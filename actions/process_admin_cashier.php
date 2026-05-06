@@ -1,7 +1,8 @@
-﻿<?php
+﻿﻿<?php
 require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/../config/db_connect.php';
 
+require_once __DIR__ . '/audit_helpers.php'; // Include audit logging helper
 secureSessionStart();
 
 if ($conn->connect_error) {
@@ -92,6 +93,7 @@ if (isset($_POST['email']) && isset($_POST['password'])) {
             $_SESSION['role'] = 'admincashier';
             $_SESSION['login_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
             $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
+            logAudit($conn, 'admincashier', $user_id, 'login', 'Admin Cashier logged in.');
 
             header('Location: ../pages/admincashier/admincashier_dashb.html');
             exit();

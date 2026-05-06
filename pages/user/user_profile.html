@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -580,7 +580,7 @@
       };
 
       try {
-        const result = await fetchWithError('http://localhost/GCST_Track_System/actions/update_user_profile.php', {
+        const result = await fetchWithError('http://localhost/GCST_Track_System/actions/update_user_profile.php', { // Now points to the new PHP file
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)

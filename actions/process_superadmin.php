@@ -2,6 +2,7 @@
 require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/../config/db_connect.php';
 
+require_once __DIR__ . '/audit_helpers.php'; // Include audit logging helper
 secureSessionStart();
 
 if ($conn->connect_error) {
@@ -49,6 +50,7 @@ if ($stmt->num_rows === 1) {
         $_SESSION['role'] = 'superadmin';
         $_SESSION['login_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
         $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        logAudit($conn, 'superadmin', $user_id, 'login', 'Superadmin logged in.');
 
         header('Location: ../pages/superadmin/superadmin_dashb.html');
         exit();

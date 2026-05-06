@@ -1,6 +1,8 @@
 <?php
+require_once __DIR__ . '/security.php'; // Ensure security.php is included first
 header('Content-Type: application/json');
 require_once 'admincashier_report_helpers.php';
+require_once __DIR__ . '/email_helpers.php'; // Use SMTP helper
 
 $conn = connectAdminCashierDb();
 if (!$conn) {
@@ -9,7 +11,6 @@ if (!$conn) {
 }
 
 $emailTable = 'email_logs';
-createEmailLogTable($conn, $emailTable);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true) ?: [];
@@ -53,20 +54,6 @@ $response = [
 echo json_encode($response);
 $conn->close();
 
-function createEmailLogTable($conn, $table) {
-    $sql = "CREATE TABLE IF NOT EXISTS `$table` (
-        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        recipient VARCHAR(255) NOT NULL,
-        subject VARCHAR(255) NOT NULL,
-        message TEXT,
-        email_type VARCHAR(100) DEFAULT 'General',
-        status ENUM('sent','failed','pending') NOT NULL DEFAULT 'pending',
-        sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-    $conn->query($sql);
-}
-
 function handleSendEmail($conn, $table, $data) {
     $recipient = trim($data['recipient'] ?? '');
     $subject = trim($data['subject'] ?? '');
@@ -78,40 +65,13 @@ function handleSendEmail($conn, $table, $data) {
         return;
     }
 
-    $status = 'sent';
-    if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
-        $status = 'failed';
+    $result = sendEmailWithLog($conn, $recipient, $subject, $message, $emailType);
+    
+    if ($result['status'] === 'sent') {
+        echo json_encode(['success' => true, 'status' => 'sent']);
     } else {
-        $boundary = md5(time());
-        $headers = "From: no-reply@granby.edu.ph\r\n";
-        $headers .= "MIME-Version: 1.0\r\n";
-        $headers .= "Content-Type: multipart/related; boundary=\"{$boundary}\"\r\n";
-
-        $body = "--{$boundary}\r\n";
-        $body .= "Content-Type: text/html; charset=UTF-8\r\n";
-        $body .= "Content-Transfer-Encoding: 8bit\r\n\r\n";
-        $body .= $message . "\r\n\r\n";
-        $body .= "--{$boundary}--";
-
-        if (function_exists('mail')) {
-            if (!@mail($recipient, $subject, $body, $headers)) {
-                $status = 'failed';
-            }
-        }
+        echo json_encode(['error' => $result['message']]);
     }
-
-    $stmt = $conn->prepare("INSERT INTO `$table` (`recipient`, `subject`, `message`, `email_type`, `status`, `sent_at`) VALUES (?, ?, ?, ?, ?, NOW())");
-    if (!$stmt) {
-        echo json_encode(['error' => 'Unable to prepare insert']);
-        return;
-    }
-    $stmt->bind_param('sssss', $recipient, $subject, $message, $emailType, $status);
-    if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'status' => $status, 'id' => $stmt->insert_id]);
-    } else {
-        echo json_encode(['error' => 'Unable to save email log']);
-    }
-    $stmt->close();
 }
 
 function handleRetryEmail($conn, $table, $data) {

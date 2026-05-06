@@ -2,6 +2,7 @@
 require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/../config/db_connect.php';
 
+require_once __DIR__ . '/audit_helpers.php'; // Include audit logging helper
 secureSessionStart();
 requireAuth(['student']);
 header('Content-Type: application/json');
@@ -56,5 +57,5 @@ if (!$success) {
     jsonResponse(['success' => false, 'message' => 'Unable to update password. Please try again.'], 500);
 }
 
-logAudit('student', $student_id, 'change_password', 'Changed account password.');
+logAudit($conn, 'student', $student_id, 'change_password', 'Changed account password.');
 jsonResponse(['success' => true, 'message' => 'Password changed successfully.']);

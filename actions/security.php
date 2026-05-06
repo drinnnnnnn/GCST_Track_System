@@ -67,37 +67,6 @@ function jsonResponse(mixed $payload, int $status = 200): void {
     exit;
 }
 
-function logAudit(string $actorType, string|int $actorId, string $action, string $details = ''): void {
-    require_once __DIR__ . '/../config/db_connect.php';
-    global $conn;
-    if (!isset($conn) || !$conn) {
-        return;
-    }
-
-    $createTableSql = "CREATE TABLE IF NOT EXISTS audit_logs (
-        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-        actor_type VARCHAR(50) NOT NULL,
-        actor_id VARCHAR(100) NOT NULL,
-        action VARCHAR(128) NOT NULL,
-        details TEXT,
-        ip_address VARCHAR(45) DEFAULT NULL,
-        user_agent VARCHAR(255) DEFAULT NULL,
-        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-    $conn->query($createTableSql);
-
-    $stmt = $conn->prepare('INSERT INTO audit_logs (actor_type, actor_id, action, details, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)');
-    if ($stmt) {
-        $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-        $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255);
-        $actorIdStr = (string)$actorId;
-        $stmt->bind_param('ssssss', $actorType, $actorIdStr, $action, $details, $ipAddress, $userAgent);
-        $stmt->execute();
-        $stmt->close();
-    }
-}
-
 function destroySession(): void {
     if (session_status() !== PHP_SESSION_ACTIVE) {
         session_start();

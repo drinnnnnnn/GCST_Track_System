@@ -1,139 +1,197 @@
 <?php
+// Force JSON output even if errors occur
+header('Content-Type: application/json');
+ini_set('display_errors', '0'); // Prevent HTML error output
+ob_start(); // Buffer any accidental output
+
 require_once __DIR__ . '/security.php';
 secureSessionStart();
 requireAuth(['student', 'admincashier', 'superadmin']);
-header('Content-Type: application/json');
 
-require_once __DIR__ . '/../config/db_connect.php';
-require_once __DIR__ . '/email_helpers.php';
-if ($conn->connect_error) {
-    echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
-    exit;
-}
-
-$adminId = $_SESSION['admin_id'] ?? null;
-
-$payload = json_decode(file_get_contents('php://input'), true);
-if (!$payload || !isset($payload['items']) || !is_array($payload['items']) || count($payload['items']) === 0) {
-    jsonResponse(['success' => false, 'message' => 'No items in cart.'], 400);
-}
-
-// Allow student ID to come from the payload (selected by cashier) or session
-$studentId = $payload['student_id'] ?? $_SESSION['student_id'] ?? null;
-
-if (!$adminId && !$studentId) {
-    echo json_encode(['success' => false, 'message' => 'Authentication required.']);
-    exit;
-}
-
-$userId = null;
-$studentFullName = null;
-if ($studentId) {
-    $lookupStmt = $conn->prepare('SELECT id, first_name, last_name FROM users WHERE student_id = ? LIMIT 1');
-    $lookupStmt->bind_param('s', $studentId);
-    $lookupStmt->execute();
-    $lookupStmt->bind_result($userId, $fName, $lName);
-    if ($lookupStmt->fetch() && $userId) {
-        $studentFullName = trim($fName . ' ' . $lName);
-    } else {
-        $lookupStmt->close();
-        echo json_encode(['success' => false, 'message' => 'Unable to resolve authenticated user.']);
-        exit;
-    }
-    $lookupStmt->close();
-}
-
-$subtotal = isset($payload['subtotal']) ? floatval($payload['subtotal']) : 0.0;
-$discountPercent = isset($payload['discount_percent']) ? floatval($payload['discount_percent']) : 0.0;
-$discountAmount = isset($payload['discount_amount']) ? floatval($payload['discount_amount']) : 0.0;
-$totalAmount = isset($payload['total_amount']) ? floatval($payload['total_amount']) : 0.0;
-$paymentReceived = isset($payload['payment_received']) ? floatval($payload['payment_received']) : 0.0;
-$paymentStatus = isset($payload['payment_status']) && in_array($payload['payment_status'], ['paid', 'pending'], true) ? $payload['payment_status'] : 'paid';
-$changeAmount = isset($payload['change_amount']) ? floatval($payload['change_amount']) : 0.0;
-$receiptNumber = isset($payload['receipt_number']) ? trim((string)$payload['receipt_number']) : null;
-
-if ($totalAmount < 0 || $subtotal < 0) {
-    echo json_encode(['success' => false, 'message' => 'Invalid amount values.']);
-    exit;
-}
-
-if ($paymentStatus === 'paid' && $paymentReceived < $totalAmount) {
-    echo json_encode(['success' => false, 'message' => 'Payment must cover total amount for paid status.']);
-    exit;
-}
-
-// Create the cashier_transactions table if it does not exist.
-$createTableSql = "CREATE TABLE IF NOT EXISTS `cashier_transactions` (
-    `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `transaction_number` VARCHAR(50) NOT NULL,
-    `receipt_number` VARCHAR(100) DEFAULT NULL,
-    `user_id` INT(11) DEFAULT NULL,
-    `student_name` VARCHAR(255) DEFAULT NULL,
-    `cashier_id` INT(11) NOT NULL,
-    `transaction_type` ENUM('buy','rent','mixed') NOT NULL,
-    `items` TEXT NOT NULL,
-    `subtotal` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    `discount_percent` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-    `discount_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    `total_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    `payment_received` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    `change_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    `payment_status` ENUM('paid','pending') NOT NULL DEFAULT 'pending',
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uniq_transaction_number` (`transaction_number`),
-    UNIQUE KEY `uniq_receipt_number` (`receipt_number`),
-    KEY `idx_cashier_transactions_user_id` (`user_id`),
-    KEY `idx_cashier_transactions_cashier_id` (`cashier_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-$conn->query($createTableSql);
-
-// Create the active_rentals table if it does not exist.
-$createRentalsTableSql = "CREATE TABLE IF NOT EXISTS `active_rentals` (
-    `rental_id` INT(11) NOT NULL AUTO_INCREMENT,
-    `transaction_number` VARCHAR(50) NOT NULL,
-    `student_id` VARCHAR(50) NOT NULL,
-    `product_id` INT(11) NOT NULL,
-    `quantity` INT(11) NOT NULL DEFAULT 1,
-    `rental_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `return_date` DATETIME NOT NULL,
-    `rejection_reason` TEXT DEFAULT NULL,
-    `status` ENUM('active','returned','overdue','pending_renewal') NOT NULL DEFAULT 'active',
-    PRIMARY KEY (`rental_id`),
-    KEY `idx_active_rentals_student` (`student_id`),
-    KEY `idx_active_rentals_transaction` (`transaction_number`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-$conn->query($createRentalsTableSql);
-
-$typeColumnInfo = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'transaction_type'");
-if ($typeColumnInfo && $typeColumnInfo->num_rows > 0) {
-    $typeDef = $typeColumnInfo->fetch_assoc()['Type'];
-    if (strpos($typeDef, "'mixed'") === false) {
-        $conn->query("ALTER TABLE `cashier_transactions` MODIFY COLUMN `transaction_type` ENUM('buy','rent','mixed') NOT NULL");
-    }
-}
-
-$userCheck = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'user_id'");
-if (!$userCheck || $userCheck->num_rows === 0) {
-    $conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `user_id` INT(11) DEFAULT NULL AFTER `receipt_number` , ADD INDEX (`user_id`) ");
-}
-
-$nameCheck = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'student_name'");
-if (!$nameCheck || $nameCheck->num_rows === 0) {
-    $conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `student_name` VARCHAR(255) DEFAULT NULL AFTER `user_id` ");
-}
-
-$stockColumn = 'stock_count';
-$stockCheck = $conn->query("SHOW COLUMNS FROM `products` LIKE 'stock_count'");
-if (!$stockCheck || $stockCheck->num_rows === 0) {
-    $stockColumn = 'stock';
-}
-
-$allowedTypes = ['buy', 'rent'];
-$itemTypes = [];
-$cartItems = [];
-$conn->begin_transaction();
 try {
+    require_once __DIR__ . '/../config/db_connect.php';
+    if ($conn->connect_error) {
+        throw new Exception('Database connection failed: ' . $conn->connect_error);
+    }
+
+    // Safe include helper to prevent Fatal Errors from breaking JSON
+    function safeInclude($path, $name) {
+        global $conn; // Add this line to bring the database connection into the function scope
+        if (!file_exists($path)) {
+            return ["success" => false, "message" => "Component missing: $name at $path"];
+        }
+        require_once $path;
+        return ["success" => true];
+    }
+
+    $checkEmail = safeInclude(__DIR__ . '/email_helpers.php', 'Email Helper');
+    $checkAudit = safeInclude(__DIR__ . '/audit_helpers.php', 'Audit Helper');
+    $checkQR = safeInclude(__DIR__ . '/qr_code_generator.php', 'QR Generator');
+
+    if (!$checkEmail['success']) throw new Exception($checkEmail['message']);
+    if (!$checkAudit['success']) throw new Exception($checkAudit['message']);
+    if (!$checkQR['success']) throw new Exception($checkQR['message']);
+
+    $adminId = $_SESSION['admin_id'] ?? null;
+    $payload = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$payload || !isset($payload['items']) || !is_array($payload['items']) || count($payload['items']) === 0) {
+        throw new Exception('No items in cart.');
+    }
+
+    $studentId = $payload['student_id'] ?? $_SESSION['student_id'] ?? null;
+    if (!$adminId && !$studentId) {
+        throw new Exception('Authentication required.');
+    }
+
+    $userId = null;
+    $studentFullName = null;
+    if ($studentId) {
+        $lookupStmt = $conn->prepare('SELECT id, first_name, last_name FROM users WHERE student_id = ? LIMIT 1');
+        $lookupStmt->bind_param('s', $studentId);
+        $lookupStmt->execute();
+        $lookupStmt->bind_result($userId, $fName, $lName);
+        if ($lookupStmt->fetch() && $userId) {
+            $studentFullName = trim($fName . ' ' . $lName);
+        } else {
+            $lookupStmt->close();
+            throw new Exception('Unable to resolve student ID: ' . $studentId);
+        }
+        $lookupStmt->close();
+    }
+
+    $subtotal = isset($payload['subtotal']) ? floatval($payload['subtotal']) : 0.0;
+    $discountPercent = isset($payload['discount_percent']) ? floatval($payload['discount_percent']) : 0.0;
+    $discountAmount = isset($payload['discount_amount']) ? floatval($payload['discount_amount']) : 0.0;
+    $totalAmount = isset($payload['total_amount']) ? floatval($payload['total_amount']) : 0.0;
+    $paymentReceived = isset($payload['payment_received']) ? floatval($payload['payment_received']) : 0.0;
+    $paymentStatus = isset($payload['payment_status']) && in_array($payload['payment_status'], ['paid', 'pending'], true) ? $payload['payment_status'] : 'paid';
+    $changeAmount = isset($payload['change_amount']) ? floatval($payload['change_amount']) : 0.0;
+    $receiptNumber = isset($payload['receipt_number']) ? trim((string)$payload['receipt_number']) : null;
+
+    if ($totalAmount < 0 || $subtotal < 0) throw new Exception('Invalid amount values.');
+    if ($paymentStatus === 'paid' && $paymentReceived < $totalAmount) throw new Exception('Payment must cover total amount for paid status.');
+
+    $allowedTypes = ['buy', 'rent'];
+    $itemTypes = [];
+    $cartItems = [];
+
+    $conn->begin_transaction();
+
+    // Create the cashier_transactions table if it does not exist.
+    $createTableSql = "CREATE TABLE IF NOT EXISTS `cashier_transactions` (
+        `id` INT(11) NOT NULL AUTO_INCREMENT,
+        `transaction_number` VARCHAR(50) NOT NULL,
+        `receipt_number` VARCHAR(100) DEFAULT NULL,
+        `user_id` INT(11) DEFAULT NULL,
+        `student_name` VARCHAR(255) DEFAULT NULL,
+        `cashier_id` INT(11) NOT NULL,
+        `transaction_type` ENUM('buy','rent','mixed') NOT NULL,
+        `items` TEXT NOT NULL,
+        `subtotal` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `discount_percent` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+        `discount_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `total_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `payment_received` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `change_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `payment_status` ENUM('paid','pending') NOT NULL DEFAULT 'pending',
+        `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uniq_transaction_number` (`transaction_number`),
+        UNIQUE KEY `uniq_receipt_number` (`receipt_number`),
+        KEY `idx_cashier_transactions_user_id` (`user_id`),
+        KEY `idx_cashier_transactions_cashier_id` (`cashier_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+    if (!$conn->query($createTableSql)) {
+        throw new Exception("Failed to create cashier_transactions table: " . $conn->error);
+    }
+
+    // Create the active_rentals table if it does not exist.
+    $createRentalsTableSql = "CREATE TABLE IF NOT EXISTS `active_rentals` (
+        `rental_id` INT(11) NOT NULL AUTO_INCREMENT,
+        `transaction_number` VARCHAR(50) NOT NULL,
+        `student_id` VARCHAR(50) NOT NULL,
+        `product_id` INT(11) NOT NULL,
+        `quantity` INT(11) NOT NULL DEFAULT 1,
+        `rental_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `return_date` DATETIME NOT NULL,
+        `rejection_reason` TEXT DEFAULT NULL,
+        `status` ENUM('active','returned','overdue','pending_renewal') NOT NULL DEFAULT 'active',
+        PRIMARY KEY (`rental_id`),
+        KEY `idx_active_rentals_student` (`student_id`),
+        KEY `idx_active_rentals_transaction` (`transaction_number`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+    if (!$conn->query($createRentalsTableSql)) {
+        throw new Exception("Failed to create active_rentals table: " . $conn->error);
+    }
+
+    $typeColumnInfo = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'transaction_type'");
+    if ($typeColumnInfo === false) {
+        throw new Exception("Failed to check transaction_type column: " . $conn->error);
+    }
+    if ($typeColumnInfo->num_rows > 0) {
+        $typeDef = $typeColumnInfo->fetch_assoc()['Type'];
+        if (strpos($typeDef, "'mixed'") === false) {
+            if (!$conn->query("ALTER TABLE `cashier_transactions` MODIFY COLUMN `transaction_type` ENUM('buy','rent','mixed') NOT NULL")) {
+                throw new Exception("Failed to alter transaction_type column: " . $conn->error);
+            }
+        }
+    }
+
+    $txnCheckCt = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'transaction_number'");
+    if (!$txnCheckCt || $txnCheckCt->num_rows === 0) {
+        $conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `transaction_number` VARCHAR(50) NOT NULL AFTER `id` , ADD UNIQUE KEY `uniq_transaction_number` (`transaction_number`) ");
+    }
+
+    $txnCheckAr = $conn->query("SHOW COLUMNS FROM `active_rentals` LIKE 'transaction_number'");
+    if (!$txnCheckAr || $txnCheckAr->num_rows === 0) {
+        $conn->query("ALTER TABLE `active_rentals` ADD COLUMN `transaction_number` VARCHAR(50) NOT NULL AFTER `rental_id` , ADD INDEX `idx_active_rentals_transaction` (`transaction_number`) ");
+    }
+
+    $userCheck = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'user_id'");
+    if ($userCheck === false) {
+        throw new Exception("Failed to check user_id column: " . $conn->error);
+    }
+    if (!$userCheck || $userCheck->num_rows === 0) {
+        if (!$conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `user_id` INT(11) DEFAULT NULL AFTER `receipt_number` , ADD INDEX (`user_id`) ")) {
+            throw new Exception("Failed to add user_id column: " . $conn->error);
+        }
+    }
+
+    $nameCheck = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'student_name'");
+    if ($nameCheck === false) {
+        throw new Exception("Failed to check student_name column: " . $conn->error);
+    }
+    if (!$nameCheck || $nameCheck->num_rows === 0) {
+        if (!$conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `student_name` VARCHAR(255) DEFAULT NULL AFTER `user_id` ")) {
+            throw new Exception("Failed to add student_name column: " . $conn->error);
+        }
+    }
+
+    $stockColumn = 'stock_count';
+    $stockCheck = $conn->query("SHOW COLUMNS FROM `products` LIKE 'stock_count'");
+    if ($stockCheck === false) {
+        throw new Exception("Failed to check stock_count column: " . $conn->error);
+    }
+    if (!$stockCheck || $stockCheck->num_rows === 0) {
+        $stockColumn = 'stock';
+    }
+
+    // Detect price columns
+    $buyPriceCol = 'buy_price';
+    $priceCheck = $conn->query("SHOW COLUMNS FROM `products` LIKE 'buy_price'");
+    if ($priceCheck === false) {
+        throw new Exception("Failed to check buy_price column: " . $conn->error);
+    }
+    if (!$priceCheck || $priceCheck->num_rows === 0) { $buyPriceCol = 'price'; }
+
+    $rentPriceCol = 'rent_price';
+    $rentCheck = $conn->query("SHOW COLUMNS FROM `products` LIKE 'rent_price'");
+    if ($rentCheck === false) {
+        throw new Exception("Failed to check rent_price column: " . $conn->error);
+    }
+    if (!$rentCheck || $rentCheck->num_rows === 0) { $rentPriceCol = '0.00'; } // Fallback if no rent price exists
+
     foreach ($payload['items'] as $item) {
         $productId = intval($item['product_id'] ?? 0);
         $quantity = intval($item['quantity'] ?? 0);
@@ -149,7 +207,7 @@ try {
 
         $itemTypes[] = $type;
 
-        $stmt = $conn->prepare("SELECT product_id, product_name, product_category, COALESCE(stock_count, stock, 0) AS available_stock, COALESCE(buy_price, price, 0.00) AS buy_price, COALESCE(rent_price, 0.00) AS rent_price FROM products WHERE product_id = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT product_id, product_name, product_category, `$stockColumn` AS available_stock, `$buyPriceCol` AS buy_price, $rentPriceCol AS rent_price FROM products WHERE product_id = ? LIMIT 1");
         $stmt->bind_param('i', $productId);
         $stmt->execute();
         $product = $stmt->get_result()->fetch_assoc();
@@ -222,7 +280,8 @@ try {
     }
 
     $insertStmt = $conn->prepare("INSERT INTO cashier_transactions (transaction_number, receipt_number, user_id, student_name, cashier_id, transaction_type, items, subtotal, discount_percent, discount_amount, total_amount, payment_received, change_amount, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $insertStmt->bind_param('ssiss ss ddd ddd s', $transactionNumber, $receiptNumber, $userId, $studentFullName, $cashierId, $transactionType, $itemsJson, $subtotal, $discountPercent, $discountAmount, $totalAmount, $paymentReceived, $changeAmount, $paymentStatus);
+    // Corrected type string: 14 parameters, s=string, i=int, d=double/float. Removed spaces.
+    $insertStmt->bind_param('ssisissdddddds', $transactionNumber, $receiptNumber, $userId, $studentFullName, $cashierId, $transactionType, $itemsJson, $subtotal, $discountPercent, $discountAmount, $totalAmount, $paymentReceived, $changeAmount, $paymentStatus);
     if (!$insertStmt->execute()) {
         throw new Exception('Could not save transaction: ' . $insertStmt->error);
     }
@@ -263,13 +322,37 @@ try {
             $emailStmt->close();
 
             if ($userData && filter_var($userData['email'] ?? '', FILTER_VALIDATE_EMAIL)) {
+                // Generate QR code image and save temporarily
                 $userEmail = $userData['email'];
                 $studentFullName = trim(($userData['first_name'] ?? '') . ' ' . ($userData['last_name'] ?? ''));
-                $qrUrl = 'https://chart.googleapis.com/chart?cht=qr&chs=400x400&chl=' . rawurlencode($transactionNumber) . '&chld=L|1';
-                $inlineQr = "<div style=\"text-align:center;margin:30px 0;padding:20px;border:2px dashed #2563eb;border-radius:16px;background:#f8fafc;\">" .
-                    "<div style=\"font-size:18px;font-weight:bold;color:#2563eb;margin-bottom:15px;letter-spacing:1px;\">PRESENT TO CASHIER</div>" .
-                    "<img src=\"{$qrUrl}\" alt=\"Order QR Code\" style=\"max-width:100%;height:auto;border:1px solid #ddd;border-radius:12px;\" />" .
-                    "</div>";
+                
+                $attachments = []; 
+                // Always use project-local temp folder for consistency and permissions
+                $tempDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'temp';
+                if (!is_dir($tempDir) && !@mkdir($tempDir, 0777, true)) {
+                    throw new Exception("Unable to create temporary directory for QR codes at: $tempDir. Please check folder permissions.");
+                }
+                
+                $tempQrPath = $tempDir . DIRECTORY_SEPARATOR . uniqid('qr_') . '.png';
+
+                try {
+                    $inlineQr = '';
+                    if (function_exists('generateLocalQrCode') && generateLocalQrCode($transactionNumber, $tempQrPath, 'H', 10, 4)) {
+                        $attachments[] = ['path' => $tempQrPath, 'name' => 'order_qr_code.png', 'cid' => 'order_qr_code'];
+                        $inlineQr = "<div style=\"text-align:center;margin:30px 0;padding:20px;border:2px dashed #2563eb;border-radius:16px;background:#f8fafc;\">" .
+                            "<div style=\"font-size:18px;font-weight:bold;color:#2563eb;margin-bottom:15px;letter-spacing:1px;\">PRESENT TO CASHIER</div>" .
+                            "<img src=\"cid:order_qr_code\" alt=\"Order QR Code\" style=\"max-width:300px;height:auto;border:1px solid #ddd;border-radius:12px;\" />" .
+                            "</div>";
+                    } else {
+                        $reason = !class_exists('QRcode') ? "Library class not loaded" : "File system error";
+                        $inlineQr = "<p style='color:red;'>QR Code could not be generated ($reason). Please use the Order Reference below.</p>";
+                        error_log("QR Library failed to generate image for order $transactionNumber. Reason: $reason");
+                    }
+                } catch (Throwable $qrErr) {
+                    error_log("Critical QR Error: " . $qrErr->getMessage());
+                    $inlineQr = "<p style='color:red;'>QR Service Error: " . $qrErr->getMessage() . "</p>";
+                }
+
                 $emailBody = "<p>Hi " . htmlspecialchars($studentFullName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . ",</p>" .
                     "<p>Your order has been placed. Please present the QR code below to the cashier for quick scanning.</p>" .
                     "<p style='color:#dc2626;'><strong>Note:</strong> This QR code will expire and become invalid after 2 days (48 hours).</p>" .
@@ -278,19 +361,27 @@ try {
                     "<p>Order total: ₱" . number_format($totalAmount, 2, '.', ',') . "</p>" .
                     "<p>Thank you for using GCST Tracking System.</p>";
 
-                $sendResult = sendEmailWithLog($conn, $userEmail, 'Your GCST Order QR Code', $emailBody, 'Order Confirmation');
+                $sendResult = sendEmailWithLog($conn, $userEmail, 'Your GCST Order QR Code', $emailBody, 'Order Confirmation', $attachments);
                 $emailStatus = $sendResult['status'] === 'sent' ? 'sent' : 'failed';
+
+                // Clean up temporary QR file
+                if (file_exists($tempQrPath)) {
+                    unlink($tempQrPath);
+                }
             }
         }
     }
 
-    logAudit($adminId ? 'admincashier' : 'student', $adminId ?? $studentId, 'save_cashier_transaction', 'Saved transaction ' . $transactionNumber . ' and email status: ' . $emailStatus);
+    // Log the transaction
+    logAudit($conn, $adminId ? 'admincashier' : 'student', $adminId ?? $userId, 'save_cashier_transaction', 'Saved transaction ' . $transactionNumber . ' and email status: ' . $emailStatus);
+
     echo json_encode([
         'success' => true,
         'message' => 'Transaction completed successfully.',
         'transaction_number' => $transactionNumber,
         'receipt_number' => $receiptNumber,
         'transaction_id' => $conn->insert_id,
+        'email_status' => $emailStatus,
         'payment_status' => $paymentStatus,
         'receipt' => [
             'transaction_number' => $transactionNumber,
@@ -307,8 +398,9 @@ try {
         ]
     ]);
     exit;
-} catch (Exception $e) {
-    $conn->rollback();
+} catch (Throwable $e) {
+    if (isset($conn) && $conn->connect_errno === 0) $conn->rollback();
+    ob_clean();
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     exit;
 }

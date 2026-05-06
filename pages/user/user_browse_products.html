@@ -705,6 +705,7 @@
     let allProducts = [];
     let currentCategory = 'all';
     let currentSearch = '';
+    let currentStudentId = null; // Variable to store the logged-in student's ID
     let cart = [];
 
     function normalizeCategory(value) {
@@ -1004,7 +1005,14 @@
         const multiplier = item.type === 'rent' ? (item.duration || 1) : 1;
         return sum + (item.unitPrice * multiplier * item.quantity);
       }, 0);
+
+      if (!currentStudentId) {
+        alert('Error: Student session not found. Please log in again.');
+        return;
+      }
+
       const payload = {
+        student_id: currentStudentId, // Explicitly include student_id in the payload
         items: selectedItems.map(item => ({
           product_id: item.product_id,
           quantity: item.quantity,
@@ -1041,12 +1049,25 @@
         await saveCartToServer();
 
         const reference = result.transaction_number || `ORDER-${Date.now()}`;
-        document.getElementById('checkout-qr').src = `https://chart.googleapis.com/chart?cht=qr&chs=250x250&chl=${encodeURIComponent(reference)}&chld=L|1`;
+        // Use local QR API instead of Google Charts
+        document.getElementById('checkout-qr').src = `http://localhost/GCST_Track_System/actions/generate_qr_api.php?data=${encodeURIComponent(reference)}`;
         document.getElementById('order-reference').textContent = reference;
         document.getElementById('checkout-result').classList.remove('hidden');
-        alert('Checkout successful! Show the QR code to the cashier for scanning.');
+        
+        let successMessage = 'Checkout successful! Show the QR code to the cashier for scanning.';
+        if (result.email_status === 'sent') {
+            successMessage += ' A copy of the QR code has also been sent to your Gmail account.';
+        } else if (result.email_status === 'failed') {
+            successMessage += ' We attempted to send a copy of the QR code to your Gmail, but it failed. Please ensure your email is valid.';
+        }
+        alert(successMessage);
       } catch (error) {
-        alert(error.message || 'Checkout failed. Please try again.');
+        console.error('Checkout error:', error);
+        let errorMsg = 'Checkout failed. ';
+        if (error.message.includes('Unexpected token')) {
+            errorMsg += 'The server encountered a fatal error. Please check the PHP error logs.';
+        } else { errorMsg += error.message; }
+        alert(errorMsg);
       } finally {
         checkoutButton.textContent = 'Checkout';
         checkoutButton.disabled = cart.length === 0;
@@ -1072,6 +1093,11 @@
     document.getElementById('checkout-button').addEventListener('click', checkoutCart);
 
     initializeAdminCashierPage(async () => {
+      const auth = await checkAuthentication(); 
+      if (auth) {
+        // Robust check for student unique ID string (e.g., GC-XXXXXX)
+        currentStudentId = auth.student_id || auth.username || auth.id;
+      }
       await loadProducts();
       await loadCart();
     });

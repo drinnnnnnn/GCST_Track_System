@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/../config/db_connect.php';
+require_once __DIR__ . '/audit_helpers.php'; // Include audit logging helper
 
 secureSessionStart();
 requireAuth(['student']);
