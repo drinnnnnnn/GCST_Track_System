@@ -3,7 +3,7 @@ require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/../config/db_connect.php';
 
 secureSessionStart();
-requireAuth(['student']);
+requireAuth(['student', 'admincashier', 'superadmin']);
 header('Content-Type: application/json');
 
 $student_id = $_SESSION['student_id'] ?? null;
@@ -35,5 +35,5 @@ if (!$success) {
     jsonResponse(['success' => false, 'message' => 'Unable to save preferences.'], 500);
 }
 
-logAudit('student', $student_id, 'save_notification_preferences', 'Updated notification preferences.');
+logAudit($conn, 'student', $student_id, 'save_notification_preferences', 'Updated notification preferences.');
 jsonResponse(['success' => true, 'message' => 'Notification preferences saved successfully.']);

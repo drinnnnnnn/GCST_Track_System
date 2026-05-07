@@ -272,12 +272,6 @@
     <a class="menu-item" href="admincashier_inventorys.html">
       <i class="fas fa-boxes"></i> Inventory
     </a>
-    <a class="menu-item" href="admincashier_products.html">
-      <i class="fas fa-boxes"></i> Products
-    </a>
-    <a class="menu-item" href="admincashier_reports.html">
-      <i class="fas fa-chart-line"></i> Reports
-    </a>
     <a class="menu-item" href="admincashier_queuing_system.html">
       <i class="fas fa-users"></i> Queue System
     </a>
@@ -371,6 +365,8 @@
   <script>
     let currentAdminId = null;
     let currentTicket = null;
+    // This interval is for page-specific polling, not notifications
+    let queuePollInterval = null;
 
     // Initialize greeting and current date/time
     window.addEventListener('DOMContentLoaded', () => {
@@ -390,6 +386,12 @@
 
       loadActiveQueues();
       loadQueueStatus();
+      startQueuePolling();
+    });
+
+    window.addEventListener('beforeunload', () => {
+      stopQueuePolling();
+      if (typeof stopNotifPolling === 'function') stopNotifPolling();
     });
 
     function updateGreeting(adminName) {
@@ -417,118 +419,18 @@
       menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
     });
 
-    document.addEventListener('click', (e) => {
-      const menu = document.getElementById('dropdown-menu');
-      if (!menu.contains(e.target) && !document.getElementById('menu-icon').contains(e.target)) {
-        menu.style.display = 'none';
-      }
-    });
-
-    // Notification functions (same as dashboard)
-    const bell = document.getElementById('notification-bell');
-    const dropdown = document.getElementById('notification-dropdown');
-    const notificationsList = document.getElementById('notifications-list');
-    const clearBtn = document.getElementById('clear-notifications');
-    const notifBadge = document.getElementById('notif-badge');
-
-    let notifInterval = null;
-
-    bell.addEventListener('click', (e) => {
-      e.preventDefault();
-      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-      if (dropdown.style.display === 'block') {
-        markAllNotificationsRead(() => {
-          loadNotifications();
-          startNotifPolling();
-        });
-      } else {
-        stopNotifPolling();
-      }
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!dropdown.contains(e.target) && !bell.contains(e.target)) {
-        dropdown.style.display = 'none';
-        stopNotifPolling();
-      }
-    });
-
-    function startNotifPolling() {
-      if (notifInterval) clearInterval(notifInterval);
-      notifInterval = setInterval(loadNotifications, 5000);
+    function startQueuePolling() {
+      if (queuePollInterval) clearInterval(queuePollInterval);
+      queuePollInterval = setInterval(() => {
+        loadActiveQueues();
+        loadQueueStatus();
+      }, 5000); // Automatically refresh queue data every 5 seconds
     }
 
-    function stopNotifPolling() {
-      if (notifInterval) clearInterval(notifInterval);
-      notifInterval = null;
+    function stopQueuePolling() {
+      if (queuePollInterval) clearInterval(queuePollInterval);
+      queuePollInterval = null;
     }
-
-    function loadNotifications() {
-      if (!currentAdminId) return;
-      fetch('http://localhost/GCST_Track_System/actions/get_notifications.php?admin_id=' + encodeURIComponent(currentAdminId))
-        .then(res => res.json())
-        .then(notifs => {
-          notificationsList.innerHTML = '';
-          if (notifs.length === 0) {
-            notificationsList.innerHTML = '<div class="notification-item">No notifications yet.</div>';
-            notifBadge.style.display = 'none';
-            return;
-          }
-
-          const unreadCount = notifs.filter(n => n.is_read == 0).length;
-          if (unreadCount > 0) {
-            notifBadge.textContent = unreadCount;
-            notifBadge.style.display = 'inline-block';
-          } else {
-            notifBadge.style.display = 'none';
-          }
-
-          notifs.forEach(n => {
-            const imgSrc = n.product_image || '/assets/images/bg/product_details.png';
-            const item = document.createElement('div');
-            item.className = 'notification-item';
-            item.style.background = n.is_read == 0 ? '#e0e7ff' : 'white';
-            item.innerHTML = `
-              <img src="${imgSrc}" alt="Product">
-              <div>
-                <div class="notification-message">${n.product_name} - ${n.status}</div>
-                <div class="notification-time">${new Date(n.notified_at).toLocaleString()}</div>
-              </div>
-            `;
-            notificationsList.appendChild(item);
-          });
-        });
-    }
-
-    function markAllNotificationsRead(callback) {
-      if (!currentAdminId) {
-        if (typeof callback === 'function') callback();
-        return;
-      }
-      fetch('http://localhost/GCST_Track_System/actions/mark_notifications_read.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ admin_id: currentAdminId })
-      }).then(() => {
-        if (typeof callback === 'function') callback();
-      });
-    }
-
-    clearBtn.addEventListener('click', () => {
-      if (!currentAdminId) return;
-      fetch('http://localhost/GCST_Track_System/actions/clear_notifications.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ admin_id: currentAdminId })
-      })
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) {
-          notificationsList.innerHTML = '<div class="notification-item">No notifications yet.</div>';
-          notifBadge.style.display = 'none';
-        }
-      });
-    });
 
     // Queue functions
     function openQueueDisplay() {
@@ -541,7 +443,7 @@
     }
 
     function loadQueueStatus() {
-      fetch('http://localhost/GCST_Track_System/actions/get_queue_status.php')
+      fetch('../../actions/get_queue_status.php')
         .then(res => res.json())
         .then(data => {
           document.getElementById('display-current-time').textContent = data.current_time;
@@ -552,7 +454,7 @@
     }
 
     function generateQueue() {
-      fetch('http://localhost/GCST_Track_System/actions/generate_queue.php', {
+      fetch('../../actions/generate_queue.php', {
         method: 'POST'
       })
       .then(res => res.json())
@@ -630,7 +532,7 @@
     }
 
     function loadActiveQueues() {
-      fetch('http://localhost/GCST_Track_System/actions/get_active_queues.php')
+      fetch('../../actions/get_active_queues.php')
         .then(res => res.json())
         .then(data => {
           const queueList = document.getElementById('queue-list');
@@ -666,7 +568,7 @@
     }
 
     function updateQueueStatus(queueId, status) {
-      fetch('http://localhost/GCST_Track_System/actions/update_queue_status.php', {
+      fetch('../../actions/update_queue_status.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ queue_id: queueId, status: status })
@@ -684,5 +586,6 @@
     }
   </script>
     <script src="http://localhost/GCST_Track_System/assets/js/logout-handler1.js"></script>
+    <script src="http://localhost/GCST_Track_System/assets/js/admincashier.js"></script>
 </body>
 </html>

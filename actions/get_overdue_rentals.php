@@ -1,27 +1,34 @@
 <?php
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['admincashier', 'superadmin']);
+requireAuth(['admincashier', 'superadmin', 'student', 'user']);
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/db_connect.php';
 
-// Ensure active rentals are synced to overdue status before fetching
-$conn->query("UPDATE active_rentals SET status = 'overdue' WHERE status = 'active' AND return_date < NOW()");
+try {
+    $role = $_SESSION['role'];
+    $session_student_id = $_SESSION['student_id'] ?? null;
 
-$sql = "SELECT r.*, p.product_name, u.first_name, u.last_name 
-        FROM active_rentals r
-        JOIN products p ON r.product_id = p.product_id
-        JOIN users u ON r.student_id = u.student_id
-        WHERE r.status = 'overdue'
-        ORDER BY r.return_date ASC";
-$result = $conn->query($sql);
+    $sql = "SELECT ar.rental_id, ar.student_id, ar.product_id, ar.quantity, ar.return_date, ar.status,
+                   u.first_name, u.last_name, p.product_name
+            FROM active_rentals ar
+            LEFT JOIN users u ON ar.student_id = u.student_id
+            LEFT JOIN products p ON ar.product_id = p.product_id
+            WHERE ar.status != 'returned' AND (ar.status = 'overdue' OR ar.return_date < NOW())";
 
-$overdue = [];
-if ($result) {
-    while($row = $result->fetch_assoc()) {
-        $overdue[] = $row;
+    if (in_array($role, ['student', 'user'])) {
+        $sql .= " AND ar.student_id = '" . $conn->real_escape_string($session_student_id) . "'";
     }
+
+    $sql .= " ORDER BY ar.return_date ASC";
+            
+    $result = $conn->query($sql);
+    $data = [];
+    while ($row = $result->fetch_assoc()) {
+        $data[] = $row;
+    }
+    echo json_encode($data);
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
 }
-echo json_encode($overdue);
-$conn->close();
-?>

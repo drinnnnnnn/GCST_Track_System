@@ -176,7 +176,6 @@
       .greeting-section { flex-direction: column; }
     }
   </style>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
       window.addEventListener('DOMContentLoaded', function() {
         fetch('http://localhost/GCST_Track_System/actions/get_user.php')
@@ -231,12 +230,6 @@
       <a class="menu-item" href="admincashier_inventorys.html">
         <i class="fas fa-boxes"></i> Inventory
       </a>
-      <a class="menu-item" href="admincashier_products.html">
-        <i class="fas fa-boxes"></i> Products
-      </a>
-      <a class="menu-item" href="admincashier_reports.html">
-        <i class="fas fa-chart-line"></i> Reports
-      </a>
       <a class="menu-item" href="admincashier_queuing_system.html">
         <i class="fas fa-users"></i> Queue System
       </a>
@@ -246,7 +239,7 @@
       <a class="menu-item" href="admincashier_profile.html">
         <i class="fas fa-user-circle"></i> Profile
       </a>
-      <a class="menu-item" href="http://localhost/GCST_Track_System/actions/sign_out.php">
+      <a class="menu-item" href="../../actions/sign_out.php">
         <i class="fas fa-sign-out-alt"></i> Log Out
       </a>
     </div>
@@ -340,10 +333,11 @@
     let currentPeriod = 'today';
     let salesTrendChart = null;
     let topProductsChart = null;
+    let salesInterval = null;
 
     // Initialize greeting and current date/time
     window.addEventListener('DOMContentLoaded', () => {
-        fetch('http://localhost/GCST_Track_System/actions/get_process_admin_cashier.php')
+        fetch('../../actions/get_process_admin_cashier.php')
           .then(res => res.json())
           .then(data => {
             if (data.admin_id) {
@@ -358,8 +352,14 @@
         setInterval(updateDateTime, 60000); // Update time every minute
 
         // Load products
-        loadSale();
+        loadSalesData(currentPeriod);
+        startSalesPolling();
       });
+
+    window.addEventListener('beforeunload', () => {
+      stopNotifPolling();
+      stopSalesPolling();
+    });
 
     function updateGreeting(adminName) {
       const hour = new Date().getHours();
@@ -396,16 +396,33 @@
 
     async function loadSalesData(period) {
       try {
-        const response = await fetch(`http://localhost/GCST_Track_System/actions/get_admincashier_sales.php?period=${encodeURIComponent(period)}`);
+        const response = await fetch(`../../actions/get_admincashier_sales.php?period=${encodeURIComponent(period)}`);
         const data = await response.json();
 
-        document.getElementById('totalSales').textContent = formatCurrency(data.total_sales);
-        document.getElementById('totalTransactions').textContent = data.total_transactions ?? 0;
-        document.getElementById('avgTransaction').textContent = formatCurrency(data.average_transaction_value);
-        document.getElementById('itemsSold').textContent = data.total_items_sold ?? 0;
+        // Robust data mapping from helper output
+        const totalSales = data.total_sales ?? data.total_sales_today ?? 0;
+        const totalTransactions = data.total_transactions ?? 0;
+        const avgValue = data.average_transaction_value ?? (totalTransactions > 0 ? (totalSales / totalTransactions) : 0);
+        const itemsSold = data.total_items_sold ?? data.books_sold ?? 0;
 
-        updateChart(salesTrendChart, data.sales_labels || [], data.sales_data || [], 'Daily Sales (₱)', 'line', 'rgba(69, 88, 255, 0.16)', '#4558ff');
-        updateChart(topProductsChart, data.top_products?.map(item => item.name) || [], data.top_products?.map(item => item.quantity) || [], 'Units Sold', 'bar', 'rgba(69, 88, 255, 0.16)', '#4558ff');
+        // Update Summary Cards
+        document.getElementById('totalSales').textContent = formatCurrency(totalSales);
+        document.getElementById('totalTransactions').textContent = totalTransactions;
+        document.getElementById('avgTransaction').textContent = formatCurrency(avgValue);
+        document.getElementById('itemsSold').textContent = itemsSold;
+
+        // Initialize charts if they don't exist, otherwise update them
+        if (!salesTrendChart) {
+          salesTrendChart = createChart('salesTrendChart', 'line', data.sales_labels || [], data.sales_data || [], 'Daily Sales (₱)');
+        } else {
+          updateChart(salesTrendChart, data.sales_labels || [], data.sales_data || [], 'Daily Sales (₱)', 'line', 'rgba(69, 88, 255, 0.16)', '#4558ff');
+        }
+
+        if (!topProductsChart) {
+          topProductsChart = createChart('topProductsChart', 'bar', data.top_products?.map(item => item.name) || [], data.top_products?.map(item => item.quantity) || [], 'Units Sold');
+        } else {
+          updateChart(topProductsChart, data.top_products?.map(item => item.name) || [], data.top_products?.map(item => item.quantity) || [], 'Units Sold', 'bar', 'rgba(69, 88, 255, 0.16)', '#4558ff');
+        }
 
         const historyBody = document.getElementById('historyBody');
         historyBody.innerHTML = '';
@@ -415,7 +432,7 @@
             row.innerHTML = `
               <td>${formatDate(entry.date)}</td>
               <td>${entry.transaction_id ?? '—'}</td>
-              <td>${entry.item}</td>
+              <td><strong>${entry.item}</strong></td>
               <td>${entry.quantity}</td>
               <td>${formatCurrency(entry.amount)}</td>
             `;
@@ -479,6 +496,18 @@
       chartRef.update();
     }
 
+    function startSalesPolling() {
+      if (salesInterval) clearInterval(salesInterval);
+      salesInterval = setInterval(() => {
+        loadSalesData(currentPeriod);
+      }, 10000); // Poll sales data every 10 seconds for real-time consistency
+    }
+
+    function stopSalesPolling() {
+      if (salesInterval) clearInterval(salesInterval);
+      salesInterval = null;
+    }
+
     // Menu toggle
     document.getElementById('menu-icon').addEventListener('click', (e) => {
       e.preventDefault();
@@ -499,6 +528,7 @@
         currentPeriod = button.dataset.period;
         setActivePeriodButton(currentPeriod);
         loadSalesData(currentPeriod);
+        startSalesPolling(); // Reset interval timer on manual change
       });
     });
 

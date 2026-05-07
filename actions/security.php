@@ -39,10 +39,12 @@ function validateCsrfToken(string $token): bool {
 function requireAuth(array $roles = []): void {
     secureSessionStart();
     if (!isset($_SESSION['role'])) {
+        error_log('Authentication required: $_SESSION[\'role\'] is not set. Request URI: ' . ($_SERVER['REQUEST_URI'] ?? 'N/A'));
         http_response_code(401);
         jsonResponse(['success' => false, 'message' => 'Authentication required.'], 401);
     }
     if (!empty($roles) && !in_array($_SESSION['role'], $roles, true)) {
+        error_log('Access denied: User role "' . ($_SESSION['role'] ?? 'N/A') . '" not in allowed roles [' . implode(', ', $roles) . ']. Request URI: ' . ($_SERVER['REQUEST_URI'] ?? 'N/A'));
         http_response_code(403);
         jsonResponse(['success' => false, 'message' => 'Access denied.'], 403);
     }

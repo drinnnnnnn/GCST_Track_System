@@ -58,19 +58,20 @@ function initializeAdminCashierUI() {
  * Check authentication and redirect if not logged in
  */
 function checkAuthentication() {
-  return fetch('http://localhost/GCST_Track_System/actions/get_user.php')
+  return fetch('../../actions/get_user.php')
     .then(res => res.json())
     .then(data => {
-      const currentId = data.student_id || data.admin_id;
-      if (!currentId) {
-        window.location.href = "http://localhost/GCST_Track_System/pages/sign_in_admin_cashier.html";
+      // Strictly enforce admin roles for admincashier pages
+      const allowedRoles = ['admincashier', 'superadmin'];
+      if (!data.admin_id || !allowedRoles.includes(data.role)) {
+        window.location.href = "../sign_in_admin_cashier.html";
         return null;
       }
-      currentAdminId = currentId;
+      currentAdminId = data.admin_id;
       return data;
     })
     .catch(() => {
-      window.location.href = "http://localhost/GCST_Track_System/pages/sign_in_admin_cashier.html";
+      window.location.href = "../sign_in_admin_cashier.html";
       return null;
     });
 }
@@ -106,7 +107,7 @@ function updateDateTime() {
  * Load notifications from server
  */
 function loadNotifications() {
-  fetch('http://localhost/GCST_Track_System/actions/get_notifications.php')
+  fetch('../../actions/get_notifications.php')
     .then(res => res.json())
     .then(data => {
       const notificationsList = document.getElementById('notifications-list');
@@ -148,7 +149,7 @@ function loadNotifications() {
  * Clear all notifications
  */
 function clearAllNotifications() {
-  fetch('http://localhost/GCST_Track_System/actions/mark_notifications_read.php', {
+  fetch('../../actions/mark_notifications_read.php', {
     method: 'POST'
   })
     .then(() => {
@@ -287,4 +288,3 @@ function fetchWithError(url, options = {}) {
       throw err;
     });
 }
-

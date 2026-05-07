@@ -550,6 +550,11 @@
           <span class="details-label">Rental Fee</span>
           <span class="details-value" id="details-fee">—</span>
         </div>
+        <!-- New row for Overdue Penalty -->
+        <div class="details-row" id="details-penalty-row" style="display: none;">
+          <span class="details-label">Overdue Penalty</span>
+          <span class="details-value" id="details-penalty-value">—</span>
+        </div>
       </div>
     </div>
   </div>
@@ -667,6 +672,13 @@
                 <label>Rental Fee</label>
                 <span>${formatCurrency(rental.rental_fee)}</span>
               </div>
+              ${(isOverdue && rental.overdue_charge > 0) ? `
+              <div class="rental-detail">
+                <label>Overdue Penalty</label>
+                <span style="color: var(--danger); font-weight: 700;">
+                  ${formatCurrency(rental.overdue_charge)}
+                </span>
+              </div>` : ''}
             </div>
 
             <div class="rental-actions">
@@ -792,6 +804,42 @@
         : (rental.status === 'overdue' ? `Overdue by ${Math.abs(daysLeft)} day${Math.abs(daysLeft) === 1 ? '' : 's'}` : `${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining`);
 
       detailsFee.textContent = formatCurrency(rental.rental_fee);
+      detailsModal.classList.add('show');
+    }
+    
+    function viewDetails(rentalId) {
+      const rental = allRentals.find(item => item.rental_id === rentalId);
+      if (!rental) return;
+
+      detailsImage.src = buildImageUrl(rental.image); // Use rental.image
+      detailsTitle.textContent = rental.name || 'Rental Details'; // Use rental.name
+      detailsProductId.textContent = `Product ID: ${rental.product_id || 'N/A'}`;
+      detailsStatus.className = `status-badge ${rental.status}`;
+      detailsStatus.textContent = rental.status;
+      detailsRentalDate.textContent = formatDate(rental.rental_date);
+      detailsDueDate.textContent = formatDate(rental.due_date);
+
+      const daysLeft = getDaysRemaining(rental.due_date);
+      const isReturned = rental.status === 'returned';
+      const isOverdue = rental.status === 'overdue';
+
+      detailsDaysRemaining.textContent = isReturned
+        ? `Returned on ${formatDate(rental.due_date)}`
+        : (isOverdue ? `Overdue by ${Math.abs(daysLeft)} day${Math.abs(daysLeft) === 1 ? '' : 's'}` : `${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining`);
+
+      detailsFee.textContent = formatCurrency(rental.rental_fee);
+
+      // Display overdue penalty in details modal if applicable
+      const penaltyRow = document.getElementById('details-penalty-row');
+      if (isOverdue && rental.overdue_charge > 0) {
+        if (penaltyRow) {
+          document.getElementById('details-penalty-value').textContent = formatCurrency(rental.overdue_charge);
+          penaltyRow.style.display = 'grid';
+        }
+      } else if (penaltyRow) {
+        penaltyRow.style.display = 'none';
+      }
+
       detailsModal.classList.add('show');
     }
 

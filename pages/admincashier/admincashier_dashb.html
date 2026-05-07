@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -45,12 +45,6 @@
     <a class="menu-item" href="admincashier_inventorys.html">
       <i class="fas fa-boxes"></i> Inventory
     </a>
-    <a class="menu-item" href="admincashier_products.html">
-      <i class="fas fa-boxes"></i> Products
-    </a>
-    <a class="menu-item" href="admincashier_reports.html">
-      <i class="fas fa-chart-line"></i> Reports
-    </a>
     <a class="menu-item" href="admincashier_queuing_system.html">
       <i class="fas fa-users"></i> Queue System
     </a>
@@ -80,17 +74,17 @@
     <section class="quick-actions">
       <h2>Quick Actions</h2>
       <div class="action-grid">
-        <a href="admincashier_sale\.php" class="action-card">
+        <a href="admincashier_sale.html" class="action-card">
           <i class="fas fa-cash-register"></i>
           <h3>New Sale</h3>
         </a>
-        <a href="admincashier_inventorys\.php" class="action-card">
+        <a href="admincashier_inventorys.html" class="action-card">
           <i class="fas fa-boxes"></i>
           <h3>Manage Inventory</h3>
         </a>
-        <a href="admincashier_reports\.php" class="action-card">
+        <a href="admincashier_cashier.html" class="action-card">
           <i class="fas fa-chart-line"></i>
-          <h3>View Reports</h3>
+          <h3>View Cashier</h3>
         </a>
       </div>
     </section>
@@ -157,8 +151,21 @@
   <script src="http://localhost/GCST_Track_System/assets/js/admincashier.js"></script>
   <script src="http://localhost/GCST_Track_System/assets/js/logout-handler1.js"></script>
   <script>
+    let salesChartInstance = null;
+    let inventoryChartInstance = null;
+    let topProductsChartInstance = null;
+
     initializeAdminCashierPage(async (userData) => {
-      // Fetch dashboard data
+      refreshAllDashboardData();
+      setInterval(refreshAllDashboardData, 20000); // Sync dashboard metrics every 20 seconds
+    });
+
+    async function refreshAllDashboardData() {
+      await fetchSummaryMetrics();
+      await fetchAnalyticsCharts();
+    }
+
+    async function fetchSummaryMetrics() {
       try {
         const dashboardData = await fetchWithError('http://localhost/GCST_Track_System/actions/get_admincashier_dashboard.php');
         document.getElementById('totalSalesToday').textContent = formatCurrency(dashboardData.total_sales_today ?? 0);
@@ -170,15 +177,16 @@
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       }
+    }
 
-      // Fetch chart data
+    async function fetchAnalyticsCharts() {
       try {
         const chartData = await fetchWithError('http://localhost/GCST_Track_System/actions/get_admincashier_charts.php');
         
         // Sales Chart
         const salesCtx = document.getElementById('salesChart')?.getContext('2d');
-        if (salesCtx) {
-          new Chart(salesCtx, {
+        if (salesCtx && !salesChartInstance) {
+          salesChartInstance = new Chart(salesCtx, {
             type: 'line',
             data: {
               labels: chartData.sales_labels || [],
@@ -197,12 +205,16 @@
               plugins: { legend: { display: true } }
             }
           });
+        } else if (salesChartInstance) {
+          salesChartInstance.data.labels = chartData.sales_labels || [];
+          salesChartInstance.data.datasets[0].data = chartData.sales_data || [];
+          salesChartInstance.update();
         }
 
         // Inventory Chart
         const inventoryCtx = document.getElementById('inventoryChart')?.getContext('2d');
-        if (inventoryCtx) {
-          new Chart(inventoryCtx, {
+        if (inventoryCtx && !inventoryChartInstance) {
+          inventoryChartInstance = new Chart(inventoryCtx, {
             type: 'doughnut',
             data: {
               labels: chartData.inventory_labels || [],
@@ -217,12 +229,16 @@
               plugins: { legend: { display: true } }
             }
           });
+        } else if (inventoryChartInstance) {
+          inventoryChartInstance.data.labels = chartData.inventory_labels || [];
+          inventoryChartInstance.data.datasets[0].data = chartData.inventory_data || [];
+          inventoryChartInstance.update();
         }
 
         // Top Products Chart
         const productsCtx = document.getElementById('topProductsChart')?.getContext('2d');
-        if (productsCtx) {
-          new Chart(productsCtx, {
+        if (productsCtx && !topProductsChartInstance) {
+          topProductsChartInstance = new Chart(productsCtx, {
             type: 'bar',
             data: {
               labels: chartData.products_labels || [],
@@ -239,11 +255,15 @@
               plugins: { legend: { display: true } }
             }
           });
+        } else if (topProductsChartInstance) {
+          topProductsChartInstance.data.labels = chartData.products_labels || [];
+          topProductsChartInstance.data.datasets[0].data = chartData.products_data || [];
+          topProductsChartInstance.update();
         }
       } catch (error) {
         console.error('Error fetching chart data:', error);
       }
-    });
+    }
   </script>
 
 </body>

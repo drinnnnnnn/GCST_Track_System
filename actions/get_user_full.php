@@ -3,10 +3,11 @@ require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/../config/db_connect.php';
 
 secureSessionStart();
-requireAuth(['student']);
+// Allow admins to fetch student details for verification or profile viewing
+requireAuth(['student', 'admincashier', 'superadmin']);
 header('Content-Type: application/json');
 
-$student_id = $_SESSION['student_id'] ?? null;
+$student_id = $_GET['student_id'] ?? $_SESSION['student_id'] ?? null;
 if (!$student_id) {
     jsonResponse(['success' => false, 'message' => 'Authentication required.'], 401);
 }

@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/db_connect.php';
 require_once __DIR__ . '/audit_helpers.php'; // Include audit logging helper
 
 secureSessionStart();
-requireAuth(['student']);
+requireAuth(['student', 'admincashier', 'superadmin']);
 header('Content-Type: application/json');
 
 $student_id = $_SESSION['student_id'] ?? null;
@@ -73,5 +73,5 @@ if (!$success) {
     jsonResponse(['success' => false, 'message' => 'Unable to save cart.'], 500);
 }
 
-logAudit('student', $student_id, 'save_user_cart', 'Updated shopping cart');
+logAudit($conn, 'student', $student_id, 'save_user_cart', 'Updated shopping cart');
 jsonResponse(['success' => true, 'message' => 'Cart saved successfully.']);

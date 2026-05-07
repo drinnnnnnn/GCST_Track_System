@@ -139,6 +139,60 @@ $mysqli->query(
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
 );
 
+$mysqli->query(
+    "CREATE TABLE IF NOT EXISTS `active_rentals` (
+        `rental_id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        `transaction_number` VARCHAR(50) NOT NULL,
+        `student_id` VARCHAR(50) NOT NULL,
+        `product_id` INT(11) NOT NULL,
+        `quantity` INT(11) NOT NULL DEFAULT 1,
+        `rental_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `return_date` DATETIME NOT NULL,
+        `rejection_reason` TEXT DEFAULT NULL,
+        `status` ENUM('active','returned','overdue','pending_renewal') NOT NULL DEFAULT 'active',
+        KEY `idx_active_rentals_student` (`student_id`),
+        KEY `idx_active_rentals_transaction` (`transaction_number`),
+        CONSTRAINT `fk_active_rentals_product` FOREIGN KEY (`product_id`) REFERENCES `products`(`product_id`) ON DELETE CASCADE,
+        CONSTRAINT `fk_active_rentals_student` FOREIGN KEY (`student_id`) REFERENCES `users`(`student_id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+);
+
+$mysqli->query(
+    "CREATE TABLE IF NOT EXISTS `cashier_transactions` ( 
+        `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        `transaction_number` VARCHAR(50) NOT NULL,
+        `receipt_number` VARCHAR(100) DEFAULT NULL,
+        `user_id` INT(11) DEFAULT NULL,
+        `student_name` VARCHAR(255) DEFAULT NULL,
+        `cashier_id` INT(11) NOT NULL,
+        `transaction_type` ENUM('buy','rent','mixed') NOT NULL,
+        `items` TEXT NOT NULL,
+        `subtotal` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `discount_percent` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+        `discount_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `total_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `payment_received` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `change_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `payment_status` ENUM('paid','pending','voided') NOT NULL DEFAULT 'pending',
+        `is_expired` TINYINT(1) NOT NULL DEFAULT 0,
+        `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY `uniq_transaction_number` (`transaction_number`),
+        KEY `idx_cashier_transactions_user_id` (`user_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+);
+
+$mysqli->query(
+    "CREATE TABLE IF NOT EXISTS `email_notifications` (
+        `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        `recipient` VARCHAR(255) NOT NULL,
+        `subject` VARCHAR(255) NOT NULL,
+        `notification_type` VARCHAR(100) DEFAULT NULL,
+        `status` ENUM('sent','failed') NOT NULL,
+        `error_message` TEXT DEFAULT NULL,
+        `sent_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+);
+
 // Add missing columns or alter column types in existing schemas.
 addColumnIfNotExists($mysqli, 'users', 'role', "ENUM('user','admin','cashier','admincashier','superadmin') NOT NULL DEFAULT 'user'");
 addColumnIfNotExists($mysqli, 'users', 'phone', "VARCHAR(25) DEFAULT NULL");
@@ -156,6 +210,18 @@ addColumnIfNotExists($mysqli, 'queue', 'queue_number', "VARCHAR(20) NOT NULL");
 addColumnIfNotExists($mysqli, 'queue', 'served_at', "TIMESTAMP NULL DEFAULT NULL");
 addColumnIfNotExists($mysqli, 'queue', 'user_id', "INT(11) DEFAULT NULL");
 addColumnIfNotExists($mysqli, 'queue', 'status', "ENUM('waiting','serving','completed','cancelled') NOT NULL DEFAULT 'waiting'");
+
+// Ensure critical columns exist in active_rentals for the renewal system
+addColumnIfNotExists($mysqli, 'active_rentals', 'rental_date', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `quantity` ");
+addColumnIfNotExists($mysqli, 'active_rentals', 'transaction_number', "VARCHAR(50) NOT NULL AFTER `rental_id` ");
+addColumnIfNotExists($mysqli, 'active_rentals', 'status', "ENUM('active','returned','overdue','pending_renewal') NOT NULL DEFAULT 'active'");
+addColumnIfNotExists($mysqli, 'active_rentals', 'rejection_reason', "TEXT DEFAULT NULL AFTER `status` ");
+addColumnIfNotExists($mysqli, 'active_rentals', 'overdue_charge', "DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `status` ");
+addColumnIfNotExists($mysqli, 'cashier_transactions', 'payment_status', "ENUM('paid','pending','voided') NOT NULL DEFAULT 'pending'");
+
+// Ensure email log columns match the helper logic
+addColumnIfNotExists($mysqli, 'email_notifications', 'notification_type', "VARCHAR(100) DEFAULT NULL AFTER `subject` ");
+addColumnIfNotExists($mysqli, 'email_notifications', 'error_message', "TEXT DEFAULT NULL AFTER `status` ");
 
 // If the queue_number column exists as INT, ensure it is text-capable.
 $columnInfo = $mysqli->query("SHOW COLUMNS FROM `queue` LIKE 'queue_number'");

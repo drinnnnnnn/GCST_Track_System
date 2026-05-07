@@ -1,83 +1,62 @@
 <?php
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['admincashier', 'superadmin']);
+requireAuth(['admincashier', 'superadmin', 'student', 'user']);
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/db_connect.php';
 
-$search_query = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
-$type_filter = isset($_GET['type']) ? $conn->real_escape_string($_GET['type']) : '';
+try {
+    $role = $_SESSION['role'];
+    $session_student_id = $_SESSION['student_id'] ?? null;
 
-$sql = "SELECT
-            ct.id,
-            ct.transaction_number,
-            ct.receipt_number,
-            ct.user_id,
-            ct.student_name,
-            ct.cashier_id,
-            ct.transaction_type,
-            ct.total_amount,
-            ct.payment_status,
-            ct.created_at,
-            u.student_id AS student_unique_id,
-            u.first_name AS student_first_name,
-            u.last_name AS student_last_name,
-            a.name AS cashier_name
-        FROM
-            cashier_transactions ct
-        LEFT JOIN
-            users u ON ct.user_id = u.id
-        LEFT JOIN
-            admins a ON ct.cashier_id = a.id
-        WHERE
-            ct.payment_status = 'pending'";
+    $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+    $limit = isset($_GET['limit']) ? max(1, intval($_GET['limit'])) : 10;
+    $offset = ($page - 1) * $limit;
 
-if (!empty($type_filter)) {
-    $sql .= " AND ct.transaction_type = '$type_filter'";
-}
+    $search = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
+    $type = isset($_GET['type']) ? $conn->real_escape_string($_GET['type']) : '';
 
-if (!empty($search_query)) {
-    $sql .= " AND (
-                ct.transaction_number LIKE '%$search_query%' OR
-                ct.student_name LIKE '%$search_query%' OR
-                u.student_id LIKE '%$search_query%' OR
-                u.first_name LIKE '%$search_query%' OR
-                u.last_name LIKE '%$search_query%'
-            )";
-}
+    $where = "WHERE ct.payment_status = 'pending'";
 
-$sql .= " ORDER BY ct.created_at DESC";
-
-$result = $conn->query($sql);
-
-$pending_orders = [];
-if ($result) {
-    while($row = $result->fetch_assoc()) {
-        $student_display = '';
-        if (!empty($row['student_first_name']) && !empty($row['student_last_name'])) {
-            $student_display = trim($row['student_first_name'] . ' ' . $row['student_last_name']);
-            if (!empty($row['student_unique_id'])) {
-                $student_display .= ' (' . $row['student_unique_id'] . ')';
-            }
-        } elseif (!empty($row['student_name'])) {
-            $student_display = $row['student_name'];
-        } elseif (!empty($row['student_unique_id'])) {
-            $student_display = $row['student_unique_id'];
-        } else {
-            $student_display = 'N/A';
-        }
-
-        $pending_orders[] = [
-            'id' => $row['id'],
-            'transaction_number' => $row['transaction_number'],
-            'student_display' => $student_display,
-            'transaction_type' => $row['transaction_type'],
-            'total_amount' => $row['total_amount'],
-            'created_at' => $row['created_at'],
-            'cashier_name' => $row['cashier_name'] ?? 'System'
-        ];
+    // If student, only show their own pending orders
+    if (in_array($role, ['student', 'user'])) {
+        $where .= " AND u.student_id = '" . $conn->real_escape_string($session_student_id) . "'";
     }
+
+    if ($search) {
+        $where .= " AND (ct.transaction_number LIKE '%$search%' OR ct.student_name LIKE '%$search%' OR u.student_id LIKE '%$search%')";
+    }
+    if ($type) {
+        $where .= " AND ct.transaction_type = '$type'";
+    }
+
+    // Count total rows for pagination
+    $countResult = $conn->query("SELECT COUNT(*) as total FROM cashier_transactions ct LEFT JOIN users u ON ct.user_id = u.id $where");
+    $totalRows = $countResult ? $countResult->fetch_assoc()['total'] : 0;
+    $totalPages = ceil($totalRows / $limit);
+
+    $sql = "SELECT ct.id, ct.transaction_number, ct.created_at, ct.transaction_type, ct.total_amount, ct.student_name, u.student_id, ct.items
+            FROM cashier_transactions ct
+            LEFT JOIN users u ON ct.user_id = u.id
+            $where
+            ORDER BY ct.created_at DESC
+            LIMIT $limit OFFSET $offset";
+
+    $result = $conn->query($sql);
+    $orders = [];
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $row['student_display'] = ($row['student_name'] ?? 'Guest') . ($row['student_id'] ? " ({$row['student_id']})" : "");
+            $orders[] = $row;
+        }
+    }
+    echo json_encode([
+        'success' => true,
+        'orders' => $orders,
+        'total_pages' => $totalPages,
+        'current_page' => $page
+    ]);
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
 }
-echo json_encode($pending_orders);
-$conn->close();
-?>

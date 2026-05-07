@@ -94,7 +94,14 @@
       color: #4338ca;
       box-shadow: 0 4px 20px rgba(79, 70, 229, 0.12);
     }
-    .products-grid {
+    /* Consistent Scrollbar Styling for all dashboard containers */
+    .products-grid,
+    #cart-content,
+    #active-rentals-content,
+    #overdue-rentals-content,
+    #renewals-content,
+    #txn-history-content,
+    #pending-orders-content {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 18px;
@@ -103,18 +110,42 @@
       padding-right: 10px;
       scroll-behavior: smooth;
     }
-    .products-grid::-webkit-scrollbar {
+    .products-grid::-webkit-scrollbar,
+    #cart-content::-webkit-scrollbar,
+    #active-rentals-content::-webkit-scrollbar,
+    #overdue-rentals-content::-webkit-scrollbar,
+    #renewals-content::-webkit-scrollbar,
+    #txn-history-content::-webkit-scrollbar,
+    #pending-orders-content::-webkit-scrollbar {
       width: 6px;
     }
-    .products-grid::-webkit-scrollbar-track {
+    .products-grid::-webkit-scrollbar-track,
+    #cart-content::-webkit-scrollbar-track,
+    #active-rentals-content::-webkit-scrollbar-track,
+    #overdue-rentals-content::-webkit-scrollbar-track,
+    #renewals-content::-webkit-scrollbar-track,
+    #txn-history-content::-webkit-scrollbar-track,
+    #pending-orders-content::-webkit-scrollbar-track {
       background: #f1f5f9;
       border-radius: 10px;
     }
-    .products-grid::-webkit-scrollbar-thumb {
+    .products-grid::-webkit-scrollbar-thumb,
+    #cart-content::-webkit-scrollbar-thumb,
+    #active-rentals-content::-webkit-scrollbar-thumb,
+    #overdue-rentals-content::-webkit-scrollbar-thumb,
+    #renewals-content::-webkit-scrollbar-thumb,
+    #txn-history-content::-webkit-scrollbar-thumb,
+    #pending-orders-content::-webkit-scrollbar-thumb {
       background: #cbd5e1;
       border-radius: 10px;
     }
-    .products-grid::-webkit-scrollbar-thumb:hover {
+    .products-grid::-webkit-scrollbar-thumb:hover,
+    #cart-content::-webkit-scrollbar-thumb:hover,
+    #active-rentals-content::-webkit-scrollbar-thumb:hover,
+    #overdue-rentals-content::-webkit-scrollbar-thumb:hover,
+    #renewals-content::-webkit-scrollbar-thumb:hover,
+    #txn-history-content::-webkit-scrollbar-thumb:hover,
+    #pending-orders-content::-webkit-scrollbar-thumb:hover {
       background: #94a3b8;
     }
     .product-card {
@@ -196,7 +227,9 @@
     }
     #active-rentals-content,
     #renewals-content,
-    #txn-history-content {
+    #txn-history-content,
+    #overdue-rentals-content,
+    #pending-orders-content {
       flex: 1;
       overflow-y: auto;
     }
@@ -444,8 +477,6 @@
       <a class="menu-item active" href="admincashier_cashier.html"><i class="fas fa-cash-register"></i> Cashier</a>
       <a class="menu-item" href="admincashier_sale.html"><i class="fas fa-receipt"></i> Sales</a>
       <a class="menu-item" href="admincashier_inventorys.html"><i class="fas fa-boxes"></i> Inventory</a>
-      <a class="menu-item" href="admincashier_products.html"><i class="fas fa-box"></i> Products</a>
-      <a class="menu-item" href="admincashier_reports.html"><i class="fas fa-chart-line"></i> Reports</a>
       <a class="menu-item" href="admincashier_queuing_system.html"><i class="fas fa-users"></i> Queue System</a>
       <a class="menu-item" href="admincashier_gmail_notification.html"><i class="fas fa-envelope"></i> Gmail Notification</a>
       <a class="menu-item" href="admincashier_profile.html"><i class="fas fa-user-circle"></i> Profile</a>
@@ -531,7 +562,7 @@
                   <th>Product</th>
                   <th>Qty</th>
                   <th onclick="sortActiveRentalsByDate()" style="cursor: pointer;">Due Date <i class="fas fa-sort" id="sort-icon-date" style="margin-left: 5px; opacity: 0.5;"></i></th>
-                  <th>Status/Note</th>
+                  <th>Penalty & Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -547,6 +578,7 @@
           <div style="display: flex; align-items: center; gap: 15px;">
             <h2>Overdue Rentals</h2>
             <span id="overdue-rental-count" class="badge" style="background: #fee2e2; color: #b91c1c;">0 overdue</span>
+            <button class="btn btn-danger" onclick="sendOverdueReminders(event)" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-paper-plane"></i> Send Reminders</button>
             <button class="btn btn-secondary" onclick="loadOverdueRentals()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
           </div>
           <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; justify-content: flex-end;">
@@ -564,6 +596,7 @@
                   <th><i class="fas fa-box"></i> Product</th>
                   <th><i class="fas fa-hashtag"></i> Qty</th>
                   <th><i class="far fa-calendar-times"></i> Due Date</th>
+                  <th><i class="fas fa-money-bill-wave"></i> Penalty</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -695,6 +728,7 @@
               </tbody>
           </table>
         </div>
+        <div id="pending-orders-pagination" style="display: flex; justify-content: center; gap: 8px; margin-top: 15px; padding-bottom: 10px;"></div>
         <div id="pending-orders-empty" class="empty-state hidden">No pending orders found.</div>
       </div>
     </section>
@@ -840,12 +874,9 @@
                     <i class="fas fa-user-plus"></i> New Student
                 </button>
             </div>
-            <div style="display: flex; gap: 10px; margin-bottom: 8px;">
-                <input id="checkout-student-id" type="text" list="student-datalist" class="search-input" placeholder="Enter Student ID (e.g. GC-123456)" style="background: white; flex: 1;" />
+            <div style="margin-bottom: 8px;">
+                <input id="checkout-student-id" type="text" list="student-datalist" class="search-input" placeholder="Student ID (e.g. GC-123456)" style="background: white; width: 100%;" readonly />
                 <datalist id="student-datalist"></datalist>
-                <button type="button" class="btn btn-secondary" onclick="checkStudentId()" style="padding: 0 20px; border-radius: 16px;">
-                    Verify
-                </button>
             </div>
             <div id="student-check-msg" style="font-size: 0.85rem; font-weight: 500; min-height: 1.2em; padding-left: 4px;"></div>
           </div>
@@ -893,17 +924,9 @@
             <strong id="change-amount" style="font-size: 1.25rem; color: #15803d;">₱0.00</strong>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 10px; padding: 0 4px;">
-            <input type="checkbox" id="auto-print-receipt" checked style="width: 20px; height: 20px; cursor: pointer; accent-color: #4f46e5;">
-            <label for="auto-print-receipt" style="cursor: pointer; font-size: 0.9rem; color: #64748b; font-weight: 500;">Automatically print receipt upon completion</label>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-top: 8px;">
-            <button id="complete-sale" class="btn btn-primary" style="padding: 16px; border-radius: 16px; font-size: 1rem; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);">
-                <i class="fas fa-check-circle" style="margin-right: 8px;"></i> Complete Transaction
-            </button>
-            <button id="print-receipt" class="btn btn-secondary" style="padding: 16px; border-radius: 16px;">
-                <i class="fas fa-print"></i>
+          <div style="display: flex; justify-content: center; margin-top: 8px;">
+            <button id="complete-sale" class="btn btn-primary" onclick="completeTransaction()" style="padding: 16px; border-radius: 16px; font-size: 1rem; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);">
+                <i class="fas fa-check-circle"></i> Complete Transaction
             </button>
           </div>
         </div>
@@ -1228,6 +1251,19 @@
           grid.innerHTML = '<div class="empty-state"><p>Unable to load products. Refresh to try again.</p></div>';
         });
     }
+
+    function calculateOverduePenalty(returnDateStr) {
+      const dueDate = new Date(returnDateStr);
+      const now = new Date();
+      if (now <= dueDate) return 0;
+
+      // Calculate difference in milliseconds
+      const diffMs = now - dueDate;
+      // Convert to hours and round up (so even 1 minute overdue counts as 1 hour)
+      const hoursOverdue = Math.ceil(diffMs / (1000 * 60 * 60));
+      return hoursOverdue * 2; // 2 pesos per hour
+    }
+
     function updateTransactionSettings() {
       const previousType = state.transactionType;
       const newType = document.getElementById('transaction-type').value;
@@ -1264,9 +1300,6 @@
       state.cashReceived = parseFloat(document.getElementById('cash-received').value) || 0;
       state.paymentStatus = document.getElementById('payment-status').value;
       state.studentId = document.getElementById('checkout-student-id').value.trim();
-      const label = document.getElementById('payment-status-label');
-      label.textContent = state.paymentStatus === 'paid' ? 'Paid' : 'Pending';
-      label.className = `badge ${state.paymentStatus === 'paid' ? 'badge-success' : 'badge-warning'}`;
       syncCartProductPrices();
     }
     function showReceipt(receipt) {
@@ -1291,6 +1324,7 @@
       });
     }
     function completeTransaction() {
+      console.log("Complete Transaction clicked.");
       if (cart.length === 0) {
         alert('Please add items to the cart before checking out.');
         return;
@@ -1301,6 +1335,12 @@
         return;
       }
       updateTransactionSettings();
+
+      if (state.transactionType === 'rent' && !state.studentId) {
+        alert('A valid Student ID is required for rental transactions. Please verify a student before proceeding.');
+        return;
+      }
+
       const subtotal = selectedItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
       const discountAmount = subtotal * (state.discountPercent / 100);
       const totalAmount = Math.max(0, subtotal - discountAmount);
@@ -1310,6 +1350,11 @@
         alert('Paid transactions require sufficient cash.');
         return;
       }
+
+      if (!confirm(`Are you sure you want to complete this transaction?\nTotal Payable: ${formatCurrency(totalAmount)}`)) {
+        return;
+      }
+
       const payload = {
         student_id: state.studentId,
         transaction_type: state.transactionType,
@@ -1323,6 +1368,9 @@
         payment_status: state.paymentStatus
       };
       const completeButton = document.getElementById('complete-sale');
+      
+      if (completeButton.disabled) return;
+      
       completeButton.disabled = true;
       fetch(`${API_ROOT}/save_cashier_transaction.php`, {
         method: 'POST',
@@ -1337,10 +1385,7 @@
             return;
           }
           showReceipt(result.receipt);
-          if (document.getElementById('auto-print-receipt').checked) {
-            printReceipt();
-          }
-          alert('Transaction completed successfully.');
+          alert('Transaction completed successfully. A receipt has been sent to the student\'s email.');
           // Only remove items that were actually purchased
           cart = cart.filter(item => !item.selected);
           updateCartSummary();
@@ -1388,6 +1433,25 @@
           pendingRenewals = Array.isArray(data) ? data : [];
           filterRenewals();
         });
+    }
+    function filterRenewals() {
+      const query = document.getElementById('renewal-search').value.toLowerCase();
+      const dateTo = document.getElementById('renewal-date-to').value;
+      
+      const filtered = pendingRenewals.filter(item => {
+        const studentName = `${item.first_name} ${item.last_name}`.toLowerCase();
+        const matchesQuery = studentName.includes(query) || 
+                            item.student_id.toLowerCase().includes(query) || 
+                            item.product_name.toLowerCase().includes(query);
+        
+        let matchesDate = true;
+        if (dateTo) {
+          const itemDate = new Date(item.return_date).toISOString().split('T')[0];
+          matchesDate = itemDate <= dateTo;
+        }
+        return matchesQuery && matchesDate;
+      });
+      renderPendingRenewals(filtered);
     }
     function renderPendingRenewals(data) {
           const body = document.getElementById('renewals-body');
@@ -1757,6 +1821,10 @@
         } else {
           alert(result.error || 'Failed to process renewal.');
         }
+      })
+      .catch(err => {
+        console.error('Renewal Error:', err);
+        alert('A system error occurred while processing the renewal. Please check the console for details.');
       });
     }
 
@@ -1821,6 +1889,7 @@
       count.textContent = `${data.length} overdue`;
       
       data.forEach(item => {
+        const penalty = calculateOverduePenalty(item.return_date);
         const tr = document.createElement('tr');
         tr.style.backgroundColor = '#fff5f5';
         tr.style.boxShadow = 'inset 4px 0 0 #ef4444';
@@ -1830,6 +1899,7 @@
           <td>${item.product_name}</td>
           <td>${item.quantity}</td>
           <td>${new Date(item.return_date).toLocaleString()}</td>
+          <td style="color: #ef4444; font-weight: 700;">${formatCurrency(penalty)}</td>
           <td>
             <button class="btn btn-primary" onclick="processReturn(${item.rental_id})">Return Item</button>
           </td>
@@ -1838,19 +1908,37 @@
       });
     }
     // New function to load pending orders
-    function loadPendingOrders() {
+    let pendingOrdersCurrentPage = 1;
+    function loadPendingOrders(page = 1) {
+      pendingOrdersCurrentPage = page;
       const search = document.getElementById('pending-order-search').value.trim();
       const type = document.getElementById('pending-order-type-filter').value;
-      fetch(`${API_ROOT}/get_pending_orders.php?search=${encodeURIComponent(search)}&type=${encodeURIComponent(type)}`)
+      fetch(`${API_ROOT}/get_pending_orders.php?search=${encodeURIComponent(search)}&type=${encodeURIComponent(type)}&page=${page}&limit=10`)
         .then(res => res.json())
         .then(data => {
-          pendingOrders = Array.isArray(data) ? data : [];
+          pendingOrders = Array.isArray(data.orders) ? data.orders : [];
           renderPendingOrders(pendingOrders);
+          renderPendingOrdersPagination(data.total_pages, data.current_page);
         })
         .catch(err => {
           console.error('Error loading pending orders:', err);
           document.getElementById('pending-orders-body').innerHTML = '<tr><td colspan="6" class="empty-state">Error loading pending orders. Please refresh.</td></tr>';
         });
+    }
+
+    function renderPendingOrdersPagination(totalPages, currentPage) {
+      const container = document.getElementById('pending-orders-pagination');
+      if (!container) return;
+      container.innerHTML = '';
+      if (totalPages <= 1) return;
+
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.className = i === currentPage ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+        btn.textContent = i;
+        btn.onclick = () => loadPendingOrders(i);
+        container.appendChild(btn);
+      }
     }
 
     // New function to render pending orders
@@ -1889,8 +1977,6 @@
           <td style="font-weight: 700; color: #1e293b;">${formatCurrency(item.total_amount)}</td>
           <td>
             <button class="btn btn-primary" onclick="reprintReceipt('${item.transaction_number}')">View Details</button>
-            <button class="btn btn-success" onclick="markOrderAsPaid(${item.id})">Mark Paid</button>
-            <button class="btn btn-danger" onclick="voidOrder(${item.id})">Void</button>
           </td>
         `;
         body.appendChild(tr);
@@ -1954,14 +2040,16 @@
           
           data.forEach(item => {
             const tr = document.createElement('tr');
+            const penalty = calculateOverduePenalty(item.return_date);
             if (item.status === 'overdue') {
               tr.style.backgroundColor = '#fff5f5';
               tr.style.boxShadow = 'inset 4px 0 0 #ef4444';
             }
 
-            const statusClass = item.status === 'overdue' ? 'background: #fee2e2; color: #b91c1c;' : 'background: #e0e7ff; color: #4338ca;';
-            const statusLabel = item.status === 'overdue' ? 'Overdue' : 'Active';
+            const statusClass = (item.status === 'overdue' || penalty > 0) ? 'background: #fee2e2; color: #b91c1c;' : 'background: #e0e7ff; color: #4338ca;';
+            const statusLabel = (item.status === 'overdue' || penalty > 0) ? 'Overdue' : 'Active';
             const reasonHtml = item.rejection_reason ? `<div style="font-size: 0.8rem; color: #ef4444; margin-top: 4px;"><strong>Rejection Note:</strong> ${item.rejection_reason}</div>` : '';
+            const penaltyHtml = penalty > 0 ? `<div style="font-weight:bold; color:#b91c1c;">Penalty: ${formatCurrency(penalty)}</div>` : '';
 
             tr.innerHTML = `
               <td><input type="checkbox" class="rental-checkbox" value="${item.rental_id}" onchange="updateBulkReturnButtonVisibility()"></td>
@@ -1969,7 +2057,7 @@
               <td>${item.product_name}</td>
               <td>${item.quantity}</td>
               <td>${new Date(item.return_date).toLocaleString()}</td>
-              <td><span class="badge" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; ${statusClass}">${statusLabel}</span>${reasonHtml}</td>
+              <td><span class="badge" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; ${statusClass}">${statusLabel}</span> ${penaltyHtml} ${reasonHtml}</td>
               <td>
                 <button class="btn btn-primary" onclick="processReturn(${item.rental_id})">Return Item</button>
               </td>
@@ -2045,14 +2133,10 @@
       }, 400);
     });
     document.getElementById('renewal-search').addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase();
-      const filtered = pendingRenewals.filter(item => {
-        const studentName = `${item.first_name} ${item.last_name}`.toLowerCase();
-        return studentName.includes(query) || 
-              item.student_id.toLowerCase().includes(query) || 
-              item.product_name.toLowerCase().includes(query);
-      });
-      renderPendingRenewals(filtered);
+      filterRenewals();
+    });
+    document.getElementById('renewal-date-to').addEventListener('change', () => {
+      filterRenewals();
     });
     let txnSearchTimeout = null;
     document.getElementById('txn-history-search').addEventListener('input', (e) => {
@@ -2090,7 +2174,6 @@
       updateTransactionSettings();
     });
     document.getElementById('clear-cart').addEventListener('click', clearCart);
-    document.getElementById('complete-sale').addEventListener('click', completeTransaction);
     document.getElementById('print-receipt').addEventListener('click', printReceipt);
     
     let scanMode = 'order'; // 'order' or 'product'
@@ -2139,6 +2222,8 @@
       closeQRScanner();
       if (scanMode === 'order') {
         loadOrderByQR(decodedText);
+      } else if (decodedText.startsWith('RENEW-')) {
+        loadRenewalByQR(decodedText);
       } else {
         handleProductBarcodeScan(decodedText);
       }
@@ -2200,6 +2285,26 @@
         });
     }
 
+    function loadRenewalByQR(renewalRef) {
+      const rentalId = renewalRef.replace('RENEW-', '');
+      fetch(`${API_ROOT}/get_renewal_details.php?rental_id=${rentalId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            if (data.status !== 'pending_renewal') {
+              alert(`This renewal (${renewalRef}) has already been processed or is not in pending status.`);
+              return;
+            }
+            if (confirm(`Renewal Request Found:\n\nStudent: ${data.student}\nBook: ${data.product}\nNew Requested Due Date: ${new Date(data.new_date).toLocaleString()}\n\nDo you want to APPROVE this renewal?`)) {
+              executeRenewalAction(rentalId, 'approve', '');
+            }
+          } else {
+            alert(data.error || 'Renewal record not found.');
+          }
+        })
+        .catch(err => console.error('Error processing renewal scan:', err));
+    }
+
     // --- Global Hardware Scanner Listener ---
     window.addEventListener('keydown', (e) => {
       // If the user is currently typing in a search input, textarea, or registration field, 
@@ -2227,6 +2332,8 @@
           // Auto-detect Scan Mode based on content
           if (code.startsWith('ORDER-')) {
             scanMode = 'order';
+          } else if (code.startsWith('RENEW-')) {
+            scanMode = 'renewal';
           } else {
             const product = products.find(p => p.barcode == code);
             if (product) {

@@ -1,15 +1,18 @@
 <?php
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-// Allow students and users to access their own transaction history
-requireAuth(['admincashier', 'superadmin', 'student', 'user']);
+
+// Restricted to student/user roles only for security
+requireAuth(['student', 'user']);
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/db_connect.php';
 
 try {
-    $role = $_SESSION['role'];
     $session_student_id = $_SESSION['student_id'] ?? null;
-    
+    if (!$session_student_id) {
+        throw new Exception('Student ID not found in session.');
+    }
+
     $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
     $limit = isset($_GET['limit']) ? max(1, intval($_GET['limit'])) : 10;
     $search = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
@@ -17,25 +20,21 @@ try {
     $to = isset($_GET['to']) ? $conn->real_escape_string($_GET['to']) : '';
     $offset = ($page - 1) * $limit;
 
-    $where = "WHERE 1=1";
-    
-    // Security: Students can only see their own transactions
-    if (in_array($role, ['student', 'user'])) {
-        $where .= " AND u.student_id = '" . $conn->real_escape_string($session_student_id) . "'";
-    }
+    // Strictly filter where the student_id matches the active session
+    $where = "WHERE u.student_id = '" . $conn->real_escape_string($session_student_id) . "'";
 
     if ($search) {
-        $where .= " AND (ct.transaction_number LIKE '%$search%' OR u.student_id LIKE '%$search%')";
+        $where .= " AND ct.transaction_number LIKE '%$search%'";
     }
     if ($from) { $where .= " AND DATE(ct.created_at) >= '$from'"; }
     if ($to) { $where .= " AND DATE(ct.created_at) <= '$to'"; }
 
     // Get total count for pagination
     $countResult = $conn->query("SELECT COUNT(*) as total FROM cashier_transactions ct LEFT JOIN users u ON ct.user_id = u.id $where");
-    $totalRows = $countResult->fetch_assoc()['total'];
+    $totalRows = $countResult->fetch_assoc()['total'] ?? 0;
     $totalPages = ceil($totalRows / $limit);
 
-    // Fetch transactions
+    // Fetch transactions joined with cashier name for better display
     $sql = "SELECT ct.*, u.student_id,
                    CONCAT(ac.first_name, ' ', ac.last_name) as cashier_name
             FROM cashier_transactions ct

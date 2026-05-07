@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['admincashier', 'superadmin']);
+requireAuth(["admincashier", "superadmin", "student", "user"]);
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/db_connect.php';
 

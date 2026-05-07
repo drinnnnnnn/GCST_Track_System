@@ -7,13 +7,9 @@ function connectAdminCashierDb() {
 
 function tableExists($conn, $table) {
     $tableName = $conn->real_escape_string($table);
-    $sql = "SELECT COUNT(*) AS cnt FROM information_schema.tables WHERE table_schema = '" . $conn->real_escape_string($conn->database) . "' AND table_name = '" . $tableName . "'";
-    $result = $conn->query($sql);
-    if (!$result) {
-        return false;
-    }
-    $row = $result->fetch_assoc();
-    return !empty($row['cnt']);
+    // Use SHOW TABLES to avoid 'Undefined property: mysqli::$database' warning
+    $result = $conn->query("SHOW TABLES LIKE '$tableName'");
+    return $result && $result->num_rows > 0;
 }
 
 function columnExists($conn, $table, $column) {

@@ -9,12 +9,13 @@ secureSessionStart();
 requireAuth(['student', 'admincashier', 'superadmin']);
 
 try {
+    global $conn;
     require_once __DIR__ . '/../config/db_connect.php';
     if ($conn->connect_error) {
         throw new Exception('Database connection failed: ' . $conn->connect_error);
     }
 
-    // Safe include helper to prevent Fatal Errors from breaking JSON
+    // Safe include helper to ensure helpers have access to the database connection
     function safeInclude($path, $name) {
         global $conn; // Add this line to bring the database connection into the function scope
         if (!file_exists($path)) {
@@ -47,8 +48,8 @@ try {
     $userId = null;
     $studentFullName = null;
     if ($studentId) {
-        $lookupStmt = $conn->prepare('SELECT id, first_name, last_name FROM users WHERE student_id = ? LIMIT 1');
-        $lookupStmt->bind_param('s', $studentId);
+        $lookupStmt = $conn->prepare('SELECT id, first_name, last_name FROM users WHERE student_id = ? OR id = ? LIMIT 1');
+        $lookupStmt->bind_param('ss', $studentId, $studentId);
         $lookupStmt->execute();
         $lookupStmt->bind_result($userId, $fName, $lName);
         if ($lookupStmt->fetch() && $userId) {
@@ -79,7 +80,7 @@ try {
     $conn->begin_transaction();
 
     // Create the cashier_transactions table if it does not exist.
-    $createTableSql = "CREATE TABLE IF NOT EXISTS `cashier_transactions` (
+    $createTableSql = "CREATE TABLE IF NOT EXISTS `cashier_transactions` ( 
         `id` INT(11) NOT NULL AUTO_INCREMENT,
         `transaction_number` VARCHAR(50) NOT NULL,
         `receipt_number` VARCHAR(100) DEFAULT NULL,
@@ -95,6 +96,7 @@ try {
         `payment_received` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `change_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `payment_status` ENUM('paid','pending') NOT NULL DEFAULT 'pending',
+        `is_expired` TINYINT(1) NOT NULL DEFAULT 0,
         `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (`id`),
         UNIQUE KEY `uniq_transaction_number` (`transaction_number`),
@@ -106,7 +108,37 @@ try {
         throw new Exception("Failed to create cashier_transactions table: " . $conn->error);
     }
 
+    // Create the transactions table if it does not exist (used for profile history)
+    $conn->query("CREATE TABLE IF NOT EXISTS `transactions` (
+        `id` INT(11) NOT NULL AUTO_INCREMENT,
+        `user_id` INT(11) NOT NULL,
+        `product_id` INT(11) NOT NULL,
+        `type` VARCHAR(20) NOT NULL,
+        `quantity` INT(11) NOT NULL,
+        `total_amount` DECIMAL(10,2) NOT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
     // Create the active_rentals table if it does not exist.
+    // This table is used for tracking individual items within a cashier_transaction
+    $createTransactionItemsTableSql = "CREATE TABLE IF NOT EXISTS `transaction_items` (
+        `id` INT(11) NOT NULL AUTO_INCREMENT,
+        `cashier_transaction_id` INT(11) NOT NULL,
+        `product_id` INT(11) NOT NULL,
+        `product_name` VARCHAR(255) NOT NULL,
+        `item_type` ENUM('buy', 'rent') NOT NULL,
+        `quantity` INT(11) NOT NULL,
+        `unit_price` DECIMAL(10,2) NOT NULL,
+        `duration` INT(11) DEFAULT NULL,
+        `duration_unit` VARCHAR(50) DEFAULT NULL,
+        `total_item_amount` DECIMAL(10,2) NOT NULL,
+        `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`id`),
+        KEY `idx_cashier_transaction_id` (`cashier_transaction_id`),
+        KEY `idx_product_id_ti` (`product_id`),
+        CONSTRAINT `fk_cashier_transaction_id` FOREIGN KEY (`cashier_transaction_id`) REFERENCES `cashier_transactions` (`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
     $createRentalsTableSql = "CREATE TABLE IF NOT EXISTS `active_rentals` (
         `rental_id` INT(11) NOT NULL AUTO_INCREMENT,
         `transaction_number` VARCHAR(50) NOT NULL,
@@ -121,6 +153,9 @@ try {
         KEY `idx_active_rentals_student` (`student_id`),
         KEY `idx_active_rentals_transaction` (`transaction_number`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+    if (!$conn->query($createTransactionItemsTableSql)) {
+        throw new Exception("Failed to create transaction_items table: " . $conn->error);
+    }
     if (!$conn->query($createRentalsTableSql)) {
         throw new Exception("Failed to create active_rentals table: " . $conn->error);
     }
@@ -141,6 +176,11 @@ try {
     $txnCheckCt = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'transaction_number'");
     if (!$txnCheckCt || $txnCheckCt->num_rows === 0) {
         $conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `transaction_number` VARCHAR(50) NOT NULL AFTER `id` , ADD UNIQUE KEY `uniq_transaction_number` (`transaction_number`) ");
+    }
+
+    $expiredCheck = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'is_expired'");
+    if (!$expiredCheck || $expiredCheck->num_rows === 0) {
+        $conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `is_expired` TINYINT(1) NOT NULL DEFAULT 0 AFTER `payment_status` ");
     }
 
     $txnCheckAr = $conn->query("SHOW COLUMNS FROM `active_rentals` LIKE 'transaction_number'");
@@ -285,10 +325,27 @@ try {
     if (!$insertStmt->execute()) {
         throw new Exception('Could not save transaction: ' . $insertStmt->error);
     }
+    $cashierTransactionId = $conn->insert_id; // Get the ID of the newly inserted cashier_transaction
     $insertStmt->close();
 
+    // Insert individual items into the transaction_items table
+    $transactionItemInsert = $conn->prepare("INSERT INTO transaction_items (cashier_transaction_id, product_id, product_name, item_type, quantity, unit_price, duration, duration_unit, total_item_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    if (!$transactionItemInsert) {
+        throw new Exception('Failed to prepare transaction_items insert statement: ' . $conn->error);
+    }
+    foreach ($cartItems as $item) {
+        $transactionItemInsert->bind_param(
+            'iisssidss',
+            $cashierTransactionId, $item['product_id'], $item['product_name'], $item['type'], $item['quantity'], $item['unit_price'], $item['duration'], $item['duration_unit'], $item['total']
+        );
+        if (!$transactionItemInsert->execute()) {
+            throw new Exception('Failed to record transaction item: ' . $transactionItemInsert->error);
+        }
+    }
+    $transactionItemInsert->close();
+
     if ($userId) {
-        $itemInsert = $conn->prepare('INSERT INTO transactions (user_id, product_id, type, quantity, total_amount) VALUES (?, ?, ?, ?, ?)');
+        $itemInsert = $conn->prepare('INSERT INTO transactions (user_id, product_id, type, quantity, total_amount) VALUES (?, ?, ?, ?, ?)'); // This is for user profile history
         $rentalInsert = $conn->prepare('INSERT INTO active_rentals (transaction_number, student_id, product_id, quantity, return_date, status) VALUES (?, ?, ?, ?, ?, "active")');
 
         foreach ($cartItems as $item) {
@@ -326,46 +383,52 @@ try {
                 $userEmail = $userData['email'];
                 $studentFullName = trim(($userData['first_name'] ?? '') . ' ' . ($userData['last_name'] ?? ''));
                 
-                $attachments = []; 
-                // Always use project-local temp folder for consistency and permissions
-                $tempDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'temp';
-                if (!is_dir($tempDir) && !@mkdir($tempDir, 0777, true)) {
-                    throw new Exception("Unable to create temporary directory for QR codes at: $tempDir. Please check folder permissions.");
-                }
-                
-                $tempQrPath = $tempDir . DIRECTORY_SEPARATOR . uniqid('qr_') . '.png';
+                $attachments = [];
+                $emailBody = "";
+                $subject = "";
 
-                try {
-                    $inlineQr = '';
-                    if (function_exists('generateLocalQrCode') && generateLocalQrCode($transactionNumber, $tempQrPath, 'H', 10, 4)) {
-                        $attachments[] = ['path' => $tempQrPath, 'name' => 'order_qr_code.png', 'cid' => 'order_qr_code'];
-                        $inlineQr = "<div style=\"text-align:center;margin:30px 0;padding:20px;border:2px dashed #2563eb;border-radius:16px;background:#f8fafc;\">" .
-                            "<div style=\"font-size:18px;font-weight:bold;color:#2563eb;margin-bottom:15px;letter-spacing:1px;\">PRESENT TO CASHIER</div>" .
-                            "<img src=\"cid:order_qr_code\" alt=\"Order QR Code\" style=\"max-width:300px;height:auto;border:1px solid #ddd;border-radius:12px;\" />" .
-                            "</div>";
-                    } else {
-                        $reason = !class_exists('QRcode') ? "Library class not loaded" : "File system error";
-                        $inlineQr = "<p style='color:red;'>QR Code could not be generated ($reason). Please use the Order Reference below.</p>";
-                        error_log("QR Library failed to generate image for order $transactionNumber. Reason: $reason");
+                if ($paymentStatus === 'paid') {
+                    $subject = 'Official Receipt - GCST Tracking System';
+                    $itemsHtml = '';
+                    foreach ($cartItems as $item) {
+                        $itemsHtml .= "<tr><td style='padding:8px; border-bottom:1px solid #eee;'>{$item['product_name']} x {$item['quantity']}</td><td style='padding:8px; border-bottom:1px solid #eee; text-align:right;'>₱" . number_format($item['total'], 2) . "</td></tr>";
                     }
-                } catch (Throwable $qrErr) {
-                    error_log("Critical QR Error: " . $qrErr->getMessage());
-                    $inlineQr = "<p style='color:red;'>QR Service Error: " . $qrErr->getMessage() . "</p>";
+                    $emailBody = "<div style='font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 15px;'>
+                        <h2 style='color: #4f46e5; text-align: center;'>Transaction Receipt</h2>
+                        <p>Hi " . htmlspecialchars($studentFullName) . ",</p>
+                        <p>Your payment has been processed. Here are your transaction details:</p>
+                        <div style='background: #f8fafc; padding: 15px; border-radius: 12px; margin: 20px 0;'>
+                            <strong>Transaction #:</strong> $transactionNumber<br><strong>Date:</strong> " . date('M d, Y h:i A') . "
+                        </div>
+                        <table style='width: 100%; border-collapse: collapse;'>
+                            <thead><tr style='background: #f1f5f9;'><th style='padding: 8px; text-align: left;'>Item</th><th style='padding: 8px; text-align: right;'>Amount</th></tr></thead>
+                            <tbody>$itemsHtml</tbody>
+                        </table>
+                        <div style='border-top: 2px solid #4f46e5; padding-top: 15px; text-align: right;'>
+                            <p><strong>Total Paid: ₱" . number_format($totalAmount, 2) . "</strong></p>
+                        </div>
+                        <p style='text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 20px;'>Thank you for using GCST Tracking System.</p>
+                    </div>";
+                } else {
+                    $subject = 'Your GCST Order QR Code';
+                    $tempDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'temp';
+                    if (!is_dir($tempDir)) @mkdir($tempDir, 0777, true);
+                    $tempQrPath = $tempDir . DIRECTORY_SEPARATOR . uniqid('qr_') . '.png';
+                    try {
+                        $inlineQr = '';
+                        if (function_exists('generateLocalQrCode') && generateLocalQrCode($transactionNumber, $tempQrPath, 'H', 10, 4)) {
+                            $attachments[] = ['path' => $tempQrPath, 'name' => 'order_qr_code.png', 'cid' => 'order_qr_code'];
+                            $inlineQr = "<div style='text-align:center;margin:30px 0;padding:20px;border:2px dashed #2563eb;border-radius:16px;background:#f8fafc;'><div style='font-size:18px;font-weight:bold;color:#2563eb;margin-bottom:15px;'>PRESENT TO CASHIER</div><img src='cid:order_qr_code' style='max-width:300px;height:auto;' /></div>";
+                        }
+                    } catch (Throwable $e) { error_log($e->getMessage()); }
+
+                    $emailBody = "<p>Hi " . htmlspecialchars($studentFullName) . ",</p><p>Your order has been placed. Present this QR code to the cashier.</p>$inlineQr<p>Order Total: ₱" . number_format($totalAmount, 2) . "</p>";
                 }
 
-                $emailBody = "<p>Hi " . htmlspecialchars($studentFullName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . ",</p>" .
-                    "<p>Your order has been placed. Please present the QR code below to the cashier for quick scanning.</p>" .
-                    "<p style='color:#dc2626;'><strong>Note:</strong> This QR code will expire and become invalid after 2 days (48 hours).</p>" .
-                    "<p><strong>Order reference:</strong> " . htmlspecialchars($transactionNumber, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "</p>" .
-                    $inlineQr .
-                    "<p>Order total: ₱" . number_format($totalAmount, 2, '.', ',') . "</p>" .
-                    "<p>Thank you for using GCST Tracking System.</p>";
-
-                $sendResult = sendEmailWithLog($conn, $userEmail, 'Your GCST Order QR Code', $emailBody, 'Order Confirmation', $attachments);
+                $sendResult = sendEmailWithLog($conn, $userEmail, $subject, $emailBody, 'Transaction Details', $attachments);
                 $emailStatus = $sendResult['status'] === 'sent' ? 'sent' : 'failed';
 
-                // Clean up temporary QR file
-                if (file_exists($tempQrPath)) {
+                if (isset($tempQrPath) && file_exists($tempQrPath)) {
                     unlink($tempQrPath);
                 }
             }
