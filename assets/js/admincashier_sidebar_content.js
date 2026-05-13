@@ -22,7 +22,7 @@ export function getSidebarHTML() {
         window.performLogout = function() {
             sessionStorage.clear();
             localStorage.clear();
-            window.location.replace('/GCST_Track_System/actions/log_out.php');
+            window.location.replace('/GCST_Track_System/actions/sign_out.php');
         };
 
         // Global listener to close modal on Escape key
@@ -242,18 +242,18 @@ export function getSidebarHTML() {
         <a href="admincashier_cashier.html" class="sidebar-link">
             <i class="fas fa-cash-register"></i> <span>Cashier</span>
         </a>
-        <a href="admincashier_sales.html" class="sidebar-link">
+        <a href="admincashier_sale.html" class="sidebar-link">
             <i class="fas fa-chart-line"></i> <span>Sales Report</span>
         </a>
-        <a href="admincashier_inventory.html" class="sidebar-link">
+        <a href="admincashier_inventorys.html" class="sidebar-link">
             <i class="fas fa-boxes"></i> <span>Inventory</span>
         </a>
         
         <p class="nav-section-label">System Services</p>
-        <a href="admincashier_queuing.html" class="sidebar-link">
+        <a href="admincashier_queuing_system.html" class="sidebar-link">
             <i class="fas fa-users-cog"></i> <span>Queuing System</span>
         </a>
-        <a href="admincashier_gmail.html" class="sidebar-link">
+        <a href="admincashier_gmail_notification.html" class="sidebar-link">
             <i class="fas fa-envelope"></i> <span>Gmail Notification</span>
             <span id="sidebar-gmail-badge" class="sidebar-badge hidden">0</span>
         </a>

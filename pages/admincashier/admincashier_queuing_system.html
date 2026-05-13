@@ -7,6 +7,8 @@
   <title>GCST Admin Cashier Queuing System</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <link rel="stylesheet" href="http://localhost/GCST_Track_System/assets/css/admincashier.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -255,27 +257,25 @@
     color: #1e293b;
   }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <script>
-    window.addEventListener('DOMContentLoaded', function() {
-      fetch('../..actions/get_user.php')
-        .then(res => res.json())
-        .then(data => {
-          if (!data.admin_id) {
-            window.location.href = "../../pages/sign_in_admin_cashier.html";
-          }
-        })
-        .catch(() => {
-          window.location.href = "../../pages/sign_in_admin_cashier.html";
-        });
-    });
-  </script> 
 </head>
 
-<body>
+<body class="antialiased">
+  <!-- Sidebar Component -->
+  <div id="sidebar-container"></div>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-  <!-- Queue Display Panel -->
+  <div class="content-wrapper">
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Greeting Section -->
+    <section class="greeting-section">
+      <div class="greeting-content">
+        <h1 id="greeting-message">Welcome, Admin Cashier!</h1>
+        <p id="current-date-time"></p>
+      </div>
+      <div class="greeting-icon">👋</div>
+    </section>
+
+    <!-- Queue Display Panel -->
   <div class="queue-display-panel" id="queue-display-panel">
     <div class="queue-display-content">
       <h2>Queue Display</h2>
@@ -296,17 +296,7 @@
       <button class="close-panel" onclick="closeQueueDisplay()">Close</button>
     </div>
   </div>
-
-  <main>
-    <!-- Greeting Section -->
-    <section class="greeting-section">
-      <div class="greeting-content">
-        <h1 id="greeting-message">Welcome, Admin Cashier!</h1>
-        <p id="current-date-time"></p>
-      </div>
-      <div class="greeting-icon">👋</div>
-    </section>
-
+  
     <!-- Live Monitor Panel -->
     <section class="live-monitor-section">
       <div class="live-monitor-grid">
@@ -368,6 +358,7 @@
   </main>
 
   <!-- Scripts -->
+  <script src="../../assets/js/admincashier.js"></script>
   <script>
     let currentAdminId = null;
     let currentTicket = null;

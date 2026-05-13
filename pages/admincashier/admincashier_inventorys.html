@@ -6,6 +6,10 @@
   <title>GCST Admin Cashier Inventory</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="../../assets/css/admincashier.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     .logo {
       display: flex;
@@ -34,37 +38,6 @@
       justify-content: space-between;
       align-items: center;
     } 
-
-    .greeting-section {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-      gap: 24px;
-      padding: 24px 30px;
-      background: linear-gradient(117deg, #eff6ff 0%, #eef2ff 100%);
-      border-radius: 28px;
-      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
-    }
-
-    .greeting-content h1 {
-      margin: 0;
-      font-size: 1.75rem;
-    }
-
-    .greeting-content p {
-      margin: 10px 0 0;
-      color: var(--muted);
-    }
-
-    .greeting-icon {
-      width: 84px;
-      height: 84px;
-      border-radius: 28px;
-      background: #eef2ff;
-      display: grid;
-      place-items: center;
-      font-size: 2rem;
-    }
 
     .inventory-board {
       margin-top: 30px;
@@ -705,9 +678,14 @@
   </style>
 </head>
 
-<body>
-  
-  <main>
+<body class="antialiased">
+  <!-- Sidebar Component -->
+  <div id="sidebar-container"></div>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <div class="content-wrapper">
+  <main class="max-w-7xl mx-auto px-6 py-8">
+
     <section class="greeting-section">
       <div class="greeting-content">
         <h1>Inventory Management</h1>
@@ -917,6 +895,7 @@
       </div>
     </section>
   </main>
+
   <script src="../../assets/js/admincashier.js"></script>
   <script>
     const inventoryApi = '../../actions/get_admincashier_products.php';

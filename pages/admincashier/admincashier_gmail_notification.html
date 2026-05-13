@@ -7,6 +7,10 @@
   <title>GCST Admin Cashier Gmail Notifications</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <link rel="stylesheet" href="../../assets/css/admincashier.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
     .balance-card p {
       margin: 0;
@@ -226,9 +230,13 @@
   </style>
 </head>
 
-<body>
+<body class="antialiased">
+  <!-- Sidebar Component -->
+  <div id="sidebar-container"></div>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-  <main>
+  <div class="content-wrapper">
+  <main class="max-w-7xl mx-auto px-6 py-8">
     <!-- Greeting Section -->
     <section class="greeting-section">
       <div class="greeting-content">
@@ -305,9 +313,8 @@
     </section>
   </main>
 
-  <script src="../../assets/js/logout-handler1.js"></script>
-
-  <div class="modal-overlay" id="emailModal">
+  <!-- Email Modal -->
+         <div class="modal-overlay" id="emailModal">
     <div class="modal-card">
       <button class="modal-close" id="modalCloseBtn" aria-label="Close modal">×</button>
       <h3 id="modalTitle">Send Email Notification</h3>
@@ -342,6 +349,8 @@
     </div>
   </div>
 
+
+  <script src="../../assets/js/admincashier.js"></script>
   <script>
     const apiUrl = '../../actions/get_admincashier_gmail_notifications.php';
     const notificationsApiUrl = '../../actions/get_notifications.php';
