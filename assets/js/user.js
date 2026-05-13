@@ -1,9 +1,4 @@
-﻿/* =====================================================
-   GCST ADMIN CASHIER - SHARED JAVASCRIPT
-   Common functions for all admincashier pages
-   ===================================================== */
-
-let currentAdminId = null;
+﻿﻿let currentAdminId = null;
 let notificationPollInterval = null;
 
 /**
@@ -58,19 +53,19 @@ function initializeAdminCashierUI() {
  * Check authentication and redirect if not logged in
  */
 function checkAuthentication() {
-  return fetch('http://localhost/GCST_Track_System/actions/get_user.php')
+  return fetch('../../actions/get_user.php')
     .then(res => res.json())
     .then(data => {
       const currentId = data.student_id || data.admin_id;
       if (!currentId) {
-        window.location.href = "http://localhost/GCST_Track_System/pages/sign_in.html";
+        window.location.href = "../../pages/sign_in.html";
         return null;
       }
       currentAdminId = currentId;
       return data;
     })
     .catch(() => {
-      window.location.href = "http://localhost/GCST_Track_System/pages/sign_in.html";
+      window.location.href = "../../pages/sign_in.html";
       return null;
     });
 }
@@ -106,7 +101,7 @@ function updateDateTime() {
  * Load notifications from server
  */
 function loadNotifications() {
-  fetch('http://localhost/GCST_Track_System/actions/get_notifications.php')
+  fetch('../../actions/get_notifications.php')
     .then(res => res.json())
     .then(data => {
       const notificationsList = document.getElementById('notifications-list');
@@ -288,3 +283,78 @@ function fetchWithError(url, options = {}) {
     });
 }
 
+/* =====================================================
+  SIDEBAR AUTO-LOADER & LOGIC
+   ===================================================== */
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('main-sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar?.classList.toggle('active');
+  overlay?.classList.toggle('active');
+}
+
+function toggleMinimizeSidebar() {
+  const sidebar = document.getElementById('main-sidebar');
+  const contentWrapper = document.querySelector('.content-wrapper');
+  const header = document.querySelector('header');
+
+  const isMinimized = sidebar?.classList.toggle('minimized');
+  contentWrapper?.classList.toggle('minimized');
+  header?.classList.toggle('minimized');
+
+  // Persist the state in localStorage
+  localStorage.setItem('sidebar-minimized', isMinimized ? 'true' : 'false');
+}
+
+async function autoLoadSidebar() {
+  const container = document.getElementById('sidebar-container');
+  if (!container) return;
+
+  try {
+    const { getSidebarHTML } = await import('../../assets/js/user_sidebar_content.js');
+    if (container) {
+      container.innerHTML = getSidebarHTML();
+
+      // Apply the saved state from localStorage immediately after injection
+      const isMinimized = localStorage.getItem('sidebar-minimized') === 'true';
+      if (isMinimized) {
+        document.getElementById('main-sidebar')?.classList.add('minimized');
+        document.querySelector('.content-wrapper')?.classList.add('minimized');
+        document.querySelector('header')?.classList.add('minimized');
+      }
+      
+      // Automatically highlight the active link based on the current URL
+      const currentPage = window.location.pathname.split('/').pop() || 'InUser_home.html';
+      const sidebarLinks = container.querySelectorAll('.sidebar-link');
+      sidebarLinks.forEach(link => {
+        const linkHref = link.getAttribute('href');
+        if (linkHref && (linkHref === currentPage || currentPage.includes(linkHref))) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+      
+      // Attach event listeners to all logout buttons found on the page
+      const logoutTriggers = [
+        document.getElementById('sidebar-logout'),
+        document.getElementById('logout-trigger')
+      ];
+
+      logoutTriggers.forEach(btn => {
+        if (btn) {
+          btn.onclick = (e) => {
+            e.preventDefault();
+            if (typeof window.logoutUser === 'function') window.logoutUser();
+          };
+        }
+      });
+    }
+  } catch (err) {
+    console.error('Sidebar auto-load failed:', err);
+  }
+}
+
+// Initialize sidebar on every page load
+document.addEventListener('DOMContentLoaded', autoLoadSidebar);

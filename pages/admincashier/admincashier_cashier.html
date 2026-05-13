@@ -1,12 +1,14 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GCST Admin Cashier - Point of Sale</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="http://localhost/GCST_Track_System/assets/css/admincashier.css" />
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <link rel="stylesheet" href="../../assets/css/admincashier.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
   <style>
     .cashier-layout {
       display: grid; 
@@ -430,6 +432,55 @@
       font-size: 0.75rem;
       letter-spacing: 0.05em;
     }
+    /* QR Scanner UI Improvements */
+    .scanner-container {
+      position: relative;
+      width: 100%;
+      height: 320px;
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .scan-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .scan-region-frame {
+      width: 200px;
+      height: 200px;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 20px;
+      position: relative;
+      box-shadow: 0 0 0 1000px rgba(15, 23, 42, 0.45);
+    }
+    .scan-line {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: #4f46e5;
+      box-shadow: 0 0 15px #4f46e5;
+      animation: scanLine 2s linear infinite;
+    }
+    @keyframes scanLine {
+      0% { top: 0; }
+      100% { top: 100%; }
+    }
+    .qr-panel {
+      width: 100%;
+      max-width: 480px;
+      padding: 32px !important;
+      border-radius: 28px !important;
+    }
+    .scan-hint {
+      color: #64748b;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
     #reader {
       border-radius: 12px;
       overflow: hidden;
@@ -457,33 +508,15 @@
     }
   </style>
 </head>
-<body>
-  <header>
-    <div class="logo">
-      <img src="http://localhost/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Library Logo" />
-      <strong>GCST Tracking System</strong>
-    </div>
-    <nav class="nav-links">
-      <a href="#" class="notification-icon" id="notification-bell" title="Notifications">🔔 <span id="notif-badge"></span></a>
-      <div class="notification-dropdown" id="notification-dropdown">
-        <div class="dropdown-header">Notifications</div>
-        <div class="notifications-list" id="notifications-list"></div>
-        <div class="dropdown-footer" id="clear-notifications">Clear All</div>
-      </div>
-      <a href="#" class="menu-icon" id="menu-icon">☰</a>
-    </nav>
-    <div class="dropdown-menu" id="dropdown-menu">
-      <a class="menu-item" href="admincashier_dashb.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-      <a class="menu-item active" href="admincashier_cashier.html"><i class="fas fa-cash-register"></i> Cashier</a>
-      <a class="menu-item" href="admincashier_sale.html"><i class="fas fa-receipt"></i> Sales</a>
-      <a class="menu-item" href="admincashier_inventorys.html"><i class="fas fa-boxes"></i> Inventory</a>
-      <a class="menu-item" href="admincashier_queuing_system.html"><i class="fas fa-users"></i> Queue System</a>
-      <a class="menu-item" href="admincashier_gmail_notification.html"><i class="fas fa-envelope"></i> Gmail Notification</a>
-      <a class="menu-item" href="admincashier_profile.html"><i class="fas fa-user-circle"></i> Profile</a>
-      <a class="menu-item" href="javascript:void(0)" id="logout-trigger"><i class="fas fa-sign-out-alt"></i> Log Out</a>
-    </div>
-  </header>
-  <main>
+
+<body class="antialiased">
+  <!-- Sidebar Component -->
+  <div id="sidebar-container"></div>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+
+  <div class="content-wrapper">
+  <main class="max-w-7xl mx-auto px-6 py-8">
     <section class="greeting-section">
       <div class="greeting-content">
         <h1 id="greeting-message">Cashier</h1>
@@ -498,9 +531,9 @@
           <span id="product-count">0 items</span>
         </div>
         <div class="search-group">
-          <input id="product-search" class="search-input" type="text" placeholder="Search by name, category or barcode" />
-          <button id="qr-scan-btn" class="btn btn-secondary" title="Scan Order QR Code"><i class="fas fa-qrcode"></i> Scan Order</button>
-          <button id="product-scan-btn" class="btn btn-secondary" title="Scan Product Barcode"><i class="fas fa-barcode"></i> Scan Product</button>
+          <input id="product-search" class="search-input" type="text" placeholder="Search by name or Category" />
+          <button id="qr-scan-btn" class="btn btn-secondary" title="Scan Order QR Code"><i class="fas fa-qrcode">
+          </i> Scan Order</button>
           <button id="clear-search" class="btn btn-secondary">Clear</button>
         </div>
         <div class="filter-group" id="category-filters"></div>
@@ -732,6 +765,31 @@
         <div id="pending-orders-empty" class="empty-state hidden">No pending orders found.</div>
       </div>
     </section>
+
+    <!-- Scan Order Modal -->
+    <div id="qr-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+      <div class="panel qr-panel" style="text-align: center;">
+        <div class="panel-header">
+          <h2 id="qr-modal-title">Scan Order QR Code</h2>
+          <button type="button" onclick="closeQRScanner()" style="border:none; background:#f1f5f9; width:32px; height:32px; border-radius:50%; cursor:pointer; color:#6b7280;">×</button>
+        </div>
+        <div class="scanner-container">
+          <div id="camera-loading-placeholder" class="hidden" style="position:absolute; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; background:rgba(0,0,0,0.8);">
+            <i class="fas fa-circle-notch fa-spin fa-2x" style="margin-bottom:12px;"></i>
+            <span>Starting Camera...</span>
+          </div>
+          <div id="camera-error-message" class="hidden" style="position:absolute; inset:0; z-index:11; padding:20px; color:#ef4444; background:white; display:flex; align-items:center; justify-content:center; font-size:0.9rem; font-weight:600;"></div>
+          <div id="reader" style="width: 100%; height: 100%;"></div>
+          <div class="scan-overlay">
+            <div class="scan-region-frame"><div class="scan-line"></div></div>
+          </div>
+        </div>
+        <p class="scan-hint"><i class="fas fa-info-circle"></i> Position the QR code within the frame</p>
+        <input id="hardware-scan-input" type="text" style="position: absolute; left: -9999px; opacity: 0;" autocomplete="on">
+        <button class="btn btn-secondary" onclick="closeQRScanner()" style="width: 100%; padding: 14px;">Cancel</button>
+      </div>
+    </div>
+
     <div id="reject-reason-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
       <div class="panel" style="width: 100%; max-width: 450px;">
         <div class="panel-header">
@@ -786,17 +844,6 @@
             </div>
           </div>
         </form>
-      </div>
-    </div>
-    <div id="qr-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;">
-      <div class="panel" style="width: 100%; max-width: 500px; text-align: center;">
-        <div class="panel-header">
-          <h2 id="qr-modal-title">Scan Order QR Code</h2>
-          <button type="button" onclick="closeQRScanner()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:#6b7280;">×</button>
-        </div>
-        <div id="reader" style="width: 100%; background: #000; margin-bottom: 20px;"></div>
-        <input id="hardware-scan-input" type="text" style="position: absolute; left: -9999px; opacity: 0;" autocomplete="off" placeholder="Hardware scanner input...">
-        <button class="btn btn-secondary" onclick="closeQRScanner()">Cancel</button>
       </div>
     </div>
 
@@ -857,13 +904,13 @@
         <div class="checkout-form" style="display: flex; flex-direction: column; gap: 24px;">
           <!-- Transaction Info Section -->
           <div style="background: #f8fafc; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0;">
-             <div class="summary-row" style="grid-template-columns: 1fr;">
+            <div class="summary-row" style="grid-template-columns: 1fr;">
                 <label style="font-weight: 600; margin-bottom: 8px; color: #475569;">Transaction Type</label>
                 <select id="transaction-type" class="search-input" style="background: white;">
                     <option value="buy">Purchase (Buy)</option>
                     <option value="rent">Rental (Rent)</option>
                 </select>
-             </div>
+            </div>
           </div>
 
           <!-- Customer Info Section -->
@@ -874,9 +921,12 @@
                     <i class="fas fa-user-plus"></i> New Student
                 </button>
             </div>
-            <div style="margin-bottom: 8px;">
-                <input id="checkout-student-id" type="text" list="student-datalist" class="search-input" placeholder="Student ID (e.g. GC-123456)" style="background: white; width: 100%;" readonly />
+            <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                <input id="checkout-student-id" type="text" list="student-datalist" class="search-input" placeholder="Enter Student ID (e.g. GC-123456)" style="background: white; flex: 1;" />
                 <datalist id="student-datalist"></datalist>
+                <button type="button" class="btn btn-secondary" onclick="checkStudentId()" style="padding: 0 20px; border-radius: 16px;">
+                    Verify
+                </button>
             </div>
             <div id="student-check-msg" style="font-size: 0.85rem; font-weight: 500; min-height: 1.2em; padding-left: 4px;"></div>
           </div>
@@ -949,12 +999,14 @@
       </div>
     </div>
   </main>
-  <script src="http://localhost/GCST_Track_System/assets/js/admincashier.js"></script>
+
+  <script src="../../assets/js/admincashier.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <script>
     const API_ROOT = window.location.origin + '/GCST_Track_System/actions';
     const ASSET_ROOT = window.location.origin + '/GCST_Track_System/assets';
     const IMAGE_FALLBACK = `${ASSET_ROOT}/images/icons/granbylogo.png`;
-    // Audio object for scan feedback
+    // Audio objects for scan feedback
     const SCAN_SOUND = new Audio('https://raw.githubusercontent.com/rafaelbotazini/floating-whatsapp/master/beep.mp3');
     const ERROR_SOUND = new Audio('https://www.soundjay.com/buttons/beep-05.mp3');
     let html5QrCode = null;
@@ -984,7 +1036,11 @@
     }
     function resolveImagePath(image) {
       if (!image) return IMAGE_FALLBACK;
-      return image.startsWith('http') ? image : `${ASSET_ROOT}/${image.replace(/^\/+/, '')}`;
+      if (image.startsWith('http://') || image.startsWith('https://')) {
+        return image;
+      }
+      const cleanPath = image.replace(/^\/+/, '');
+      return `${window.location.origin}/GCST_Track_System/${cleanPath}`;
     }
     function getProductPrice(product) {
       return parseFloat(product.buy_price ?? product.product_price ?? product.price ?? 0);
@@ -1222,6 +1278,7 @@
       document.getElementById('payment-status').value = 'paid';
       document.getElementById('checkout-student-id').value = '';
       document.getElementById('student-check-msg').textContent = '';
+      document.getElementById('transaction-type').value = 'buy'; // Reset transaction type
       const selectAll = document.getElementById('select-all-cart');
       if (selectAll) selectAll.checked = false;
       const label = document.getElementById('payment-status-label');
@@ -1388,6 +1445,7 @@
           alert('Transaction completed successfully. A receipt has been sent to the student\'s email.');
           // Only remove items that were actually purchased
           cart = cart.filter(item => !item.selected);
+          clearCart(); // Clear all cart and checkout fields
           updateCartSummary();
           loadProducts();
           loadRecentTransactions();
@@ -2120,8 +2178,8 @@
       const filtered = overdueRentals.filter(item => {
         const studentName = `${item.first_name} ${item.last_name}`.toLowerCase();
         return studentName.includes(query) || 
-               item.student_id.toLowerCase().includes(query) || 
-               item.product_name.toLowerCase().includes(query);
+              item.student_id.toLowerCase().includes(query) || 
+              item.product_name.toLowerCase().includes(query);
       });
       renderOverdueRentals(filtered);
     });
@@ -2176,114 +2234,6 @@
     document.getElementById('clear-cart').addEventListener('click', clearCart);
     document.getElementById('print-receipt').addEventListener('click', printReceipt);
     
-    let scanMode = 'order'; // 'order' or 'product'
-    document.getElementById('qr-scan-btn').addEventListener('click', () => openQRScanner('order'));
-    document.getElementById('product-scan-btn').addEventListener('click', () => openQRScanner('product'));
-
-    function openQRScanner(mode = 'order') {
-      scanMode = mode;
-      document.getElementById('qr-modal-title').textContent = mode === 'order' ? 'Scan Order QR Code' : 'Scan Product Barcode';
-      document.getElementById('qr-modal').classList.remove('hidden');
-
-      const hwInput = document.getElementById('hardware-scan-input');
-      if (hwInput) {
-        hwInput.value = '';
-        setTimeout(() => hwInput.focus(), 200);
-      }
-
-      html5QrCode = new Html5Qrcode("reader");
-      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-      html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
-        .catch(err => {
-          console.error("Error starting QR scanner:", err);
-          alert("Unable to access camera. Please check permissions.");
-          document.getElementById('qr-modal').classList.add('hidden');
-        });
-    }
-
-    function closeQRScanner() {
-      if (html5QrCode) {
-        html5QrCode.stop().then(() => {
-          document.getElementById('qr-modal').classList.add('hidden');
-          html5QrCode = null;
-        }).catch(() => {
-          document.getElementById('qr-modal').classList.add('hidden');
-          html5QrCode = null;
-        });
-      } else {
-        document.getElementById('qr-modal').classList.add('hidden');
-      }
-    }
-
-    function onScanSuccess(decodedText) {
-      // Play success sound immediately on detection
-      SCAN_SOUND.currentTime = 0;
-      SCAN_SOUND.play().catch(err => console.warn("Audio play blocked by browser:", err));
-      closeQRScanner();
-      if (scanMode === 'order') {
-        loadOrderByQR(decodedText);
-      } else if (decodedText.startsWith('RENEW-')) {
-        loadRenewalByQR(decodedText);
-      } else {
-        handleProductBarcodeScan(decodedText);
-      }
-    }
-
-    function handleProductBarcodeScan(barcode) {
-      const product = products.find(p => p.barcode == barcode);
-      if (product) {
-        addProductToCart(product.product_id);
-        alert(`Added ${product.product_name} to cart.`);
-      } else {
-        ERROR_SOUND.currentTime = 0;
-        ERROR_SOUND.play().catch(err => console.warn("Audio play blocked by browser:", err));
-        alert(`No product found with barcode: ${barcode}`);
-      }
-    }
-
-    function loadOrderByQR(txnNumber) {
-      fetch(`${API_ROOT}/get_order_by_qr.php?transaction_number=${encodeURIComponent(txnNumber)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            const order = data.order;
-            // Set transaction type first to ensure prices sync correctly
-            document.getElementById('transaction-type').value = order.transaction_type;
-            state.transactionType = order.transaction_type;
-
-            // Populate cart
-            cart = order.items.map(item => ({
-              product_id: item.product_id,
-              product_name: item.product_name,
-              quantity: item.quantity,
-              unitPrice: parseFloat(item.unit_price),
-              selected: true
-            }));
-
-            if (order.student_id) {
-              document.getElementById('checkout-student-id').value = order.student_id;
-              state.studentId = order.student_id;
-              checkStudentId(); 
-            }
-
-            document.getElementById('discount-percent').value = order.discount_percent;
-            state.discountPercent = parseFloat(order.discount_percent);
-
-            updateCartSummary();
-            alert(`Order ${txnNumber} loaded into cart.`);
-          } else {
-            ERROR_SOUND.currentTime = 0;
-            ERROR_SOUND.play().catch(err => console.warn("Audio play blocked by browser:", err));
-            alert(data.message || 'Failed to load order.');
-          }
-        })
-        .catch(err => {
-          console.error('Error loading order:', err);
-          ERROR_SOUND.currentTime = 0;
-          ERROR_SOUND.play().catch(err => console.warn("Audio play blocked by browser:", err));
-          alert('An error occurred while loading the order.');
-        });
-    }
 
     function loadRenewalByQR(renewalRef) {
       const rentalId = renewalRef.replace('RENEW-', '');
@@ -2311,14 +2261,14 @@
       // do not intercept the keystrokes so they can type normally.
       const activeElement = document.activeElement;
       const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement.tagName) && 
-                           activeElement.id !== 'hardware-scan-input';
+                          activeElement.id !== 'hardware-scan-input';
       
       if (isInputField) return;
 
       const now = Date.now();
       // Scanners type much faster than humans. If there is a delay > 50ms, 
       // we assume it's a manual entry and clear the buffer.
-      if (now - globalLastKeyTime > 50) {
+      if (now - globalLastKeyTime > 200) {
         globalScanBuffer = '';
       }
       globalLastKeyTime = now;
@@ -2328,25 +2278,12 @@
           e.preventDefault(); // Prevent default Enter key behavior (e.g., form submission)
           const code = globalScanBuffer.trim();
           globalScanBuffer = ''; // Clear buffer after processing
-          
-          // Auto-detect Scan Mode based on content
-          if (code.startsWith('ORDER-')) {
-            scanMode = 'order';
-          } else if (code.startsWith('RENEW-')) {
-            scanMode = 'renewal';
+
+          if (code.startsWith('RENEW-')) {
+            loadRenewalByQR(code);
           } else {
-            const product = products.find(p => p.barcode == code);
-            if (product) {
-              scanMode = 'product';
-            } else {
-              ERROR_SOUND.currentTime = 0;
-              ERROR_SOUND.play().catch(err => console.warn("Audio play blocked by browser:", err));
-              alert(`No product or order found for scanned code: ${code}`);
-              return; // Stop processing this scan
-            }
+            loadOrderByQR(code);
           }
-          
-          onScanSuccess(code);
         }
       } else if (e.key.length === 1) { // Only append single character keys
         globalScanBuffer += e.key;
@@ -2458,7 +2395,157 @@
         alert('An error occurred during bulk return.');
       });
     }
+
+    // --- QR Scanner Functions ---
+    async function openQRScanner() {
+      document.getElementById('qr-modal').classList.remove('hidden');
+      document.getElementById('camera-loading-placeholder').classList.remove('hidden');
+      document.getElementById('camera-error-message').classList.add('hidden');
+      document.getElementById('hardware-scan-input').focus(); // Focus for hardware scanners
+
+      if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("reader");
+      }
+
+      const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+        console.log(`QR Code detected: ${decodedText}`, decodedResult);
+        SCAN_SOUND.play();
+        // Process the scanned code
+        if (decodedText.startsWith('RENEW-')) {
+          loadRenewalByQR(decodedText);
+        } else {
+          loadOrderByQR(decodedText);
+        }
+        closeQRScanner(); // Close scanner after successful scan
+      };
+
+      const qrCodeErrorCallback = (errorMessage) => {
+        // This can be noisy, only log if needed for debugging camera issues
+        // console.warn(`QR Code scanning error: ${errorMessage}`);
+      };
+
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        disableFlip: false, // Set to true if you are not using front camera
+      };
+
+      try {
+        await html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback, qrCodeErrorCallback);
+        document.getElementById('camera-loading-placeholder').classList.add('hidden');
+        document.getElementById('reader').style.display = 'block';
+      } catch (err) {
+        console.error("Failed to start QR scanner:", err);
+        ERROR_SOUND.play();
+        document.getElementById('camera-loading-placeholder').classList.add('hidden');
+        document.getElementById('camera-error-message').classList.remove('hidden');
+        document.getElementById('camera-error-message').textContent = `Camera failed to start: ${err.message || err}. Please ensure camera access is granted.`;
+        document.getElementById('reader').style.display = 'none';
+      }
+    }
+
+    async function closeQRScanner() {
+      document.getElementById('qr-modal').classList.add('hidden');
+      document.getElementById('camera-error-message').classList.add('hidden');
+      document.getElementById('hardware-scan-input').value = ''; // Clear hardware scan input
+      if (html5QrCode && html5QrCode.isScanning) {
+        try {
+          await html5QrCode.stop();
+          console.log("QR scanner stopped.");
+        } catch (err) {
+          console.error("Error stopping QR scanner:", err);
+        }
+      }
+    }
+
+    async function loadOrderByQR(qrCodeData) {
+      console.log('Attempting to load order for QR data:', qrCodeData);
+      try {
+        const response = await fetch(`${API_ROOT}/get_order_by_qr.php?transaction_number=${encodeURIComponent(qrCodeData)}`, {
+          method: 'GET',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const result = await response.json();
+
+        console.log('Server response for QR scan:', result); // Log the full response for debugging
+
+        if (result.success) {
+          alert('Order loaded successfully!');
+          loadOrderIntoCart(result.order);
+          closeQRScanner();
+        } else {
+          ERROR_SOUND.play();
+          // Display the specific message from the backend for better debugging
+          alert('Order scan failed: ' + (result.message || 'Unknown error from server.'));
+        }
+      } catch (error) {
+        console.error('Error fetching order by QR:', error);
+        ERROR_SOUND.play();
+        alert('An error occurred while fetching order details. Please check console for more info.');
+      }
+    }
+
+    function loadOrderIntoCart(order) {
+      clearCart(); // Clear current cart before loading new order
+      state.studentId = order.student_id || '';
+      document.getElementById('checkout-student-id').value = order.student_id || '';
+      document.getElementById('transaction-type').value = order.transaction_type || 'buy';
+      document.getElementById('discount-percent').value = order.discount_percent || 0;
+      document.getElementById('payment-status').value = order.payment_status || 'pending';
+      // Verify student ID if available
+      if (order.student_id) {
+        checkStudentId();
+      }
+
+      order.items.forEach(orderItem => {
+        const product = products.find(p => p.product_id == orderItem.product_id);
+        if (product) {
+          const unitPrice = orderItem.type === 'rent' ? getProductRentPrice(product) : getProductPrice(product);
+          cart.push({
+            product_id: product.product_id,
+            product_name: product.product_name,
+            quantity: orderItem.quantity,
+            unitPrice: unitPrice,
+            selected: true // Mark as selected by default when loading from QR
+          });
+        } else {
+          console.warn(`Product with ID ${orderItem.product_id} not found in current product list.`);
+          // Fallback for unknown products (e.g., if product was deleted)
+          cart.push({
+            product_id: orderItem.product_id,
+            product_name: orderItem.product_name || `Unknown Product (ID: ${orderItem.product_id})`,
+            quantity: orderItem.quantity,
+            unitPrice: orderItem.unit_price || 0, // Use unit_price from order if product not found
+            selected: true
+          });
+        }
+      });
+      updateTransactionSettings(); // Recalculate totals and update UI
+      updateCartSummary();
+      openCheckoutModal(); // Open checkout modal with pre-filled order
+    }
+
+    // Event listener for the QR scan button
+    document.getElementById('qr-scan-btn').addEventListener('click', openQRScanner);
+
+    // Event listener for hardware scanner input (hidden input field)
+    document.getElementById('hardware-scan-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const scannedCode = this.value.trim();
+        if (scannedCode) {
+          if (scannedCode.startsWith('RENEW-')) {
+            loadRenewalByQR(scannedCode);
+          } else {
+            loadOrderByQR(scannedCode);
+          }
+          this.value = ''; // Clear input after processing
+          closeQRScanner(); // Close scanner modal after processing
+        }
+      }
+    });
   </script>
-    <script src="http://localhost/GCST_Track_System/assets/js/logout-handler1.js"></script>
+    <script src="../../assets/js/order-scanner.js"></script>
 </body>
 </html>

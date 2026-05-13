@@ -1,7 +1,7 @@
 ﻿<?php
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['student', 'user']); // Only students/users can access their own rentals
+requireAuth(['student', 'users', 'admincashier', 'superadmin']); // Only students/users can access their own rentals
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/db_connect.php';
 

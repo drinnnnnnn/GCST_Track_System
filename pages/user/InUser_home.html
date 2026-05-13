@@ -6,8 +6,32 @@
   
   <title>GCST User - Home Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <link rel="stylesheet" href="http://localhost/GCST_Track_System/assets/css/user.css" />
+  <link rel="stylesheet" href="../../assets/css/user.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --primary: #2563eb;
+      --primary-soft: #eff6ff;
+      --slate-900: #0f172a;
+      --slate-600: #475569;
+      --slate-400: #94a3b8;
+      --glass: rgba(255, 255, 255, 0.7);
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: #f8fafc;
+      color: var(--slate-900);
+      margin: 0;
+    }
+
+    .glass {
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
     .rental-card {
       background: var(--surface);
       border-radius: var(--radius-lg);
@@ -207,55 +231,14 @@
   </style>
 </head>
 
-<body>
-  <!-- Header -->
-  <header>
-    <div class="logo">
-      <img src="http://localhost/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Library Logo">
+<body class="antialiased">
+  <!-- Sidebar Component -->
+  <div id="sidebar-container"></div>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-      <div>
-        <strong>GCST Tracking System</strong>
-        <p>Manage your bookstore activities, rentals, fees, and queue tickets in one place.</p>
-      </div>
-    </div>
-    
-    <nav class="nav-links">
-      <a href="#" class="notification-icon" id="notification-bell" title="Notifications">
-        🔔
-        <span id="notif-badge"></span>
-      </a>
 
-      <div class="notification-dropdown" id="notification-dropdown">
-        <div class="dropdown-header">Notifications</div>
-        <div class="notifications-list" id="notifications-list"></div>
-        <div class="dropdown-footer" id="clear-notifications">Clear All</div>
-      </div>
-
-      <a href="#" class="menu-icon" id="menu-icon">☰</a>
-    </nav>
-    <div class="dropdown-menu" id="dropdown-menu">
-      <a class="menu-item" href="InUser_home.html">
-        <i class="fas fa-tachometer-alt"></i> Dashboard
-      </a>
-      <a class="menu-item" href="user_browse_products.html">
-        <i class="fas fa-shopping-bag"></i> Browse Products
-      </a>
-      <a class="menu-item" href="user_rentals.html">
-        <i class="fas fa-book"></i> My Rentals
-      </a>
-      <a class="menu-item" href="user_queue_tickets.html">
-        <i class="fas fa-ticket-alt"></i> Queue Tickets
-      </a>
-      <a class="menu-item" href="user_profile.html">
-        <i class="fas fa-user-circle"></i> Profile
-      </a>
-      <a class="menu-item" href="javascript:void(0)" id="logout-trigger">
-        <i class="fas fa-sign-out-alt"></i> Log Out
-      </a>
-    </div>
-  </header>
-
-  <main>
+  <div class="content-wrapper">
+  <main class="max-w-7xl mx-auto px-6 py-8">
     <!-- Greeting Section -->
     <section class="greeting-section">
       <div class="greeting-content">
@@ -263,25 +246,6 @@
         <p id="current-date-time">Loading...</p>
       </div>
       <div class="greeting-icon">📚</div>
-    </section>
-
-    <!-- Quick Actions -->
-    <section class="quick-actions">
-      <h2>Quick Actions</h2>
-      <div class="action-grid">
-        <a href="user_browse_products.html" class="action-card">
-          <i class="fas fa-shopping-bag"></i>
-          <h3>Browse Products</h3>
-        </a>
-        <a href="user_queue_tickets.html" class="action-card">
-          <i class="fas fa-ticket-alt"></i>
-          <h3>Get Queue Ticket</h3>
-        </a>
-        <a href="user_rentals.html" class="action-card">
-          <i class="fas fa-book"></i>
-          <h3>My Rentals</h3>
-        </a>
-      </div>
     </section>
 
     <!-- Overdue Alert -->
@@ -388,7 +352,8 @@
   </main>
 
   <!-- Scripts -->
-  <script src="http://localhost/GCST_Track_System/assets/js/user.js"></script>
+  <script src="../../assets/js/user.js"></script>
+  
   <script>
     let allRentals = [];
     let currentFilter = 'all';
@@ -407,6 +372,14 @@
       const diff = due - today;
       const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
       return days;
+    }
+
+    function buildImageUrl(src) {
+      const defaultImage = '/GCST_Track_System/assets/img_bg/product_details.png';
+      if (!src) return defaultImage;
+      if (src.startsWith('http')) return src;
+      const cleanPath = src.replace(/^\/?GCST_Track_System\//, '').replace(/^\/+/, '');
+      return `/GCST_Track_System/${cleanPath}`;
     }
 
     function renderRentals() {
@@ -428,11 +401,16 @@
         return;
       }
 
-      container.innerHTML = filtered.map(rental => `
+      container.innerHTML = filtered.map(rental => {
+        const rentalImg = rental.product_image || rental.image;
+        const rentalName = rental.product_name || rental.name || 'Untitled Product';
+        const rentalId = rental.rental_id || rental.id;
+
+        return `
         <div class="rental-card">
-          <img src="${rental.image || 'http://localhost/GCST_Track_System/assets/book_img/placeholder.jpg'}" alt="${rental.name}" class="rental-image">
+          <img src="${buildImageUrl(rentalImg)}" alt="${rentalName}" class="rental-image">
           <div class="rental-details" style="flex: 1;">
-            <h3>${rental.name}</h3>
+            <h3>${rentalName}</h3>
             <div class="rental-info">
               <span><i class="fas fa-calendar"></i> Rented: ${formatDate(rental.rental_date)}</span>
               <span><i class="fas fa-calendar-check"></i> Due: ${formatDate(rental.due_date)}</span>
@@ -444,21 +422,22 @@
             </div>
           </div>
           <div class="rental-actions">
-            ${rental.status === 'active' ? `<button class="btn-renew" onclick="renewRental('${rental.id}')">Request Renewal</button>` : ''}
+            ${rental.status === 'active' ? `<button class="btn-renew" onclick="renewRental('${rentalId}')">Request Renewal</button>` : ''}
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
 
     async function loadQueueData() {
       try {
         // Fetch general queue status (Now Serving and Waiting Count)
-        const queueStatus = await fetchWithError('http://localhost/GCST_Track_System/actions/get_queue_status.php');
+        const queueStatus = await fetchWithError('/GCST_Track_System/actions/get_queue_status.php');
         document.getElementById('nowServing').textContent = queueStatus.now_serving || '-';
         document.getElementById('waitingCount').textContent = queueStatus.counts?.waiting ?? 0;
 
         // Fetch user's specific tickets to show their latest status
-        const userTickets = await fetchWithError('http://localhost/GCST_Track_System/actions/get_user_tickets.php');
+        const userTickets = await fetchWithError('/GCST_Track_System/actions/get_user_tickets.php');
         const tickets = userTickets.tickets || [];
         const latestTicketEl = document.getElementById('myLatestTicket');
         const statusEl = document.getElementById('myTicketStatus');
@@ -485,7 +464,7 @@
       const container = document.getElementById('pending-orders-container');
       try {
         // Pointing to get_pending_orders.php as it contains the unified pagination logic
-        const response = await fetchWithError(`http://localhost/GCST_Track_System/actions/get_pending_orders.php?page=${page}&limit=5`);
+        const response = await fetchWithError(`/GCST_Track_System/actions/get_pending_orders.php?page=${page}&limit=5`);
         const orders = response.orders || [];
 
         if (orders.length === 0) {
@@ -548,7 +527,7 @@
       if (!unit) return;
 
       try {
-        const result = await fetchWithError('http://localhost/GCST_Track_System/actions/renew_rental.php', {
+        const result = await fetchWithError('/GCST_Track_System/actions/renew_rental.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -580,7 +559,7 @@
         await loadPendingOrders();
 
         // Fetch user rentals
-        const rentalsData = await fetchWithError('http://localhost/GCST_Track_System/actions/get_user_rentals.php');
+        const rentalsData = await fetchWithError('/GCST_Track_System/actions/get_user_rentals.php');
         allRentals = rentalsData.rentals || [];
         
         // Update summary stats
@@ -615,6 +594,5 @@
       }
     });
   </script>
-    <script src="http://localhost/GCST_Track_System/assets/js/logout-handler.js"></script>
 </body>
 </html>

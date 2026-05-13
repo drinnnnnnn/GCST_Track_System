@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GCST Admin Cashier Inventory</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="http://localhost/GCST_Track_System/assets/css/admincashier.css" />
+  <link rel="stylesheet" href="../../assets/css/admincashier.css" />
   <style>
     .logo {
       display: flex;
@@ -166,7 +166,18 @@
       gap: 16px;
     }
 
-    .add-product-form .form-grid {
+    .add-product-form .form-body-wrapper {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 20px;
+    }
+
+    .add-product-form .image-upload-section {
+      flex: 0 0 240px;
+    }
+
+    .add-product-form .form-inputs-grid {
+      flex: 1;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 16px;
@@ -210,16 +221,19 @@
 
     .image-preview img {
       width: 100%;
-      height: auto;
-      object-fit: contain;
-    }
-
-    .image-preview.hidden {
-      display: none;
+      height: 100%;
+      object-fit: cover;
     }
 
     @media screen and (max-width: 980px) {
-      .add-product-form .form-grid {
+      .add-product-form .form-body-wrapper {
+        flex-direction: column;
+      }
+      .add-product-form .image-upload-section {
+        flex: none;
+        width: 100%;
+      }
+      .add-product-form .form-inputs-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -656,34 +670,43 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* New styles for product details panel header */
+    .product-info-header {
+      display: flex; /* Use flexbox for horizontal layout */
+      align-items: center; /* Vertically align items */
+      gap: 15px; /* Space between image and text */
+      margin-bottom: 15px; /* Space below this section */
+    }
+
+    .product-info-header .image-preview {
+      width: 100px; /* Fixed width for the image preview */
+      height: 100px; /* Fixed height */
+      flex-shrink: 0; /* Prevent image from shrinking */
+      border-radius: 12px; /* Softer corners */
+      overflow: hidden;
+      background: #eef2ff; /* Light background */
+      border: 1px solid #d1d5db; /* Subtle border */
+    }
+
+    .product-info-header .image-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* Cover the area without distortion */
+    }
+
+    .product-info-header h3 {
+      margin: 0;
+      font-size: 1.2rem;
+      color: var(--text);
+    }
+
+    /* End new styles */
   </style>
 </head>
+
 <body>
-  <header>
-    <div class="logo">
-      <img src="http://localhost/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Library Logo" />
-      <strong>GCST Tracking System</strong>
-    </div>
-    <nav class="nav-links">
-      <a href="#" class="notification-icon" id="notification-bell" title="Notifications">🔔 <span id="notif-badge"></span></a>
-      <div class="notification-dropdown" id="notification-dropdown">
-        <div class="dropdown-header">Notifications</div>
-        <div class="notifications-list" id="notifications-list"></div>
-        <div class="dropdown-footer" id="clear-notifications">Clear All</div>
-      </div>
-      <a href="#" class="menu-icon" id="menu-icon">☰</a>
-    </nav>
-    <div class="dropdown-menu" id="dropdown-menu">
-      <a class="menu-item" href="admincashier_dashb.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-      <a class="menu-item" href="admincashier_cashier.html"><i class="fas fa-cash-register"></i> Cashier</a>
-      <a class="menu-item" href="admincashier_sale.html"><i class="fas fa-receipt"></i> Sales</a>
-      <a class="menu-item active" href="admincashier_inventorys.html"><i class="fas fa-boxes"></i> Inventory</a>
-      <a class="menu-item" href="admincashier_queuing_system.html"><i class="fas fa-users"></i> Queue System</a>
-      <a class="menu-item" href="admincashier_gmail_notification.html"><i class="fas fa-envelope"></i> Gmail Notification</a>
-      <a class="menu-item" href="admincashier_profile.html"><i class="fas fa-user-circle"></i> Profile</a>
-      <a class="menu-item" href="javascript:void(0)" id="logout-trigger"><i class="fas fa-sign-out-alt"></i> Log Out</a>
-    </div>
-  </header>
+  
   <main>
     <section class="greeting-section">
       <div class="greeting-content">
@@ -711,43 +734,60 @@
             <button id="btn-close-add-product" type="button" class="btn btn-secondary">Cancel</button>
           </div>
           <form id="add-product-form" class="add-product-form" enctype="multipart/form-data">
-            <div class="form-grid">
-              <div class="form-group">
-                <label for="new-product-image">Product Image</label>
-                <input id="new-product-image" name="product_image" type="file" accept="image/*" />
-                <div id="new-product-image-preview" class="image-preview hidden"></div>
+            <div class="form-body-wrapper">
+              <div class="image-upload-section">
+                <div class="form-group">
+                  <label for="new-product-image">Product Image</label>
+                  <div id="new-product-image-preview" class="image-preview" style="height: 200px; margin-bottom: 10px;">
+                    <i class="fas fa-image" style="font-size: 3rem; color: #cbd5e1;"></i>
+                  </div>
+                  <input id="new-product-image" name="product_image" type="file" accept="image/*" />
+                </div>
               </div>
-              <div class="form-group">
-                <label for="new-product-name">Product Name</label>
-                <input id="new-product-name" name="product_name" type="text" required />
-              </div>
-              <div class="form-group">
-                <label for="new-product-category">Category</label>
-                <input id="new-product-category" name="product_category" type="text" placeholder="Books, Uniform, Accessories, Other" required />
-              </div>
-              <div class="form-group">
-                <label for="new-product-price">Price</label>
-                <input id="new-product-price" name="buy_price" type="number" min="0" step="0.01" required />
-              </div>
-              <div class="form-group">
-                <label for="new-product-rent">Rent Price</label>
-                <input id="new-product-rent" name="rent_price" type="number" min="0" step="0.01" required />
-              </div>
-              <div class="form-group">
-                <label for="new-product-stock">Stock Quantity</label>
-                <input id="new-product-stock" name="stock_count" type="number" min="0" step="1" required />
-              </div>
-              <div class="form-group">
-                <label for="new-product-barcode">Barcode / QR Code</label>
-                <input id="new-product-barcode" name="barcode" type="text" required />
-              </div>
-              <div class="form-group">
-                <label for="new-product-status">Status</label>
-                <select id="new-product-status" name="product_status" required>
-                  <option value="available">In Stock</option>
-                  <option value="available">Low Stock</option>
-                  <option value="unavailable">Out of Stock</option>
-                </select>
+              <div class="form-inputs-grid">
+                <div class="form-group">
+                  <label for="new-product-name">Product Name</label>
+                  <input id="new-product-name" name="product_name" type="text" required />
+                </div>
+                <div class="form-group">
+                  <label for="new-product-category">Category</label>
+                  <select id="new-product-category" name="product_category" required>
+                    <option value="" disabled selected>Select Category</option>
+                    <option value="Books">Books</option>
+                    <option value="Uniform">Uniform</option>
+                    <option value="Accessories">Accessories</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="new-product-price">Price</label>
+                  <input id="new-product-price" name="buy_price" type="number" min="0" step="0.01" required />
+                </div>
+                <div class="form-group">
+                  <label for="new-product-rent">Rent Price</label>
+                  <input id="new-product-rent" name="rent_price" type="number" min="0" step="0.01" required />
+                </div>
+                <div class="form-group">
+                  <label for="new-product-stock">Stock Quantity</label>
+                  <input id="new-product-stock" name="stock_count" type="number" min="0" step="1" required />
+                </div>
+                <div class="form-group">
+                  <label for="new-product-barcode">Barcode / QR Code</label>
+                  <div style="display: flex; gap: 10px;">
+                    <input id="new-product-barcode" name="barcode" type="text" required style="flex: 1;" />
+                    <button type="button" id="btn-generate-barcode" class="btn btn-secondary" style="padding: 10px 15px; font-size: 0.9rem; white-space: nowrap;">
+                      <i class="fas fa-barcode"></i> Generate
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="new-product-status">Status</label>
+                  <select id="new-product-status" name="product_status" required>
+                    <option value="available">In Stock</option>
+                    <option value="available">Low Stock</option>
+                    <option value="unavailable">Out of Stock</option>
+                  </select>
+                </div>
               </div>
             </div>
             <div class="form-group">
@@ -809,16 +849,20 @@
             <div id="detail-empty" class="empty-state">
               Select a product from the list to view and update inventory details.
             </div>
+            <!-- Consolidated product details section -->
             <div id="product-details" class="product-details hidden">
-              <div class="product-preview">
-                <img id="detail-image" src="" alt="Product image" />
+              <div class="product-info-header"> <!-- New container for image and text details -->
+                <div id="detail-image-preview" class="image-preview">
+                  <img id="detail-image" src="" alt="Product image" />
+                </div>
                 <div>
                   <h3 id="detail-name"></h3>
-                  <div class="product-meta">
-                    <span id="detail-category"></span>
-                    <span id="detail-stock" class="status-pill status-instock"></span>
-                  </div>
+                  <div class="product-meta"> <span id="detail-category"></span> <span id="detail-stock" class="status-pill status-instock"></span> </div>
                 </div>
+              </div>
+              <div class="form-group">
+                <label for="detail-product-image">Product Image</label>
+                <input id="detail-product-image" name="product_image" type="file" accept="image/*" />
               </div>
               <div class="form-group">
                 <label for="detail-name-input">Product Name</label>
@@ -873,13 +917,12 @@
       </div>
     </section>
   </main>
-  <script src="http://localhost/GCST_Track_System/assets/js/admincashier.js"></script>
-  <script src="http://localhost/GCST_Track_System/assets/js/logout-handler1.js"></script>
+  <script src="../../assets/js/admincashier.js"></script>
   <script>
-    const inventoryApi = 'http://localhost/GCST_Track_System/actions/get_admincashier_products.php';
-    const inventoryUpdateApi = 'http://localhost/GCST_Track_System/actions/admincashier_update_inventory.php';
-    const productCreateApi = 'http://localhost/GCST_Track_System/actions/admincashier_create_product.php';
-    const productDeleteApi = 'http://localhost/GCST_Track_System/actions/admincashier_delete_product.php';
+    const inventoryApi = '../../actions/get_admincashier_products.php';
+    const inventoryUpdateApi = '../../actions/admincashier_update_inventory.php';
+    const productCreateApi = '../../actions/admincashier_create_product.php';
+    const productDeleteApi = '../../actions/admincashier_delete_product.php';
 
     let inventoryProducts = [];
     let filteredProducts = [];
@@ -908,11 +951,13 @@
     }
 
     function resolveImagePath(path) {
-      if (!path) return 'http://localhost/GCST_Track_System/assets/images/icons/granbylogo.png';
-      if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('/')) {
+      const IMAGE_FALLBACK = `${window.location.origin}/GCST_Track_System/assets/images/icons/granbylogo.png`;
+      if (!path) return IMAGE_FALLBACK;
+      if (path.startsWith('http://') || path.startsWith('https://')) {
         return path;
       }
-      return `http://localhost/GCST_Track_System/${path}`;
+      const cleanPath = path.replace(/^\/+/, ''); // Remove leading slash if any
+      return `${window.location.origin}/GCST_Track_System/${cleanPath}`;
     }
 
     function toggleAddProductPanel(show = true) {
@@ -932,8 +977,7 @@
       form.reset();
       const preview = document.getElementById('new-product-image-preview');
       if (preview) {
-        preview.innerHTML = '';
-        preview.classList.add('hidden');
+        preview.innerHTML = '<i class="fas fa-image" style="font-size: 3rem; color: #cbd5e1;"></i>';
       }
     }
 
@@ -941,13 +985,11 @@
       const preview = document.getElementById('new-product-image-preview');
       if (!preview) return;
       if (!file) {
-        preview.innerHTML = '';
-        preview.classList.add('hidden');
+        preview.innerHTML = '<i class="fas fa-image" style="font-size: 3rem; color: #cbd5e1;"></i>';
         return;
       }
       const imageUrl = URL.createObjectURL(file);
       preview.innerHTML = `<img src="${imageUrl}" alt="Product preview" />`;
-      preview.classList.remove('hidden');
     }
 
     function validateNewProductForm() {
@@ -963,8 +1005,12 @@
 
       if (!productName) return 'Product name is required.';
       if (!productCategory) return 'Product category is required.';
-      if (Number.isNaN(buyPrice) || buyPrice < 0) return 'Price must be a valid non-negative number.';
-      if (Number.isNaN(rentPrice) || rentPrice < 0) return 'Rent price must be a valid non-negative number.';
+      if (!isBookCategory(productCategory) && (Number.isNaN(buyPrice) || buyPrice < 0)) {
+        return 'Price must be a valid non-negative number.';
+      }
+      if (isBookCategory(productCategory) && (Number.isNaN(rentPrice) || rentPrice < 0)) {
+        return 'Rent price must be a valid non-negative number for items in the Books category.';
+      }
       if (Number.isNaN(stockCount) || stockCount < 0) return 'Stock quantity must be a valid non-negative number.';
       if (!barcode) return 'Barcode / QR Code is required.';
       if (!description) return 'Product description is required.';
@@ -1024,6 +1070,26 @@
       updateNewProductImagePreview(file);
     }
 
+    function generateNewProductBarcode() {
+      const barcodeInput = document.getElementById('new-product-barcode');
+      if (!barcodeInput) return;
+      const uniqueId = `GCST-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+      barcodeInput.value = uniqueId;
+    }
+
+    function handleDetailImageChange(event) {
+      const file = event.target.files && event.target.files[0];
+      const previewContainer = document.getElementById('detail-image-preview');
+      const previewImage = document.getElementById('detail-image');
+      if (file && previewImage && previewContainer) {
+        previewImage.src = URL.createObjectURL(file);
+        previewContainer.classList.remove('hidden');
+      } else if (previewImage && selectedProduct) {
+        // Revert to original product image if file selection is cancelled
+        previewImage.src = resolveImagePath(selectedProduct.product_image);
+      }
+    }
+
     function normalizeStatusForSelect(value) {
       if (value === 'unavailable') return 'Out of Stock';
       return 'In Stock';
@@ -1035,9 +1101,12 @@
 
     function updateNewProductRentFieldState() {
       const categoryInput = document.getElementById('new-product-category');
+      const buyInput = document.getElementById('new-product-price');
       const rentInput = document.getElementById('new-product-rent');
-      if (!categoryInput || !rentInput) return;
+      if (!categoryInput || !buyInput || !rentInput) return;
       const rentable = isBookCategory(categoryInput.value);
+
+      // Handle Rent Price field
       rentInput.disabled = !rentable;
       if (!rentable) {
         rentInput.value = '0';
@@ -1047,16 +1116,34 @@
         rentInput.removeAttribute('placeholder');
         rentInput.required = true;
       }
+
+      // Handle Buy Price field (Books are for rent only)
+      buyInput.disabled = rentable;
+      if (rentable) {
+        buyInput.value = '0';
+        buyInput.placeholder = 'N/A (Rent Only)';
+        buyInput.removeAttribute('required');
+      } else {
+        buyInput.removeAttribute('placeholder');
+        buyInput.required = true;
+      }
     }
 
     function updateDetailRentFieldState() {
       const categoryInput = document.getElementById('detail-category-input');
+      const buyInput = document.getElementById('detail-buy-input');
       const rentInput = document.getElementById('detail-rent-input');
-      if (!categoryInput || !rentInput) return;
+      if (!categoryInput || !buyInput || !rentInput) return;
       const rentable = isBookCategory(categoryInput.value);
+
       rentInput.disabled = !rentable;
       if (!rentable) {
         rentInput.value = '0.00';
+      }
+
+      buyInput.disabled = rentable;
+      if (rentable) {
+        buyInput.value = '0.00';
       }
     }
 
@@ -1202,25 +1289,33 @@
       if (!selectedProduct) {
         detailSection.classList.add('hidden');
         emptySection.classList.remove('hidden');
+        // Clear image input and preview when no product is selected
+        document.getElementById('detail-product-image').value = '';
+        document.getElementById('detail-image-preview').classList.add('hidden');
         return;
       }
       detailSection.classList.remove('hidden');
       emptySection.classList.add('hidden');
       const stock = Number(selectedProduct.stock_count) || 0;
+
+      // Reset image input and preview
+      document.getElementById('detail-product-image').value = '';
+
       const rentable = isBookCategory(selectedProduct.product_category);
       document.getElementById('detail-image').src = resolveImagePath(selectedProduct.product_image);
       document.getElementById('detail-name').textContent = selectedProduct.product_name || 'Unnamed Product';
       document.getElementById('detail-category').textContent = selectedProduct.product_category || 'Other';
       const stockLabel = document.getElementById('detail-stock');
-      stockLabel.textContent = `${stock} in stock`;
+      stockLabel.textContent = `${stock} item${stock === 1 ? '' : 's'}`;
       stockLabel.className = `status-pill ${getStatusClass(stock)}`;
       document.getElementById('detail-name-input').value = selectedProduct.product_name || '';
-      document.getElementById('detail-category-input').value = selectedProduct.product_category || 'Other';
+      document.getElementById('detail-category-input').value = selectedProduct.product_category || 'Books'; // Default to Books if empty
       document.getElementById('detail-buy-input').value = Number(selectedProduct.buy_price || 0).toFixed(2);
       document.getElementById('detail-rent-input').value = rentable ? Number(selectedProduct.rent_price || 0).toFixed(2) : '0.00';
       document.getElementById('detail-barcode-input').value = selectedProduct.barcode || '';
       document.getElementById('detail-status-input').value = selectedProduct.product_status || 'available';
       document.getElementById('detail-stock-input').value = stock;
+      document.getElementById('detail-image-preview').classList.remove('hidden'); // Show preview for selected product
       updateDetailRentFieldState();
     }
 
@@ -1230,12 +1325,13 @@
       selectedProduct.product_category = document.getElementById('detail-category-input').value;
       selectedProduct.buy_price = parseFloat(document.getElementById('detail-buy-input').value) || 0;
       selectedProduct.rent_price = parseFloat(document.getElementById('detail-rent-input').value) || 0;
+      // Ensure buy_price is 0 for books and rent_price is 0 for non-books
+      if (isBookCategory(selectedProduct.product_category)) selectedProduct.buy_price = 0;
+      else selectedProduct.rent_price = 0;
+
       selectedProduct.barcode = document.getElementById('detail-barcode-input').value.trim();
       selectedProduct.product_status = document.getElementById('detail-status-input').value;
       selectedProduct.stock_count = parseInt(document.getElementById('detail-stock-input').value, 10) || 0;
-      if (!isBookCategory(selectedProduct.product_category)) {
-        selectedProduct.rent_price = 0;
-      }
       updateDetailPanel();
     }
 
@@ -1253,33 +1349,30 @@
         alert('Select a product before saving.');
         return;
       }
-      updateSelectedProductFromForm();
-      const body = {
-        product_id: selectedProduct.product_id,
-        product_name: selectedProduct.product_name,
-        product_category: selectedProduct.product_category,
-        product_status: selectedProduct.product_status,
-        barcode: selectedProduct.barcode,
-        buy_price: Number(selectedProduct.buy_price) || 0,
-        rent_price: isBookCategory(selectedProduct.product_category) ? Number(selectedProduct.rent_price) || 0 : 0,
-        stock_count: Number(selectedProduct.stock_count) || 0
-      };
+
       const btn = document.getElementById('btn-save-product');
       btn.disabled = true;
       btn.textContent = 'Saving...';
-      fetch(inventoryUpdateApi, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      })
+
+      const formData = new FormData();
+      formData.append('product_id', selectedProduct.product_id);
+      formData.append('product_name', document.getElementById('detail-name-input').value.trim());
+      formData.append('product_category', document.getElementById('detail-category-input').value);
+      formData.append('buy_price', document.getElementById('detail-buy-input').value);
+      formData.append('rent_price', document.getElementById('detail-rent-input').value);
+      formData.append('barcode', document.getElementById('detail-barcode-input').value.trim());
+      formData.append('product_status', document.getElementById('detail-status-input').value);
+      formData.append('stock_count', document.getElementById('detail-stock-input').value);
+
+      const imageFile = document.getElementById('detail-product-image').files[0];
+      if (imageFile) formData.append('product_image', imageFile);
+
+      fetch(inventoryUpdateApi, { method: 'POST', body: formData })
         .then(response => response.json())
         .then(data => {
           btn.disabled = false;
           btn.textContent = 'Save Changes';
-          if (!data.success) {
-            alert(data.message || 'Unable to save inventory update.');
-            return;
-          }
+          if (!data.success) throw new Error(data.message || 'Unable to save inventory update.');
           selectedProduct = data.product;
           const index = inventoryProducts.findIndex(p => Number(p.product_id) === Number(selectedProduct.product_id));
           if (index !== -1) {
@@ -1289,10 +1382,10 @@
           updateDetailPanel();
           alert('Product updated successfully.');
         })
-        .catch(() => {
+        .catch((error) => {
           btn.disabled = false;
           btn.textContent = 'Save Changes';
-          alert('Unable to save changes. Please try again.');
+          alert(error.message || 'An error occurred while saving.');
         });
     }
 
@@ -1392,13 +1485,15 @@
       document.getElementById('btn-open-add-product').addEventListener('click', () => {
         toggleAddProductPanel(true);
         updateNewProductRentFieldState();
+        generateNewProductBarcode(); // Generate barcode when opening add product panel
       });
       document.getElementById('btn-close-add-product').addEventListener('click', () => toggleAddProductPanel(false));
       document.getElementById('new-product-image').addEventListener('change', handleNewProductImageChange);
-      document.getElementById('new-product-category').addEventListener('input', updateNewProductRentFieldState);
+      document.getElementById('new-product-category').addEventListener('change', updateNewProductRentFieldState);
       document.getElementById('add-product-form').addEventListener('submit', handleAddProductSubmit);
       document.getElementById('btn-reset-new-product').addEventListener('click', () => {
         resetAddProductForm();
+        generateNewProductBarcode(); // Regenerate barcode on reset
         updateNewProductRentFieldState();
       });
       document.getElementById('view-cards').addEventListener('click', () => setActiveView('cards'));
@@ -1406,6 +1501,7 @@
       document.getElementById('btn-add-stock').addEventListener('click', () => adjustStock(1));
       document.getElementById('btn-reduce-stock').addEventListener('click', () => adjustStock(-1));
       document.getElementById('btn-save-product').addEventListener('click', saveProductUpdates);
+      document.getElementById('detail-product-image').addEventListener('change', handleDetailImageChange);
       document.getElementById('btn-clear-selection').addEventListener('click', clearSelection);
       document.getElementById('detail-category-input').addEventListener('change', () => {
         updateDetailRentFieldState();
@@ -1419,9 +1515,9 @@
         }
       });
       document.getElementById('detail-stock-input').addEventListener('input', updateSelectedProductFromForm);
+      document.getElementById('btn-generate-barcode').addEventListener('click', generateNewProductBarcode);
       createDetailDeleteButton();
     });
   </script>
-    <script src="http://localhost/GCST_Track_System/assets/js/logout-handler1.js"></script>
 </body>
 </html>

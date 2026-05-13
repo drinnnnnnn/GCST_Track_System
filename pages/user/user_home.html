@@ -32,6 +32,14 @@
       border: 1px solid rgba(255, 255, 255, 0.3); 
     }
 
+    .text-gradient { background: linear-gradient(135deg, #0f172a 0%, #2563eb 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    
+    .modal { transition: opacity 0.3s ease, visibility 0.3s; }
+    .modal:not(.active) { opacity: 0; visibility: hidden; pointer-events: none; }
+    
+    .card-hover { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .card-hover:hover { transform: translateY(-10px); box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.2); }
+
     .welcome-banner {
       /* Keep your original background settings */
       background-image: url('http://localhost/GCST_Track_System/assets/images/bg/Granby.jpg');
@@ -594,7 +602,7 @@
         <a href="http://localhost/GCST_Track_System/pages/sign_in.html" class="p-3 text-slate-600 hover:text-blue-600 transition-colors" title="Sign In">
           <i class="fas fa-sign-in-alt text-lg"></i>
         </a>
-        <a href="http://localhost/GCST_Track_System/pages/index.html" class="p-3 bg-slate-900 text-white rounded-xl hover:bg-blue-600 transition-all shadow-md" title="About Us">
+        <a href="#footer" class="p-3 bg-slate-900 text-white rounded-xl hover:bg-blue-600 transition-all shadow-md" title="About Us">
           <i class="fas fa-circle-info"></i>
         </a>
       </nav>
@@ -779,37 +787,82 @@
       </div>
     </div>
 
-    <!-- Getting Started Section -->
-    <section class="bg-white rounded-[2rem] p-10 border border-slate-100 shadow-sm">
-      <h2 class="text-2xl font-black text-slate-900 mb-6">Getting Started</h2>
-      <div class="grid md:grid-cols-2 gap-8">
-        <p class="text-slate-500 leading-loose">
-          Welcome to your personal command center. This portal was designed to eliminate paperwork and long queues, putting the power of management in your hands. Explore our services to see how we can assist your academic journey today.
-        </p>
-        <ul class="space-y-3">
-          <li class="flex items-center text-sm text-slate-600">
-            <i class="fas fa-check-circle text-blue-600 mr-3"></i> Unified library and uniform shop
-          </li>
-          <li class="flex items-center text-sm text-slate-600">
-            <i class="fas fa-check-circle text-blue-600 mr-3"></i> Real-time payment and fee tracking
-          </li>
-          <li class="flex items-center text-sm text-slate-600">
-            <i class="fas fa-check-circle text-blue-600 mr-3"></i> Instant digital queue generation
-          </li>
-        </ul>
+  <!-- Institutional Info Modal -->
+  <div id="info-modal" class="modal-backdrop" aria-hidden="true" onclick="closeInfoModal(event)">
+    <div class="product-modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 id="info-modal-title" class="modal-title">Information</h3>
+          <p id="info-modal-subtitle" class="text-sm text-slate-500">Details about the institution.</p>
+        </div>
+        <button type="button" class="modal-close" onclick="closeInfoModal()" aria-label="Close modal">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="info-modal-text" class="modal-description">
+          Content placeholder.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeInfoModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+    <!-- Institutional Cards Section (from index.html) -->
+    <section id="institution" class="max-w-7xl mx-auto py-20">
+      <div class="text-center mb-16">
+          <h3 class="text-3xl font-bold text-slate-900">Institutional Governance</h3>
+          <p class="text-slate-500 mt-2">Transparency and support at the heart of Granby Colleges.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <!-- About Card -->
+        <button onclick="openModal('about-modal')" class="card-hover text-left p-8 bg-white rounded-[2rem] border border-slate-100 group">
+          <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-7h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+          </div>
+          <h4 class="font-bold text-slate-900 mb-2">About GCST</h4>
+          <p class="text-xs text-slate-500 leading-relaxed">Our history, mission, and vision for science and technology.</p>
+        </button>
+
+        <!-- Privacy Card -->
+        <button onclick="openModal('privacy-modal')" class="card-hover text-left p-8 bg-white rounded-[2rem] border border-slate-100 group">
+          <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04 1 1 0 00-2.25 1.5l1.13 2.257a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+          </div>
+          <h4 class="font-bold text-slate-900 mb-2">Privacy Policy</h4>
+          <p class="text-xs text-slate-500 leading-relaxed">How we protect and manage your institutional data.</p>
+        </button>
+
+        <!-- Terms Card -->
+        <button onclick="openModal('terms-modal')" class="card-hover text-left p-8 bg-white rounded-[2rem] border border-slate-100 group">
+          <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mb-6 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          </div>
+          <h4 class="font-bold text-slate-900 mb-2">Terms of Service</h4>
+          <p class="text-xs text-slate-500 leading-relaxed">The agreement governing your use of this platform.</p>
+        </button>
+
+        <!-- Support Card -->
+        <button onclick="openModal('support-modal')" class="card-hover text-left p-8 bg-white rounded-[2rem] border border-slate-100 group">
+          <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          </div>
+          <h4 class="font-bold text-slate-900 mb-2">Contact Support</h4>
+          <p class="text-xs text-slate-500 leading-relaxed">Need technical help? Our team is a click away.</p>
+        </button>
       </div>
     </section>
-
   </main>
 
   <!-- Footer -->
-  <footer class="py-12 border-t border-slate-200 mt-12 text-center">
+  <footer id="footer" class="py-12 border-t border-slate-200 mt-12 text-center">
     <img src="http://localhost/GCST_Track_System/assets/images/icons/granbylogo.png" class="w-8 h-8 grayscale opacity-50 inline-block mb-4">
     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 Granby Colleges - Track System</p>
   </footer>
 
   <script>
-    const API_PRODUCTS = 'http://localhost/GCST_Track_System/actions/get_admincashier_products.html';
+    const API_PRODUCTS = 'http://localhost/GCST_Track_System/actions/get_admincashier_products.php';
     const productsGrid = document.getElementById('products-grid');
     const productsLoading = document.getElementById('products-loading');
     const productsEmpty = document.getElementById('products-empty');
@@ -978,6 +1031,49 @@
       modal.classList.remove('open');
       modal.setAttribute('aria-hidden', 'true');
       document.removeEventListener('keydown', handleModalEscape);
+    }
+
+    function openModal(modalId) {
+      const contentMap = {
+        'about-modal': {
+          title: 'About GCST',
+          subtitle: 'Our History & Mission',
+          text: 'Granby Colleges of Science and Technology (GCST) is a leading institution in technical education, established to empower students with industry-relevant skills and values since its inception.'
+        },
+        'privacy-modal': {
+          title: 'Privacy Policy',
+          subtitle: 'Data Management',
+          text: 'We are committed to protecting your personal information. All student data collected through this portal is handled strictly according to the Data Privacy Act of 2012 and institutional security protocols.'
+        },
+        'terms-modal': {
+          title: 'Terms of Service',
+          subtitle: 'Usage Agreement',
+          text: 'The Track System portal is for authorized student use only. Users are responsible for maintaining the confidentiality of their login credentials and adhering to the Student Code of Conduct.'
+        },
+        'support-modal': {
+          title: 'Contact Support',
+          subtitle: 'Technical Help Desk',
+          text: 'Having trouble? Contact the MIS support team at the Administration building or email support@granby.edu.ph for assistance with your student account or portal access.'
+        }
+      };
+
+      const data = contentMap[modalId];
+      if (!data) return;
+
+      document.getElementById('info-modal-title').textContent = data.title;
+      document.getElementById('info-modal-subtitle').textContent = data.subtitle;
+      document.getElementById('info-modal-text').textContent = data.text;
+
+      const modal = document.getElementById('info-modal');
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeInfoModal(event) {
+      if (event && event.target !== event.currentTarget) return;
+      const modal = document.getElementById('info-modal');
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
     }
 
     function updateSearch() {

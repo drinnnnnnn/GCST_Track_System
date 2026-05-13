@@ -6,7 +6,9 @@
   
   <title>GCST User - My Rentals</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <link rel="stylesheet" href="http://localhost/GCST_Track_System/assets/css/user.css" />
+  <link rel="stylesheet" href="../../assets/css/user.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     .page-header {
       display: flex;
@@ -412,60 +414,18 @@
   </style>
 </head>
 
-<body>
-  <!-- Header -->
-  <header>
-    <div class="logo">
-      <img src="http://localhost/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Library Logo">
+<body class="antialiased">
+  <!-- Sidebar Component -->
+  <div id="sidebar-container"></div>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-      <div>
-        <strong>GCST Tracking System</strong>
-        <p>View and manage all your borrowed books and rental history in one place.</p>
-      </div>
-    </div>
-    
-    <nav class="nav-links">
-      <a href="#" class="notification-icon" id="notification-bell" title="Notifications">
-        🔔
-        <span id="notif-badge"></span>
-      </a>
-
-      <div class="notification-dropdown" id="notification-dropdown">
-        <div class="dropdown-header">Notifications</div>
-        <div class="notifications-list" id="notifications-list"></div>
-        <div class="dropdown-footer" id="clear-notifications">Clear All</div>
-      </div>
-
-      <a href="#" class="menu-icon" id="menu-icon">☰</a>
-    </nav>
-    <div class="dropdown-menu" id="dropdown-menu">
-      <a class="menu-item" href="InUser_home.html">
-        <i class="fas fa-tachometer-alt"></i> Dashboard
-      </a>
-      <a class="menu-item" href="user_browse_products.html">
-        <i class="fas fa-shopping-bag"></i> Browse Products
-      </a>
-      <a class="menu-item" href="user_rentals.html">
-        <i class="fas fa-book"></i> My Rentals
-      </a>
-      <a class="menu-item" href="user_queue_tickets.html">
-        <i class="fas fa-ticket-alt"></i> Queue Tickets
-      </a>
-      <a class="menu-item" href="user_profile.html">
-        <i class="fas fa-user-circle"></i> Profile
-      </a>
-      <a class="menu-item" href="javascript:void(0)" id="logout-trigger">
-        <i class="fas fa-sign-out-alt"></i> Log Out
-      </a>
-    </div>
-  </header>
-
-  <main>
+  <div class="content-wrapper">
+  <main class="max-w-7xl mx-auto px-6 py-8">
     <!-- Greeting Section -->
-    <section class="page-header">
-      <div class="header-copy">
-        <h1>My Rentals</h1>
-        <p>View and manage your rental books and items</p>
+    <section class="greeting-section">
+      <div class="greeting-content">
+        <h1 id="greeting-message">Welcome back!</h1>
+        <p id="current-date-time">Loading...</p>
       </div>
       <div class="greeting-icon">📚</div>
     </section>
@@ -521,6 +481,7 @@
     </section>
 
   </main>
+  </div>
 
   <div class="details-modal" id="detailsModal" role="dialog" aria-modal="true">
     <div class="details-card">
@@ -560,9 +521,9 @@
   </div>
 
   <!-- Scripts -->
-  <script src="http://localhost/GCST_Track_System/assets/js/user.js"></script>
+  <script src="../../assets/js/user.js"></script>
   <script>
-    const apiBase = 'http://localhost/GCST_Track_System/actions';
+    const apiBase = '/GCST_Track_System/actions';
     let allRentals = [];
     let currentFilter = 'all';
 
@@ -597,18 +558,12 @@
     }
 
     function buildImageUrl(src) {
-      const defaultImage = 'http://localhost/GCST_Track_System/assets/img_bg/product_details.png';
-      if (!src) {
-        return defaultImage;
-      }
-      if (src.startsWith('http://') || src.startsWith('https://')) {
-        return src;
-      }
-      const basePath = window.location.pathname.split('/').slice(0, 2).join('/');
-      if (src.startsWith('/')) {
-        return `${window.location.origin}${basePath}${src}`;
-      }
-      return `${window.location.origin}${basePath}/${src}`;
+      const defaultImage = '/GCST_Track_System/assets/img_bg/product_details.png';
+      if (!src) return defaultImage;
+      if (src.startsWith('http')) return src;
+      // Remove project root from path if it's already there to prevent duplication
+      const cleanPath = src.replace(/^\/?GCST_Track_System\//, '').replace(/^\/+/, '');
+      return `/GCST_Track_System/${cleanPath}`;
     }
 
     function setFilter(filter) {
@@ -636,6 +591,8 @@
         const daysLeft = getDaysRemaining(rental.due_date);
         const isReturned = rental.status === 'returned';
         const isOverdue = rental.status === 'overdue';
+        const rentalImg = rental.product_image || rental.image;
+        const rentalName = rental.product_name || rental.name || 'Untitled Product';
         const remainingLabel = isReturned
           ? `Returned on ${formatDate(rental.due_date)}`
           : (isOverdue ? `Overdue by ${Math.abs(daysLeft)} days` : `${daysLeft} days remaining`);
@@ -644,9 +601,9 @@
           <div class="rental-card">
             <div class="rental-header">
               <div class="product-meta">
-                <img class="rental-image" src="${buildImageUrl(rental.product_image)}" alt="${rental.product_name}">
+                <img class="rental-image" src="${buildImageUrl(rentalImg)}" alt="${rentalName}">
                 <div class="product-info">
-                  <h3 class="product-name">${rental.product_name || 'Untitled Product'}</h3>
+                  <h3 class="product-name">${rentalName}</h3>
                   <p class="product-id">Product ID: ${rental.product_id || 'N/A'}</p>
                 </div>
               </div>
@@ -682,10 +639,10 @@
             </div>
 
             <div class="rental-actions">
-              <button class="btn-action btn-view" type="button" onclick="viewDetails(${rental.rental_id})">
+              <button class="btn-action btn-view" type="button" onclick="viewDetails(${rental.rental_id || rental.id})">
                 <i class="fas fa-info-circle"></i> View Details
               </button>
-              ${!isReturned ? `<button class="btn-action btn-renew" type="button" onclick="renewRental(${rental.rental_id})"><i class="fas fa-redo"></i> Request Renewal</button>` : ''}
+              ${!isReturned ? `<button class="btn-action btn-renew" type="button" onclick="renewRental(${rental.rental_id || rental.id})"><i class="fas fa-redo"></i> Request Renewal</button>` : ''}
             </div>
           </div>
         `;
@@ -787,32 +744,11 @@
     }
 
     function viewDetails(rentalId) {
-      const rental = allRentals.find(item => item.rental_id === rentalId);
+      const rental = allRentals.find(item => (item.rental_id || item.id) == rentalId);
       if (!rental) return;
 
-      detailsImage.src = buildImageUrl(rental.product_image);
-      detailsTitle.textContent = rental.product_name || 'Rental Details';
-      detailsProductId.textContent = `Product ID: ${rental.product_id || 'N/A'}`;
-      detailsStatus.className = `status-badge ${rental.status}`;
-      detailsStatus.textContent = rental.status;
-      detailsRentalDate.textContent = formatDate(rental.rental_date);
-      detailsDueDate.textContent = formatDate(rental.due_date);
-
-      const daysLeft = getDaysRemaining(rental.due_date);
-      detailsDaysRemaining.textContent = rental.status === 'returned'
-        ? `Returned on ${formatDate(rental.due_date)}`
-        : (rental.status === 'overdue' ? `Overdue by ${Math.abs(daysLeft)} day${Math.abs(daysLeft) === 1 ? '' : 's'}` : `${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining`);
-
-      detailsFee.textContent = formatCurrency(rental.rental_fee);
-      detailsModal.classList.add('show');
-    }
-    
-    function viewDetails(rentalId) {
-      const rental = allRentals.find(item => item.rental_id === rentalId);
-      if (!rental) return;
-
-      detailsImage.src = buildImageUrl(rental.image); // Use rental.image
-      detailsTitle.textContent = rental.name || 'Rental Details'; // Use rental.name
+      detailsImage.src = buildImageUrl(rental.product_image || rental.image);
+      detailsTitle.textContent = (rental.product_name || rental.name) || 'Rental Details';
       detailsProductId.textContent = `Product ID: ${rental.product_id || 'N/A'}`;
       detailsStatus.className = `status-badge ${rental.status}`;
       detailsStatus.textContent = rental.status;
@@ -863,6 +799,5 @@
       await loadRentals();
     });
   </script>
-    <script src="http://localhost/GCST_Track_System/assets/js/logout-handler.js"></script>
 </body>
 </html>

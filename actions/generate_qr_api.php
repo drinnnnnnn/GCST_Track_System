@@ -1,14 +1,18 @@
 <?php
-// actions/generate_qr_api.php
-if (!file_exists(__DIR__ . '/../vendor/phpqrcode/qrlib.php')) {
-    header('Content-Type: text/plain');
-    die("Error: QR Library missing in vendor folder.");
-}
+require_once __DIR__ . '/security.php';
+secureSessionStart();
+// Allow students and staff to generate/view QR codes
+requireAuth(['student', 'admincashier', 'superadmin', 'users']);
+
 require_once __DIR__ . '/../vendor/phpqrcode/qrlib.php';
 
-$data = isset($_GET['data']) ? $_GET['data'] : 'No Data';
+$data = $_GET['data'] ?? '';
 
-// Output the QR code directly to the browser
+if (empty($data)) {
+    header("HTTP/1.0 400 Bad Request");
+    exit("Data parameter is required");
+}
+
+// Output the QR code directly to the browser as a PNG
 header('Content-Type: image/png');
-QRcode::png($data, false, 'H', 8, 2);
-exit;
+QRcode::png($data, false, QR_ECLEVEL_L, 10, 2);

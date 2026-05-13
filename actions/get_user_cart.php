@@ -3,7 +3,7 @@ require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/../config/db_connect.php';
 
 secureSessionStart();
-requireAuth(['student']);
+requireAuth(['student', 'users', 'admincashier']);
 header('Content-Type: application/json');
 
 $student_id = $_SESSION['student_id'] ?? null;

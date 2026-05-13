@@ -1,144 +1,143 @@
 ﻿<?php
-session_start();
+// Force JSON output even if errors occur
 header('Content-Type: application/json');
-require_once __DIR__ . '/../config/db_connect.php';
+ini_set('display_errors', '0'); // Prevent HTML error output
+ob_start(); // Buffer any accidental output
 
-if ($conn->connect_error) {
-    echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
-    exit;
-}
+require_once __DIR__ . '/security.php';
+secureSessionStart();
+requireAuth(['admin', 'admincashier', 'superadmin']);
 
-$adminId = $_SESSION['admin_id'] ?? null;
-if (!$adminId) {
-    echo json_encode(['success' => false, 'message' => 'Authentication required.']);
-    exit;
-}
+try {
+    require_once __DIR__ . '/../database/connection.php';
+    $conn = Database::getConnection();
 
-$contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-if (strpos($contentType, 'application/json') !== false) {
-    $payload = json_decode(file_get_contents('php://input'), true);
-} else {
-    $payload = $_POST;
-}
-
-if (!$payload || !isset($payload['product_id'])) {
-    echo json_encode(['success' => false, 'message' => 'Invalid request payload.']);
-    exit;
-}
-
-$productId = intval($payload['product_id']);
-if ($productId <= 0) {
-    echo json_encode(['success' => false, 'message' => 'Invalid product ID.']);
-    exit;
-}
-
-$productName = trim($payload['product_name'] ?? '');
-$category = trim($payload['product_category'] ?? '');
-$productStatus = trim($payload['product_status'] ?? 'available');
-$barcode = trim($payload['barcode'] ?? '');
-$buyPrice = isset($payload['buy_price']) ? floatval($payload['buy_price']) : null;
-$rentPrice = isset($payload['rent_price']) ? floatval($payload['rent_price']) : null;
-$stockCount = isset($payload['stock_count']) ? intval($payload['stock_count']) : null;
-
-if ($productName === '') {
-    echo json_encode(['success' => false, 'message' => 'Product name is required.']);
-    exit;
-}
-
-if ($stockCount === null || $stockCount < 0) {
-    echo json_encode(['success' => false, 'message' => 'Stock count must be a non-negative number.']);
-    exit;
-}
-
-if ($buyPrice === null || $buyPrice < 0) {
-    echo json_encode(['success' => false, 'message' => 'Price must be a valid number.']);
-    exit;
-}
-
-if ($rentPrice === null || $rentPrice < 0) {
-    echo json_encode(['success' => false, 'message' => 'Rent price must be a valid number.']);
-    exit;
-}
-
-$productStatus = in_array($productStatus, ['available', 'unavailable'], true) ? $productStatus : 'available';
-
-$stockColumn = 'stock_count';
-$stockCheck = $conn->query("SHOW COLUMNS FROM `products` LIKE 'stock_count'");
-if (!$stockCheck || $stockCheck->num_rows === 0) {
-    $stockColumn = 'stock';
-}
-
-$priceColumn = 'buy_price';
-$priceCheck = $conn->query("SHOW COLUMNS FROM `products` LIKE 'buy_price'");
-if (!$priceCheck || $priceCheck->num_rows === 0) {
-    $priceColumn = 'price';
-}
-
-$productImagePath = null;
-if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] === UPLOAD_ERR_OK) {
-    $uploadDir = __DIR__ . '/../uploads/';
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
+    if ($conn->connect_error) {
+        throw new Exception('Database connection failed: ' . $conn->connect_error);
     }
-    $fileTmpPath = $_FILES['product_image']['tmp_name'];
-    $fileName = basename($_FILES['product_image']['name']);
-    $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-    if (in_array($fileExt, $allowedExtensions, true)) {
-        $newFileName = uniqid('product_', true) . '.' . $fileExt;
-        $destPath = $uploadDir . $newFileName;
-        if (move_uploaded_file($fileTmpPath, $destPath)) {
-            $productImagePath = 'uploads/' . $newFileName;
+
+    // Check if product_id is provided
+    $productId = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
+    if (!$productId) {
+        throw new Exception('Product ID is required for update.');
+    }
+
+    // Fetch current product data to get existing image path if no new image is uploaded
+    $stmt = $conn->prepare("SELECT product_image FROM products WHERE product_id = ?");
+    $stmt->bind_param('i', $productId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $currentProduct = $result->fetch_assoc();
+    $stmt->close();
+
+    if (!$currentProduct) {
+        throw new Exception('Product not found.');
+    }
+
+    $productImage = $currentProduct['product_image']; // Default to existing image
+
+    // Handle image upload if a new file is provided
+    if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['product_image'];
+        $uploadDir = __DIR__ . '/../assets/images/products/';
+        
+        // Ensure upload directory exists
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        $maxFileSize = 5 * 1024 * 1024; // 5 MB
+
+        if (!in_array($file['type'], $allowedTypes)) {
+            throw new Exception('Invalid file type. Only JPG, PNG, and GIF images are allowed.');
+        }
+        if ($file['size'] > $maxFileSize) {
+            throw new Exception('File size exceeds the maximum limit of 5MB.');
+        }
+
+        $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $newFileName = uniqid('product_') . '.' . $fileExtension;
+        $destination = $uploadDir . $newFileName;
+
+        if (move_uploaded_file($file['tmp_name'], $destination)) {
+            // Delete old image if it's not the default fallback and exists
+            if ($productImage && $productImage !== 'assets/images/icons/granbylogo.png' && file_exists(__DIR__ . '/../' . $productImage)) {
+                unlink(__DIR__ . '/../' . $productImage);
+            }
+            $productImage = 'assets/images/products/' . $newFileName; // Store relative path
+        } else {
+            throw new Exception('Failed to upload image.');
         }
     }
-}
 
-$updateFields = "product_name = ?, product_category = ?, product_status = ?, barcode = ?, $priceColumn = ?, rent_price = ?, `$stockColumn` = ?";
-$params = [$productName, $category, $productStatus, $barcode, $buyPrice, $rentPrice, $stockCount];
-$types = 'ssssddi';
-if ($productImagePath !== null) {
-    $updateFields .= ', product_image = ?';
-    $params[] = $productImagePath;
-    $types .= 's';
-}
-$updateFields .= ' WHERE product_id = ?';
-$params[] = $productId;
-$types .= 'i';
+    // Sanitize and validate other product data
+    $productName = filter_input(INPUT_POST, 'product_name', FILTER_SANITIZE_STRING);
+    $productCategory = filter_input(INPUT_POST, 'product_category', FILTER_SANITIZE_STRING);
+    $buyPrice = filter_input(INPUT_POST, 'buy_price', FILTER_VALIDATE_FLOAT);
+    $rentPrice = filter_input(INPUT_POST, 'rent_price', FILTER_VALIDATE_FLOAT);
+    $barcode = filter_input(INPUT_POST, 'barcode', FILTER_SANITIZE_STRING);
+    $productStatus = filter_input(INPUT_POST, 'product_status', FILTER_SANITIZE_STRING);
+    $stockCount = filter_input(INPUT_POST, 'stock_count', FILTER_VALIDATE_INT);
 
-$sql = "UPDATE products SET $updateFields";
-$stmt = $conn->prepare($sql);
-if (!$stmt) {
-    echo json_encode(['success' => false, 'message' => 'Failed to prepare update statement.']);
-    exit;
-}
+    if (!$productName || !$productCategory || $buyPrice === false || $rentPrice === false || !$barcode || !$productStatus || $stockCount === false) {
+        throw new Exception('Invalid or missing product data.');
+    }
 
-$bindValues = array_merge([$types], $params);
-$tmp = [];
-foreach ($bindValues as $key => $value) {
-    $tmp[$key] = &$bindValues[$key];
-}
-call_user_func_array([$stmt, 'bind_param'], $tmp);
+    // Prepare the update statement
+    $updateQuery = "UPDATE products SET 
+                        product_name = ?, 
+                        product_category = ?, 
+                        buy_price = ?, 
+                        rent_price = ?, 
+                        barcode = ?, 
+                        product_status = ?, 
+                        stock_count = ?, 
+                        product_image = ? 
+                    WHERE product_id = ?";
 
-if (!$stmt->execute()) {
-    echo json_encode(['success' => false, 'message' => 'Unable to update product: ' . $stmt->error]);
+    $stmt = $conn->prepare($updateQuery);
+    if (!$stmt) {
+        throw new Exception('Failed to prepare update statement: ' . $conn->error);
+    }
+
+    $stmt->bind_param(
+        'ssddssisi',
+        $productName,
+        $productCategory,
+        $buyPrice,
+        $rentPrice,
+        $barcode,
+        $productStatus,
+        $stockCount,
+        $productImage,
+        $productId
+    );
+
+    if (!$stmt->execute()) {
+        throw new Exception('Failed to update product: ' . $stmt->error);
+    }
     $stmt->close();
-    exit;
+
+    // Fetch the updated product to return to the frontend
+    $stmt = $conn->prepare("SELECT * FROM products WHERE product_id = ?");
+    $stmt->bind_param('i', $productId);
+    $stmt->execute();
+    $updatedProduct = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Product updated successfully.',
+        'product' => $updatedProduct
+    ]);
+
+} catch (Exception $e) {
+    ob_clean(); // Clear any buffered output before sending JSON error
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+} finally {
+    if (isset($conn)) {
+        $conn->close();
+    }
 }
-$stmt->close();
-
-$selectSql = "SELECT product_id, product_name, COALESCE(stock_count, stock, 0) AS stock_count, COALESCE(buy_price, price, 0.00) AS buy_price, COALESCE(rent_price, 0.00) AS rent_price, product_category, product_image, barcode, COALESCE(product_status, 'available') AS product_status, CASE WHEN COALESCE(stock_count, stock, 0) = 0 THEN 'Out of Stock' WHEN COALESCE(stock_count, stock, 0) < 10 THEN 'Low Stock' ELSE 'In Stock' END AS status FROM products WHERE product_id = ? LIMIT 1";
-$selectStmt = $conn->prepare($selectSql);
-$selectStmt->bind_param('i', $productId);
-$selectStmt->execute();
-$result = $selectStmt->get_result();
-$product = $result->fetch_assoc();
-$selectStmt->close();
-
-if (!$product) {
-    echo json_encode(['success' => false, 'message' => 'Product updated but could not load refreshed data.']);
-    exit;
-}
-
-echo json_encode(['success' => true, 'message' => 'Inventory updated successfully.', 'product' => $product]);
-exit;
 ?>

@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/db_connect.php';
 
 secureSessionStart();
 // Allow admins to fetch student details for verification or profile viewing
-requireAuth(['student', 'admincashier', 'superadmin']);
+requireAuth(['student', 'users','admincashier', 'superadmin']);
 header('Content-Type: application/json');
 
 $student_id = $_GET['student_id'] ?? $_SESSION['student_id'] ?? null;

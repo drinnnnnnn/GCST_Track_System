@@ -55,6 +55,7 @@
       padding: 18px 24px;
       background: var(--surface);
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
     }
 
     .logo {
@@ -920,4 +921,37 @@
       .balance-card p {
         font-size: 1.5rem;
       }
+    }
+
+    /* =====================================================
+      SIDEBAR LAYOUT & TRANSITIONS
+      ===================================================== */
+
+    /* Global transition for content and header shifts */
+    .content-wrapper {
+      transition: margin-left 0.3s ease;
+    }
+
+    /* Mobile Sidebar Overlay */
+    #sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 900;
+      display: none;
+    }
+
+    #sidebar-overlay.active {
+      display: block;
+    }
+
+    /* Layout shifts for screens with the sidebar (Desktop) */
+    @media (min-width: 1025px) {
+      .content-wrapper { margin-left: 280px; }
+      header { left: 280px; width: calc(100% - 280px); }
+
+      /* Minimized state shifts (80px icon-only sidebar) */
+      .content-wrapper.minimized { margin-left: 80px; }
+      header.minimized { left: 80px; width: calc(100% - 80px); }
     }

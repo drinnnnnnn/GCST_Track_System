@@ -54,6 +54,7 @@ header {
   padding: 18px 24px;
   background: var(--surface);
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  transition: all 0.3s ease;
 }
 
 .logo {
@@ -919,4 +920,109 @@ button:disabled, .btn:disabled {
   .balance-card p {
     font-size: 1.5rem;
   }
+}
+
+/* ===== SCANNER MODAL UI/UX IMPROVEMENTS ===== */
+.qr-panel {
+  max-width: 450px !important;
+  overflow: hidden;
+  position: relative;
+}
+
+.scanner-container {
+  position: relative;
+  width: 100%;
+  background: #000;
+  border-radius: 16px;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  margin-bottom: 16px;
+  border: 2px solid var(--border);
+}
+
+.scan-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.scan-region-frame {
+  width: 250px;
+  height: 250px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 24px;
+  position: relative;
+  box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.4);
+}
+
+/* Corner Brackets */
+.scan-region-frame::before, .scan-region-frame::after {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 4px solid var(--primary);
+}
+
+.scan-region-frame::before { top: -2px; left: -2px; border-right: 0; border-bottom: 0; border-top-left-radius: 12px; }
+.scan-region-frame::after { bottom: -2px; right: -2px; border-left: 0; border-top: 0; border-bottom-right-radius: 12px; }
+
+.scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--primary), transparent);
+  box-shadow: 0 0 8px var(--primary);
+  animation: scanMove 2.5s infinite ease-in-out;
+}
+
+@keyframes scanMove {
+  0%, 100% { top: 15%; opacity: 0.2; }
+  50% { top: 85%; opacity: 1; }
+}
+
+.scan-hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+/* =====================================================
+  SIDEBAR LAYOUT & TRANSITIONS
+  ===================================================== */
+
+/* Global transition for content and header shifts */
+.content-wrapper {
+  transition: margin-left 0.3s ease;
+}
+
+/* Mobile Sidebar Overlay */
+#sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 900;
+  display: none;
+}
+
+#sidebar-overlay.active {
+  display: block;
+}
+
+/* Layout shifts for screens with the sidebar (Desktop) */
+@media (min-width: 1025px) {
+  .content-wrapper { margin-left: 280px; }
+  header { left: 280px; width: calc(100% - 280px); }
+
+  /* Minimized state shifts (80px icon-only sidebar) */
+  .content-wrapper.minimized { margin-left: 80px; }
+  header.minimized { left: 80px; width: calc(100% - 80px); }
 }

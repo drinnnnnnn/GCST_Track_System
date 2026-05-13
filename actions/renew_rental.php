@@ -2,9 +2,11 @@
 require_once __DIR__ . '/security.php';
 secureSessionStart();
 // Broaden roles to ensure students (or admins testing the portal) aren't blocked by 403
-requireAuth(['student', 'user', 'admincashier', 'superadmin']);
+requireAuth(['student', 'admin', 'admincashier', 'superadmin']);
 header('Content-Type: application/json');
-require_once __DIR__ . '/../config/db_connect.php';
+
+require_once __DIR__ . '/../database/connection.php';
+$conn = Database::getConnection();
 
 $payload = json_decode(file_get_contents('php://input'), true) ?: [];
 $rental_id = isset($payload['rental_id']) ? intval($payload['rental_id']) : 0;

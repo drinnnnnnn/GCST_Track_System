@@ -1,11 +1,11 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GCST Admin Cashier Sales</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <link rel="stylesheet" href="http://localhost/GCST_Track_System/assets/css/admincashier.css" />
+  <link rel="stylesheet" href="../../assets/css/admincashier.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
@@ -178,78 +178,27 @@
   </style>
     <script>
       window.addEventListener('DOMContentLoaded', function() {
-        fetch('http://localhost/GCST_Track_System/actions/get_user.php')
+        fetch('../../actions/get_user.php')
           .then(res => res.json())
           .then(data => {
             if (!data.admin_id) {
-              window.location.href = "http://localhost/GCST_Track_System/pages/sign_in_admin_cashier.html";
+              window.location.href = "../../pages/sign_in_admin_cashier.html";
             }
           })
           .catch(() => {
-            window.location.href = "http://localhost/GCST_Track_System/pages/sign_in_admin_cashier.html";
+            window.location.href = "../../pages/sign_in_admin_cashier.html";
           });
       });
     </script> 
 </head>
 
 <body>
-  <header>
-    <div class="logo">
-      <img src="http://localhost/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Logo" />
-      <div>
-        <strong>GCST Tracking System</strong>
-        <p style="margin: 4px 0 0; color: var(--muted); font-size: 0.95rem;">Admin Cashier Sales</p>
-      </div>
-    </div>
-
-    <nav class="nav-links">
-      <a href="#" class="notification-icon" id="notification-bell" title="Notifications">
-        🔔
-        <span id="notif-badge"></span>
-      </a>
-
-      <div class="notification-dropdown" id="notification-dropdown">
-        <div class="dropdown-header">Notifications</div>
-        <div class="notifications-list" id="notifications-list"></div>
-        <div class="dropdown-footer" id="clear-notifications">Clear All</div>
-      </div>
-
-      <a href="#" class="menu-icon" id="menu-icon">☰</a>
-    </nav>
-
-    <div class="dropdown-menu" id="dropdown-menu">
-      <a class="menu-item" href="admincashier_dashb.html">
-        <i class="fas fa-tachometer-alt"></i> Dashboard
-      </a>
-      <a class="menu-item" href="admincashier_cashier.html">
-        <i class="fas fa-cash-register"></i> Cashier
-      </a>
-          <a class="menu-item" href="admincashier_sale.html">
-        <i class="fas fa-cash-register"></i> Sales
-      </a>
-      <a class="menu-item" href="admincashier_inventorys.html">
-        <i class="fas fa-boxes"></i> Inventory
-      </a>
-      <a class="menu-item" href="admincashier_queuing_system.html">
-        <i class="fas fa-users"></i> Queue System
-      </a>
-      <a class="menu-item" href="admincashier_gmail_notification.html">
-        <i class="fas fa-boxes"></i> Gmail Notification
-      </a>
-      <a class="menu-item" href="admincashier_profile.html">
-        <i class="fas fa-user-circle"></i> Profile
-      </a>
-      <a class="menu-item" href="../../actions/sign_out.php">
-        <i class="fas fa-sign-out-alt"></i> Log Out
-      </a>
-    </div>
-</header>
 
   <main>
     <!-- Greeting Section -->
     <section class="greeting-section">
       <div class="greeting-content">
-        <h1 id="greeting-message">Welcome, Admin Cashier!</h1>
+        <h1 id="greeting-message">Sales Management</h1>
         <p id="current-date-time"></p>
       </div>
       <div class="greeting-icon">👋</div>
@@ -261,6 +210,7 @@
       <button class="period-button" data-period="week">This Week</button>
       <button class="period-button" data-period="month">This Month</button>
       <button class="period-button" data-period="year">This Year</button>
+      <button class="period-button" id="export-csv-btn" style="margin-left: auto; background: var(--success); color: white;"><i class="fas fa-file-csv"></i> Export CSV</button>
     </div>
 
     <!-- Summary Section -->
@@ -334,6 +284,7 @@
     let salesTrendChart = null;
     let topProductsChart = null;
     let salesInterval = null;
+    let lastFetchedHistory = [];
 
     // Initialize greeting and current date/time
     window.addEventListener('DOMContentLoaded', () => {
@@ -396,7 +347,9 @@
 
     async function loadSalesData(period) {
       try {
-        const response = await fetch(`../../actions/get_admincashier_sales.php?period=${encodeURIComponent(period)}`);
+        // Added a limit parameter to the request. 
+        // Change '100' to a higher number or 'all' depending on your backend implementation.
+        const response = await fetch(`../../actions/get_admincashier_sales.php?period=${encodeURIComponent(period)}&limit=100`);
         const data = await response.json();
 
         // Robust data mapping from helper output
@@ -427,6 +380,7 @@
         const historyBody = document.getElementById('historyBody');
         historyBody.innerHTML = '';
         if (Array.isArray(data.history) && data.history.length) {
+          lastFetchedHistory = data.history;
           data.history.forEach(entry => {
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -439,6 +393,7 @@
             historyBody.appendChild(row);
           });
         } else {
+          lastFetchedHistory = [];
           historyBody.innerHTML = '<tr><td colspan="5" class="empty-state">No sales history available for this period.</td></tr>';
         }
       } catch (error) {
@@ -508,6 +463,28 @@
       salesInterval = null;
     }
 
+    function exportSalesToCSV() {
+      if (!lastFetchedHistory || lastFetchedHistory.length === 0) {
+        alert('No sales data available to export for this period.');
+        return;
+      }
+      const headers = ['Date', 'Transaction ID', 'Product(s)', 'Quantity', 'Amount'];
+      const rows = lastFetchedHistory.map(item => [
+        `"${formatDate(item.date)}"`,
+        `"${item.transaction_id || ''}"`,
+        `"${item.item.replace(/"/g, '""')}"`,
+        item.quantity,
+        item.amount
+      ]);
+      const csvContent = headers.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `sales_report_${currentPeriod}_${new Date().toISOString().split('T')[0]}.csv`);
+      link.click();
+    }
+
     // Menu toggle
     document.getElementById('menu-icon').addEventListener('click', (e) => {
       e.preventDefault();
@@ -531,6 +508,8 @@
         startSalesPolling(); // Reset interval timer on manual change
       });
     });
+
+    document.getElementById('export-csv-btn').addEventListener('click', exportSalesToCSV);
 
     // Notification functions
     const bell = document.getElementById('notification-bell');
@@ -573,7 +552,7 @@
 
     function loadNotifications() {
       if (!currentAdminId) return;
-      fetch('http://localhost/GCST_Track_System/actions/get_notifications.php?admin_id=' + encodeURIComponent(currentAdminId))
+      fetch('../../actions/get_notifications.php?admin_id=' + encodeURIComponent(currentAdminId))
         .then(res => res.json())
         .then(notifs => {
           notificationsList.innerHTML = '';
@@ -613,7 +592,7 @@
         if (typeof callback === 'function') callback();
         return;
       }
-      fetch('http://localhost/GCST_Track_System/actions/mark_notifications_read.php', {
+      fetch('../../actions/mark_notifications_read.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ admin_id: currentAdminId })
@@ -624,7 +603,7 @@
 
     clearBtn.addEventListener('click', () => {
       if (!currentAdminId) return;
-      fetch('http://localhost/GCST_Track_System/actions/clear_notifications.php', {
+      fetch('../../actions/clear_notifications.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ admin_id: currentAdminId })
@@ -638,6 +617,5 @@
       });
     });
   </script>
-    <script src="http://localhost/GCST_Track_System/assets/js/logout-handler1.js"></script>
 </body>
 </html>

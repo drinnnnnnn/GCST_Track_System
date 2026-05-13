@@ -1,14 +1,12 @@
 <?php
 header('Content-Type: application/json');
-require_once __DIR__ . '/../config/db_connect.php';
 require_once __DIR__ . '/security.php';
 
 secureSessionStart();
 requireAuth(['admin','admincashier','superadmin']);
 
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once __DIR__ . '/../database/connection.php';
+$conn = Database::getConnection();
 
 $data = json_decode(file_get_contents('php://input'), true);
 $request_id = intval($data['request_id'] ?? 0);
@@ -80,7 +78,6 @@ if (in_array($status, ['approved','declined','processing','completed'], true)) {
 updatePendingRequestsCount($conn);
 
 echo json_encode(['success' => true]);
-$conn->close();
 
 function updatePendingRequestsCount($conn) {
     $result = $conn->query("SELECT COUNT(*) AS cnt FROM request WHERE status = 'pending'");

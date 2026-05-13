@@ -6,11 +6,12 @@ ob_start(); // Buffer any accidental output
 
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['student', 'admincashier', 'superadmin']);
+requireAuth(['student', 'admin', 'admincashier', 'superadmin']);
 
 try {
-    global $conn;
-    require_once __DIR__ . '/../config/db_connect.php';
+    // Ensure the Database class is available and get the connection
+    require_once __DIR__ . '/../database/connection.php';
+    $conn = Database::getConnection();
     if ($conn->connect_error) {
         throw new Exception('Database connection failed: ' . $conn->connect_error);
     }

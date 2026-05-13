@@ -1,4 +1,4 @@
-﻿<?php
+﻿﻿<?php
 session_start();
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/db_connect.php';
@@ -30,18 +30,24 @@ $buyPrice = isset($payload['buy_price']) ? floatval($payload['buy_price']) : nul
 $rentPrice = isset($payload['rent_price']) ? floatval($payload['rent_price']) : null;
 $stockCount = isset($payload['stock_count']) ? intval($payload['stock_count']) : null;
 
+// If the product is a book, its buy price should be 0.
+if (strtolower($category) === 'books') {
+    $buyPrice = 0.00;
+}
+
 if ($productName === '') {
     echo json_encode(['success' => false, 'message' => 'Product name is required.']);
     exit;
 }
 
 if ($stockCount === null || $stockCount < 0) {
-    echo json_encode(['success' => false, 'message' => 'Stock count must be a non-negative number.']);
+    echo json_encode(['success' => false, 'message' => 'Stock quantity must be a non-negative number.']);
     exit;
 }
 
-if ($buyPrice === null || $buyPrice < 0) {
-    echo json_encode(['success' => false, 'message' => 'Price must be a valid number.']);
+// Validate buyPrice only if it's NOT a book
+if (strtolower($category) !== 'books' && ($buyPrice === null || $buyPrice < 0)) {
+    echo json_encode(['success' => false, 'message' => 'Price must be a valid non-negative number.']);
     exit;
 }
 

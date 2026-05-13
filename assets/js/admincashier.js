@@ -1,9 +1,4 @@
-﻿/* =====================================================
-   GCST ADMIN CASHIER - SHARED JAVASCRIPT
-   Common functions for all admincashier pages
-   ===================================================== */
-
-let currentAdminId = null;
+﻿let currentAdminId = null;
 let notificationPollInterval = null;
 
 /**
@@ -58,20 +53,21 @@ function initializeAdminCashierUI() {
  * Check authentication and redirect if not logged in
  */
 function checkAuthentication() {
-  return fetch('../../actions/get_user.php')
+  return fetch('/GCST_Track_System/actions/get_user.php')
     .then(res => res.json())
     .then(data => {
       // Strictly enforce admin roles for admincashier pages
-      const allowedRoles = ['admincashier', 'superadmin'];
-      if (!data.admin_id || !allowedRoles.includes(data.role)) {
-        window.location.href = "../sign_in_admin_cashier.html";
+      const allowedRoles = ['admin', 'admincashier', 'superadmin'];
+      const currentId = data.admin_id;
+      if (!currentId || !allowedRoles.includes(data.role)) {
+        window.location.href = "/GCST_Track_System/pages/sign_in_admin_cashier.html";
         return null;
       }
-      currentAdminId = data.admin_id;
+      currentAdminId = currentId;
       return data;
     })
     .catch(() => {
-      window.location.href = "../sign_in_admin_cashier.html";
+      window.location.href = "/GCST_Track_System/pages/sign_in_admin_cashier.html";
       return null;
     });
 }
@@ -107,11 +103,12 @@ function updateDateTime() {
  * Load notifications from server
  */
 function loadNotifications() {
-  fetch('../../actions/get_notifications.php')
+  fetch('/GCST_Track_System/actions/get_notifications.php')
     .then(res => res.json())
     .then(data => {
       const notificationsList = document.getElementById('notifications-list');
       const notifBadge = document.getElementById('notif-badge');
+      const sidebarBadge = document.getElementById('sidebar-gmail-badge');
       
       if (!notificationsList) return;
 
@@ -120,6 +117,7 @@ function loadNotifications() {
       if (data.length === 0) {
         notificationsList.innerHTML = '<div class="empty-state"><p>No notifications</p></div>';
         if (notifBadge) notifBadge.style.display = 'none';
+        if (sidebarBadge) sidebarBadge.classList.add('hidden');
         return;
       }
 
@@ -141,6 +139,12 @@ function loadNotifications() {
         notifBadge.textContent = data.length;
         notifBadge.style.display = 'flex';
       }
+
+      // Update Sidebar Badge
+      if (sidebarBadge) {
+        sidebarBadge.textContent = data.length;
+        sidebarBadge.classList.remove('hidden');
+      }
     })
     .catch(err => console.error('Error loading notifications:', err));
 }
@@ -149,7 +153,7 @@ function loadNotifications() {
  * Clear all notifications
  */
 function clearAllNotifications() {
-  fetch('../../actions/mark_notifications_read.php', {
+  fetch('/GCST_Track_System/actions/mark_notifications_read.php', {
     method: 'POST'
   })
     .then(() => {
@@ -238,15 +242,18 @@ function showError(element, message = 'An error occurred') {
  * Initialize page - call this in every page's DOMContentLoaded
  * @param {Function} pageCallback - Callback function to initialize page-specific content
  */
-function initializeAdminCashierPage(pageCallback) {
-  window.addEventListener('DOMContentLoaded', async () => {
+window.initializeAdminCashierPage = function(pageCallback) {
+  const init = async () => {
     try {
-      // Initialize UI elements
-      initializeAdminCashierUI();
-
-      // Check authentication
+      // 1. Load sidebar first so the user sees the UI immediately
+      await autoLoadSidebar();
+      
+      // 2. Start authentication check
       const userData = await checkAuthentication();
-      if (!userData) return;
+      if (!userData) return; // checkAuthentication handles the redirect
+
+      // 3. Initialize UI elements now that sidebar is in the DOM
+      initializeAdminCashierUI();
 
       // Update greeting and time
       updateGreeting(userData.name || 'Admin');
@@ -264,7 +271,13 @@ function initializeAdminCashierPage(pageCallback) {
     } catch (error) {
       console.error('Error initializing page:', error);
     }
-  });
+  };
+
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
   // Clean up on page unload
   window.addEventListener('beforeunload', () => {
@@ -288,3 +301,76 @@ function fetchWithError(url, options = {}) {
       throw err;
     });
 }
+
+/* =====================================================
+  SIDEBAR AUTO-LOADER & LOGIC
+   ===================================================== */
+
+window.toggleSidebar = function() {
+  const sidebar = document.getElementById('main-sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar?.classList.toggle('active');
+  overlay?.classList.toggle('active');
+}
+
+window.toggleMinimizeSidebar = function() {
+  const sidebar = document.getElementById('main-sidebar');
+  const contentWrapper = document.querySelector('.content-wrapper');
+  const header = document.querySelector('header');
+
+  const isMinimized = sidebar?.classList.toggle('minimized');
+  contentWrapper?.classList.toggle('minimized');
+  header?.classList.toggle('minimized');
+
+  // Persist the state in localStorage
+  localStorage.setItem('sidebar-minimized', isMinimized ? 'true' : 'false');
+}
+
+async function autoLoadSidebar() {
+  const container = document.getElementById('sidebar-container');
+  if (!container) return;
+
+  try {
+    // Use dynamic import instead of relying on global window object
+    const { getSidebarHTML } = await import('./admincashier_sidebar_content.js');
+    if (container && typeof getSidebarHTML === 'function') {
+      container.innerHTML = getSidebarHTML();
+
+      // Apply the saved state from localStorage immediately after injection
+      const isMinimized = localStorage.getItem('sidebar-minimized') === 'true';
+      if (isMinimized) {
+        document.getElementById('main-sidebar')?.classList.add('minimized');
+        document.querySelector('.content-wrapper')?.classList.add('minimized');
+        document.querySelector('header')?.classList.add('minimized');
+      }
+      
+      // Automatically highlight the active link based on the current URL
+      const currentPage = window.location.pathname.split('/').pop() || 'admincashier_dashb.html';
+      const sidebarLinks = container.querySelectorAll('.sidebar-link');
+      sidebarLinks.forEach(link => {
+        const linkHref = link.getAttribute('href');
+        // Extract just the filename from the link's href for comparison
+        const linkFilename = linkHref ? linkHref.split('/').pop() : '';
+        if (linkFilename && linkFilename === currentPage) { // Exact match for the filename
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+    }
+  } catch (err) {
+    console.error('Sidebar auto-load failed:', err);
+  }
+}
+
+/**
+ * Initialization helper:
+ * Only auto-loads the sidebar if initializeAdminCashierPage hasn't been called.
+ */
+document.addEventListener('DOMContentLoaded', () => {
+  const container = document.getElementById('sidebar-container');
+  // If the container is empty, it means initializeAdminCashierPage hasn't run yet.
+  if (container && container.innerHTML.trim() === "") {
+    autoLoadSidebar();
+  }
+});
