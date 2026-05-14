@@ -12,12 +12,6 @@ $data = json_decode(file_get_contents('php://input'), true);
 $request_id = intval($data['request_id'] ?? 0);
 $status = strtolower(trim($data['status'] ?? ''));
 
-// Only allow system or admin roles to change statuses
-if (!in_array($_SESSION['role'] ?? '', ['admin','admincashier','superadmin'], true)) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
-
 // Valid workflow statuses
 $validStatuses = ['pending','approved','declined','processing','completed'];
 if (!in_array($status, $validStatuses, true)) {
@@ -47,8 +41,6 @@ switch ($current) {
     case 'processing':
         $allowed = $status === 'completed';
         break;
-    default:
-        $allowed = false;
 }
 
 if (!$allowed) {
@@ -56,35 +48,41 @@ if (!$allowed) {
     exit;
 }
 
-$update = $conn->prepare("UPDATE request SET status=? WHERE request_id=?");
-$update->bind_param('si', $status, $request_id);
-$update->execute();
+$conn->begin_transaction();
+try {
+    $update = $conn->prepare("UPDATE request SET status=? WHERE request_id=?");
+    $update->bind_param('si', $status, $request_id);
+    $update->execute();
 
-// Create notification entries for students on key transitions
-if (in_array($status, ['approved','declined','processing','completed'], true)) {
-    $stmt = $conn->prepare("SELECT student_id, book_id FROM request WHERE request_id = ?");
-    $stmt->bind_param('i', $request_id);
-    $stmt->execute();
-    $r = $stmt->get_result();
-    if ($row = $r->fetch_assoc()) {
-        $student_id = $row['student_id'];
-        $book_id = $row['book_id'] ?? null;
-        $notif = $conn->prepare("INSERT INTO student_notification (student_id, book_id, status) VALUES (?, ?, ?)");
-        $notif->bind_param('sis', $student_id, $book_id, $status);
-        $notif->execute();
+    // Create notification entries for students on key transitions
+    if (in_array($status, ['approved','declined','processing','completed'], true)) {
+        $stmt = $conn->prepare("SELECT student_id, book_id FROM request WHERE request_id = ?");
+        $stmt->bind_param('i', $request_id);
+        $stmt->execute();
+        $r = $stmt->get_result();
+        if ($row = $r->fetch_assoc()) {
+            $student_id = $row['student_id'];
+            $book_id = $row['book_id'] ?? null;
+            $notif = $conn->prepare("INSERT INTO student_notification (student_id, book_id, status) VALUES (?, ?, ?)");
+            $notif->bind_param('sis', $student_id, $book_id, $status);
+            $notif->execute();
+        }
     }
+
+    updatePendingRequestsCount($conn);
+    $conn->commit();
+    echo json_encode(['success' => true]);
+} catch (Exception $e) {
+    $conn->rollback();
+    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
 }
-
-updatePendingRequestsCount($conn);
-
-echo json_encode(['success' => true]);
 
 function updatePendingRequestsCount($conn) {
     $result = $conn->query("SELECT COUNT(*) AS cnt FROM request WHERE status = 'pending'");
     $row = $result->fetch_assoc();
     $total = (int)$row['cnt'];
-    $conn->query("INSERT INTO count_items (pending_requests) SELECT $total WHERE NOT EXISTS (SELECT 1 FROM count_items)");
-    $conn->query("UPDATE count_items SET pending_requests = $total");
+    // Using a single atomic query to update counters
+    $conn->query("INSERT INTO count_items (id, pending_requests) VALUES (1, $total) 
+                  ON DUPLICATE KEY UPDATE pending_requests = $total");
 }
-
 ?>

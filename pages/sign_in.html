@@ -241,6 +241,14 @@
     </div>
 
     <script>
+        // Handle status messages from URL parameters
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('error') === 'invalid') {
+                showToast("Incorrect Student ID or password.", true);
+            }
+        });
+
         // Modal Control
         function toggleModal(modalId, show) {
             const modal = document.getElementById(modalId);
@@ -263,7 +271,7 @@
             const toast = document.getElementById("floating-message");
             toast.textContent = message;
             toast.className = isError ? "floating-message show error" : "floating-message show";
-            setTimeout(() => toast.classList.remove("show"), 4000);
+            setTimeout(() => toast.classList.remove("show"), 8000); // Increased to 8 seconds
         }
 
         // Handle Reset Submission Mockup

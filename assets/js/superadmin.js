@@ -459,13 +459,14 @@ async function autoLoadSidebar() {
       }
       
       // Automatically highlight the active link based on the current URL
-      const currentPage = window.location.pathname.split('/').pop() || 'superadmin_dashb.html';
+      const getFileName = (path) => path.split('/').pop() || 'superadmin_dashb.html';
+      const currentFile = getFileName(window.location.pathname);
+
       const sidebarLinks = container.querySelectorAll('.sidebar-link');
       sidebarLinks.forEach(link => {
-        const linkHref = link.getAttribute('href');
-        // Extract just the filename from the link's href for comparison
-        const linkFilename = linkHref ? linkHref.split('/').pop() : '';
-        if (linkFilename && linkFilename === currentPage) { // Exact match for the filename
+        // Use link.pathname property to get the resolved path without query strings or hashes
+        const linkFile = getFileName(link.pathname);
+        if (linkFile && linkFile === currentFile && !link.href.startsWith('javascript')) {
           link.classList.add('active');
         } else {
           link.classList.remove('active');

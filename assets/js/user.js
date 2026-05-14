@@ -325,11 +325,13 @@ async function autoLoadSidebar() {
       }
       
       // Automatically highlight the active link based on the current URL
-      const currentPage = window.location.pathname.split('/').pop() || 'InUser_home.html';
+      const getFileName = (path) => path.split('/').pop() || 'InUser_home.html';
+      const currentFile = getFileName(window.location.pathname);
+
       const sidebarLinks = container.querySelectorAll('.sidebar-link');
       sidebarLinks.forEach(link => {
-        const linkHref = link.getAttribute('href');
-        if (linkHref && (linkHref === currentPage || currentPage.includes(linkHref))) {
+        const linkFile = getFileName(link.pathname);
+        if (linkFile && linkFile === currentFile && !link.href.startsWith('javascript')) {
           link.classList.add('active');
         } else {
           link.classList.remove('active');

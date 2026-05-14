@@ -3,23 +3,8 @@ require_once __DIR__ . '/security.php';
 secureSessionStart();
 requireAuth(['admincashier', 'superadmin']);
 header('Content-Type: application/json');
-$requiredDb = require_once __DIR__ . '/../config/db_connect.php';
-
-if (!isset($conn) && $requiredDb instanceof mysqli) {
-    $conn = $requiredDb;
-}
-
-if (!isset($conn)) {
-    if (isset($mysqli)) {
-        $conn = $mysqli;
-    } elseif (isset($link)) {
-        $conn = $link;
-    } elseif (isset($db_conn)) {
-        $conn = $db_conn;
-    } else {
-        throw new Exception('Database connection not available');
-    }
-}
+require_once __DIR__ . '/../database/connection.php';
+$conn = Database::getConnection();
 
 $period = $_GET['period'] ?? 'today';
 
@@ -43,27 +28,27 @@ switch ($period) {
 try {
     // 1. Summary Totals (Total Sales, Total Transactions, Avg Transaction Value)
     $summaryQuery = "SELECT 
-        COUNT(t.id) as total_transactions,
-        SUM(t.total_amount) as total_sales,
+        IFNULL(COUNT(t.id), 0) as total_transactions,
+        IFNULL(SUM(t.total_amount), 0) as total_sales,
         IFNULL(AVG(t.total_amount), 0) as average_transaction_value
-        FROM transactions t
+        FROM cashier_transactions t
         WHERE $dateCondition AND t.payment_status = 'paid'";
     
     $summaryResult = $conn->query($summaryQuery);
-    $summary = $summaryResult->fetch_assoc();
+    $summary = $summaryResult ? $summaryResult->fetch_assoc() : null;
 
     // 2. Total Items Sold
-    $itemsQuery = "SELECT SUM(ti.quantity) as total_items_sold 
+    $itemsQuery = "SELECT IFNULL(SUM(ti.quantity), 0) as total_items_sold 
         FROM transaction_items ti
-        JOIN transactions t ON ti.transaction_id = t.id
+        JOIN cashier_transactions t ON ti.cashier_transaction_id = t.id
         WHERE $dateCondition AND t.payment_status = 'paid'";
     
     $itemsResult = $conn->query($itemsQuery);
-    $itemsRow = $itemsResult->fetch_assoc();
+    $itemsRow = $itemsResult ? $itemsResult->fetch_assoc() : null;
 
     // 3. Sales Trend Chart Data
     $chartQuery = "SELECT DATE(t.created_at) as sale_date, SUM(t.total_amount) as daily_total
-        FROM transactions t
+        FROM cashier_transactions t
         WHERE $dateCondition AND t.payment_status = 'paid'
         GROUP BY DATE(t.created_at)
         ORDER BY sale_date ASC";
@@ -80,7 +65,7 @@ try {
     $topQuery = "SELECT p.product_name as name, SUM(ti.quantity) as quantity
         FROM transaction_items ti
         JOIN products p ON ti.product_id = p.product_id
-        JOIN transactions t ON ti.transaction_id = t.id
+        JOIN cashier_transactions t ON ti.cashier_transaction_id = t.id
         WHERE $dateCondition AND t.payment_status = 'paid'
         GROUP BY ti.product_id
         ORDER BY quantity DESC
@@ -96,8 +81,8 @@ try {
     $historyQuery = "SELECT t.created_at as date, t.transaction_number as transaction_id, 
         GROUP_CONCAT(p.product_name SEPARATOR ', ') as item, 
         SUM(ti.quantity) as quantity, t.total_amount as amount
-        FROM transactions t
-        JOIN transaction_items ti ON t.id = ti.transaction_id
+        FROM cashier_transactions t
+        JOIN transaction_items ti ON t.id = ti.cashier_transaction_id
         JOIN products p ON ti.product_id = p.product_id
         WHERE $dateCondition AND t.payment_status = 'paid'
         GROUP BY t.id

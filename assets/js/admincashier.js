@@ -1,4 +1,4 @@
-﻿let currentAdminId = null;
+﻿﻿let currentAdminId = null;
 let notificationPollInterval = null;
 
 /**
@@ -103,7 +103,8 @@ function updateDateTime() {
  * Load notifications from server
  */
 function loadNotifications() {
-  fetch('/GCST_Track_System/actions/get_notifications.php')
+  if (!currentAdminId) return;
+  fetch(`/GCST_Track_System/actions/get_notifications.php?admin_id=${encodeURIComponent(currentAdminId)}`)
     .then(res => res.json())
     .then(data => {
       const notificationsList = document.getElementById('notifications-list');
@@ -135,7 +136,7 @@ function loadNotifications() {
       });
 
       // Show badge with count
-      if (notifBadge) {
+      if (notifBadge && data.length > 0) {
         notifBadge.textContent = data.length;
         notifBadge.style.display = 'flex';
       }
@@ -153,8 +154,11 @@ function loadNotifications() {
  * Clear all notifications
  */
 function clearAllNotifications() {
+  if (!currentAdminId) return;
   fetch('/GCST_Track_System/actions/mark_notifications_read.php', {
-    method: 'POST'
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ admin_id: currentAdminId })
   })
     .then(() => {
       loadNotifications();
@@ -345,13 +349,14 @@ async function autoLoadSidebar() {
       }
       
       // Automatically highlight the active link based on the current URL
-      const currentPage = window.location.pathname.split('/').pop() || 'admincashier_dashb.html';
+      const getFileName = (path) => path.split('/').pop() || 'admincashier_dashb.html';
+      const currentFile = getFileName(window.location.pathname);
+      
       const sidebarLinks = container.querySelectorAll('.sidebar-link');
       sidebarLinks.forEach(link => {
-        const linkHref = link.getAttribute('href');
-        // Extract just the filename from the link's href for comparison
-        const linkFilename = linkHref ? linkHref.split('/').pop() : '';
-        if (linkFilename && linkFilename === currentPage) { // Exact match for the filename
+        // Use link.pathname property to get the resolved path without query strings or hashes
+        const linkFile = getFileName(link.pathname);
+        if (linkFile && linkFile === currentFile && !link.href.startsWith('javascript')) {
           link.classList.add('active');
         } else {
           link.classList.remove('active');
