@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin / Cashier Registration</title>
 
-    <!-- Boxicons & Fonts -->
+    <title>Admin / Cashier Registration</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -194,11 +193,10 @@
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
     </style>
 </head>
-<body>
 
+<body>
     <div class="container">
         <div class="header-anim animate-item">
             <div class="header-icon"><i class='bx bx-user-plus'></i></div>
@@ -206,7 +204,7 @@
             <p class="subtitle">Set up a new administrator or cashier</p>
         </div>
 
-        <form action="http://localhost/GCST_Track_System/actions/process_admin_cashier.php" method="POST" onsubmit="return validateForm(this)">
+        <form action="../../actions/process_admin_cashier.php" method="POST" onsubmit="return validateForm(this)">
             <div class="form-fields form-anim animate-item">
                 <div class="input-group">
                     <input type="text" name="last_name" placeholder="Last Name" required>
@@ -273,8 +271,5 @@
             }
         }
     </script>
-
 </body>
 </html>
-
-

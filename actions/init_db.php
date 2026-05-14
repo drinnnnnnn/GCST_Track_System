@@ -199,6 +199,7 @@ addColumnIfNotExists($mysqli, 'users', 'phone', "VARCHAR(25) DEFAULT NULL");
 addColumnIfNotExists($mysqli, 'users', 'created_at', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
 addColumnIfNotExists($mysqli, 'users', 'updated_at', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'role', "ENUM('admincashier','cashier','superadmin') NOT NULL DEFAULT 'admincashier'");
+addColumnIfNotExists($mysqli, 'admincashier_acc', 'pin', "VARCHAR(10) DEFAULT NULL AFTER `password` ");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'status', "ENUM('active','inactive') NOT NULL DEFAULT 'active'");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'created_at', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'updated_at', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
@@ -222,6 +223,7 @@ addColumnIfNotExists($mysqli, 'cashier_transactions', 'payment_status', "ENUM('p
 // Ensure email log columns match the helper logic
 addColumnIfNotExists($mysqli, 'email_notifications', 'notification_type', "VARCHAR(100) DEFAULT NULL AFTER `subject` ");
 addColumnIfNotExists($mysqli, 'email_notifications', 'error_message', "TEXT DEFAULT NULL AFTER `status` ");
+addColumnIfNotExists($mysqli, 'email_notifications', 'email_body', "LONGTEXT DEFAULT NULL AFTER `error_message` ");
 
 // If the queue_number column exists as INT, ensure it is text-capable.
 $columnInfo = $mysqli->query("SHOW COLUMNS FROM `queue` LIKE 'queue_number'");

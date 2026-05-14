@@ -5,12 +5,12 @@ header('Content-Type: application/json');
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['student_id'])) {
     $student_id = $_POST['student_id'];
 
-    if ($conn->connect_error) {
+    if (!isset($conn) || $conn->connect_error) {
         echo json_encode(['success' => false]);
         exit();
     }
 
-    $stmt = $conn->prepare("UPDATE users SET status = 'active' WHERE student_id = ?");
+    $stmt = $conn->prepare("UPDATE users SET status = 'Active' WHERE student_id = ?");
     $stmt->bind_param("s", $student_id);
     $success = $stmt->execute();
     $stmt->close();

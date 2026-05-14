@@ -506,7 +506,7 @@
 
     async function loadQueueStatus() {
       try {
-        const data = await fetchWithError('http://localhost/GCST_Track_System/actions/get_queue_status.php');
+        const data = await fetchWithError('../../actions/get_queue_status.php');
         document.getElementById('nowServing').textContent = data.now_serving || '-';
         document.getElementById('nextQueue').textContent = data.next_queue || '-';
         document.getElementById('waitingCount').textContent = data.counts?.waiting ?? 0;
@@ -517,7 +517,7 @@
 
     async function loadUserTickets() {
       try {
-        const data = await fetchWithError('http://localhost/GCST_Track_System/actions/get_user_tickets.php');
+        const data = await fetchWithError('../../actions/get_user_tickets.php');
         allTickets = data.tickets || [];
         currentTicketId = allTickets.length ? allTickets[0].id : null;
         updateLatestTicketCard();
@@ -587,7 +587,7 @@
       button.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Generating...';
 
       try {
-        const response = await fetchWithError('http://localhost/GCST_Track_System/actions/generate_queue.php', {
+        const response = await fetchWithError('../../actions/generate_queue.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ queue_number: null, student_name: studentName, purpose: purpose })
@@ -683,6 +683,5 @@
       setInterval(refreshQueueStatus, 30000);
     });
   </script>
-    <script src="http://localhost/GCST_Track_System/assets/js/logout-handler.js"></script>
 </body>
 </html>

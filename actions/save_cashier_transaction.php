@@ -52,6 +52,8 @@ try {
         $lookupStmt = $conn->prepare('SELECT id, first_name, last_name FROM users WHERE student_id = ? OR id = ? LIMIT 1');
         $lookupStmt->bind_param('ss', $studentId, $studentId);
         $lookupStmt->execute();
+        $fName = '';
+        $lName = '';
         $lookupStmt->bind_result($userId, $fName, $lName);
         if ($lookupStmt->fetch() && $userId) {
             $studentFullName = trim($fName . ' ' . $lName);
@@ -415,15 +417,21 @@ try {
                     $tempDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'temp';
                     if (!is_dir($tempDir)) @mkdir($tempDir, 0777, true);
                     $tempQrPath = $tempDir . DIRECTORY_SEPARATOR . uniqid('qr_') . '.png';
+                    $inlineQr = '';
                     try {
-                        $inlineQr = '';
-                        if (function_exists('generateLocalQrCode') && generateLocalQrCode($transactionNumber, $tempQrPath, 'H', 10, 4)) {
+                        // Create a detailed content string for the QR code
+                        $qrContent = "Order ID: $transactionNumber\nItems:\n";
+                        foreach ($cartItems as $item) {
+                            $qrContent .= "- " . $item['product_name'] . " (Qty: " . $item['quantity'] . ")\n";
+                        }
+
+                        if (function_exists('generateLocalQrCode') && generateLocalQrCode($qrContent, $tempQrPath, 'H', 10, 4)) {
                             $attachments[] = ['path' => $tempQrPath, 'name' => 'order_qr_code.png', 'cid' => 'order_qr_code'];
                             $inlineQr = "<div style='text-align:center;margin:30px 0;padding:20px;border:2px dashed #2563eb;border-radius:16px;background:#f8fafc;'><div style='font-size:18px;font-weight:bold;color:#2563eb;margin-bottom:15px;'>PRESENT TO CASHIER</div><img src='cid:order_qr_code' style='max-width:300px;height:auto;' /></div>";
                         }
                     } catch (Throwable $e) { error_log($e->getMessage()); }
 
-                    $emailBody = "<p>Hi " . htmlspecialchars($studentFullName) . ",</p><p>Your order has been placed. Present this QR code to the cashier.</p>$inlineQr<p>Order Total: ₱" . number_format($totalAmount, 2) . "</p>";
+                    $emailBody = "<p>Hi " . htmlspecialchars($studentFullName) . ",</p><p>Your order has been placed. Present this QR code to the cashier.</p>$inlineQr<p>Order Total: ₱" . number_format($totalAmount, 2) . "</p><p>Thank you for your ordering!</p>";
                 }
 
                 $sendResult = sendEmailWithLog($conn, $userEmail, $subject, $emailBody, 'Transaction Details', $attachments);

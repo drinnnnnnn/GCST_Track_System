@@ -133,7 +133,7 @@
     async function fetchTopSellingTable() {
       try {
         // Fetching data for the current month summary
-        const response = await fetch('http://localhost/GCST_Track_System/actions/get_admincashier_sales.php?period=month');
+        const response = await fetch('../../actions/get_admincashier_sales.php?period=month');
         const data = await response.json();
         const tableBody = document.getElementById('topSellingTableBody');
         
@@ -161,7 +161,7 @@
 
     async function fetchSummaryMetrics() {
       try {
-        const dashboardData = await fetchWithError('http://localhost/GCST_Track_System/actions/get_admincashier_dashboard.php');
+        const dashboardData = await fetchWithError('../../actions/get_admincashier_dashboard.php');
         document.getElementById('totalSalesToday').textContent = formatCurrency(dashboardData.total_sales_today ?? 0);
         document.getElementById('totalInventory').textContent = dashboardData.total_inventory ?? 0;
         document.getElementById('pendingQueue').textContent = dashboardData.pending_queue ?? 0;
@@ -174,7 +174,7 @@
 
     async function fetchAnalyticsCharts() {
       try {
-        const chartData = await fetchWithError('http://localhost/GCST_Track_System/actions/get_admincashier_charts.php');
+        const chartData = await fetchWithError('../../actions/get_admincashier_charts.php');
         
         // Sales Chart
         const salesCtx = document.getElementById('salesChart')?.getContext('2d');

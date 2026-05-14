@@ -5,6 +5,23 @@ requireAuth(['student', 'users', 'admincashier', 'superadmin']); // Only student
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/db_connect.php';
 
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    if (isset($mysqli) && $mysqli instanceof mysqli) {
+        $conn = $mysqli;
+    } elseif (isset($db) && $db instanceof mysqli) {
+        $conn = $db;
+    } elseif (isset($link) && $link instanceof mysqli) {
+        $conn = $link;
+    } elseif (defined('DB_SERVER') && defined('DB_USERNAME') && defined('DB_PASSWORD') && defined('DB_NAME')) {
+        $conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
+        if ($conn->connect_error) {
+            throw new Exception('Database connection failed: ' . $conn->connect_error);
+        }
+    } else {
+        throw new Exception('Database connection not initialized.');
+    }
+}
+
 try {
     $session_student_id = $_SESSION['student_id'] ?? null;
 
@@ -15,8 +32,8 @@ try {
     // Fetch all rentals for the logged-in student
     // LEFT JOINs are used to ensure rentals are still shown even if product/user data is missing
     $sql = "SELECT ar.rental_id, ar.student_id, ar.product_id, ar.quantity, ar.rental_date, 
-                   ar.return_date AS due_date, ar.status, ar.overdue_charge,
-                   p.product_name AS name, p.product_image AS image, p.rent_price AS rental_fee
+                ar.return_date AS due_date, ar.status, ar.overdue_charge,
+                p.product_name AS name, p.product_image AS image, p.rent_price AS rental_fee
             FROM active_rentals ar
             LEFT JOIN users u ON ar.student_id = u.student_id
             LEFT JOIN products p ON ar.product_id = p.product_id

@@ -22,15 +22,6 @@
       --danger: #ef4444;
       --border: #dbe3f0;
     }
-
-    .quick-actions {
-      margin-bottom: 24px;
-    }
-    .quick-actions h2 {
-      margin: 0 0 16px;
-      font-size: 1.25rem;
-      color: var(--text);
-    }
     .action-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -174,10 +165,6 @@
         grid-template-columns: 1fr;
       }
     }
-    @media (max-width: 680px) {
-      header { flex-direction: column; align-items: stretch; }
-      .greeting-section { flex-direction: column; }
-    }
   </style>
     <script>
       window.addEventListener('DOMContentLoaded', function() {
@@ -205,8 +192,8 @@
     <!-- Greeting Section -->
     <section class="greeting-section">
       <div class="greeting-content">
-        <h1 id="greeting-message">Sales Management</h1>
-        <p id="current-date-time"></p>
+        <h1>Sales Management</h1>
+        <p>Track and manage your sales performance and analytics.</p>
       </div>
       <div class="greeting-icon">👋</div>
     </section>
@@ -294,49 +281,10 @@
     let salesInterval = null;
     let lastFetchedHistory = [];
 
-    // Initialize greeting and current date/time
-    window.addEventListener('DOMContentLoaded', () => {
-        fetch('../../actions/get_process_admin_cashier.php')
-          .then(res => res.json())
-          .then(data => {
-            if (data.admin_id) {
-              currentAdminId = data.admin_id;
-              updateGreeting(data.name);
-              loadNotifications();
-              startNotifPolling();
-            }
-          });
-
-        updateDateTime();
-        setInterval(updateDateTime, 60000); // Update time every minute
-
-        // Load products
-        loadSalesData(currentPeriod);
-        startSalesPolling();
-      });
-
     window.addEventListener('beforeunload', () => {
       stopNotifPolling();
       stopSalesPolling();
     });
-
-    function updateGreeting(adminName) {
-      const hour = new Date().getHours();
-      let greet = "Hello";
-      if (hour < 12) greet = "Good Morning";
-      else if (hour < 18) greet = "Good Afternoon";
-      else greet = "Good Evening";
-
-      document.getElementById('greeting-message').textContent = `${greet}, ${adminName}!`;
-    }
-
-    function updateDateTime() {
-      const now = new Date();
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      const dateStr = now.toLocaleDateString('en-US', options);
-      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      document.getElementById('current-date-time').textContent = `${dateStr} • ${timeStr}`;
-    }
 
     function formatCurrency(value) {
       return '₱' + Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

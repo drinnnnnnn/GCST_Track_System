@@ -10,13 +10,15 @@ require_once __DIR__ . '/../vendor/autoload.php';
 function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments = []) {
     $mail = new PHPMailer(true);
     $status = 'pending';
+    $logMessage = null;
 
+    $mail->CharSet = 'UTF-8';
     try {
         // Server settings (Update these with your real Gmail/SMTP credentials)
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'aldrinbautista0425@gmail.com'; 
+        $mail->Username   = 'aldrinbautista0425@gmail.com'; // Consider moving to a config file or .env
         $mail->Password   = 'kmml wgyx oaqv glfm'; 
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
@@ -30,11 +32,15 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
             ]
         ];
 
-        $mail->setFrom('no-reply@gcst.edu', 'GCST Tracking System');
+        // Using the Username as the From address ensures better deliverability with Gmail
+        $mail->setFrom($mail->Username, 'GCST Tracking System');
         $mail->addAddress($toEmail);
         $mail->isHTML(true);
         $mail->Subject = $subject;
         $mail->Body    = $body;
+        
+        // Generate a plain-text version for better compatibility and lower spam scores
+        $mail->AltBody = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $body));
 
         // Process attachments (QR codes, etc.)
         foreach ($attachments as $att) {
@@ -47,20 +53,22 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
 
         if ($mail->send()) {
             $status = 'sent';
+            $logMessage = 'Sent successfully';
         } else {
             $status = 'failed';
+            $logMessage = 'Mail accepted but send() returned false';
         }
     } catch (Exception $e) {
         $status = 'failed';
-        error_log("Mailer Error: " . $mail->ErrorInfo);
+        $logMessage = $e->getMessage() ?: $mail->ErrorInfo;
+        error_log("Mailer Error: " . $logMessage);
     }
 
     // Log the notification to the database
     try {
-        $stmt = $conn->prepare("INSERT INTO email_notifications (recipient, subject, notification_type, status, error_message) VALUES (?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO email_notifications (recipient, subject, notification_type, status, error_message, email_body) VALUES (?, ?, ?, ?, ?, ?)");
         if ($stmt) {
-            $cleanBody = strip_tags($body);
-            $stmt->bind_param('sssss', $toEmail, $subject, $type, $status, $cleanBody);
+            $stmt->bind_param('ssssss', $toEmail, $subject, $type, $status, $logMessage, $body);
             $stmt->execute();
             $stmt->close();
         }

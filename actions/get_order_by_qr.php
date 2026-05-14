@@ -1,8 +1,12 @@
 <?php
+// Prevent HTML error output from corrupting the JSON response
+ini_set('display_errors', '0');
+if (ob_get_level() == 0) ob_start();
+
 require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/QRService.php';
 secureSessionStart();
-requireAuth(['admincashier', 'superadmin', 'users']);
+requireAuth(['admincashier', 'superadmin', 'student', 'user']);
 header('Content-Type: application/json');
 
 // 1. Prevent direct external access by checking for AJAX header
@@ -32,20 +36,31 @@ if ($parsed['type'] !== 'order' || !isset($parsed['reference'])) {
 }
 
 $transactionNumber = $parsed['reference'];
+/**
+ * Try to find the order using the provided reference.
+ * We check for the full transaction number and a version without the 'ORDER-' prefix 
+ * to ensure compatibility regardless of how it's stored in the database.
+ */
+$cleanReference = str_replace('ORDER-', '', $transactionNumber);
 
-$stmt = $conn->prepare("SELECT id, transaction_number, user_id, student_name, transaction_type, items, subtotal, discount_percent, discount_amount, total_amount, payment_status FROM cashier_transactions WHERE transaction_number = ? LIMIT 1");
-$stmt->bind_param('s', $transactionNumber);
-$stmt->execute();
-$result = $stmt->get_result();
-$order = $result->fetch_assoc();
-$stmt->close();
+$query = "SELECT id, transaction_number, user_id, student_name, transaction_type, items, subtotal, discount_percent, discount_amount, total_amount, payment_status, created_at 
+          FROM cashier_transactions 
+          WHERE transaction_number = ? OR transaction_number = ? LIMIT 1";
+$stmt = $conn->prepare($query);
+$stmt->bind_param('ss', $transactionNumber, $cleanReference);
 
-if (!$order) {
+if ($stmt->execute()) {
+    $result = $stmt->get_result();
+    $order = $result->fetch_assoc();
+    $stmt->close();
+}
+
+if (!$order || empty($order)) {
     QRService::respond(false, [], 'Order not found.');
 }
 
 // 3. Security: Prevent students from scanning/viewing other users' orders (IDOR protection)
-if ($_SESSION['role'] === 'student' && intval($order['user_id']) !== intval($_SESSION['user_id'])) {
+if (($_SESSION['role'] === 'student' || $_SESSION['role'] === 'user') && intval($order['user_id']) !== intval($_SESSION['user_id'])) {
     QRService::respond(false, [], 'Unauthorized access: This order does not belong to you.');
 }
 
@@ -55,7 +70,7 @@ if ($order['payment_status'] === 'paid') {
 
 // Get user/student details to resolve student_id if possible
 $studentId = null;
-if ($order['user_id']) {
+if (!empty($order['user_id'])) {
     $uStmt = $conn->prepare("SELECT student_id FROM users WHERE id = ? AND student_id IS NOT NULL LIMIT 1");
     $uStmt->bind_param('i', $order['user_id']);
     $uStmt->execute();
@@ -64,10 +79,21 @@ if ($order['user_id']) {
     $uStmt->close();
 }
 
-// 4. Clear rate limit on success (Optional: provides better UX for legitimate users)
+$order['student_id'] = $studentId;
+
+// Ensure items are properly decoded into an array for the frontend
+if (is_string($order['items'])) {
+    $decodedItems = json_decode($order['items'], true);
+    $order['items'] = is_array($decodedItems) ? $decodedItems : [];
+}
+
+// Ensure data is UTF-8 encoded to prevent json_encode failure
+array_walk_recursive($order, function(&$item) {
+    if (is_string($item)) $item = mb_convert_encoding($item, 'UTF-8', 'UTF-8');
+});
+
+// Clear rate limit only after all data processing is safe
 QRService::resetAttempts($conn, 'order_scan');
 
-$order['student_id'] = $studentId;
-$order['items'] = json_decode($order['items'], true);
-
+ob_clean(); // Clear buffer to ensure only JSON is sent
 QRService::respond(true, ['order' => $order]);

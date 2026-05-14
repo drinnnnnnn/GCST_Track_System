@@ -519,8 +519,8 @@
   <main class="max-w-7xl mx-auto px-6 py-8">
     <section class="greeting-section">
       <div class="greeting-content">
-        <h1 id="greeting-message">Cashier</h1>
-        <p id="current-date-time">Loading...</p>
+        <h1>Transaction Management</h1>
+        <p>Manage sales, inventory, and customer transactions efficiently.</p>
       </div>
       <div class="greeting-icon">💳</div>
     </section>
@@ -1002,6 +1002,7 @@
 
   <script src="../../assets/js/admincashier.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="../../assets/js/order-scanner.js"></script>
   <script>
     const API_ROOT = window.location.origin + '/GCST_Track_System/actions';
     const ASSET_ROOT = window.location.origin + '/GCST_Track_System/assets';
@@ -1279,11 +1280,12 @@
       document.getElementById('checkout-student-id').value = '';
       document.getElementById('student-check-msg').textContent = '';
       document.getElementById('transaction-type').value = 'buy'; // Reset transaction type
+      
       const selectAll = document.getElementById('select-all-cart');
       if (selectAll) selectAll.checked = false;
-      const label = document.getElementById('payment-status-label');
-      label.textContent = 'Paid';
-      label.className = 'badge badge-success';
+      
+      // Removed reference to missing element 'payment-status-label'
+      
       document.getElementById('receipt-card').classList.add('hidden');
       updateCartSummary();
     }
@@ -1443,9 +1445,7 @@
           }
           showReceipt(result.receipt);
           alert('Transaction completed successfully. A receipt has been sent to the student\'s email.');
-          // Only remove items that were actually purchased
-          cart = cart.filter(item => !item.selected);
-          clearCart(); // Clear all cart and checkout fields
+          clearCart(); // Resets the cart and UI
           updateCartSummary();
           loadProducts();
           loadRecentTransactions();
@@ -2232,7 +2232,10 @@
       updateTransactionSettings();
     });
     document.getElementById('clear-cart').addEventListener('click', clearCart);
-    document.getElementById('print-receipt').addEventListener('click', printReceipt);
+    
+    // Added safety check for missing print-receipt button
+    const printBtn = document.getElementById('print-receipt');
+    if (printBtn) printBtn.addEventListener('click', printReceipt);
     
 
     function loadRenewalByQR(renewalRef) {
@@ -2461,7 +2464,9 @@
 
     async function loadOrderByQR(qrCodeData) {
       console.log('Attempting to load order for QR data:', qrCodeData);
+
       try {
+        // Send raw data. The backend parser (QRService::parse) handles prefix recognition.
         const response = await fetch(`${API_ROOT}/get_order_by_qr.php?transaction_number=${encodeURIComponent(qrCodeData)}`, {
           method: 'GET',
           headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -2470,14 +2475,21 @@
 
         console.log('Server response for QR scan:', result); // Log the full response for debugging
 
-        if (result.success) {
+        // Robustly extract order data from common API response structures
+        const orderData = result.order || (result.data && result.data.order) || (result.success && !result.message ? result : null);
+
+        if (result.success && orderData && typeof orderData === 'object' && Object.keys(orderData).length > 0) {
           alert('Order loaded successfully!');
-          loadOrderIntoCart(result.order);
+          loadOrderIntoCart(orderData);
           closeQRScanner();
         } else {
           ERROR_SOUND.play();
-          // Display the specific message from the backend for better debugging
-          alert('Order scan failed: ' + (result.message || 'Unknown error from server.'));
+          let errorMsg = result.message || 'Unknown error from server.';
+          if (result.success && (!orderData || Object.keys(orderData).length === 0)) {
+              errorMsg = 'Order details not found or invalid in server response.';
+          }
+          
+          alert('Order scan failed: ' + errorMsg);
         }
       } catch (error) {
         console.error('Error fetching order by QR:', error);
@@ -2487,19 +2499,34 @@
     }
 
     function loadOrderIntoCart(order) {
-      clearCart(); // Clear current cart before loading new order
+      if (!order) return;
+      
+      clearCart();
       state.studentId = order.student_id || '';
       document.getElementById('checkout-student-id').value = order.student_id || '';
       document.getElementById('transaction-type').value = order.transaction_type || 'buy';
       document.getElementById('discount-percent').value = order.discount_percent || 0;
       document.getElementById('payment-status').value = order.payment_status || 'pending';
-      // Verify student ID if available
+
       if (order.student_id) {
         checkStudentId();
       }
 
-      order.items.forEach(orderItem => {
-        const product = products.find(p => p.product_id == orderItem.product_id);
+      // Fix: Verify items exist and handle JSON string format if necessary
+      let items = order.items;
+      if (typeof items === 'string') {
+        try { items = JSON.parse(items); } catch (e) { items = []; }
+      }
+
+      if (!items || !Array.isArray(items)) {
+        console.error('Invalid or missing order items:', order.items);
+        alert('The order contains invalid item details.');
+        return;
+      }
+
+      items.forEach(orderItem => {
+        // Ensure product_id comparison works regardless of string/number type
+        const product = products.find(p => String(p.product_id) === String(orderItem.product_id));
         if (product) {
           const unitPrice = orderItem.type === 'rent' ? getProductRentPrice(product) : getProductPrice(product);
           cart.push({
@@ -2546,6 +2573,5 @@
       }
     });
   </script>
-    <script src="../../assets/js/order-scanner.js"></script>
 </body>
 </html>

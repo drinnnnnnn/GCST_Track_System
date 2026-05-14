@@ -32,7 +32,7 @@ function generateLocalQrCode($data, $filename, $ecc = 'L', $pixelSize = 10, $fra
         return false;
     }
     if (!class_exists('QRcode')) {
-        $mainPath = $libPath; // Use the already defined $libPath
+        $mainPath = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'phpqrcode' . DIRECTORY_SEPARATOR . 'qrlib.php';
         error_log("QRcode class not found after requiring $mainPath. File exists: " . (file_exists($mainPath) ? 'Yes' : 'No') . ". Include path: " . get_include_path());
         // This might indicate an issue within qrlib.php itself or its dependencies.
         return false;

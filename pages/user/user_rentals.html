@@ -248,6 +248,11 @@
       color: #0f6f55;
     }
 
+    .status-badge.pending_renewal {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
     .rental-actions {
       display: flex;
       flex-wrap: wrap;
@@ -466,6 +471,7 @@
         <button class="period-button" data-filter="active">Active</button>
         <button class="period-button" data-filter="returned">Returned</button>
         <button class="period-button" data-filter="overdue">Overdue</button>
+        <button class="period-button" data-filter="pending_renewal">Pending</button>
       </div>
     </section>
 
@@ -487,7 +493,7 @@
     <div class="details-card">
       <button class="modal-close" id="detailsModalClose" aria-label="Close details">&times;</button>
       <div class="details-header">
-        <img id="details-image" src="http://localhost/GCST_Track_System/assets/img_bg/product_details.png" alt="Product image">
+        <img id="details-image" src="../../assets/img_bg/product_details.png" alt="Product image">
         <div class="details-header-content">
           <h3 id="details-title">Rental Details</h3>
           <p id="details-product-id">Product ID: —</p>
@@ -515,6 +521,13 @@
         <div class="details-row" id="details-penalty-row" style="display: none;">
           <span class="details-label">Overdue Penalty</span>
           <span class="details-value" id="details-penalty-value">—</span>
+        </div>
+
+        <!-- Renewal QR Code Section -->
+        <div id="details-qr-section" style="display: none; text-align: center; border-top: 1px solid var(--border-soft); padding-top: 20px; margin-top: 10px;">
+          <p class="details-label" style="margin-bottom: 12px;">Renewal QR Code</p>
+          <img id="details-qr-image" src="" alt="Renewal QR" style="width: 160px; height: 160px; margin: 0 auto; border: 4px solid #fff; box-shadow: var(--shadow);">
+          <p style="font-size: 0.8rem; color: var(--muted); margin-top: 8px;">Present this to the cashier to finalize renewal</p>
         </div>
       </div>
     </div>
@@ -592,6 +605,7 @@
         const isReturned = rental.status === 'returned';
         const isOverdue = rental.status === 'overdue';
         const rentalImg = rental.product_image || rental.image;
+        const displayStatus = rental.status.replace('_', ' ');
         const rentalName = rental.product_name || rental.name || 'Untitled Product';
         const remainingLabel = isReturned
           ? `Returned on ${formatDate(rental.due_date)}`
@@ -607,7 +621,7 @@
                   <p class="product-id">Product ID: ${rental.product_id || 'N/A'}</p>
                 </div>
               </div>
-              <span class="status-badge ${rental.status}">${rental.status}</span>
+              <span class="status-badge ${rental.status}">${displayStatus}</span>
             </div>
 
             <div class="rental-meta-grid">
@@ -642,7 +656,7 @@
               <button class="btn-action btn-view" type="button" onclick="viewDetails(${rental.rental_id || rental.id})">
                 <i class="fas fa-info-circle"></i> View Details
               </button>
-              ${!isReturned ? `<button class="btn-action btn-renew" type="button" onclick="renewRental(${rental.rental_id || rental.id})"><i class="fas fa-redo"></i> Request Renewal</button>` : ''}
+              ${(!isReturned && rental.status !== 'pending_renewal') ? `<button class="btn-action btn-renew" type="button" onclick="renewRental(${rental.rental_id || rental.id})"><i class="fas fa-redo"></i> Request Renewal</button>` : ''}
             </div>
           </div>
         `;
@@ -674,12 +688,16 @@
       if (!rentalsContainer) return;
       showLoading(rentalsContainer);
 
+      const urlParams = new URLSearchParams(window.location.search);
+      const studentId = urlParams.get('student_id');
+      const idQuery = studentId ? `?student_id=${studentId}` : '';
+
       try {
-        const rentalsData = await fetchWithError(`${apiBase}/get_user_rentals.php`);
+        const rentalsData = await fetchWithError(`${apiBase}/get_user_rentals.php${idQuery}`);
         allRentals = rentalsData.rentals || [];
 
         const urlParams = new URLSearchParams(window.location.search);
-        const requestedFilter = urlParams.get('filter');
+        const requestedFilter = urlParams.get('filter') || 'all';
         if (requestedFilter && ['active', 'returned', 'overdue'].includes(requestedFilter)) {
           currentFilter = requestedFilter;
         }
@@ -751,7 +769,7 @@
       detailsTitle.textContent = (rental.product_name || rental.name) || 'Rental Details';
       detailsProductId.textContent = `Product ID: ${rental.product_id || 'N/A'}`;
       detailsStatus.className = `status-badge ${rental.status}`;
-      detailsStatus.textContent = rental.status;
+      detailsStatus.textContent = rental.status.replace('_', ' ');
       detailsRentalDate.textContent = formatDate(rental.rental_date);
       detailsDueDate.textContent = formatDate(rental.due_date);
 
@@ -774,6 +792,17 @@
         }
       } else if (penaltyRow) {
         penaltyRow.style.display = 'none';
+      }
+
+      // Handle Renewal QR Display
+      const qrSection = document.getElementById('details-qr-section');
+      const qrImage = document.getElementById('details-qr-image');
+      if (rental.status === 'pending_renewal') {
+        const ref = 'RENEW-' + (rental.rental_id || rental.id);
+        qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(ref)}`;
+        qrSection.style.display = 'block';
+      } else {
+        qrSection.style.display = 'none';
       }
 
       detailsModal.classList.add('show');

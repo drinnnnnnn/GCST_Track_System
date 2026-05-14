@@ -430,14 +430,18 @@
     }
 
     async function loadQueueData() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const studentId = urlParams.get('student_id');
+      const idQuery = studentId ? `?student_id=${studentId}` : '';
+
       try {
         // Fetch general queue status (Now Serving and Waiting Count)
-        const queueStatus = await fetchWithError('/GCST_Track_System/actions/get_queue_status.php');
+        const queueStatus = await fetchWithError('../../actions/get_queue_status.php');
         document.getElementById('nowServing').textContent = queueStatus.now_serving || '-';
         document.getElementById('waitingCount').textContent = queueStatus.counts?.waiting ?? 0;
 
         // Fetch user's specific tickets to show their latest status
-        const userTickets = await fetchWithError('/GCST_Track_System/actions/get_user_tickets.php');
+        const userTickets = await fetchWithError(`../../actions/get_user_tickets.php${idQuery}`);
         const tickets = userTickets.tickets || [];
         const latestTicketEl = document.getElementById('myLatestTicket');
         const statusEl = document.getElementById('myTicketStatus');
@@ -462,9 +466,12 @@
     async function loadPendingOrders(page = 1) {
       pendingOrdersPage = page;
       const container = document.getElementById('pending-orders-container');
+      const urlParams = new URLSearchParams(window.location.search);
+      const studentId = urlParams.get('student_id');
+      const idParam = studentId ? `&student_id=${studentId}` : '';
+
       try {
-        // Pointing to get_pending_orders.php as it contains the unified pagination logic
-        const response = await fetchWithError(`/GCST_Track_System/actions/get_pending_orders.php?page=${page}&limit=5`);
+        const response = await fetchWithError(`../../actions/get_pending_orders.php?page=${page}&limit=5${idParam}`);
         const orders = response.orders || [];
 
         if (orders.length === 0) {
@@ -527,7 +534,7 @@
       if (!unit) return;
 
       try {
-        const result = await fetchWithError('/GCST_Track_System/actions/renew_rental.php', {
+        const result = await fetchWithError('../../actions/renew_rental.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -552,14 +559,18 @@
     });
 
     initializeAdminCashierPage(async (userData) => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const studentId = urlParams.get('student_id');
+      const idQuery = studentId ? `?student_id=${studentId}` : '';
+
       try {
         await loadQueueData();
         setInterval(loadQueueData, 30000); // Auto-refresh queue data every 30 seconds
         
         await loadPendingOrders();
 
-        // Fetch user rentals
-        const rentalsData = await fetchWithError('/GCST_Track_System/actions/get_user_rentals.php');
+        // Fetch user rentals, passing student_id if admin is viewing
+        const rentalsData = await fetchWithError(`../../actions/get_user_rentals.php${idQuery}`);
         allRentals = rentalsData.rentals || [];
         
         // Update summary stats

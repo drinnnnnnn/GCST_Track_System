@@ -51,6 +51,7 @@ if ($success) {
     try {
         require_once __DIR__ . '/email_helpers.php';
         require_once __DIR__ . '/qr_code_generator.php';
+        require_once __DIR__ . '/../config/env.php';
 
         // Fetch Student Details for the email
         $uStmt = $conn->prepare("SELECT email, first_name, last_name FROM users WHERE student_id = ? LIMIT 1");
@@ -86,6 +87,25 @@ if ($success) {
                 
                 if (file_exists($tempQrPath)) unlink($tempQrPath);
             }
+        }
+
+        // Send Admin Notification
+        $adminEmail = env('SMTP_USERNAME');
+        if ($user && filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+            $studentFullName = trim($user['first_name'] . ' ' . $user['last_name']);
+            
+            $adminSubject = "Renewal Request: {$studentFullName} (#{$rental_id})";
+            $adminBody = "<div style='font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 15px;'>
+                <h2 style='color: #4f46e5;'>New Renewal Request</h2>
+                <p>A student has requested a renewal for their rental.</p>
+                <p><strong>Student:</strong> " . htmlspecialchars($studentFullName) . " ({$target_student_id})</p>
+                <p><strong>Rental ID:</strong> #{$rental_id}</p>
+                <p><strong>Requested New Due Date:</strong> " . date('M d, Y h:i A', strtotime($newDueDate)) . "</p>
+                <hr style='border: 0; border-top: 1px solid #eee; margin: 20px 0;'>
+                <p>Please log in to the admin dashboard to process this pending request.</p>
+            </div>";
+
+            sendEmailWithLog($conn, $adminEmail, $adminSubject, $adminBody, 'Admin Notification - Renewal Request');
         }
     } catch (Throwable $e) {
         error_log("Renewal Email/QR Error: " . $e->getMessage());

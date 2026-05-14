@@ -92,7 +92,8 @@
         .login-card p { animation-delay: 0.3s; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 35px; }
         .input-box:nth-child(1) { animation-delay: 0.4s; }
         .input-box:nth-child(2) { animation-delay: 0.5s; }
-        .submit-btn { animation-delay: 0.6s; }
+        .input-box:nth-child(3) { animation-delay: 0.6s; }
+        .submit-btn { animation-delay: 0.7s; }
 
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(15px); }
@@ -195,7 +196,7 @@
     <form action="http://localhost/GCST_Track_System/actions/process_superadmin.php" method="POST" id="authForm">
         <div class="input-box animate-item">
             <label>Superadmin Email</label>
-            <input type="email" name="email" placeholder="superadmin@gcst.edu" autocomplete="email" required>
+            <input type="email" name="email" placeholder="superadmin@gmail.com" autocomplete="email" required>
             <i class='bx bxs-envelope'></i>
         </div>
 
@@ -203,6 +204,12 @@
             <label>Password</label>
             <input type="password" name="password" id="password" placeholder="••••••••" autocomplete="current-password" required>
             <i class='bx bx-show' id="toggleBtn"></i>
+        </div>
+
+        <div class="input-box animate-item">
+            <label>Security PIN</label>
+            <input type="password" name="pin" placeholder="••••" maxlength="6" pattern="\d*" inputmode="numeric" required>
+            <i class='bx bx-dialpad'></i>
         </div>
 
         <button type="submit" class="submit-btn animate-item" id="loginBtn">
@@ -232,6 +239,9 @@
         if (urlParams.get('error') === 'invalid') {
             statusArea.className = "animate-item msg-error";
             statusArea.innerText = "Invalid email or password.";
+        } else if (urlParams.get('error') === 'invalid_pin') {
+            statusArea.className = "animate-item msg-error";
+            statusArea.innerText = "Incorrect Security PIN.";
         } else if (urlParams.get('error') === 'unauthorized') {
             statusArea.className = "animate-item msg-error";
             statusArea.innerText = "Only active superadmin accounts may sign in.";

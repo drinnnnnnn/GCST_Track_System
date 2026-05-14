@@ -6,7 +6,10 @@
   
   <title>GCST Super Admin - Account Management</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <link rel="stylesheet" href="http://localhost/GCST_Track_System/assets/css/admincashier.css" />
+  <link rel="stylesheet" href="../../assets/css/superadmin.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
   .charts-grid {
     display: grid;
@@ -122,67 +125,34 @@
     background: #dc2626;
   }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
 <!--
 <script>
   window.addEventListener('DOMContentLoaded', function() {
-    fetch('http://localhost/GCST_Track_System/actions/get_user.php')
+    fetch('../../actions/get_user.php')
       .then(res => res.json())
       .then(data => {
         const currentId = data.admin_id;
         if (!currentId) {
-          window.location.href = "http://localhost/GCST_Track_System/pages/sign_in_admin_cashier.html";
+          window.location.href = "../../pages/sign_in_admin_cashier.html";
           return;
         }
         currentSuperAdminId = currentId;
       })
       .catch(() => {
-        window.location.href = "http://localhost/GCST_Track_System/pages/sign_in_admin_cashier.html";
+        window.location.href = "../../pages/sign_in_admin_cashier.html";
       });
   });
 </script> -->
-</head>
 
-<body>
-  <!-- Header -->
-  <header>
-    <div class="logo">
-      <img src="http://localhost/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Library Logo">
-      <strong>GCST Tracking System</strong>
-    </div>
-    
-    <nav class="nav-links">
-      <a href="superadmin_dashb.html" class="notification-icon" title="Dashboard">
-        📊
-      </a>
-      <a href="#" class="menu-icon" id="menu-icon">☰</a>
-    </nav>
-    <div class="dropdown-menu" id="dropdown-menu">
-      <a class="menu-item" href="superadmin_dashb.html">
-        <i class="fas fa-users"></i>Dashboard
-      </a>
-      <a class="menu-item" href="superadmin_manage_acc.html">
-        <i class="fas fa-users"></i> Manage Admins Acc
-      </a>
-      <a class="menu-item" href="superadmin_system_maintenance.html">
-        <i class="fas fa-tools"></i> System Maintenance
-      </a>
-      <a class="menu-item" href="sign_up.html">
-        <i class="fas fa-chart-line"></i> Sign up student account
-      </a>
-      <a class="menu-item" href="register_admin_cashier.html">
-        <i class="fas fa-user-circle"></i> Register Admin/Cashier Acc
-      </a>
-      <a class="menu-item" href="http://localhost/GCST_Track_System/actions/log_out.php">
-        <i class="fas fa-sign-out-alt"></i> Log Out
-      </a>
-    </div>
-  </header>
+<body class="antialiased">
+  <!-- Sidebar Component -->
+  <div id="sidebar-container"></div>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-  <!-- Main Content -->
-  <main style="max-width: 1400px; margin: 0 auto;">
-
-    <!-- Greeting Section -->
+  <div class="content-wrapper">
+  <main class="max-w-7xl mx-auto px-6 py-8">
+  <!-- Greeting Section -->
     <section class="greeting-section">
       <div class="greeting-content">
         <h1>Account Management</h1>
@@ -218,13 +188,14 @@
   </main>
 
   <!-- Scripts -->
+  <script src="../../assets/js/superadmin.js"></script>
   <script>
     let currentSuperAdminId = null;
     let allAdmins = [];
 
     // Load admins
     function loadAdmins() {
-      fetch('http://localhost/GCST_Track_System/actions/get_admin_accounts.php')
+      fetch('../../actions/get_admin_accounts.php')
         .then(res => res.json())
         .then(data => {
           allAdmins = data;
@@ -264,7 +235,7 @@
 
     // Update status
     function updateStatus(adminId, status) {
-      fetch('http://localhost/GCST_Track_System/actions/update_admin_status.php', {
+      fetch('../../actions/update_admin_status.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ admin_id: adminId, status: status })
@@ -287,7 +258,7 @@
     // Delete admin
     function deleteAdmin(adminId) {
       if (confirm('Are you sure you want to delete this admin?')) {
-        fetch('http://localhost/GCST_Track_System/actions/delete_admin.php', {
+        fetch('../../actions/delete_admin.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ admin_id: adminId })

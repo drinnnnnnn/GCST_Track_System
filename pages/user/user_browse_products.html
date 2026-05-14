@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="../../assets/css/user.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
   <style>
     .product-card {
       background: var(--surface);
@@ -914,7 +915,7 @@
       if (currentSearch.trim()) query.set('search', currentSearch.trim());
       if (document.getElementById('stock-toggle').checked) query.set('available_only', '1');
 
-      const url = 'http://localhost/GCST_Track_System/actions/get_products.php' + (query.toString() ? `?${query.toString()}` : '');
+      const url = '../../actions/get_products.php' + (query.toString() ? `?${query.toString()}` : '');
       const productsData = await fetchWithError(url);
       allProducts = Array.isArray(productsData) ? productsData : productsData.products || [];
       renderProducts();
@@ -922,7 +923,7 @@
 
     async function loadCart() {
       try {
-        const response = await fetchWithError('http://localhost/GCST_Track_System/actions/get_user_cart.php');
+        const response = await fetchWithError('../../actions/get_user_cart.php');
         const serverCart = Array.isArray(response.cart) ? response.cart : [];
 
         cart = serverCart.map(item => {
@@ -951,7 +952,7 @@
 
     async function saveCartToServer() {
       try {
-        await fetchWithError('http://localhost/GCST_Track_System/actions/save_user_cart.php', {
+        await fetchWithError('../../actions/save_user_cart.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ items: cart })
@@ -982,8 +983,12 @@
         return;
       }
 
+      // Determine primary transaction type for the session
+      const hasRental = selectedItems.some(item => item.type === 'rent');
+
       const payload = {
         student_id: currentStudentId, // Explicitly include student_id in the payload
+        transaction_type: hasRental ? 'rent' : 'buy',
         items: selectedItems.map(item => ({
           product_id: item.product_id,
           quantity: item.quantity,
@@ -1004,7 +1009,7 @@
       checkoutButton.disabled = true;
 
       try {
-        const result = await fetchWithError('http://localhost/GCST_Track_System/actions/save_cashier_transaction.php', {
+        const result = await fetchWithError('../../actions/save_cashier_transaction.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -1018,10 +1023,14 @@
         cart = cart.filter(item => !item.selected);
         updateCartDisplay();
         await saveCartToServer();
+        
+        // Ensure the reference is available for display
+        const reference = result.transaction_number || `TXN-${Date.now()}`;
+        // Always prepend 'ORDER-' if missing to satisfy the backend QRService::parse requirement
+        const qrData = String(reference).trim().startsWith('ORDER-') ? reference.trim() : `ORDER-${reference.trim()}`;
 
-        const reference = result.transaction_number || `ORDER-${Date.now()}`;
-        // Use local QR API instead of Google Charts
-        document.getElementById('checkout-qr').src = `http://localhost/GCST_Track_System/actions/generate_qr_api.php?data=${encodeURIComponent(reference)}`;
+        // Use local QR API
+        document.getElementById('checkout-qr').src = `../../actions/generate_qr_api.php?data=${encodeURIComponent(qrData.trim())}`;
         document.getElementById('order-reference').textContent = reference;
         document.getElementById('checkout-result').classList.remove('hidden');
         

@@ -3,7 +3,23 @@ require_once __DIR__ . '/security.php';
 secureSessionStart();
 requireAuth(['admincashier', 'superadmin']);
 header('Content-Type: application/json');
-require_once __DIR__ . '/../config/db_connect.php';
+$requiredDb = require_once __DIR__ . '/../config/db_connect.php';
+
+if (!isset($conn) && $requiredDb instanceof mysqli) {
+    $conn = $requiredDb;
+}
+
+if (!isset($conn)) {
+    if (isset($mysqli)) {
+        $conn = $mysqli;
+    } elseif (isset($link)) {
+        $conn = $link;
+    } elseif (isset($db_conn)) {
+        $conn = $db_conn;
+    } else {
+        throw new Exception('Database connection not available');
+    }
+}
 
 $period = $_GET['period'] ?? 'today';
 

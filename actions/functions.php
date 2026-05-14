@@ -1,6 +1,25 @@
 ﻿<?php
 require_once __DIR__ . '/../config/db_connect.php';
 
+/**
+ * Universal helper to retrieve the active student ID.
+ * Allows admins/cashiers to override via GET parameter when viewing student portals.
+ * @return string|null
+ */
+function get_student_id() {
+    $role = $_SESSION['role'] ?? '';
+    
+    // If staff is logged in, allow them to view a specific student via GET
+    if (in_array($role, ['admin', 'admincashier', 'superadmin'])) {
+        if (!empty($_GET['student_id'])) {
+            return $_GET['student_id'];
+        }
+    }
+    
+    // Default to the logged-in student's ID from session
+    return $_SESSION['student_id'] ?? null;
+}
+
 // Function to get all admin accounts
 function getAdminAccounts() {
     global $conn;

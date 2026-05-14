@@ -42,7 +42,7 @@
 
     .welcome-banner {
       /* Keep your original background settings */
-      background-image: url('http://localhost/GCST_Track_System/assets/images/bg/Granby.jpg');
+      background-image: url('../../assets/images/bg/Granby.jpg');
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -289,10 +289,6 @@
       font-size: 0.85rem;
       font-weight: 700;
     }
-
-    .stock-available { background: #d1fae5; color: #065f46; }
-    .stock-low { background: #fef3c7; color: #92400e; }
-    .stock-unavailable { background: #fee2e2; color: #991b1b; }
 
     .product-actions {
       display: inline-flex;
@@ -591,7 +587,7 @@
   <header>
     <div class="nav-container glass rounded-2xl px-6 py-3 shadow-lg">
       <div class="flex items-center space-x-4">
-        <img src="http://localhost/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Logo" class="w-10 h-10 drop-shadow-sm">
+        <img src="../../assets/images/icons/granbylogo.png" alt="Logo" class="w-10 h-10 drop-shadow-sm">
         <div class="hidden sm:block">
           <h1 class="text-sm font-extrabold tracking-tight text-slate-800 leading-none">GCST TRACK</h1>
           <span class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Student Portal</span>
@@ -599,7 +595,7 @@
       </div>
       
       <nav class="flex items-center space-x-2">
-        <a href="http://localhost/GCST_Track_System/pages/sign_in.html" class="p-3 text-slate-600 hover:text-blue-600 transition-colors" title="Sign In">
+        <a href="../../pages/sign_in.html" class="p-3 text-slate-600 hover:text-blue-600 transition-colors" title="Sign In">
           <i class="fas fa-sign-in-alt text-lg"></i>
         </a>
         <a href="#footer" class="p-3 bg-slate-900 text-white rounded-xl hover:bg-blue-600 transition-all shadow-md" title="About Us">
@@ -727,66 +723,6 @@
       </div>
     </section>
 
-    <!-- Available Products Section -->
-    <section id="products-section" class="products-panel fade-in-section fade-in-delay mb-12">
-      <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-8">
-        <div>
-          <span class="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-[0.24em]">Live inventory</span>
-          <h2 class="mt-4 font-black text-slate-900">Available Products</h2>
-          <p class="products-meta mt-3">Browse the latest items in stock with real-time availability, rental options, and price details.</p>
-        </div>
-        <button onclick="toggleProductsPopup()" class="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-5 py-3 text-sm font-semibold transition hover:bg-blue-600 shadow-lg">View all products <i class="fas fa-arrow-right"></i></button>
-      </div>
-
-      <div class="products-controls mb-6">
-        <div class="search-input-wrapper">
-          <input id="product-search" type="search" placeholder="Search products, categories, or names" autocomplete="off">
-          <button id="product-search-btn" type="button"><i class="fas fa-search"></i></button>
-        </div>
-        <div id="category-filters" class="category-filters" aria-label="Product categories"></div>
-      </div>
-
-      <div id="products-grid" class="products-grid"></div>
-      <div id="products-loading" class="products-loading">Loading available products...</div>
-      <div id="products-empty" class="products-empty hidden">No available products found right now. Check back soon.</div>
-    </section>
-
-    <div id="product-details-modal" class="modal-backdrop" aria-hidden="true" onclick="closeProductDetails(event)">
-      <div class="product-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onclick="event.stopPropagation()">
-        <div class="modal-header">
-          <div>
-            <h3 id="modal-title" class="modal-title">Product details</h3>
-            <p id="modal-subtitle" class="text-sm text-slate-500">View information about the selected book.</p>
-          </div>
-          <button type="button" class="modal-close" onclick="closeProductDetails()" aria-label="Close product details">×</button>
-        </div>
-        <div class="modal-body">
-          <img id="modal-image" src="http://localhost/GCST_Track_System/assets/img_bg/product_details.png" alt="Product image">
-          <div class="modal-meta">
-            <div class="modal-meta-item">
-              <span>Category</span>
-              <strong id="modal-category">—</strong>
-            </div>
-            <div class="modal-meta-item">
-              <span>Available stock</span>
-              <strong id="modal-stock">—</strong>
-            </div>
-            <div class="modal-meta-item">
-              <span>Price</span>
-              <strong id="modal-price">—</strong>
-            </div>
-          </div>
-          <div>
-            <h4 class="font-semibold text-slate-900">Description</h4>
-            <p id="modal-description" class="modal-description">No description available.</p>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-secondary" onclick="closeProductDetails()">Close</button>
-        </div>
-      </div>
-    </div>
-
   <!-- Institutional Info Modal -->
   <div id="info-modal" class="modal-backdrop" aria-hidden="true" onclick="closeInfoModal(event)">
     <div class="product-modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
@@ -857,12 +793,12 @@
 
   <!-- Footer -->
   <footer id="footer" class="py-12 border-t border-slate-200 mt-12 text-center">
-    <img src="http://localhost/GCST_Track_System/assets/images/icons/granbylogo.png" class="w-8 h-8 grayscale opacity-50 inline-block mb-4">
+    <img src="../../assets/images/icons/granbylogo.png" class="w-8 h-8 grayscale opacity-50 inline-block mb-4">
     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 Granby Colleges - Track System</p>
   </footer>
 
   <script>
-    const API_PRODUCTS = 'http://localhost/GCST_Track_System/actions/get_admincashier_products.php';
+    const API_PRODUCTS = '../../actions/get_admincashier_products.php';
     const productsGrid = document.getElementById('products-grid');
     const productsLoading = document.getElementById('products-loading');
     const productsEmpty = document.getElementById('products-empty');
@@ -877,13 +813,13 @@
 
     function normalizeImagePath(value) {
       if (!value) {
-        return 'http://localhost/GCST_Track_System/assets/img_bg/product_details.png';
+        return '../../assets/img_bg/product_details.png';
       }
       if (value.startsWith('http://') || value.startsWith('https://')) {
         return value;
       }
       if (value.startsWith('/')) {
-        return `http://localhost/GCST_Track_System${value}`;
+        return `../../${value}`;
       }
       return value;
     }
@@ -1104,6 +1040,5 @@
       }
     });
   </script>
-
 </body>
 </html>

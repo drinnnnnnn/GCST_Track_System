@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Student Sign Up</title>
-    
-    <!-- Boxicons & Fonts -->
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -142,6 +141,32 @@
             transform: translateY(-2px);
         }
 
+        /* Custom File Input Styling */
+        .input-box input[type="file"] {
+            padding: 9px 45px 9px 12px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-box input[type="file"]::file-selector-button {
+            background: var(--text-dark);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 12px;
+        }
+
+        .input-box input[type="file"]::file-selector-button:hover {
+            background: var(--primary);
+            box-shadow: 0 4px 10px var(--primary-glow);
+        }
+
         .input-box i {
             position: absolute;
             right: 18px;
@@ -227,7 +252,9 @@
     <div id="floating-message" class="floating-message"></div>
 
     <div class="container">
-        <form action="http://localhost/GCST_Track_System/actions/sign_up.php" method="POST" onsubmit="return validateForm(this)">
+        <form action="../../actions/sign_up.php" method="POST" enctype="multipart/form-data" onsubmit="return validateForm(this)">
+            <!-- Hint for PHP maximum file size (5MB) -->
+            <input type="hidden" name="MAX_FILE_SIZE" value="5242880">
             
             <div class="form-header header-anim animate-item">
                 <div class="header-icon"><i class='bx bxs-user-circle'></i></div>
@@ -267,6 +294,11 @@
                 </div>
 
                 <div class="input-box">
+                    <input type="text" name="department" placeholder="Department" required>
+                    <i class='bx bxs-buildings'></i>
+                </div>
+
+                <div class="input-box">
                     <input type="text" name="year_section" placeholder="Year Level (e.g., 1-A)" required pattern="[1-5]-[A-Z]">
                     <i class='bx bxs-layer'></i>
                 </div>
@@ -279,6 +311,24 @@
                 <div class="input-box">
                     <input type="text" name="address" placeholder="Address" required>
                     <i class='bx bxs-map'></i>
+                </div>
+
+                <div class="input-box">
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px; margin-left: 5px;">Proof: School ID (Picture)</p>
+                    <input type="file" name="school_id_pic" accept=".jpg,.jpeg,.png,.pdf" required>
+                    <i class='bx bxs-image'></i>
+                </div>
+
+                <div class="input-box">
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px; margin-left: 5px;">Proof: Registration Form</p>
+                    <input type="file" name="reg_form" accept=".pdf,.jpg,.jpeg,.png" required>
+                    <i class='bx bxs-file-pdf'></i>
+                </div>
+
+                <div class="input-box">
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px; margin-left: 5px;">Proof: Payment Scheme</p>
+                    <input type="file" name="payment_scheme" accept=".pdf,.jpg,.jpeg,.png" required>
+                    <i class='bx bxs-credit-card'></i>
                 </div>
 
                 <div class="input-box">
@@ -300,7 +350,7 @@
             <button type="submit" class="btn btn-anim animate-item">Register Account</button>
 
             <div class="signin-link footer-anim animate-item">
-                Already have an account? <a href="superadmin_dashb.html">Go to Dashboard</a>
+                Already have an account? <a href="../../pages/sign_in.html">Go to Sign In</a>
             </div>
         </form>
     </div>
@@ -323,6 +373,10 @@
             if (status === "success") showToast("Successfully Registered!");
             else if (status === "exists") showToast("Account already exists.", true);
             else if (status === "nomatch") showToast("Passwords do not match.", true);
+            else if (status === "too_large") showToast("One or more files exceed the 5MB limit.", true);
+            else if (status === "invalid_file_type") showToast("Invalid file type. Only PDF, JPG, and PNG are allowed.", true);
+            else if (status === "upload_failed") showToast("Document upload failed. Please try again.", true);
+            else if (status === "invalid") showToast("Please check your form inputs.", true);
         });
 
         // Form Validation
@@ -332,6 +386,27 @@
             if (password !== confirm) {
                 showToast("Passwords do not match!", true);
                 return false;
+            }
+
+            // Client-side file validation (Size & Type)
+            const maxSizeBytes = 5 * 1024 * 1024;
+            const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+            const fileInputs = form.querySelectorAll('input[type="file"]');
+
+            for (let input of fileInputs) {
+                if (input.files && input.files[0]) {
+                    const file = input.files[0];
+                    const fileExt = file.name.split('.').pop().toLowerCase();
+
+                    if (file.size > maxSizeBytes) {
+                        showToast(`"${file.name}" exceeds the 5MB limit.`, true);
+                        return false;
+                    }
+                    if (!allowedExtensions.includes(fileExt)) {
+                        showToast(`"${file.name}" is not a valid format (JPG, PNG, PDF only).`, true);
+                        return false;
+                    }
+                }
             }
             return true;
         }

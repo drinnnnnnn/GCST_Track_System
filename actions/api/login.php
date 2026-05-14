@@ -3,6 +3,7 @@ require_once __DIR__ . '/../security.php';
 require_once __DIR__ . '/../config/db_connect.php';
 require_once __DIR__ . '/../../database/models/UserModel.php';
 require_once __DIR__ . '/../../database/models/AdminCashierModel.php';
+require_once __DIR__ . '/../../database/models/SuperAdminModel.php';
 
 secureSessionStart();
 
@@ -70,6 +71,40 @@ if ($type === 'admincashier') {
         'success' => true,
         'role' => 'admincashier',
         'redirect' => '/GCST_Track_System/pages/admincashier/admincashier_dashb.html',
+        'name' => $_SESSION['admin_name']
+    ]);
+}
+
+if ($type === 'superadmin') {
+    $identifier = filterJsonString($input, 'identifier');
+    if ($identifier === '' || $password === '') {
+        jsonResponse(['success' => false, 'message' => 'Username/Email and password are required.'], 422);
+    }
+
+    $superAdminModel = new SuperAdminModel();
+    $admin = $superAdminModel->authenticate($identifier, $password);
+
+    if (!$admin) {
+        jsonResponse(['success' => false, 'message' => 'Invalid credentials.'], 401);
+    }
+
+    if (isset($admin['locked'])) {
+        jsonResponse(['success' => false, 'message' => 'Account is temporarily locked until ' . $admin['until']], 403);
+    }
+
+    if ($admin['status'] !== 'active') {
+        jsonResponse(['success' => false, 'message' => 'Your account is ' . $admin['status'] . '.'], 403);
+    }
+
+    session_regenerate_id(true);
+    $_SESSION['admin_id'] = $admin['id'];
+    $_SESSION['admin_name'] = trim($admin['first_name'] . ' ' . $admin['last_name']);
+    $_SESSION['role'] = 'superadmin';
+
+    jsonResponse([
+        'success' => true,
+        'role' => 'superadmin',
+        'redirect' => '/GCST_Track_System/pages/superadmin/superadmin_dashb.html',
         'name' => $_SESSION['admin_name']
     ]);
 }

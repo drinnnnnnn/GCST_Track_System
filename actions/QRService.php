@@ -6,12 +6,13 @@ class QRService {
     public static function parse(string $input): array {
         $input = trim($input);
         
-        if (strpos($input, 'ORDER-') === 0) {
+        if (stripos($input, 'ORDER-') === 0) {
+            // Keep the full prefix as it is part of the transaction_number in the DB
             return ['type' => 'order', 'reference' => $input];
         }
         
-        if (strpos($input, 'RENEW-') === 0) {
-            return ['type' => 'renewal', 'reference' => str_replace('RENEW-', '', $input)];
+        if (stripos($input, 'RENEW-') === 0) {
+            return ['type' => 'renewal', 'reference' => trim(preg_replace('/^RENEW-/i', '', $input))];
         }
 
         return ['type' => 'unknown', 'reference' => $input];
