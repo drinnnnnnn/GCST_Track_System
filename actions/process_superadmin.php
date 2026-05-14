@@ -10,12 +10,12 @@ require_once __DIR__ . '/audit_helpers.php'; // Include audit logging helper
 secureSessionStart();
 
 if (isset($conn) && $conn->connect_error) {
-    header('Location: ../pages/sign_in_superadmin.php?error=database');
+    header('Location: ../pages/sign_in_superadmin.html?error=database');
     exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../pages/sign_in_superadmin.php?error=invalid');
+    header('Location: ../pages/sign_in_superadmin.html?error=invalid');
     exit();
 }
 
@@ -30,7 +30,7 @@ $password = $_POST['password'] ?? '';
 $pin = $_POST['pin'] ?? '';
 
 if ($email === '' || $password === '') {
-    header('Location: ../pages/sign_in_superadmin.php?error=invalid');
+    header('Location: ../pages/sign_in_superadmin.html?error=invalid');
     exit();
 }
 
@@ -40,23 +40,23 @@ $superAdminModel = new SuperAdminModel();
 $admin = $superAdminModel->authenticate($email, $password);
 
 if (!$admin) {
-    header('Location: ../pages/sign_in_superadmin.php?error=invalid');
+    header('Location: ../pages/sign_in_superadmin.html?error=invalid');
     exit();
 }
 
 if (isset($admin['locked'])) {
-    header('Location: ../pages/sign_in_superadmin.php?error=locked');
+    header('Location: ../pages/sign_in_superadmin.html?error=locked');
     exit();
 }
 
 if ($admin['status'] !== 'active') {
-    header('Location: ../pages/sign_in_superadmin.php?error=unauthorized');
+    header('Location: ../pages/sign_in_superadmin.html?error=unauthorized');
     exit();
 }
 
 // Verify the security PIN using hashed comparison for the superadmin layer
 if (!password_verify($pin, $admin['security_pin_hash'])) {
-    header('Location: ../pages/sign_in_superadmin.php?error=invalid_pin');
+    header('Location: ../pages/sign_in_superadmin.html?error=invalid_pin');
     exit();
 }
 
@@ -72,3 +72,4 @@ logAudit($conn, 'superadmin', $admin['id'], 'login', 'Superadmin logged in succe
 
 header('Location: ../pages/superadmin/superadmin_dashb.html');
 exit();
+?>

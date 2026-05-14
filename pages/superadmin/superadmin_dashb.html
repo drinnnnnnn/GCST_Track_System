@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="../../assets/css/superadmin.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
   .charts-grid {
@@ -39,26 +40,6 @@
     }
   }
 </style>
-
-<!--
-<script> // Check if super admin is logged in and fetch their name
-  window.addEventListener('DOMContentLoaded', function() {
-    fetch('../../actions/get_user.php')
-      .then(res => res.json())
-      .then(data => {
-        const currentId = data.admin_id;
-        if (!currentId) {
-          window.location.href = "../../pages/sign_in_admin_cashier.html";
-          return;
-        }
-        currentSuperAdminId = currentId;
-        updateGreeting(data.name || 'Super Admin');
-      })
-      .catch(() => {
-        window.location.href = "../../pages/sign_in_admin_cashier.html";
-      });
-  });
-</script> --> 
 </head>
 
 <body class="antialiased">
@@ -124,46 +105,42 @@
   <!-- Scripts -->
   <script src="../../assets/js/superadmin.js"></script>
   <script>
-    let currentSuperAdminId = null;
+    // Use the unified initializer from superadmin.js
+    window.initializeSuperAdminPage((userData) => {
+      loadDashboardStats();
+      loadDashboardCharts();
+    });
 
-    // Initialize greeting and current date/time
-    window.addEventListener('DOMContentLoaded', () => {
-      fetch('../../actions/get_user.php')
-        .then(res => res.json())
-        .then(data => {
-          if (data.admin_id) {
-            currentSuperAdminId = data.admin_id;
-            updateGreeting(data.name);
-          }
-        });
-
-      updateDateTime();
-      setInterval(updateDateTime, 60000); // Update time every minute
-
-      // Fetch dashboard data
+    async function loadDashboardStats() {
       fetch('../../actions/get_superadmin_dashboard.php')
         .then(res => res.json())
         .then(data => {
-          document.getElementById('totalAdminAccounts').textContent = data.total_admin_accounts ?? 0;
-          document.getElementById('activeSessions').textContent = data.active_sessions ?? 0;
-          document.getElementById('systemUptime').textContent = data.system_uptime ?? 'N/A';
-          document.getElementById('pendingIssues').textContent = data.pending_issues ?? 0;
+          if (data.success) {
+            document.getElementById('totalAdminAccounts').textContent = data.data.total_admin_accounts ?? 0;
+            document.getElementById('activeSessions').textContent = data.data.active_sessions ?? 0;
+            document.getElementById('systemUptime').textContent = data.data.system_uptime ?? 'N/A';
+            document.getElementById('pendingIssues').textContent = data.data.pending_issues ?? 0;
+          }
         })
         .catch(err => console.error('Error fetching dashboard data:', err));
+    }
 
-      // Fetch chart data
+    async function loadDashboardCharts() {
       fetch('../../actions/get_superadmin_charts.php')
         .then(res => res.json())
         .then(data => {
+          if (!data.success) return;
+          const chartData = data.data;
+
           // Admin Activities Chart
           const activitiesCtx = document.getElementById('adminActivitiesChart').getContext('2d');
           new Chart(activitiesCtx, {
             type: 'line',
             data: {
-              labels: data.activities_labels,
+              labels: chartData.activities_labels,
               datasets: [{
                 label: 'Admin Activities',
-                data: data.activities_data,
+                data: chartData.activities_data,
                 borderColor: '#667eea',
                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
                 tension: 0.4,
@@ -173,7 +150,8 @@
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              plugins: { legend: { display: true } }
+              plugins: { legend: { display: false } },
+              scales: { y: { beginAtZero: true } }
             }
           });
 
@@ -182,58 +160,23 @@
           new Chart(healthCtx, {
             type: 'doughnut',
             data: {
-              labels: data.health_labels,
+              labels: chartData.health_labels,
               datasets: [{
-                data: data.health_data,
+                data: chartData.health_data,
                 backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe']
               }]
             },
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              plugins: { legend: { display: true } }
+              plugins: { 
+                legend: { position: 'bottom' }
+              }
             }
           });
         })
         .catch(err => console.error('Error fetching chart data:', err));
-    });
-
-    function updateGreeting(adminName) {
-      const hour = new Date().getHours();
-      let greet = "Hello";
-      if (hour < 12) greet = "Good Morning";
-      else if (hour < 18) greet = "Good Afternoon";
-      else greet = "Good Evening";
-
-      document.getElementById('greeting-message').textContent = `${greet}, ${adminName}!`;
     }
-
-    function updateDateTime() {
-      const now = new Date();
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      const dateStr = now.toLocaleDateString('en-US', options);
-      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      document.getElementById('current-date-time').textContent = `${dateStr} • ${timeStr}`;
-    }
-
-    // Menu toggle
-    document.getElementById('menu-icon').addEventListener('click', (e) => {
-      e.preventDefault();
-      const menu = document.getElementById('dropdown-menu');
-      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-    });
-
-    document.addEventListener('click', (e) => {
-      const menu = document.getElementById('dropdown-menu');
-      if (!menu.contains(e.target) && !document.getElementById('menu-icon').contains(e.target)) {
-        menu.style.display = 'none';
-      }
-    });
   </script>
-
 </body>
 </html>
-
-
-
-

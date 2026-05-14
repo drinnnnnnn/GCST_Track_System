@@ -1,12 +1,14 @@
 <?php
-require_once __DIR__ . '/../../actions/config/db_connect.php';
+require_once __DIR__ . '/../../config/db_connect.php';
+// Ensure the core connection file is available for the Database class
+require_once __DIR__ . '/../../database/connection.php';
 
 class SuperAdminModel {
     private $conn;
 
     public function __construct() {
-        global $conn;
-        $this->conn = $conn;
+        // Use the centralized Database class instead of global variables
+        $this->conn = Database::getConnection();
     }
 
     public function authenticate($identifier, $password) {

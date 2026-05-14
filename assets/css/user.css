@@ -1,6 +1,6 @@
     /* =====================================================
-      GCST ADMIN CASHIER - UNIFIED CSS
-      All admincashier pages use this single stylesheet
+      GCST STUDENT PORTAL - UNIFIED CSS
+      All student pages use this single stylesheet
       ===================================================== */
 
     :root {
@@ -647,6 +647,13 @@
       color: #721c24;
     }
 
+    /* Add a wrapper for responsive tables */
+    .table-responsive-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+      margin-bottom: 1.5rem;
+    }
+
     /* ===== TABLES ===== */
     .products-table,
     .logs-table,
@@ -654,6 +661,7 @@
     .queue-table {
       width: 100%;
       border-collapse: collapse;
+      min-width: 600px; /* Ensure tables don't shrink too much */
       font-size: 0.95rem;
     }
 
@@ -806,6 +814,106 @@
       100% { transform: rotate(360deg); }
     }
 
+    /* ===== SIDEBAR VISUALS & COMPONENTS ===== */
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      margin-bottom: 3.5rem;
+      padding: 0 0.5rem;
+      position: relative;
+    }
+
+    .sidebar-brand img {
+      width: 48px; /* Increased from 42px for improved visibility */
+      height: 48px;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar-brand h1 {
+      font-size: 1.35rem; /* Increased font size for better UI balance */
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.1;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .sidebar-brand span {
+      font-size: 0.8rem; /* Increased role text visibility (~13px) */
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .sidebar-minimize-btn {
+      position: absolute;
+      top: 50%;
+      right: -25px;
+      transform: translateY(-50%);
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      z-index: 1001;
+    }
+
+    .sidebar.minimized .sidebar-minimize-btn { right: 50%; transform: translate(50%, -50%) rotate(180deg); }
+    .sidebar.minimized .sidebar-brand img { transform: scale(1.15); }
+    .sidebar.minimized .sidebar-brand h1, 
+    .sidebar.minimized .sidebar-brand span, 
+    .sidebar.minimized .nav-section-label, 
+    .sidebar.minimized .sidebar-link span {
+      display: none;
+    }
+
+    .nav-section-label {
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      margin: 2rem 0 0.75rem 1rem;
+      opacity: 0.7;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.25rem; /* Enhanced touch target size */
+      border-radius: 1.25rem;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      margin-bottom: 0.5rem;
+      position: relative;
+    }
+
+    .sidebar-link i { font-size: 1.2rem; width: 24px; text-align: center; transition: transform 0.3s ease; }
+    .sidebar-link:hover { background: var(--surface-soft); color: var(--primary); transform: translateX(5px); }
+    .sidebar-link:hover i { transform: scale(1.1); }
+    .sidebar.minimized .sidebar-link:hover { transform: none; }
+    .sidebar-link.active { 
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+      color: white !important; 
+      box-shadow: 0 8px 16px -4px rgba(102, 126, 234, 0.4); 
+    }
+    .sidebar-link.active i { color: white; }
+
     /* ===== ANIMATIONS ===== */
     @keyframes fadeIn {
       from {
@@ -829,6 +937,24 @@
 
     /* ===== RESPONSIVE DESIGN ===== */
     @media (max-width: 1024px) {
+      /* Reset desktop sidebar-related layout for mobile */
+      .content-wrapper { margin-left: 0 !important; }
+      header { left: 0 !important; width: 100% !important; }
+
+      /* Sidebar mobile specific drawer styling */
+      .sidebar {
+        width: 300px; /* Default mobile sidebar width */
+        background: #ffffff; /* Solid background for mobile */
+        box-shadow: var(--shadow-lg);
+        transform: translateX(-100%); /* Hidden by default */
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 0 1.5rem 1.5rem 0; /* Rounded right edge */
+        border-right: none;
+      }
+      .sidebar.active {
+        transform: translateX(0); /* Visible when active */
+      }
+
       .charts-grid {
         grid-template-columns: 1fr;
       }
@@ -938,7 +1064,7 @@
       inset: 0;
       background: rgba(15, 23, 42, 0.4);
       backdrop-filter: blur(4px);
-      z-index: 900;
+      z-index: 999; /* Higher z-index to stay above content but below sidebar */
       display: none;
     }
 

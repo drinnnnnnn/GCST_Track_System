@@ -1,5 +1,42 @@
 export function getSidebarHTML() {
     // Define functions once
+    if (!window.initSidebarGestures) {
+        window.initSidebarGestures = function() {
+            const sidebar = document.getElementById('main-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (!sidebar || !overlay) return;
+
+            let touchStartX = 0;
+            let touchEndX = 0;
+
+            const handleGesture = () => {
+                const swipeDistance = touchEndX - touchStartX;
+                // Swipe left to close (only if menu is active/open)
+                if (sidebar.classList.contains('active') && swipeDistance < -60) {
+                    if (typeof window.toggleSidebar === 'function') {
+                        window.toggleSidebar();
+                    }
+                }
+            };
+
+            const addTouchEvents = (el) => {
+                el.addEventListener('touchstart', e => {
+                    touchStartX = e.changedTouches[0].screenX;
+                }, { passive: true });
+
+                el.addEventListener('touchend', e => {
+                    touchEndX = e.changedTouches[0].screenX;
+                    handleGesture();
+                }, { passive: true });
+            };
+
+            addTouchEvents(sidebar);
+            addTouchEvents(overlay);
+        };
+        // Initialize after DOM injection
+        setTimeout(window.initSidebarGestures, 200);
+    }
+
     if (!window.logoutUser) {
         window.logoutUser = function() {
             const modal = document.getElementById('sidebar-logout-modal');
@@ -36,11 +73,11 @@ export function getSidebarHTML() {
         const modalHTML = `
         <div id="sidebar-logout-modal" class="logout-modal-overlay" style="display:none;">
             <div class="logout-modal-card">
-                <div class="logout-modal-icon"><i class="fas fa-sign-out-alt"></i></div>
-                <h2 class="logout-modal-title">Ready to leave?</h2>
-                <p class="logout-modal-text">You are about to sign out. Make sure you've finished any active tasks before leaving.</p>
+                <div class="logout-modal-icon"><i class="fas fa-door-open"></i></div>
+                <h2 class="logout-modal-title">Confirm Logout</h2>
+                <p class="logout-modal-text">Are you sure you want to end your session? Make sure all your work has been saved.</p>
                 <div class="logout-modal-actions">
-                    <button onclick="closeLogoutModal()" class="btn-modal btn-modal-cancel">Cancel</button>
+                    <button onclick="closeLogoutModal()" class="btn-modal btn-modal-cancel">Stay</button>
                     <button onclick="performLogout()" class="btn-modal btn-modal-confirm">Log Out</button>
                 </div>
             </div>
@@ -52,79 +89,55 @@ export function getSidebarHTML() {
 <style>
     .sidebar {
         position: fixed;
-        top: 0;
-        left: 0;
-        bottom: 0;
+        top: 0; left: 0; bottom: 0;
         width: 280px;
         z-index: 1000;
         display: flex;
         flex-direction: column;
-        padding: 2rem 1.5rem;
-        border-right: 1px solid rgba(255, 255, 255, 0.3);
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(12px);
-        transition: transform 0.3s ease;
-        box-sizing: border-box; /* Ensure padding doesn't increase width */
+        padding: 2rem 1.25rem;
+        border-right: 1px solid var(--border-soft);
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(20px) saturate(180%);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+        box-sizing: border-box;
     }
 
     /* Sidebar Layout Logic - Controls main page structure */
     @media (min-width: 1025px) {
-        .content-wrapper { margin-left: 280px; transition: margin-left 0.3s ease; }
-        header { left: 280px; width: calc(100% - 280px); transition: all 0.3s ease; }
+        .content-wrapper { margin-left: 280px; transition: margin-left 0.4s ease; }
+        header { left: 280px !important; width: calc(100% - 280px) !important; transition: all 0.4s ease; }
 
       /* Adjust content and header when sidebar is minimized */
-        .content-wrapper.minimized { margin-left: 80px; }
-        header.minimized { left: 80px; width: calc(100% - 80px); }
+        .sidebar.minimized { width: 90px; padding: 2rem 0.75rem; }
+        .content-wrapper.minimized { margin-left: 90px !important; }
+        header.minimized { left: 90px !important; width: calc(100% - 90px) !important; }
     }
 
     /* Integrated Logout Modal Styles */
     .logout-modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.4);
-        backdrop-filter: blur(10px);
-        z-index: 10000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: all 0.2s ease;
-        font-family: 'Outfit', sans-serif;
+        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(12px); z-index: 10000; display: none; align-items: center; justify-content: center;
+        opacity: 0; transition: all 0.3s ease; font-family: 'Poppins', sans-serif;
     }
     .logout-modal-overlay.active { display: flex; opacity: 1; }
     .logout-modal-card {
-        background: white;
-        width: 92%;
-        max-width: 420px;
-        padding: 3rem 2rem;
-        border-radius: 2.5rem;
-        text-align: center;
-        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
-        transform: translateY(20px);
-        transition: all 0.2s ease-out;
+        background: white; width: 90%; max-width: 420px; padding: 3rem 2.5rem;
+        border-radius: 2.5rem; text-align: center; box-shadow: var(--shadow-lg);
+        transform: scale(0.9); transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .logout-modal-overlay.active .logout-modal-card { transform: translateY(0); }
+    .logout-modal-overlay.active .logout-modal-card { transform: scale(1); }
     .logout-modal-icon {
-        width: 80px;
-        height: 80px;
-        background: #fff1f2;
-        color: #f43f5e;
-        border-radius: 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 1.5rem;
-        font-size: 2rem;
-        transform: rotate(-10deg);
+        width: 80px; height: 80px; background: #fef2f2; color: var(--danger);
+        border-radius: 1.5rem; display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1.5rem; font-size: 2rem; transform: rotate(-5deg);
     }
-    .logout-modal-title { margin: 0 0 0.75rem; color: #0f172a; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.025em; }
-    .logout-modal-text { color: #64748b; font-size: 1rem; line-height: 1.6; margin-bottom: 2.5rem; }
+    .logout-modal-title { margin: 0 0 0.5rem; color: var(--text); font-size: 1.75rem; font-weight: 800; }
+    .logout-modal-text { color: var(--muted); font-size: 1rem; margin-bottom: 2.5rem; line-height: 1.6; }
     .logout-modal-actions { display: flex; gap: 1rem; }
-    .btn-modal { flex: 1; padding: 1rem; border-radius: 1.25rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease; border: none; font-size: 1rem; font-family: inherit; }
-    .btn-modal-cancel { background: #f1f5f9; color: #475569; }
-    .btn-modal-cancel:hover { background: #e2e8f0; }
-    .btn-modal-confirm { background: #2563eb; color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(29, 78, 216, 0.2); }
-    .btn-modal-confirm:hover { background: #1d4ed8; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(29, 78, 216, 0.4); }
+    .btn-modal { flex: 1; padding: 1rem; border-radius: 1.25rem; font-weight: 700; cursor: pointer; border: none; transition: all 0.3s; }
+    .btn-modal-cancel { background: var(--surface-soft); color: var(--text); }
+    .btn-modal-confirm { background: var(--primary); color: white; box-shadow: 0 10px 15px -3px rgba(102, 126, 234, 0.3); }
+    .btn-modal-confirm:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(102, 126, 234, 0.5); }
 
     #sidebar-overlay {
         position: fixed;
@@ -137,117 +150,114 @@ export function getSidebarHTML() {
     #sidebar-overlay.active { display: block; }
 
     @media (max-width: 1024px) {
-        .sidebar { transform: translateX(-100%); }
+        .sidebar { 
+            transform: translateX(-100%); 
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0 1.5rem 1.5rem 0;
+            width: 300px;
+            box-shadow: 10px 0 30px rgba(15, 23, 42, 0.15);
+            border-right: none;
+        }
         .sidebar.active { transform: translateX(0); }
+
+        /* Enhanced Touch Targets */
+        .sidebar-link {
+            padding: 1.1rem 1.5rem;
+            margin-bottom: 0.8rem;
+            font-size: 1rem;
+        }
+        .sidebar-footer { padding-bottom: 2rem; }
+        .nav-section-label { margin-top: 2rem; font-size: 0.75rem; }
     }
 
     .sidebar-brand {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 2.5rem;
+        gap: 1rem;
+        margin-bottom: 3rem;
         padding: 0 0.5rem;
+        position: relative;
+    }
+
+    .sidebar-brand img {
+        width: 42px;
+        height: 42px;
+        transition: transform 0.3s ease;
     }
 
     .sidebar-minimize-btn {
         position: absolute;
-        top: 2rem;
-        right: -16px; /* Position outside the sidebar slightly */
+        top: 50%;
+        right: -25px;
+        transform: translateY(-50%);
         background: var(--primary);
         color: white;
         border: none;
         border-radius: 50%;
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         transition: all 0.3s ease;
-        z-index: 1001; /* Above sidebar */
+        z-index: 1001;
     }
-    .sidebar-minimize-btn:hover {
-        background: var(--primary-dark);
-        transform: scale(1.05);
-    }
-    /* Hide on small screens where the mobile toggle is used */
+
     @media (max-width: 1024px) {
         .sidebar-minimize-btn { display: none; }
     }
 
-    /* Minimized Sidebar Styles */
-    .sidebar.minimized {
-        width: 80px;
-        padding: 2rem 0.5rem;
-    }
-    .sidebar.minimized .sidebar-minimize-btn i {
-        transform: rotate(180deg); /* Flip chevron */
-    }
-    .sidebar.minimized .sidebar-brand {
-        justify-content: center;
-        margin-bottom: 2rem;
-    }
-    .sidebar.minimized .sidebar-brand h1,
-    .sidebar.minimized .sidebar-brand span,
-    .sidebar.minimized .nav-section-label {
-        display: none;
-    }
-    .sidebar.minimized .sidebar-link {
-        justify-content: center;
-        padding: 0.85rem 0.5rem;
-        gap: 0; /* Remove gap when text is hidden */
-    }
-    .sidebar.minimized .sidebar-link i {
-        margin-right: 0;
-    }
+    .sidebar.minimized .sidebar-minimize-btn { right: 50%; transform: translate(50%, -50%) rotate(180deg); }
+    .sidebar.minimized .sidebar-brand img { transform: scale(1.1); }
+    .sidebar.minimized .sidebar-brand h1, 
+    .sidebar.minimized .sidebar-brand span, 
+    .sidebar.minimized .nav-section-label, 
     .sidebar.minimized .sidebar-link span {
         display: none;
     }
-    .sidebar.minimized .sidebar-footer {
-        padding-top: 1rem;
-    }
 
     .nav-section-label {
-        font-size: 0.65rem;
+        font-size: 0.7rem;
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        color: #94a3b8;
+        letter-spacing: 0.15em;
+        color: var(--muted);
         margin: 1.5rem 0 0.75rem 1rem;
+        opacity: 0.7;
     }
 
     .sidebar-link {
         display: flex;
         align-items: center;
         gap: 1rem;
-        padding: 0.85rem 1.25rem;
+        padding: 0.9rem 1.25rem;
         border-radius: 1.25rem;
-        color: #475569;
+        color: var(--muted);
         font-weight: 600;
         font-size: 0.95rem;
         text-decoration: none;
         transition: all 0.3s ease;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.5rem;
+        position: relative;
     }
 
-    .sidebar-link i { font-size: 1.1rem; width: 20px; text-align: center; flex-shrink: 0; }
-
-    .sidebar-link:hover {
-        background: #eff6ff;
-        color: #2563eb;
-        transform: translateX(5px);
-    }
-
+    .sidebar-link i { font-size: 1.2rem; width: 24px; text-align: center; transition: transform 0.3s ease; }
+    .sidebar-link:hover { background: var(--surface-soft); color: var(--primary); transform: translateX(5px); }
+    .sidebar-link:hover i { transform: scale(1.1); }
+    .sidebar.minimized .sidebar-link:hover { transform: none; }
     .sidebar-link.active {
-        background: #2563eb;
+        background: var(--primary) !important; 
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
         color: white;
-        box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.3);
+        box-shadow: 0 8px 16px -4px rgba(102, 126, 234, 0.4); 
     }
+    .sidebar-link.active i { color: white; }
 
-    .sidebar-footer { margin-top: auto; padding-top: 2rem; }
-    .btn-logout { background: #fee2e2; color: #dc2626; }
-    .btn-logout:hover { background: #dc2626; color: white; }
+    .sidebar-footer { margin-top: auto; padding-top: 1.5rem; border-top: 1px solid var(--border-soft); }
+    .btn-logout { background: transparent; color: var(--danger); }
+    .btn-logout:hover { background: var(--danger); color: white; box-shadow: 0 8px 16px -4px rgba(239, 68, 68, 0.4); }
 </style>
 
 <aside id="main-sidebar" class="sidebar">

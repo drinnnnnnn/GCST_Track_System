@@ -1,28 +1,16 @@
-﻿<?php
+﻿﻿<?php
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['student', 'users', 'admincashier', 'superadmin']); // Only students/users can access their own rentals
+// Restrict to student/user roles. Admins/Superadmins use different endpoints for management.
+requireAuth(['student', 'users']); 
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/db_connect.php';
-
-if (!isset($conn) || !($conn instanceof mysqli)) {
-    if (isset($mysqli) && $mysqli instanceof mysqli) {
-        $conn = $mysqli;
-    } elseif (isset($db) && $db instanceof mysqli) {
-        $conn = $db;
-    } elseif (isset($link) && $link instanceof mysqli) {
-        $conn = $link;
-    } elseif (defined('DB_SERVER') && defined('DB_USERNAME') && defined('DB_PASSWORD') && defined('DB_NAME')) {
-        $conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
-        if ($conn->connect_error) {
-            throw new Exception('Database connection failed: ' . $conn->connect_error);
-        }
-    } else {
-        throw new Exception('Database connection not initialized.');
-    }
-}
+require_once __DIR__ . '/../database/connection.php';
 
 try {
+    $conn = Database::getConnection();
+    if (!$conn) throw new Exception('Database connection failed.');
+
     $session_student_id = $_SESSION['student_id'] ?? null;
 
     if (!$session_student_id) {
@@ -65,5 +53,3 @@ try {
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
-
-$conn->close();

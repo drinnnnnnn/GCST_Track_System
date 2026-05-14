@@ -1,5 +1,41 @@
 export function getSidebarHTML() {
     // Define global utility functions for the sidebar
+    if (!window.initSidebarGestures) {
+        window.initSidebarGestures = function() {
+            const sidebar = document.getElementById('main-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (!sidebar || !overlay) return;
+
+            let touchStartX = 0;
+            let touchEndX = 0;
+
+            const handleGesture = () => {
+                const swipeDistance = touchEndX - touchStartX;
+                // Swipe left to close (only if menu is active/open)
+                if (sidebar.classList.contains('active') && swipeDistance < -60) {
+                    if (typeof window.toggleSidebar === 'function') {
+                        window.toggleSidebar();
+                    }
+                }
+            };
+
+            const addTouchEvents = (el) => {
+                el.addEventListener('touchstart', e => {
+                    touchStartX = e.changedTouches[0].screenX;
+                }, { passive: true });
+
+                el.addEventListener('touchend', e => {
+                    touchEndX = e.changedTouches[0].screenX;
+                    handleGesture();
+                }, { passive: true });
+            };
+
+            addTouchEvents(sidebar);
+            addTouchEvents(overlay);
+        };
+        setTimeout(window.initSidebarGestures, 200);
+    }
+
     if (!window.logoutUser) {
         window.logoutUser = function() {
             const modal = document.getElementById('sidebar-logout-modal');
@@ -47,6 +83,16 @@ export function getSidebarHTML() {
                 setTimeout(() => pinInput.classList.remove('shake'), 500);
             }
         };
+
+        // Global utility to initialize lock screen events
+        window.initLockScreenEvents = function() {
+            const pinInput = document.getElementById('lock-screen-pin');
+            if (pinInput) {
+                pinInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') window.attemptUnlock();
+                });
+            }
+        };
     }
 
     // Ensure the logout modal exists in the body
@@ -75,7 +121,7 @@ export function getSidebarHTML() {
                 <h2>Session Locked</h2>
                 <p>Please enter your PIN to continue</p>
                 <div class="pin-input-group">
-                    <input type="password" id="lock-screen-pin" maxlength="6" placeholder="••••" inputmode="numeric">
+                    <input type="password" id="lock-screen-pin" maxlength="6" placeholder="••••" inputmode="numeric" autocomplete="one-time-code">
                     <button onclick="attemptUnlock()" class="btn-unlock">
                         <i class="fas fa-arrow-right"></i>
                     </button>
@@ -84,117 +130,94 @@ export function getSidebarHTML() {
             </div>
         </div>`;
         document.body.insertAdjacentHTML('beforeend', lockHTML);
+        // Initialize events after injection
+        window.initLockScreenEvents();
     }
 
     return `
 <style>
     .sidebar {
         position: fixed;
-        top: 0;
-        left: 0;
-        bottom: 0;
+        top: 0; left: 0; bottom: 0;
         width: 280px;
         z-index: 1000;
         display: flex;
         flex-direction: column;
-        padding: 2rem 1.5rem;
-        border-right: 1px solid rgba(0, 0, 0, 0.05);
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(16px);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 1.5rem 1rem; /* Consistent padding */
+        border-right: 1px solid rgba(var(--border-rgb), 0.2);
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(20px) saturate(180%);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         box-sizing: border-box;
+        overflow-x: hidden;
     }
 
-    /* Desktop Layout Synchronization */
     @media (min-width: 1025px) {
-        .content-wrapper { margin-left: 280px; transition: margin-left 0.3s ease; }
-        header { left: 280px !important; width: calc(100% - 280px) !important; transition: all 0.3s ease; }
+        .sidebar.minimized { width: 88px; padding: 1.5rem 0.75rem; }
+        
+        .sidebar.minimized .sidebar-brand div,
+        .sidebar.minimized .nav-section-label,
+        .sidebar.minimized .sidebar-link span {
+            opacity: 0;
+            pointer-events: none;
+            width: 0;
+            margin: 0;
+        }
 
-        .sidebar.minimized { width: 85px; padding: 2rem 0.75rem; }
-        .content-wrapper.minimized { margin-left: 85px !important; }
-        header.minimized { left: 85px !important; width: calc(100% - 85px) !important; }
+        .sidebar.minimized .sidebar-brand { justify-content: center; padding: 0; margin-bottom: 2.5rem; }
+        .sidebar.minimized .sidebar-link { justify-content: center; padding: 0.8rem; border-radius: 1rem; }
+        .sidebar.minimized .sidebar-link i { margin: 0; font-size: 1.25rem; }
+        
+        .sidebar.minimized .sidebar-footer { padding: 1rem 0; display: flex; justify-content: center; }
     }
 
-    /* Mobile Transition */
     @media (max-width: 1024px) {
         .sidebar { 
-            transform: translateX(-100%); 
             width: 280px; 
-            border-radius: 0 2rem 2rem 0;
+            transform: translateX(-100%); 
             background: #ffffff;
-            border-right: none;
+            border-radius: 0 1.5rem 1.5rem 0;
         }
-        .sidebar.active { 
-            transform: translateX(0); 
-            box-shadow: 25px 0 60px -15px rgba(15, 23, 42, 0.3); 
-        }
-
-        #sidebar-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(4px);
-            z-index: 999;
-            display: none;
-        }
-
-        #sidebar-overlay.active { display: block; }
+        .sidebar.active { transform: translateX(0); }
         .sidebar-minimize-btn { display: none; }
     }
 
     .sidebar-brand {
         display: flex;
         align-items: center;
-        gap: 0.85rem;
+        gap: 0.75rem;
         margin-bottom: 2.5rem;
         padding: 0 0.5rem;
         position: relative;
-    }
-
-    .sidebar-brand img {
-        width: 40px;
-        height: 40px;
-        flex-shrink: 0;
-        object-fit: contain;
-    }
-
-    .sidebar.minimized .sidebar-brand { justify-content: center; padding: 0; }
-
-    .sidebar-minimize-btn {
-        position: absolute;
-        top: 50%;
-        right: -28px;
-        transform: translateY(-50%);
-        background: #2563eb;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 26px;
-        height: 26px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         transition: all 0.3s ease;
-        z-index: 1001;
     }
 
-    .sidebar.minimized .sidebar-minimize-btn { right: 50%; transform: translate(50%, -50%) rotate(180deg); }
-    .sidebar.minimized .sidebar-brand h1, 
-    .sidebar.minimized .sidebar-brand span, 
-    .sidebar.minimized .nav-section-label, 
-    .sidebar.minimized .sidebar-link span {
-        display: none;
+    .sidebar-brand h1 {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: var(--text);
+        letter-spacing: -0.02em;
+        white-space: nowrap;
+    }
+
+    .sidebar-brand span {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--primary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: block;
     }
 
     .nav-section-label {
-        font-size: 0.7rem;
-        font-weight: 800;
+        font-size: 0.65rem;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.12em;
-        color: #94a3b8;
-        margin: 1.5rem 0 0.75rem 1rem;
+        color: var(--muted);
+        margin: 1.5rem 0 0.5rem 1.25rem;
+        opacity: 0.6;
+        white-space: nowrap;
+        transition: opacity 0.3s ease;
     }
 
     .sidebar-link {
@@ -202,112 +225,72 @@ export function getSidebarHTML() {
         align-items: center;
         gap: 1rem;
         padding: 0.85rem 1.25rem;
-        border-radius: 1.25rem;
-        color: #475569;
+        border-radius: 1rem;
+        color: var(--muted);
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 0.92rem;
         text-decoration: none;
+        margin-bottom: 0.25rem;
         transition: all 0.2s ease;
-        margin-bottom: 0.35rem;
+        white-space: nowrap;
     }
 
-    .sidebar-link i { font-size: 1.15rem; width: 22px; text-align: center; }
-    .sidebar-link:hover { background: #f1f5f9; color: #1e40af; transform: translateX(4px); }
-    .sidebar.minimized .sidebar-link:hover { transform: none; }
-    .sidebar-link.active { background: #2563eb !important; color: white !important; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4); }
-
-    /* Sidebar Badge Styles */
-    .sidebar-badge {
-        background: #ef4444;
-        color: white;
-        font-size: 0.65rem;
-        font-weight: 800;
-        padding: 0.2rem 0.5rem;
-        border-radius: 99px;
-        line-height: 1;
-        margin-left: auto;
-        box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
-        transition: all 0.3s ease;
+    .sidebar-link i { font-size: 1.1rem; width: 24px; text-align: center; }
+    .sidebar-link:hover { background: rgba(var(--primary-rgb), 0.05); color: var(--primary); transform: translateX(4px); }
+    .sidebar-link.active { 
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+        color: white !important; 
+        box-shadow: 0 8px 16px rgba(var(--primary-rgb), 0.25);
     }
-    .sidebar.minimized .sidebar-badge {
+    .sidebar.minimized .sidebar-link:hover { transform: scale(1.05); }
+
+    .sidebar-minimize-btn {
         position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-        padding: 0.15rem 0.4rem;
-        display: block !important; /* Ensure it stays visible when minimized */
-    }
-    .hidden { display: none !important; }
-
-    .sidebar-footer { margin-top: auto; padding-top: 1.5rem; border-top: 1px solid rgba(0,0,0,0.05); }
-    .btn-logout { background: #fff1f2; color: #e11d48; margin-top: 0.5rem; }
-    .btn-logout:hover { background: #e11d48; color: white; }
-
-    /* Lock Screen Styles */
-    .lock-screen-overlay {
-        position: fixed; inset: 0; background: #0f172a; z-index: 20000;
-        display: none; align-items: center; justify-content: center;
-        backdrop-filter: blur(20px);
-    }
-    .lock-screen-overlay.active { display: flex; }
-    .lock-card { background: white; padding: 3rem; border-radius: 2.5rem; text-align: center; width: 350px; }
-    .lock-icon { font-size: 2.5rem; color: #2563eb; margin-bottom: 1.5rem; }
-    .pin-input-group { display: flex; gap: 0.5rem; margin: 1.5rem 0; }
-    .pin-input-group input {
-        flex: 1; padding: 1rem; border-radius: 1rem; border: 2px solid #e2e8f0;
-        text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem; outline: none;
-    }
-    .btn-unlock {
-        width: 55px; background: #2563eb; color: white; border: none;
-        border-radius: 1rem; cursor: pointer; transition: 0.2s;
-    }
-    .btn-unlock:hover { background: #1d4ed8; }
-    .btn-lock-logout {
-        background: transparent; color: #64748b; border: none;
-        font-weight: 600; cursor: pointer; font-size: 0.85rem;
-    }
-    .shake { animation: shake 0.4s; border-color: #ef4444 !important; }
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-8px); }
-        75% { transform: translateX(8px); }
+        top: 50%;
+        right: -13px;
+        transform: translateY(-50%);
+        background: #ffffff;
+        color: var(--primary);
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        border-radius: 50%;
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 1001;
+        font-size: 0.8rem;
     }
 
-    /* Modal Overlay Styles */
-    .logout-modal-overlay {
-        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6);
-        backdrop-filter: blur(8px); z-index: 10000; display: none; align-items: center; justify-content: center;
-        opacity: 0; transition: all 0.3s ease; font-family: 'Outfit', sans-serif;
+    .sidebar-minimize-btn:hover {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-50%) scale(1.1);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
     }
-    .logout-modal-overlay.active { display: flex; opacity: 1; }
-    .logout-modal-card {
-        background: white; width: 90%; max-width: 400px; padding: 2.5rem;
-        border-radius: 2rem; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-        transform: scale(0.9); transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    .sidebar-minimize-btn:active {
+        transform: translateY(-50%) scale(0.95);
     }
-    .logout-modal-overlay.active .logout-modal-card { transform: scale(1); }
-    .logout-modal-icon {
-        width: 70px; height: 70px; background: #fff1f2; color: #e11d48;
-        border-radius: 1.25rem; display: flex; align-items: center; justify-content: center;
-        margin: 0 auto 1.5rem; font-size: 1.75rem;
+
+    .sidebar.minimized .sidebar-minimize-btn {
+        right: -13px;
+        transform: translateY(-50%) rotate(180deg);
     }
-    .logout-modal-title { margin: 0 0 0.5rem; color: #0f172a; font-size: 1.5rem; font-weight: 800; }
-    .logout-modal-text { color: #64748b; font-size: 0.95rem; margin-bottom: 2rem; }
-    .logout-modal-actions { display: flex; gap: 0.75rem; }
-    .btn-modal { flex: 1; padding: 0.85rem; border-radius: 1rem; font-weight: 700; cursor: pointer; border: none; font-family: inherit; transition: all 0.2s; }
-    .btn-modal-cancel { background: #f1f5f9; color: #475569; }
-    .btn-modal-confirm { background: #2563eb; color: white; }
-    .btn-modal-confirm:hover { background: #1d4ed8; transform: translateY(-2px); }
 </style>
 
 <aside id="main-sidebar" class="sidebar" aria-label="Main Sidebar">
     <div class="sidebar-brand">
-        <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Logo" class="w-10 h-10">
+        <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Logo" style="width: 40px; height: 40px;">
         <div>
-            <h1 class="text-sm font-extrabold text-slate-800 leading-none tracking-tight">GCST TRACK</h1>
-            <span class="text-[10px] font-bold text-red-600 uppercase tracking-widest">System Super Admin</span>
+            <h1>GCST TRACK</h1>
+            <span>System Super Admin</span>
         </div>
         <button onclick="toggleMinimizeSidebar()" id="sidebar-minimize-btn" class="sidebar-minimize-btn" title="Toggle Sidebar">
-            <i class="fas fa-chevron-left text-[10px]"></i>
+            <i class="fas fa-chevron-left"></i>
         </button>
     </div>
 

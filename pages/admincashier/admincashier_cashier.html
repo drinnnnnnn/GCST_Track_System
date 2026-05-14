@@ -403,18 +403,73 @@
       padding: 10px 0;
       border-bottom: 1px solid #e5e7eb;
     }
-    .receipt-item strong {
-      color: #111827;
-    }
     .receipt-actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       margin-top: 16px;
     }
-    .receipt-actions .btn {
-      flex: 1;
+
+    /* --- Enhanced Checkout & Receipt Styles --- */
+    .checkout-section {
+      background: #f8fafc;
+      padding: 20px;
+      border-radius: 20px;
+      border: 1px solid #e2e8f0;
     }
+    .checkout-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .financial-card {
+      background: linear-gradient(135deg, #1e293b, #334155);
+      padding: 24px;
+      border-radius: 24px;
+      color: #f8fafc;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+    }
+    .financial-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+    .financial-row.total {
+      border-top: 1px solid rgba(255,255,255,0.15);
+      padding-top: 16px;
+      margin-top: 16px;
+      opacity: 1;
+    }
+    .receipt-id {
+      font-family: 'ui-monospace', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+      background: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #475569;
+    }
+    .receipt-item-list {
+      margin-top: 12px;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 12px;
+    }
+    .receipt-item-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 0.9rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .receipt-item-row:last-child { border-bottom: none; }
+    
     .empty-state {
       padding: 28px;
       text-align: center;
@@ -520,7 +575,7 @@
     <section class="greeting-section">
       <div class="greeting-content">
         <h1>Transaction Management</h1>
-        <p>Manage sales, inventory, and customer transactions efficiently.</p>
+        <p id="current-date-time">Loading date and time...</p>
       </div>
       <div class="greeting-icon">💳</div>
     </section>
@@ -766,6 +821,42 @@
       </div>
     </section>
 
+    <!-- Lost Books Section -->
+    <section class="management-section" style="margin-top: 24px; padding: 0 20px;">
+      <div class="panel">
+        <div class="panel-header" style="flex-wrap: wrap; gap: 20px;">
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <h2>Lost Books</h2>
+            <span id="lost-books-count" class="badge" style="background: #fee2e2; color: #b91c1c;">0 lost</span>
+            <button class="btn btn-secondary" onclick="loadLostBooks()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+          </div>
+          <div style="position: relative; max-width: 300px; flex: 1;">
+            <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem;"></i>
+            <input id="lost-books-search" class="search-input" type="text" placeholder="Search lost books..." style="padding: 10px 16px 10px 38px; font-size: 0.85rem; width: 100%;" />
+          </div>
+        </div>
+        <div id="lost-books-content">
+          <table class="data-table">
+              <thead>
+                <tr>
+                  <th><i class="fas fa-user-graduate"></i> Student</th>
+                  <th><i class="fas fa-book"></i> Product</th>
+                  <th><i class="fas fa-hashtag"></i> Qty</th>
+                  <th><i class="far fa-calendar-alt"></i> Lost Date</th>
+                  <th><i class="fas fa-money-bill-wave"></i> Penalty</th>
+                  <th><i class="fas fa-info-circle"></i> Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="lost-books-body">
+                <tr><td colspan="6" class="empty-state">Loading lost books...</td></tr>
+              </tbody>
+          </table>
+        </div>
+        <div id="lost-books-empty" class="empty-state hidden">No lost books found.</div>
+      </div>
+    </section>
+
     <!-- Scan Order Modal -->
     <div id="qr-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10000;">
       <div class="panel qr-panel" style="text-align: center;">
@@ -892,6 +983,105 @@
       </div>
     </div>
 
+    <!-- New Partial Return Modal -->
+    <div id="partial-return-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+      <div class="panel" style="width: 100%; max-width: 500px;">
+        <div class="panel-header">
+          <h2>Process Item Return</h2>
+          <button type="button" class="modal-close" onclick="closePartialReturnModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:#6b7280;">×</button>
+        </div>
+        <form id="partial-return-form">
+          <input type="hidden" id="return-rental-id" name="rental_id">
+          <div class="summary-card">
+            <div class="summary-row" style="grid-template-columns: 1fr;">
+              <label>Student Name:
+                <input type="text" id="return-student-name" readonly style="background: #f8fafc;" />
+              </label>
+            </div>
+            <div class="summary-row" style="grid-template-columns: 1fr;">
+              <label>Product Name:
+                <input type="text" id="return-product-name" readonly style="background: #f8fafc;" />
+              </label>
+            </div>
+            <div class="summary-row" style="grid-template-columns: 1fr;">
+              <label>Currently Out (Quantity):
+                <input type="number" id="return-current-quantity" readonly style="background: #f8fafc;" />
+              </label>
+            </div>
+            <div class="summary-row" style="grid-template-columns: 1fr;">
+              <label>Quantity to Return:
+                <input type="number" id="return-quantity-input" name="returned_quantity" min="1" required />
+              </label>
+            </div>
+            <div class="summary-row" style="grid-template-columns: 1fr;">
+              <label>Notes (Optional):
+                <textarea id="return-notes" name="notes" rows="3" placeholder="e.g., Item damaged, partial return reason"></textarea>
+              </label>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+              <button type="submit" class="btn btn-primary" style="flex: 1;">Process Return</button>
+              <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closePartialReturnModal()">Cancel</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Report Lost Modal -->
+    <div id="report-lost-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+      <div class="panel" style="width: 100%; max-width: 500px;">
+        <div class="panel-header">
+          <h2>Report Item as Lost</h2>
+          <button type="button" class="modal-close" onclick="closeReportLostModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:#6b7280;">×</button>
+        </div>
+        <form id="report-lost-form">
+          <input type="hidden" id="lost-rental-id" name="rental_id">
+          <input type="hidden" id="lost-product-id" name="product_id">
+          <input type="hidden" id="lost-student-id" name="student_id">
+          <div class="summary-card">
+            <div class="summary-row" style="grid-template-columns: 1fr;">
+              <label>Student Name:
+                <input type="text" id="lost-student-name" readonly style="background: #f8fafc;" />
+              </label>
+            </div>
+            <div class="summary-row" style="grid-template-columns: 1fr;">
+              <label>Product Name:
+                <input type="text" id="lost-product-name" readonly style="background: #f8fafc;" />
+              </label>
+            </div>
+            <div class="summary-row" style="grid-template-columns: 1fr;">
+              <label>Currently Out:
+                <input type="number" id="lost-current-quantity" readonly style="background: #f8fafc;" />
+              </label>
+            </div>
+            <div class="summary-row" style="grid-template-columns: 1fr;">
+              <label>Quantity Lost:
+                <input type="number" id="lost-quantity-input" name="quantity" min="1" required />
+              </label>
+            </div>
+            <div class="summary-row" style="grid-template-columns: 1fr;">
+              <label>Calculated Penalty (PHP):
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="number" id="lost-penalty-input" name="penalty_amount" step="0.01" style="flex: 1;" required />
+                <button type="button" class="btn btn-secondary" onclick="recalculateLostPenalty()" title="Recalculate based on input qty"><i class="fas fa-sync-alt"></i></button>
+                </div>
+                <small style="color: #64748b;">Includes replacement cost + accumulated overdue fees.</small>
+              </label>
+            </div>
+            <div class="summary-row" style="grid-template-columns: 1fr;">
+              <label>Notes (Required):
+                <textarea id="lost-notes" name="notes" rows="3" placeholder="Explain the situation (e.g., Lost during commute)" required></textarea>
+              </label>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+              <button type="submit" class="btn btn-danger" style="flex: 1;">Confirm Lost</button>
+              <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeReportLostModal()">Cancel</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <div id="checkout-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 9999;">
       <div class="panel" style="width: 100%; max-width: 580px; max-height: 95vh; overflow-y: auto; border-radius: 28px; padding: 32px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
         <div class="panel-header" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 24px;">
@@ -901,67 +1091,67 @@
           </button>
         </div>
 
-        <div class="checkout-form" style="display: flex; flex-direction: column; gap: 24px;">
+        <div class="checkout-form" style="display: flex; flex-direction: column; gap: 20px;">
           <!-- Transaction Info Section -->
-          <div style="background: #f8fafc; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0;">
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-                <label style="font-weight: 600; margin-bottom: 8px; color: #475569;">Transaction Type</label>
-                <select id="transaction-type" class="search-input" style="background: white;">
-                    <option value="buy">Purchase (Buy)</option>
-                    <option value="rent">Rental (Rent)</option>
-                </select>
-            </div>
+          <div class="checkout-section">
+            <label class="checkout-label">Transaction Details</label>
+            <select id="transaction-type" class="search-input" style="background: white; width: 100%;">
+                <option value="buy">Purchase (Buy Items)</option>
+                <option value="rent">Library Rental (Rent Books)</option>
+            </select>
           </div>
 
           <!-- Customer Info Section -->
-          <div style="background: #f8fafc; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <label style="font-weight: 600; color: #475569;">Student Information</label>
+          <div class="checkout-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <label class="checkout-label" style="margin-bottom: 0;">Student Information</label>
                 <button type="button" class="btn btn-secondary" onclick="openQuickRegisterModal()" style="padding: 6px 12px; font-size: 0.75rem; border-radius: 10px;">
                     <i class="fas fa-user-plus"></i> New Student
                 </button>
             </div>
-            <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+            <div style="display: flex; gap: 10px;">
                 <input id="checkout-student-id" type="text" list="student-datalist" class="search-input" placeholder="Enter Student ID (e.g. GC-123456)" style="background: white; flex: 1;" />
                 <datalist id="student-datalist"></datalist>
                 <button type="button" class="btn btn-secondary" onclick="checkStudentId()" style="padding: 0 20px; border-radius: 16px;">
                     Verify
                 </button>
             </div>
-            <div id="student-check-msg" style="font-size: 0.85rem; font-weight: 500; min-height: 1.2em; padding-left: 4px;"></div>
+            <div id="student-check-msg" style="font-size: 0.8rem; font-weight: 600; margin-top: 8px; min-height: 1.2em; padding-left: 4px;"></div>
           </div>
 
           <!-- Financial Summary Section -->
-          <div style="background: #4f46e5; background: linear-gradient(135deg, #4f46e5, #6366f1); padding: 24px; border-radius: 24px; color: white; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; opacity: 0.9;">
+          <div class="financial-card">
+            <div class="financial-row">
                 <span>Subtotal</span>
-                <span id="subtotal-amount" style="font-weight: 600;">₱0.00</span>
+                <span id="subtotal-amount" style="font-weight: 700;">₱0.00</span>
             </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.2);">
+            <div class="financial-row">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <span>Discount</span>
-                    <input id="discount-percent" type="number" min="0" max="100" value="0" style="width: 60px; padding: 4px 8px; border-radius: 8px; border: none; background: rgba(255,255,255,0.2); color: white; text-align: center;" />
-                    <span>%</span>
+                    <span>Apply Discount</span>
+                    <div style="display: flex; align-items: center; background: rgba(255,255,255,0.15); border-radius: 8px; padding: 2px 8px;">
+                      <input id="discount-percent" type="number" min="0" max="100" value="0" style="width: 45px; border: none; background: transparent; color: white; text-align: right; font-weight: 700; outline: none;" />
+                      <span style="font-size: 0.8rem; margin-left: 2px;">%</span>
+                    </div>
                 </div>
-                <span id="discount-amount" style="font-weight: 600;">-₱0.00</span>
+                <span id="discount-amount" style="font-weight: 700; color: #fca5a5;">-₱0.00</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                <span style="font-size: 1.1rem; font-weight: 600;">Total Payable</span>
+            <div class="financial-row total">
+                <span style="font-size: 1.1rem; font-weight: 700; letter-spacing: 0.02em;">TOTAL PAYABLE</span>
                 <strong id="total-amount" style="font-size: 2rem;">₱0.00</strong>
             </div>
           </div>
 
           <!-- Payment Section -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
             <div style="display: flex; flex-direction: column; gap: 8px;">
-                <label style="font-weight: 600; color: #475569; font-size: 0.9rem;">Cash Received</label>
+                <label class="checkout-label">Cash Received</label>
                 <div style="position: relative;">
                     <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-weight: 600;">₱</span>
                     <input id="cash-received" type="number" min="0" step="0.01" value="0.00" class="search-input" style="padding-left: 30px; background: #fff;" />
                 </div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px;">
-                <label style="font-weight: 600; color: #475569; font-size: 0.9rem;">Payment Status</label>
+                <label class="checkout-label">Payment Status</label>
                 <select id="payment-status" class="search-input" style="background: #fff;">
                     <option value="paid">Mark as Paid</option>
                     <option value="pending">Keep as Pending</option>
@@ -969,31 +1159,43 @@
             </div>
           </div>
 
-          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 16px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-weight: 600; color: #166534;">Change Amount</span>
-            <strong id="change-amount" style="font-size: 1.25rem; color: #15803d;">₱0.00</strong>
+          <div style="background: #ecfdf5; border: 2px solid #bbf7d0; padding: 20px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 700; color: #065f46; font-size: 0.95rem;">CHANGE DUE</span>
+            <strong id="change-amount" style="font-size: 1.6rem; color: #15803d; letter-spacing: -0.02em;">₱0.00</strong>
           </div>
 
           <div style="display: flex; justify-content: center; margin-top: 8px;">
             <button id="complete-sale" class="btn btn-primary" onclick="completeTransaction()" style="padding: 16px; border-radius: 16px; font-size: 1rem; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);">
-                <i class="fas fa-check-circle"></i> Complete Transaction
+                <i class="fas fa-check-circle"></i> Finalize Transaction
             </button>
           </div>
         </div>
 
-        <div id="receipt-card" class="receipt-panel hidden" style="margin-top: 32px; border-top: 2px dashed #e2e8f0; padding-top: 32px;">
-          <h3 style="font-weight: 700; margin-bottom: 20px; text-align: center;">Transaction Successful</h3>
-          <div class="receipt-line"><span>Transaction #</span><strong id="receipt-number"></strong></div>
+        <div id="receipt-card" class="receipt-panel hidden" style="margin-top: 40px; border-top: 3px dashed #e2e8f0; padding-top: 32px;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div style="width: 56px; height: 56px; background: #dcfce7; color: #15803d; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 1.5rem;">
+              <i class="fas fa-check"></i>
+            </div>
+            <h3 style="font-weight: 800; color: #111827; margin: 0;">Transaction Successful</h3>
+            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">A digital receipt has been emailed to the student.</p>
+          </div>
+
+          <div class="receipt-line"><span>Transaction #</span><strong id="receipt-number" class="receipt-id"></strong></div>
           <div class="receipt-line"><span>Type</span><strong id="receipt-type"></strong></div>
           <div class="receipt-line"><span>Status</span><strong id="receipt-status"></strong></div>
           <div class="receipt-line"><span>Date</span><strong id="receipt-date"></strong></div>
-          <div id="receipt-items" class="receipt-items"></div>
+          <div id="receipt-items" class="receipt-item-list"></div>
           <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
               <div class="receipt-line"><span>Subtotal</span><strong id="receipt-subtotal"></strong></div>
               <div class="receipt-line"><span>Discount</span><strong id="receipt-discount"></strong></div>
               <div class="receipt-line" style="font-size: 1.1rem; color: #4f46e5;"><span>Total</span><strong id="receipt-total"></strong></div>
               <div class="receipt-line"><span>Paid</span><strong id="receipt-paid"></strong></div>
               <div class="receipt-line"><span>Change</span><strong id="receipt-change"></strong></div>
+          </div>
+
+          <div class="receipt-actions" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+            <button class="btn btn-primary" onclick="printReceipt()" style="flex: 1;"><i class="fas fa-print"></i> Print Slip</button>
+            <button class="btn btn-secondary" onclick="closeCheckoutModal()" style="flex: 1;">Close</button>
           </div>
         </div>
       </div>
@@ -1002,7 +1204,6 @@
 
   <script src="../../assets/js/admincashier.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
-  <script src="../../assets/js/order-scanner.js"></script>
   <script>
     const API_ROOT = window.location.origin + '/GCST_Track_System/actions';
     const ASSET_ROOT = window.location.origin + '/GCST_Track_System/assets';
@@ -1018,6 +1219,7 @@
     let products = [];
     let cart = [];
     let activeRentals = [];
+    let lostBooks = []; // New array for lost books
     let overdueRentals = [];
     let pendingRenewals = [];
     let pendingOrders = []; // New array for pending orders
@@ -1194,6 +1396,14 @@
       document.getElementById('change-amount').textContent = formatCurrency(change >= 0 ? change : 0);
     }
 
+    function updateDateTime() {
+      const now = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+      const dateTimeString = now.toLocaleDateString('en-US', options);
+      const el = document.getElementById('current-date-time');
+      if (el) el.textContent = dateTimeString;
+    }
+
     function toggleSelectAllCart(isChecked) {
       cart.forEach(item => item.selected = isChecked);
       updateCartSummary();
@@ -1323,6 +1533,21 @@
       return hoursOverdue * 2; // 2 pesos per hour
     }
 
+    function recalculateLostPenalty() {
+      const productId = document.getElementById('lost-product-id').value;
+      const rentalId = document.getElementById('lost-rental-id').value;
+      const qtyLost = parseInt(document.getElementById('lost-quantity-input').value) || 0;
+      
+      const product = products.find(p => p.product_id == productId);
+      const rental = activeRentals.find(r => r.rental_id == rentalId) || overdueRentals.find(r => r.rental_id == rentalId);
+      
+      let replacementPrice = product ? getProductPrice(product) : 0;
+      let overdueFees = rental ? calculateOverduePenalty(rental.return_date) : 0;
+      
+      const totalPenalty = (replacementPrice * qtyLost) + overdueFees;
+      document.getElementById('lost-penalty-input').value = totalPenalty.toFixed(2);
+    }
+
     function updateTransactionSettings() {
       const previousType = state.transactionType;
       const newType = document.getElementById('transaction-type').value;
@@ -1377,11 +1602,14 @@
       receiptItems.innerHTML = '';
       receipt.items.forEach(item => {
         const entry = document.createElement('div');
-        entry.className = 'receipt-item';
+        entry.className = 'receipt-item-row';
         entry.innerHTML = `<span>${item.product_name} x ${item.quantity}</span><strong>${formatCurrency(item.total)}</strong>`;
         receiptItems.appendChild(entry);
       });
+      // Scroll modal to bottom to show receipt
+      setTimeout(() => { document.getElementById('checkout-modal').scrollTo({ top: 500, behavior: 'smooth' }); }, 100);
     }
+
     function completeTransaction() {
       console.log("Complete Transaction clicked.");
       if (cart.length === 0) {
@@ -1855,6 +2083,54 @@
         });
     }
 
+    function openQuickRegisterModal() {
+      document.getElementById('quick-register-modal').classList.remove('hidden');
+    }
+
+    function closeQuickRegisterModal() {
+      document.getElementById('quick-register-modal').classList.add('hidden');
+      const form = document.getElementById('quick-register-form');
+      if (form) form.reset();
+    }
+
+    // Form submission for Quick Registration
+    document.getElementById('quick-register-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const formData = new FormData(this);
+      const payload = Object.fromEntries(formData.entries());
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
+
+      fetch(`${API_ROOT}/quick_register_student.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(result => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Register Student';
+        if (result.success) {
+          alert('Student registered successfully!');
+          const checkoutInput = document.getElementById('checkout-student-id');
+          if (checkoutInput) checkoutInput.value = payload.student_id;
+          checkStudentId();
+          closeQuickRegisterModal();
+          loadStudentList();
+        } else {
+          alert(result.message || 'Registration failed.');
+        }
+      })
+      .catch(err => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Register Student';
+        console.error('Registration Error:', err);
+        alert('A system error occurred during registration.');
+      });
+    });
+
     function confirmRejection() {
       const reason = document.getElementById('rejection-reason').value.trim();
       if (!reason) {
@@ -1958,8 +2234,11 @@
           <td>${item.quantity}</td>
           <td>${new Date(item.return_date).toLocaleString()}</td>
           <td style="color: #ef4444; font-weight: 700;">${formatCurrency(penalty)}</td>
-          <td>
-            <button class="btn btn-primary" onclick="processReturn(${item.rental_id})">Return Item</button>
+          <td style="white-space: nowrap;">
+            <div style="display: flex; gap: 6px;">
+              <button class="btn btn-primary btn-sm" onclick="openPartialReturnModal(${item.rental_id}, ${item.quantity}, '${item.product_name}', '${item.first_name} ${item.last_name}')">Return</button>
+              <button class="btn btn-danger btn-sm" onclick="openReportLostModal(${item.rental_id}, ${item.quantity}, '${item.product_name}', '${item.first_name} ${item.last_name}', '${item.student_id}', ${item.product_id})">Lost</button>
+            </div>
           </td>
         `;
         body.appendChild(tr);
@@ -2107,7 +2386,7 @@
             const statusClass = (item.status === 'overdue' || penalty > 0) ? 'background: #fee2e2; color: #b91c1c;' : 'background: #e0e7ff; color: #4338ca;';
             const statusLabel = (item.status === 'overdue' || penalty > 0) ? 'Overdue' : 'Active';
             const reasonHtml = item.rejection_reason ? `<div style="font-size: 0.8rem; color: #ef4444; margin-top: 4px;"><strong>Rejection Note:</strong> ${item.rejection_reason}</div>` : '';
-            const penaltyHtml = penalty > 0 ? `<div style="font-weight:bold; color:#b91c1c;">Penalty: ${formatCurrency(penalty)}</div>` : '';
+            const penaltyHtml = penalty > 0 ? `<div style="font-weight:bold; color:#b91c1c; margin-top: 4px;">Penalty: ${formatCurrency(penalty)}</div>` : '';
 
             tr.innerHTML = `
               <td><input type="checkbox" class="rental-checkbox" value="${item.rental_id}" onchange="updateBulkReturnButtonVisibility()"></td>
@@ -2116,23 +2395,145 @@
               <td>${item.quantity}</td>
               <td>${new Date(item.return_date).toLocaleString()}</td>
               <td><span class="badge" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; ${statusClass}">${statusLabel}</span> ${penaltyHtml} ${reasonHtml}</td>
-              <td>
-                <button class="btn btn-primary" onclick="processReturn(${item.rental_id})">Return Item</button>
+              <td style="white-space: nowrap;">
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn btn-primary btn-sm" onclick="openPartialReturnModal(${item.rental_id}, ${item.quantity}, '${item.product_name}', '${item.first_name} ${item.last_name}')">Return</button>
+                  <button class="btn btn-danger btn-sm" onclick="openReportLostModal(${item.rental_id}, ${item.quantity}, '${item.product_name}', '${item.first_name} ${item.last_name}', '${item.student_id}', ${item.product_id})">Lost</button>
+                </div>
               </td>
             `;
             body.appendChild(tr);
           });
     }
-    function processReturn(rentalId) {
-      if (!confirm('Are you sure you want to mark this item as returned? Stock will be updated.')) return;
-      
-      fetch(`${API_ROOT}/return_item.php`, {
+
+    // --- Report Lost Functions (Corrected Position) ---
+    function openReportLostModal(rentalId, currentQuantity, productName, studentName, studentId, productId) {
+      document.getElementById('lost-rental-id').value = rentalId;
+      document.getElementById('lost-product-id').value = productId;
+      document.getElementById('lost-student-id').value = studentId;
+      document.getElementById('lost-student-name').value = studentName;
+      document.getElementById('lost-product-name').value = productName;
+      document.getElementById('lost-current-quantity').value = currentQuantity;
+      document.getElementById('lost-quantity-input').max = currentQuantity;
+      document.getElementById('lost-quantity-input').value = currentQuantity;
+      document.getElementById('lost-notes').value = '';
+      recalculateLostPenalty();
+      document.getElementById('report-lost-modal').classList.remove('hidden');
+    }
+
+    function closeReportLostModal() {
+      document.getElementById('report-lost-modal').classList.add('hidden');
+      document.getElementById('report-lost-form').reset();
+    }
+
+    document.getElementById('report-lost-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const rentalId = document.getElementById('lost-rental-id').value;
+      const quantity = parseInt(document.getElementById('lost-quantity-input').value, 10);
+      const notes = document.getElementById('lost-notes').value.trim();
+      const penaltyAmount = parseFloat(document.getElementById('lost-penalty-input').value) || 0;
+      const currentQty = parseInt(document.getElementById('lost-current-quantity').value, 10);
+
+      if (quantity <= 0 || quantity > currentQty) {
+        alert('Invalid quantity.');
+        return;
+      }
+
+      if (!confirm(`Are you sure you want to mark ${quantity} item(s) as LOST? This action is permanent.`)) return;
+
+      const submitBtn = this.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reporting...';
+
+      fetch(`${API_ROOT}/report_lost_book.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rental_id: rentalId })
+        body: JSON.stringify({
+          rental_id: rentalId,
+          quantity: quantity,
+          notes: notes,
+          product_id: document.getElementById('lost-product-id').value,
+          student_id: document.getElementById('lost-student-id').value,
+          penalty_amount: penaltyAmount
+        })
       })
       .then(res => res.json())
       .then(result => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Confirm Lost';
+        if (result.success) {
+          alert(result.message);
+          loadActiveRentals();
+          loadOverdueRentals();
+          loadLostBooks();
+          closeReportLostModal();
+        } else {
+          alert(result.message || 'Failed to report lost book.');
+        }
+      })
+      .catch(err => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Confirm Lost';
+        console.error('Report Lost Error:', err);
+      });
+    });
+
+    function processReturn(rentalId) {
+      // This function is now replaced by openPartialReturnModal and executeReturn
+      // Keeping it as a placeholder or for backward compatibility if needed elsewhere.
+      console.warn("`processReturn(rentalId)` is deprecated. Use `openPartialReturnModal` and `executeReturn`.");
+    }
+
+    let currentRentalForReturn = {}; // Store details for the modal
+
+    function openPartialReturnModal(rentalId, currentQuantity, productName, studentName) {
+      currentRentalForReturn = { rentalId, currentQuantity, productName, studentName };
+      document.getElementById('return-rental-id').value = rentalId;
+      document.getElementById('return-student-name').value = studentName;
+      document.getElementById('return-product-name').value = productName;
+      document.getElementById('return-current-quantity').value = currentQuantity;
+      document.getElementById('return-quantity-input').max = currentQuantity; // Set max for input
+      document.getElementById('return-quantity-input').value = currentQuantity; // Default to full return
+      document.getElementById('return-notes').value = '';
+      document.getElementById('partial-return-modal').classList.remove('hidden');
+    }
+
+    function closePartialReturnModal() {
+      document.getElementById('partial-return-modal').classList.add('hidden');
+      document.getElementById('partial-return-form').reset();
+      currentRentalForReturn = {};
+    }
+
+    // Form submission for Partial Return
+    document.getElementById('partial-return-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const rentalId = document.getElementById('return-rental-id').value;
+      const returnedQuantity = parseInt(document.getElementById('return-quantity-input').value, 10);
+      const notes = document.getElementById('return-notes').value.trim();
+      const currentQuantity = parseInt(document.getElementById('return-current-quantity').value, 10);
+
+      if (returnedQuantity <= 0 || returnedQuantity > currentQuantity) {
+        alert(`Quantity to return must be between 1 and ${currentQuantity}.`);
+        return;
+      }
+
+      if (!confirm(`Are you sure you want to return ${returnedQuantity} item(s) for this rental?`)) {
+        return;
+      }
+
+      const submitBtn = this.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+      fetch(`${API_ROOT}/process_rental_return.php`, { // This will be a new backend endpoint
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rental_id: rentalId, returned_quantity: returnedQuantity, notes: notes })
+      })
+      .then(res => res.json())
+      .then(result => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Process Return';
         if (result.success) {
           alert(result.message);
           loadActiveRentals();
@@ -2140,8 +2541,106 @@
         } else {
           alert(result.message || 'Failed to process return.');
         }
+        closePartialReturnModal();
+      })
+      .catch(err => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Process Return';
+        console.error('Return Error:', err);
+        alert('An error occurred while processing the return.');
+      });
+    });
+
+    // New function to load lost books
+    function loadLostBooks() {
+      fetch(`${API_ROOT}/get_lost_books.php`) // New backend endpoint
+        .then(res => res.json())
+        .then(data => {
+          lostBooks = Array.isArray(data) ? data : [];
+          filterLostBooks(''); // Render all initially
+        })
+        .catch(err => {
+          console.error('Error loading lost books:', err);
+          document.getElementById('lost-books-body').innerHTML = '<tr><td colspan="6" class="empty-state">Error loading lost books. Please refresh.</td></tr>';
+        });
+    }
+
+    // New function to filter and render lost books
+    function filterLostBooks(query) {
+      const filtered = lostBooks.filter(item => {
+        const studentName = `${item.first_name} ${item.last_name}`.toLowerCase();
+        return studentName.includes(query.toLowerCase()) || 
+               item.student_id.toLowerCase().includes(query.toLowerCase()) || 
+               item.product_name.toLowerCase().includes(query.toLowerCase());
+      });
+      renderLostBooks(filtered);
+    }
+
+    // New function to render lost books
+    function renderLostBooks(data) {
+      const body = document.getElementById('lost-books-body');
+      const empty = document.getElementById('lost-books-empty');
+      const content = document.getElementById('lost-books-content');
+      const count = document.getElementById('lost-books-count');
+
+      body.innerHTML = '';
+      if (!data || data.length === 0) {
+        content.style.display = 'none';
+        empty.classList.remove('hidden');
+        count.textContent = '0 lost';
+        return;
+      }
+
+      content.style.display = 'block';
+      empty.classList.add('hidden');
+      count.textContent = `${data.length} lost`;
+
+      data.forEach(item => {
+        const dateObj = new Date(item.lost_date);
+        const tr = document.createElement('tr');
+        tr.style.backgroundColor = '#fff5f5'; // Light red background for lost
+        tr.style.boxShadow = 'inset 4px 0 0 #ef4444'; // Red left border
+
+        tr.innerHTML = `
+          <td>${item.first_name} ${item.last_name} (${item.student_id})</td>
+          <td>${item.product_name}</td>
+          <td>${item.quantity}</td>
+          <td>${dateObj.toLocaleDateString()}</td>
+          <td style="font-weight: 700; color: #b91c1c;">${formatCurrency(item.penalty_amount)}</td>
+          <td><span class="badge" style="background: #fee2e2; color: #b91c1c;">${item.status.toUpperCase()}</span></td>
+          <td>
+            <button class="btn btn-primary" onclick="markBookAsFound(${item.lost_book_id})">Mark as Found</button>
+          </td>
+        `;
+        body.appendChild(tr);
       });
     }
+
+    // New function to mark a lost book as found
+    function markBookAsFound(lostBookId) {
+      if (!confirm('Are you sure you want to mark this book as FOUND? Stock will be updated.')) return;
+      // Implement AJAX call to mark_book_found.php
+      fetch(`${API_ROOT}/mark_book_found.php`, { // New backend endpoint
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lost_book_id: lostBookId })
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          alert(result.message);
+          loadLostBooks(); // Reload lost books list
+          loadProducts(); // Reload products to update stock
+        } else {
+          alert(result.message || 'Failed to mark book as found.');
+        }
+      })
+      .catch(err => {
+        console.error('Error marking book as found:', err);
+        alert('An error occurred while marking the book as found.');
+      });
+    }
+
     initializeAdminCashierPage(async (userData) => {
       const name = userData.name || 'Admin Cashier';
       const greetingElement = document.getElementById('greeting-message');
@@ -2156,8 +2655,10 @@
       loadOverdueRentals();
       loadActiveRentals();
       loadPendingOrders(); // Load pending orders on page load
+      loadLostBooks(); // Load lost books on page load
       loadRecentTransactions();
       loadStudentList();
+      autoVoidExpiredOrders();
     });
     document.getElementById('product-search').addEventListener('input', () => {
       state.query = document.getElementById('product-search').value.trim();
@@ -2282,8 +2783,9 @@
           const code = globalScanBuffer.trim();
           globalScanBuffer = ''; // Clear buffer after processing
 
-          if (code.startsWith('RENEW-')) {
-            loadRenewalByQR(code);
+          const renewMatch = code.match(/RENEW-[a-zA-Z0-9-]+/i);
+          if (renewMatch) {
+            loadRenewalByQR(renewMatch[0]);
           } else {
             loadOrderByQR(code);
           }
@@ -2413,13 +2915,14 @@
       const qrCodeSuccessCallback = (decodedText, decodedResult) => {
         console.log(`QR Code detected: ${decodedText}`, decodedResult);
         SCAN_SOUND.play();
-        // Process the scanned code
-        if (decodedText.startsWith('RENEW-')) {
-          loadRenewalByQR(decodedText);
+        
+        const renewMatch = decodedText.match(/RENEW-[a-zA-Z0-9-]+/i);
+        closeQRScanner(); // Stop camera immediately to release resources
+        if (renewMatch) {
+          loadRenewalByQR(renewMatch[0]);
         } else {
           loadOrderByQR(decodedText);
         }
-        closeQRScanner(); // Close scanner after successful scan
       };
 
       const qrCodeErrorCallback = (errorMessage) => {
@@ -2475,26 +2978,17 @@
 
         console.log('Server response for QR scan:', result); // Log the full response for debugging
 
-        // Robustly extract order data from common API response structures
-        const orderData = result.order || (result.data && result.data.order) || (result.success && !result.message ? result : null);
-
-        if (result.success && orderData && typeof orderData === 'object' && Object.keys(orderData).length > 0) {
+        if (result.success && result.order) {
+          loadOrderIntoCart(result.order);
           alert('Order loaded successfully!');
-          loadOrderIntoCart(orderData);
-          closeQRScanner();
         } else {
           ERROR_SOUND.play();
-          let errorMsg = result.message || 'Unknown error from server.';
-          if (result.success && (!orderData || Object.keys(orderData).length === 0)) {
-              errorMsg = 'Order details not found or invalid in server response.';
-          }
-          
-          alert('Order scan failed: ' + errorMsg);
+          alert('Order scan failed: ' + (result.message || 'Order not found or invalid format.'));
         }
       } catch (error) {
         console.error('Error fetching order by QR:', error);
         ERROR_SOUND.play();
-        alert('An error occurred while fetching order details. Please check console for more info.');
+        alert('An error occurred while fetching order details.');
       }
     }
 
@@ -2525,28 +3019,14 @@
       }
 
       items.forEach(orderItem => {
-        // Ensure product_id comparison works regardless of string/number type
         const product = products.find(p => String(p.product_id) === String(orderItem.product_id));
-        if (product) {
-          const unitPrice = orderItem.type === 'rent' ? getProductRentPrice(product) : getProductPrice(product);
-          cart.push({
-            product_id: product.product_id,
-            product_name: product.product_name,
-            quantity: orderItem.quantity,
-            unitPrice: unitPrice,
-            selected: true // Mark as selected by default when loading from QR
-          });
-        } else {
-          console.warn(`Product with ID ${orderItem.product_id} not found in current product list.`);
-          // Fallback for unknown products (e.g., if product was deleted)
-          cart.push({
-            product_id: orderItem.product_id,
-            product_name: orderItem.product_name || `Unknown Product (ID: ${orderItem.product_id})`,
-            quantity: orderItem.quantity,
-            unitPrice: orderItem.unit_price || 0, // Use unit_price from order if product not found
-            selected: true
-          });
-        }
+        cart.push({
+          product_id: orderItem.product_id,
+          product_name: product ? product.product_name : (orderItem.product_name || `Product #${orderItem.product_id}`),
+          quantity: parseInt(orderItem.quantity) || 1,
+          unitPrice: 0, // syncCartProductPrices will update this based on transaction type
+          selected: true
+        });
       });
       updateTransactionSettings(); // Recalculate totals and update UI
       updateCartSummary();
@@ -2562,8 +3042,9 @@
         e.preventDefault();
         const scannedCode = this.value.trim();
         if (scannedCode) {
-          if (scannedCode.startsWith('RENEW-')) {
-            loadRenewalByQR(scannedCode);
+          const renewMatch = scannedCode.match(/RENEW-[a-zA-Z0-9-]+/i);
+          if (renewMatch) {
+            loadRenewalByQR(renewMatch[0]);
           } else {
             loadOrderByQR(scannedCode);
           }

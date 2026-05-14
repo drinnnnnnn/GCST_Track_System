@@ -159,6 +159,25 @@ try {
     if (!$conn->query($createTransactionItemsTableSql)) {
         throw new Exception("Failed to create transaction_items table: " . $conn->error);
     }
+
+    // Create the lost_books table if it does not exist
+    $createLostBooksTableSql = "CREATE TABLE IF NOT EXISTS `lost_books` (
+        `lost_book_id` INT(11) NOT NULL AUTO_INCREMENT,
+        `rental_id` INT(11) DEFAULT NULL,
+        `product_id` INT(11) NOT NULL,
+        `student_id` VARCHAR(50) NOT NULL,
+        `quantity` INT(11) NOT NULL DEFAULT 1,
+        `lost_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `status` ENUM('lost','found') NOT NULL DEFAULT 'lost',
+        `reported_by_cashier_id` INT(11) NOT NULL,
+        `found_by_cashier_id` INT(11) DEFAULT NULL,
+        `found_date` TIMESTAMP NULL DEFAULT NULL,
+        `notes` TEXT DEFAULT NULL,
+        PRIMARY KEY (`lost_book_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+    if (!$conn->query($createLostBooksTableSql)) {
+        throw new Exception("Failed to create lost_books table: " . $conn->error);
+    }
     if (!$conn->query($createRentalsTableSql)) {
         throw new Exception("Failed to create active_rentals table: " . $conn->error);
     }
@@ -394,23 +413,40 @@ try {
                     $subject = 'Official Receipt - GCST Tracking System';
                     $itemsHtml = '';
                     foreach ($cartItems as $item) {
-                        $itemsHtml .= "<tr><td style='padding:8px; border-bottom:1px solid #eee;'>{$item['product_name']} x {$item['quantity']}</td><td style='padding:8px; border-bottom:1px solid #eee; text-align:right;'>₱" . number_format($item['total'], 2) . "</td></tr>";
+                        $itemsHtml .= "<tr>
+                            <td style='padding:8px; border-bottom:1px solid #eee; text-align:left;'>{$item['product_name']}</td>
+                            <td style='padding:8px; border-bottom:1px solid #eee; text-align:center;'>{$item['quantity']}</td>
+                            <td style='padding:8px; border-bottom:1px solid #eee; text-align:right;'>₱" . number_format($item['unit_price'], 2) . "</td>
+                            <td style='padding:8px; border-bottom:1px solid #eee; text-align:right;'>₱" . number_format($item['total'], 2) . "</td>
+                        </tr>";
                     }
                     $emailBody = "<div style='font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 15px;'>
                         <h2 style='color: #4f46e5; text-align: center;'>Transaction Receipt</h2>
                         <p>Hi " . htmlspecialchars($studentFullName) . ",</p>
                         <p>Your payment has been processed. Here are your transaction details:</p>
-                        <div style='background: #f8fafc; padding: 15px; border-radius: 12px; margin: 20px 0;'>
+                        <div style='background: #f8fafc; padding: 15px; border-radius: 12px; margin: 20px 0; border: 1px solid #e5e7eb;'>
                             <strong>Transaction #:</strong> $transactionNumber<br><strong>Date:</strong> " . date('M d, Y h:i A') . "
                         </div>
                         <table style='width: 100%; border-collapse: collapse;'>
-                            <thead><tr style='background: #f1f5f9;'><th style='padding: 8px; text-align: left;'>Item</th><th style='padding: 8px; text-align: right;'>Amount</th></tr></thead>
+                            <thead>
+                                <tr style='background: #f1f5f9;'>
+                                    <th style='padding: 8px; text-align: left;'>Item</th>
+                                    <th style='padding: 8px; text-align: center;'>Qty</th>
+                                    <th style='padding: 8px; text-align: right;'>Unit Price</th>
+                                    <th style='padding: 8px; text-align: right;'>Total</th>
+                                </tr>
+                            </thead>
                             <tbody>$itemsHtml</tbody>
                         </table>
-                        <div style='border-top: 2px solid #4f46e5; padding-top: 15px; text-align: right;'>
-                            <p><strong>Total Paid: ₱" . number_format($totalAmount, 2) . "</strong></p>
+
+                        <div style='text-align: right; margin-top: 20px; padding-top: 15px; border-top: 1px dashed #ccc;'>
+                            <p style='margin: 5px 0;'><strong>Subtotal:</strong> ₱" . number_format($subtotal, 2) . "</p>
+                            <p style='margin: 5px 0; color: #ef4444;'><strong>Discount (" . number_format($discountPercent, 0) . "%):</strong> -₱" . number_format($discountAmount, 2) . "</p>
+                            <h3 style='margin: 15px 0 5px; color: #4f46e5; font-size: 1.5rem;'>Total Paid: ₱" . number_format($totalAmount, 2) . "</h3>
+                            <p style='margin: 5px 0;'><strong>Cash Received:</strong> ₱" . number_format($paymentReceived, 2) . "</p>
+                            <p style='margin: 5px 0;'><strong>Change:</strong> ₱" . number_format($changeAmount, 2) . "</p>
                         </div>
-                        <p style='text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 20px;'>Thank you for using GCST Tracking System.</p>
+                        <p style='text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 30px;'>Thank you for choosing GCST Tracking System. Please keep this receipt for your records.</p>
                     </div>";
                 } else {
                     $subject = 'Your GCST Order QR Code';
@@ -419,11 +455,7 @@ try {
                     $tempQrPath = $tempDir . DIRECTORY_SEPARATOR . uniqid('qr_') . '.png';
                     $inlineQr = '';
                     try {
-                        // Create a detailed content string for the QR code
-                        $qrContent = "Order ID: $transactionNumber\nItems:\n";
-                        foreach ($cartItems as $item) {
-                            $qrContent .= "- " . $item['product_name'] . " (Qty: " . $item['quantity'] . ")\n";
-                        }
+                        $qrContent = $transactionNumber; // Only encode the ID for machine readability
 
                         if (function_exists('generateLocalQrCode') && generateLocalQrCode($qrContent, $tempQrPath, 'H', 10, 4)) {
                             $attachments[] = ['path' => $tempQrPath, 'name' => 'order_qr_code.png', 'cid' => 'order_qr_code'];
@@ -431,7 +463,31 @@ try {
                         }
                     } catch (Throwable $e) { error_log($e->getMessage()); }
 
-                    $emailBody = "<p>Hi " . htmlspecialchars($studentFullName) . ",</p><p>Your order has been placed. Present this QR code to the cashier.</p>$inlineQr<p>Order Total: ₱" . number_format($totalAmount, 2) . "</p><p>Thank you for your ordering!</p>";
+                    $itemsHtml = '';
+                    foreach ($cartItems as $item) {
+                        $itemsHtml .= "<p style='margin: 5px 0;'>- {$item['product_name']} x {$item['quantity']} (₱" . number_format($item['unit_price'], 2) . " each)</p>";
+                    }
+
+                    $emailBody = "<div style='font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 15px; background-color: #fdfdfd;'>
+                        <h2 style='color: #4f46e5; text-align: center; margin-bottom: 20px;'>Order Confirmation</h2>
+                        <p style='margin-bottom: 10px;'>Hi " . htmlspecialchars($studentFullName) . ",</p>
+                        <p style='margin-bottom: 20px;'>Your order has been placed successfully and is awaiting payment/pickup. Please present the QR code below to the cashier to finalize your transaction.</p>
+                        
+                        <div style='background: #f8fafc; padding: 15px; border-radius: 12px; margin: 20px 0; border: 1px solid #e5e7eb;'>
+                            <p style='margin: 5px 0;'><strong>Transaction #:</strong> <span style='color: #4f46e5; font-weight: bold;'>$transactionNumber</span></p>
+                            <p style='margin: 5px 0;'><strong>Transaction Type:</strong> " . ucfirst($transactionType) . "</p>
+                            <p style='margin: 5px 0;'><strong>Date:</strong> " . date('M d, Y h:i A') . "</p>
+                        </div>
+
+                        <p style='margin-bottom: 10px;'><strong>Items in your order:</strong></p>
+                        <div style='margin-left: 15px; margin-bottom: 20px;'>$itemsHtml</div>
+
+                        <p style='text-align: right; margin-top: 10px;'><strong>Total Payable: ₱" . number_format($totalAmount, 2) . "</strong></p>
+                        
+                        $inlineQr
+                        
+                        <p style='text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 30px;'>Thank you for your order! We look forward to serving you.</p>
+                    </div>";
                 }
 
                 $sendResult = sendEmailWithLog($conn, $userEmail, $subject, $emailBody, 'Transaction Details', $attachments);

@@ -6,21 +6,12 @@
   
   <title>GCST Admin Cashier Gmail Notifications</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <link rel="stylesheet" href="../../assets/css/admincashier.css" />
+  <link rel="stylesheet" href="http://localhost/GCST_Track_System/assets/css/admincashier.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-    :root {
-      --bg: #f4f7fb;
-      --surface: #ffffff;
-      --text: #1d2939;
-      --muted: #5f6c84;
-      --primary: #4558ff;
-      --success: #10b981;
-      --danger: #ef4444;
-    }
     .balance-card p {
       margin: 0;
       font-size: 1.9rem;
@@ -236,22 +227,8 @@
       .greeting-section { flex-direction: column; }
       .logs-table { min-width: 100%; }
     }
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      display: inline-block;
-      margin-right: 6px;
-    }
-    .status-connected { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
-    .status-connecting { background-color: #f59e0b; animation: status-pulse 1.5s infinite; }
-    .status-error { background-color: var(--danger); }
-    @keyframes status-pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.4; }
-      100% { opacity: 1; }
-    }
   </style>
+</head>
 
 <body class="antialiased">
   <!-- Sidebar Component -->
@@ -263,9 +240,8 @@
     <!-- Greeting Section -->
     <section class="greeting-section">
       <div class="greeting-content">
-        <h1 id="greeting-message">Gmail Notification</h1>
-        <p>automatically sends email notifications through Gmail
-            to inform users about updates, alerts, transactions, or important activities in a system.</p>
+        <h1 id="greeting-message">Welcome, Admin Cashier!</h1>
+        <p id="current-date-time"></p>
       </div>
       <div class="greeting-icon">📩</div>
     </section>
@@ -295,13 +271,7 @@
 
     <!-- Email Logs Table -->
     <section class="logs-section">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
-        <h2 style="margin: 0;">Email Logs</h2>
-        <div id="connection-status" style="font-size: 0.85rem; display: flex; align-items: center; color: var(--muted); background: #f8fafc; padding: 6px 12px; border-radius: 10px; border: 1px solid #eef2f7;">
-          <span id="status-dot" class="status-dot" style="background-color: #94a3b8;"></span>
-          <span id="status-text">Disconnected</span>
-        </div>
-      </div>
+      <h2>Email Logs</h2>
       <div class="logs-toolbar">
         <div class="toolbar-group">
           <input id="searchInput" class="search-input" type="search" placeholder="Search recipient, subject or type" />
@@ -343,8 +313,7 @@
     </section>
   </main>
 
-  <!-- Email Modal -->
-         <div class="modal-overlay" id="emailModal">
+  <div class="modal-overlay" id="emailModal">
     <div class="modal-card">
       <button class="modal-close" id="modalCloseBtn" aria-label="Close modal">×</button>
       <h3 id="modalTitle">Send Email Notification</h3>
@@ -379,436 +348,14 @@
     </div>
   </div>
 
-
   <script src="../../assets/js/admincashier.js"></script>
   <script>
-    const apiUrl = '../../actions/get_admincashier_gmail_notifications.php';
-    const notificationsApiUrl = '../../actions/get_notifications.php';
-    let currentAdminId = null;
-    let emailEventSource = null;
-    let emailLogs = [];
-
-    const searchInput = document.getElementById('searchInput');
-    const statusFilter = document.getElementById('statusFilter');
-    const typeFilter = document.getElementById('typeFilter');
-    const fromDate = document.getElementById('fromDate');
-    const toDate = document.getElementById('toDate');
-    const refreshLogsBtn = document.getElementById('refreshLogsBtn');
-    const sendEmailBtn = document.getElementById('sendEmailBtn');
-    const emailModal = document.getElementById('emailModal');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalCloseBtn = document.getElementById('modalCloseBtn');
-    const modalCancelBtn = document.getElementById('modalCancelBtn');
-    const modalSendBtn = document.getElementById('modalSendBtn');
-    const modalRecipient = document.getElementById('modalRecipient');
-    const modalType = document.getElementById('modalType');
-    const modalSubject = document.getElementById('modalSubject');
-    const modalMessage = document.getElementById('modalMessage');
-
-    let notifInterval = null;
-
-    initializeAdminCashierPage(async (data) => {
-      currentAdminId = data.admin_id;
-      updateGreeting(data.name || data.username || 'Admin Cashier');
-      loadNotifications();
-      startNotifPolling();
-      updateDateTime();
-      setInterval(updateDateTime, 60000);
-      loadGmailData();
-      attachFilterListeners();
-      setupNotificationUI();
+    // Use the central initializer from admincashier.js
+    initializeAdminCashierPage((userData) => {
+      // page-specific data loading
+      loadActiveQueues();
+      loadQueueStatus();
     });
-
-    window.addEventListener('beforeunload', () => {
-      if (emailEventSource) emailEventSource.close();
-      stopNotifPolling();
-    });
-
-    function attachFilterListeners() {
-      [searchInput, statusFilter, typeFilter, fromDate, toDate].forEach(element => {
-        element.addEventListener('change', loadGmailData);
-        element.addEventListener('keyup', event => {
-          if (event.key === 'Enter') loadGmailData();
-        });
-      });
-      refreshLogsBtn.addEventListener('click', loadGmailData);
-      sendEmailBtn.addEventListener('click', () => openModal('send'));
-      modalCloseBtn.addEventListener('click', closeModal);
-      modalCancelBtn.addEventListener('click', closeModal);
-      modalSendBtn.addEventListener('click', submitSendEmail);
-      emailModal.addEventListener('click', (event) => {
-        if (event.target === emailModal) closeModal();
-      });
-    }
-
-    function updateConnectionStatus(state) {
-      const dot = document.getElementById('status-dot');
-      const text = document.getElementById('status-text');
-      if (!dot || !text) return;
-
-      dot.className = 'status-dot';
-      switch (state) {
-        case 'connected':
-          dot.classList.add('status-connected');
-          text.textContent = 'Live Connected';
-          break;
-        case 'connecting':
-          dot.classList.add('status-connecting');
-          text.textContent = 'Connecting...';
-          break;
-        case 'error':
-          dot.classList.add('status-error');
-          text.textContent = 'Connection Lost';
-          break;
-      }
-    }
-
-    function updateGreeting(adminName) {
-      const hour = new Date().getHours();
-      let greet = 'Hello';
-      if (hour < 12) greet = 'Good Morning';
-      else if (hour < 18) greet = 'Good Afternoon';
-      else greet = 'Good Evening';
-      document.getElementById('greeting-message').textContent = `${greet}, ${adminName}!`;
-    }
-
-    function updateDateTime() {
-      const now = new Date();
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      const dateStr = now.toLocaleDateString('en-US', options);
-      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      document.getElementById('current-date-time').textContent = `${dateStr} • ${timeStr}`;
-    }
-
-    function loadGmailData() {
-      // Close existing stream before starting a new one with potentially different filters
-      if (emailEventSource) emailEventSource.close();
-
-      updateConnectionStatus('connecting');
-
-      const params = new URLSearchParams();
-      if (statusFilter.value) params.set('status', statusFilter.value);
-      if (typeFilter.value) params.set('email_type', typeFilter.value);
-      if (fromDate.value) params.set('from_date', fromDate.value);
-      if (toDate.value) params.set('to_date', toDate.value);
-      if (searchInput.value.trim()) params.set('search', searchInput.value.trim());
-
-      const sseUrl = `../../actions/get_admincashier_gmail_notifications_sse.php?${params.toString()}`;
-      emailEventSource = new EventSource(sseUrl);
-
-      emailEventSource.onopen = () => updateConnectionStatus('connected');
-
-      emailEventSource.onmessage = function(event) {
-        try {
-          const result = JSON.parse(event.data);
-          const metrics = result.metrics || {};
-          
-          document.getElementById('sentToday').textContent = metrics.sent_today ?? 0;
-          document.getElementById('failedEmails').textContent = metrics.failed_emails ?? 0;
-          document.getElementById('pendingEmails').textContent = metrics.pending_emails ?? 0;
-          document.getElementById('totalEmailsSent').textContent = metrics.total_emails_sent ?? 0;
-          
-          emailLogs = result.logs || [];
-          renderEmailLogs(emailLogs);
-          populateEmailTypes(result.types || []);
-        } catch (e) {
-          console.error("Error parsing real-time data:", e);
-        }
-      };
-
-      emailEventSource.onerror = function(err) {
-        updateConnectionStatus('error');
-        console.error('Real-time connection error. Reconnecting...');
-        // EventSource will automatically attempt to reconnect
-      };
-    }
-
-    function renderEmailLogs(logs) {
-      const logsBody = document.getElementById('emailLogsBody');
-      logsBody.innerHTML = '';
-      if (!logs.length) {
-        logsBody.innerHTML = '<tr><td colspan="7" class="empty-state">No email logs available.</td></tr>';
-        return;
-      }
-
-      logs.forEach(log => {
-        const row = document.createElement('tr');
-        const statusClass = log.status === 'sent' ? 'status-sent' : log.status === 'failed' ? 'status-failed' : 'status-pending';
-        const displayType = log.notification_type || log.email_type || 'N/A';
-        const displayTime = log.timestamp || log.created_at || log.date_sent || 'N/A';
-        row.innerHTML = `
-          <td>${log.id}</td>
-          <td>${escapeHtml(log.recipient)}</td>
-          <td>${escapeHtml(log.subject)}</td>
-          <td>${escapeHtml(displayType)}</td>
-          <td><span class="status-badge ${statusClass}">${escapeHtml(log.status)}</span></td>
-          <td>${formatDateTime(displayTime)}</td>
-          <td>
-            <div class="action-buttons">
-              <button class="action-button view" type="button" data-action="view" data-id="${log.id}">View</button>
-              <button class="action-button retry" type="button" data-action="retry" data-id="${log.id}">Retry</button>
-              <button class="action-button delete" type="button" data-action="delete" data-id="${log.id}">Delete</button>
-            </div>
-          </td>
-        `;
-        logsBody.appendChild(row);
-      });
-      logsBody.querySelectorAll('.action-button').forEach(button => {
-        button.addEventListener('click', () => handleRowAction(button.dataset.action, button.dataset.id));
-      });
-    }
-
-    function populateEmailTypes(types) {
-      const existingValues = Array.from(typeFilter.options).map(opt => opt.value);
-      const uniqueTypes = Array.from(new Set(types.filter(type => type && !existingValues.includes(type))));
-      uniqueTypes.forEach(type => {
-        const option = document.createElement('option');
-        option.value = type;
-        option.textContent = type;
-        typeFilter.appendChild(option);
-      });
-    }
-
-    function formatDateTime(value) {
-      if (!value || value === 'N/A') return 'N/A';
-      const date = new Date(value);
-      return isNaN(date.getTime()) ? value : date.toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    }
-
-    function openModal(mode, log = null) {
-      emailModal.classList.add('open');
-      if (mode === 'send' || !log) {
-        modalTitle.textContent = 'Send Email Notification';
-        modalSendBtn.style.display = 'inline-flex';
-        modalRecipient.value = '';
-        modalSubject.value = '';
-        modalMessage.value = '';
-        modalType.value = 'System Alert';
-      } else if (mode === 'view' && log) {
-        modalTitle.textContent = 'Email Details';
-        modalSendBtn.style.display = 'none';
-        modalRecipient.value = log.recipient;
-        modalSubject.value = log.subject;
-        modalMessage.value = log.message || 'No message content available.';
-        modalType.value = log.notification_type || log.email_type || 'Other';
-      }
-    }
-
-    function closeModal() {
-      emailModal.classList.remove('open');
-    }
-
-    function submitSendEmail() {
-      const payload = {
-        action: 'send_email',
-        recipient: modalRecipient.value.trim(),
-        subject: modalSubject.value.trim(),
-        message: modalMessage.value.trim(),
-        email_type: modalType.value.trim()
-      };
-      if (!payload.recipient || !payload.subject) {
-        alert('Please provide a recipient and subject.');
-        return;
-      }
-      fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-      .then(res => res.json())
-      .then(result => {
-        if (result.success) {
-          closeModal();
-          loadGmailData();
-        } else {
-          alert(result.error || 'Unable to send email notification.');
-        }
-      })
-      .catch(err => {
-        console.error('Error sending email:', err);
-        alert('Unable to send email notification.');
-      });
-    }
-
-    function handleRowAction(action, id) {
-      const log = emailLogs.find(entry => String(entry.id) === String(id));
-      if (action === 'view' && log) {
-        openModal('view', log);
-      }
-      if (action === 'retry') {
-        retryEmailLog(id);
-      }
-      if (action === 'delete' && confirm('Delete this email log entry?')) {
-        deleteEmailLog(id);
-      }
-    }
-
-    function retryEmailLog(id) {
-      fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'retry_email', id })
-      })
-      .then(res => res.json())
-      .then(result => {
-        if (result.success) {
-          loadGmailData();
-        } else {
-          alert(result.error || 'Unable to retry email.');
-        }
-      })
-      .catch(err => {
-        console.error('Retry error:', err);
-        alert('Unable to retry email.');
-      });
-    }
-
-    function deleteEmailLog(id) {
-      fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete_log', id })
-      })
-      .then(res => res.json())
-      .then(result => {
-        if (result.success) {
-          loadGmailData();
-        } else {
-          alert(result.error || 'Unable to delete log.');
-        }
-      })
-      .catch(err => {
-        console.error('Delete error:', err);
-        alert('Unable to delete log.');
-      });
-    }
-
-    function escapeHtml(value) {
-      return String(value || '').replace(/[&"'<>]/g, tag => ({ '&': '&amp;', '"': '&quot;', "'": '&#39;', '<': '&lt;', '>': '&gt;' })[tag]);
-    }
-
-    function loadNotifications() {
-      if (!currentAdminId) return;
-      const notificationsList = document.getElementById('notifications-list');
-      const notifBadge = document.getElementById('notif-badge');
-      if (!notificationsList) return;
-
-      fetch(`${notificationsApiUrl}?admin_id=${encodeURIComponent(currentAdminId)}`)
-        .then(res => res.json())
-        .then(notifs => {
-          notificationsList.innerHTML = '';
-          if (!Array.isArray(notifs) || notifs.length === 0) {
-            notificationsList.innerHTML = '<div class="notification-item">No notifications yet.</div>';
-            if (notifBadge) notifBadge.style.display = 'none';
-            return;
-          }
-          const unreadCount = notifs.filter(n => n.is_read == 0).length;
-          if (notifBadge) {
-            notifBadge.textContent = unreadCount > 0 ? unreadCount : '';
-            notifBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
-          }
-          notifs.forEach(n => {
-            const imgSrc = n.product_image || '/assets/images/bg/product_details.png';
-            const item = document.createElement('div');
-            item.className = 'notification-item';
-            item.style.background = n.is_read == 0 ? '#e0e7ff' : 'white';
-            item.innerHTML = `
-              <img src="${imgSrc}" alt="Product">
-              <div>
-                <div class="notification-message">${escapeHtml(n.product_name)} - ${escapeHtml(n.status)}</div>
-                <div class="notification-time">${new Date(n.notified_at).toLocaleString()}</div>
-              </div>
-            `;
-            notificationsList.appendChild(item);
-          });
-        });
-    }
-
-    function setupNotificationUI() {
-      const menuIcon = document.getElementById('menu-icon');
-      const bell = document.getElementById('notification-bell');
-      const dropdown = document.getElementById('notification-dropdown');
-      const clearBtn = document.getElementById('clear-notifications');
-
-      if (menuIcon) {
-        menuIcon.addEventListener('click', (e) => {
-          e.preventDefault();
-          const menu = document.getElementById('dropdown-menu');
-          if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-        });
-      }
-
-      if (bell && dropdown) {
-        bell.addEventListener('click', (e) => {
-          e.preventDefault();
-          const isOpen = dropdown.style.display === 'block';
-          dropdown.style.display = isOpen ? 'none' : 'block';
-          if (!isOpen) {
-            markAllNotificationsRead(() => {
-              loadNotifications();
-              startNotifPolling();
-            });
-          } else {
-            stopNotifPolling();
-          }
-        });
-      }
-
-      document.addEventListener('click', (e) => {
-        const menu = document.getElementById('dropdown-menu');
-        if (menu && menuIcon && !menu.contains(e.target) && !menuIcon.contains(e.target)) {
-          menu.style.display = 'none';
-        }
-        if (dropdown && bell && !dropdown.contains(e.target) && !bell.contains(e.target)) {
-          dropdown.style.display = 'none';
-          stopNotifPolling();
-        }
-      });
-
-      if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-          if (!currentAdminId) return;
-          fetch('../../actions/clear_notifications.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ admin_id: currentAdminId })
-          })
-          .then(res => res.json())
-          .then(res => {
-            if (res.success) {
-              const notificationsList = document.getElementById('notifications-list');
-              const notifBadge = document.getElementById('notif-badge');
-              if (notificationsList) notificationsList.innerHTML = '<div class="notification-item">No notifications yet.</div>';
-              if (notifBadge) notifBadge.style.display = 'none';
-            }
-          });
-        });
-      }
-    }
-
-    function startNotifPolling() {
-      if (notifInterval) clearInterval(notifInterval);
-      notifInterval = setInterval(loadNotifications, 5000);
-    }
-
-    function stopNotifPolling() {
-      if (notifInterval) clearInterval(notifInterval);
-      notifInterval = null;
-    }
-
-    function markAllNotificationsRead(callback) {
-      if (!currentAdminId) {
-        if (typeof callback === 'function') callback();
-        return;
-      }
-      fetch('../../actions/mark_notifications_read.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ admin_id: currentAdminId })
-      }).then(() => {
-        if (typeof callback === 'function') callback();
-      });
-    }
   </script>
 </body>
 </html>
