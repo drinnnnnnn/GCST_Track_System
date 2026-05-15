@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $csrf_token = $_POST['_csrf_token'] ?? '';
 if (!validateCsrfToken($csrf_token)) {
-    header('Location: ../pages/superadmin/superadmin_dashb.html?error=csrf');
+    header('Location: ../pages/sign_in_superadmin.html?error=csrf');
     exit();
 }
 
@@ -37,10 +37,15 @@ if ($email === '' || $password === '') {
 $superAdminModel = new SuperAdminModel();
 
 // Authenticate using the specialized model to handle brute-force protection and the correct table
-$admin = $superAdminModel->authenticate($email, $password);
+$admin = $superAdminModel->authenticate($email, $password, $pin);
 
 if (!$admin) {
     header('Location: ../pages/sign_in_superadmin.html?error=invalid');
+    exit();
+}
+
+if (isset($admin['error'])) {
+    header('Location: ../pages/sign_in_superadmin.html?error=' . $admin['error']);
     exit();
 }
 
@@ -51,12 +56,6 @@ if (isset($admin['locked'])) {
 
 if ($admin['status'] !== 'active') {
     header('Location: ../pages/sign_in_superadmin.html?error=unauthorized');
-    exit();
-}
-
-// Verify the security PIN using hashed comparison for the superadmin layer
-if (!password_verify($pin, $admin['security_pin_hash'])) {
-    header('Location: ../pages/sign_in_superadmin.html?error=invalid_pin');
     exit();
 }
 
@@ -72,4 +71,3 @@ logAudit($conn, 'superadmin', $admin['id'], 'login', 'Superadmin logged in succe
 
 header('Location: ../pages/superadmin/superadmin_dashb.html');
 exit();
-?>

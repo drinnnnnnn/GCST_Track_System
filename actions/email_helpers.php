@@ -66,6 +66,22 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
 
     // Log the notification to the database
     try {
+        // Ensure the email_notifications table exists with all required columns
+        $conn->query("CREATE TABLE IF NOT EXISTS email_notifications (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            recipient VARCHAR(255) NOT NULL,
+            subject VARCHAR(255),
+            notification_type VARCHAR(50),
+            status VARCHAR(20),
+            error_message TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )");
+
+        $checkColumn = $conn->query("SHOW COLUMNS FROM `email_notifications` LIKE 'email_body'");
+        if ($checkColumn && $checkColumn->num_rows === 0) {
+            $conn->query("ALTER TABLE `email_notifications` ADD COLUMN `email_body` LONGTEXT AFTER `error_message`");
+        }
+
         $stmt = $conn->prepare("INSERT INTO email_notifications (recipient, subject, notification_type, status, error_message, email_body) VALUES (?, ?, ?, ?, ?, ?)");
         if ($stmt) {
             $stmt->bind_param('ssssss', $toEmail, $subject, $type, $status, $logMessage, $body);

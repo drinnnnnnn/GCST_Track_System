@@ -186,46 +186,54 @@ function formatCurrency(value) {
 
 /**
  * Show loading indicator
+ * @param {HTMLElement} element - The target container to display the loader in
+ * @param {string} message - Optional text to display below the spinner
  */
-function showLoading(element) {
-  if (element) {
-    element.innerHTML = `
-      <div class="loading">
-        <div class="spinner"></div>
-        <span>Loading...</span>
-      </div>
-    `;
-  }
+function showLoading(element, message = 'Loading...') {
+  if (!element) return;
+  
+  element.innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      <span>${message}</span>
+    </div>
+  `;
 }
 
 /**
- * Show empty state
+ * Show empty state UI
+ * @param {HTMLElement} element - The target container
+ * @param {string} message - Descriptive text explaining why the view is empty
+ * @param {string} title - Optional heading title
+ * @param {string} iconClass - FontAwesome icon class (e.g., 'fas fa-inbox')
  */
-function showEmptyState(element, message = 'No data available') {
-  if (element) {
-    element.innerHTML = `
-      <div class="empty-state">
-        <i class="fas fa-inbox"></i>
-        <h3>No Data</h3>
-        <p>${message}</p>
-      </div>
-    `;
-  }
+function showEmptyState(element, message = 'No data available', title = 'No Data', iconClass = 'fas fa-inbox') {
+  if (!element) return;
+
+  element.innerHTML = `
+    <div class="empty-state">
+      <i class="${iconClass}"></i>
+      <h3>${title}</h3>
+      <p>${message}</p>
+    </div>
+  `;
 }
 
 /**
- * Show error message
+ * Show error message state
+ * @param {HTMLElement} element - The target container
+ * @param {string} message - Error details or user-friendly error message
  */
 function showError(element, message = 'An error occurred') {
-  if (element) {
-    element.innerHTML = `
-      <div class="empty-state" style="border-color: #ef4444; color: #ef4444;">
-        <i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>
-        <h3>Error</h3>
-        <p>${message}</p>
-      </div>
-    `;
-  }
+  if (!element) return;
+
+  element.innerHTML = `
+    <div class="empty-state" style="border-color: #ef4444; color: #ef4444;">
+      <i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>
+      <h3>Oops! Something went wrong</h3>
+      <p>${message}</p>
+    </div>
+  `;
 }
 
 /**

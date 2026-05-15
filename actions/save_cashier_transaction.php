@@ -150,6 +150,7 @@ try {
         `quantity` INT(11) NOT NULL DEFAULT 1,
         `rental_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `return_date` DATETIME NOT NULL,
+        `overdue_charge` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `rejection_reason` TEXT DEFAULT NULL,
         `status` ENUM('active','returned','overdue','pending_renewal') NOT NULL DEFAULT 'active',
         PRIMARY KEY (`rental_id`),
@@ -208,6 +209,11 @@ try {
     $txnCheckAr = $conn->query("SHOW COLUMNS FROM `active_rentals` LIKE 'transaction_number'");
     if (!$txnCheckAr || $txnCheckAr->num_rows === 0) {
         $conn->query("ALTER TABLE `active_rentals` ADD COLUMN `transaction_number` VARCHAR(50) NOT NULL AFTER `rental_id` , ADD INDEX `idx_active_rentals_transaction` (`transaction_number`) ");
+    }
+
+    $overdueCheck = $conn->query("SHOW COLUMNS FROM `active_rentals` LIKE 'overdue_charge'");
+    if (!$overdueCheck || $overdueCheck->num_rows === 0) {
+        $conn->query("ALTER TABLE `active_rentals` ADD COLUMN `overdue_charge` DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `return_date` ");
     }
 
     $userCheck = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'user_id'");

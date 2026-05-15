@@ -11,7 +11,7 @@ export function getSidebarHTML() {
 
             const handleGesture = () => {
                 const swipeDistance = touchEndX - touchStartX;
-                // Swipe left to close (only if menu is active/open)
+                // Swipe left to close (threshold increased for better feel)
                 if (sidebar.classList.contains('active') && swipeDistance < -60) {
                     if (typeof window.toggleSidebar === 'function') {
                         window.toggleSidebar();
@@ -88,42 +88,33 @@ export function getSidebarHTML() {
     return `
 <style>
     .sidebar {
-        position: fixed;
-        top: 0; left: 0; bottom: 0;
-        width: 280px;
-        z-index: 1000;
         display: flex;
         flex-direction: column;
         padding: 2rem 1.25rem;
         border-right: 1px solid var(--border-soft);
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(20px) saturate(180%);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+        transition: var(--transition, 0.35s cubic-bezier(0.4, 0, 0.2, 1));
         box-sizing: border-box;
+        position: fixed; top: 0; left: 0; bottom: 0;
+        z-index: 1001;
+        width: 280px;
     }
 
-    /* Sidebar Layout Logic - Controls main page structure */
     @media (min-width: 1025px) {
-        .content-wrapper { margin-left: 280px; transition: margin-left 0.4s ease; }
-        header { left: 280px !important; width: calc(100% - 280px) !important; transition: all 0.4s ease; }
-
-      /* Adjust content and header when sidebar is minimized */
-        .sidebar.minimized { width: 90px; padding: 2rem 0.75rem; }
-        .content-wrapper.minimized { margin-left: 90px !important; }
-        header.minimized { left: 90px !important; width: calc(100% - 90px) !important; }
+        .sidebar.minimized { width: var(--sidebar-minimized, 85px); padding: 2rem 0.75rem; }
     }
 
-    /* Integrated Logout Modal Styles */
     .logout-modal-overlay {
         position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5);
         backdrop-filter: blur(12px); z-index: 10000; display: none; align-items: center; justify-content: center;
-        opacity: 0; transition: all 0.3s ease; font-family: 'Poppins', sans-serif;
+        opacity: 0; transition: var(--transition); font-family: 'Poppins', sans-serif;
     }
     .logout-modal-overlay.active { display: flex; opacity: 1; }
     .logout-modal-card {
         background: white; width: 90%; max-width: 420px; padding: 3rem 2.5rem;
         border-radius: 2.5rem; text-align: center; box-shadow: var(--shadow-lg);
-        transform: scale(0.9); transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transform: scale(0.9); transition: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .logout-modal-overlay.active .logout-modal-card { transform: scale(1); }
     .logout-modal-icon {
@@ -144,19 +135,18 @@ export function getSidebarHTML() {
         inset: 0;
         background: rgba(15, 23, 42, 0.4);
         backdrop-filter: blur(4px);
-        z-index: 900;
+        z-index: 1000;
         display: none;
     }
     #sidebar-overlay.active { display: block; }
 
     @media (max-width: 1024px) {
         .sidebar { 
-            transform: translateX(-100%); 
-            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 0 1.5rem 1.5rem 0;
-            width: 300px;
+            transform: translateX(-110%); 
+            border-radius: 0 2rem 2rem 0;
+            width: 280px;
+            max-width: 85vw;
             box-shadow: 10px 0 30px rgba(15, 23, 42, 0.15);
-            border-right: none;
         }
         .sidebar.active { transform: translateX(0); }
 
@@ -168,6 +158,17 @@ export function getSidebarHTML() {
         }
         .sidebar-footer { padding-bottom: 2rem; }
         .nav-section-label { margin-top: 2rem; font-size: 0.75rem; }
+
+        .sidebar-mobile-close {
+            display: flex;
+            position: absolute;
+            top: 1.5rem;
+            right: 1.25rem;
+            background: var(--surface-soft);
+            border: none; width: 36px; height: 36px; border-radius: 10px;
+            align-items: center; justify-content: center;
+            color: var(--muted); cursor: pointer;
+        }
     }
 
     .sidebar-brand {
@@ -177,6 +178,10 @@ export function getSidebarHTML() {
         margin-bottom: 3rem;
         padding: 0 0.5rem;
         position: relative;
+    }
+
+    .sidebar-mobile-close {
+        display: none;
     }
 
     .sidebar-brand img {
@@ -189,7 +194,7 @@ export function getSidebarHTML() {
         position: absolute;
         top: 50%;
         right: -25px;
-        transform: translateY(-50%);
+        transform: translate(50%, -50%);
         background: var(--primary);
         color: white;
         border: none;
@@ -200,7 +205,7 @@ export function getSidebarHTML() {
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         transition: all 0.3s ease;
         z-index: 1001;
     }
@@ -209,7 +214,7 @@ export function getSidebarHTML() {
         .sidebar-minimize-btn { display: none; }
     }
 
-    .sidebar.minimized .sidebar-minimize-btn { right: 50%; transform: translate(50%, -50%) rotate(180deg); }
+    .sidebar.minimized .sidebar-minimize-btn { right: 0; transform: translate(50%, -50%) rotate(180deg); }
     .sidebar.minimized .sidebar-brand img { transform: scale(1.1); }
     .sidebar.minimized .sidebar-brand h1, 
     .sidebar.minimized .sidebar-brand span, 
@@ -269,6 +274,9 @@ export function getSidebarHTML() {
         </div>
         <button onclick="toggleMinimizeSidebar()" id="sidebar-minimize-btn" class="sidebar-minimize-btn" title="Toggle Sidebar">
             <i class="fas fa-chevron-left"></i>
+        </button>
+        <button onclick="toggleSidebar()" class="sidebar-mobile-close">
+            <i class="fas fa-times"></i>
         </button>
     </div>
 

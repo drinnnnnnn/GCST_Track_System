@@ -60,14 +60,14 @@ function checkAuthentication() {
       const allowedRoles = ['superadmin'];
       const currentId = data.admin_id;
       if (!currentId || !allowedRoles.includes(data.role)) {
-        window.location.href = "/GCST_Track_System/pages/sign_in_superadmin.php";
+        window.location.href = "/GCST_Track_System/pages/sign_in_superadmin.html";
         return null;
       }
       currentAdminId = currentId;
       return data;
     })
     .catch(() => {
-      window.location.href = "/GCST_Track_System/pages/sign_in_superadmin.php";
+      window.location.href = "/GCST_Track_System/pages/sign_in_superadmin.html";
       return null;
     });
 }
@@ -369,7 +369,7 @@ function setupBrowserSecurity() {
   window.addEventListener('storage', (event) => {
     if (event.key === 'gcst_superadmin_logout_event') {
       // If a logout happened in another tab, redirect this tab as well
-      window.location.replace("/GCST_Track_System/pages/sign_in_superadmin.php");
+      window.location.replace("/GCST_Track_System/pages/sign_in_superadmin.html");
     }
   });
 }

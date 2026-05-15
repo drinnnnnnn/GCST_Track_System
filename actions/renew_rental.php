@@ -13,8 +13,13 @@ $rental_id = isset($payload['rental_id']) ? intval($payload['rental_id']) : 0;
 $duration = isset($payload['duration']) ? intval($payload['duration']) : 0;
 $unit = isset($payload['unit']) ? trim(strtolower($payload['unit'])) : 'days';
 
-if (!$rental_id) {
-    echo json_encode(['success' => false, 'error' => 'Missing rental_id']);
+if (!$rental_id || $duration <= 0) {
+    echo json_encode(['success' => false, 'error' => 'Invalid rental ID or duration']);
+    exit;
+}
+
+if (!in_array($unit, ['days', 'hours'])) {
+    echo json_encode(['success' => false, 'error' => 'Invalid duration unit']);
     exit;
 }
 
@@ -22,7 +27,7 @@ $student_id = $_SESSION['student_id'] ?? null;
 $role = $_SESSION['role'];
 
 // Fetch current rental details to verify ownership and get the existing due date
-$sql = "SELECT return_date, student_id FROM active_rentals WHERE rental_id = ? LIMIT 1";
+$sql = "SELECT return_date, student_id, status FROM active_rentals WHERE rental_id = ? LIMIT 1";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param('i', $rental_id);
 $stmt->execute();
@@ -33,6 +38,11 @@ $stmt->close();
 // Verify that the rental exists and belongs to the student (if logged in as a student)
 if (!$row || ($role === 'student' && $row['student_id'] !== $student_id)) {
     echo json_encode(['success' => false, 'error' => 'Rental not found']);
+    exit;
+}
+
+if ($row['status'] === 'returned') {
+    echo json_encode(['success' => false, 'error' => 'Cannot renew a returned item']);
     exit;
 }
 

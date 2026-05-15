@@ -174,9 +174,11 @@
             padding: 16px 24px; border-radius: 20px; font-weight: 600;
             text-align: center; opacity: 0; transition: all 0.4s ease;
             z-index: 3000; pointer-events: none;
+            display: flex; align-items: center; justify-content: center; gap: 12px;
         }
         .floating-message.show { opacity: 1; transform: translateX(-50%) translateY(0); }
         .floating-message.error { background: #dc2626; }
+        .floating-message i { font-size: 24px; }
 
         .info-highlight {
             background: rgba(255, 255, 255, 0.5); padding: 16px;
@@ -227,16 +229,32 @@
         <div class="modal-box">
             <div class="header-icon"><i class='bx bx-reset'></i></div>
             <h2>Reset Password</h2>
-            <p style="margin: 15px 0; color: var(--text-muted); font-size: 14px;">Enter your ID to request a password reset from the IT department.</p>
+            <p id="reset-modal-desc" style="margin: 15px 0; color: var(--text-muted); font-size: 14px;">Enter your registered Email address to receive a verification code.</p>
             
-            <form action="../../actions/reset_request.php" method="POST" onsubmit="handleReset(event)">
+            <div id="reset-step-1">
                 <div class="input-box">
-                    <input type="text" name="reset_student_id" placeholder="Student ID Number" required>
-                    <i class='bx bxs-id-card'></i>
+                    <input type="email" id="reset_identifier" placeholder="Registered Email Address" required>
+                    <i class='bx bxs-envelope'></i>
                 </div>
-                <button type="submit" class="btn">Request Reset</button>
-                <button type="button" class="btn" style="background: transparent; color: var(--text-muted); box-shadow: none;" onclick="toggleModal('resetModal', false)">Back to Sign In</button>
-            </form>
+                <button type="button" class="btn" id="btnRequestCode" onclick="requestResetCode()">Send Verification Code</button>
+            </div>
+
+            <div id="reset-step-2" style="display:none;">
+                <div class="input-box">
+                    <input type="text" id="reset_otp" placeholder="6-Digit Code" maxlength="6" style="text-align: center; letter-spacing: 4px;">
+                </div>
+                <button type="button" class="btn" onclick="verifyResetCode()">Verify Code</button>
+            </div>
+
+            <div id="reset-step-3" style="display:none;">
+                <div class="input-box">
+                    <input type="password" id="new_password" placeholder="New Password" required>
+                    <i class='bx bx-lock-alt'></i>
+                </div>
+                <button type="button" class="btn" onclick="performPasswordReset()">Update Password</button>
+            </div>
+
+            <button type="button" class="btn" style="background: transparent; color: var(--text-muted); box-shadow: none;" onclick="toggleModal('resetModal', false)">Back to Sign In</button>
         </div>
     </div>
 
@@ -244,8 +262,18 @@
         // Handle status messages from URL parameters
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('error') === 'invalid') {
-                showToast("Incorrect Student ID or password.", true);
+            const error = urlParams.get('error');
+            const success = urlParams.get('success');
+            if (error === 'invalid') {
+                showToast("Incorrect credentials or password.", true);
+            } else if (error === 'pending') {
+                showToast("Access Denied: Your account is currently pending approval. Please check back later.", true);
+            } else if (error === 'rejected') {
+                showToast("Access Denied: Your registration request was rejected. Please contact the administrative office.", true);
+            } else if (error === 'suspended') {
+                showToast("Access Restricted: Your account has been suspended. Please contact support for assistance.", true);
+            } else if (success === 'registered') {
+                showToast("Account created successfully! Your registration is now pending review.", false);
             }
         });
 
@@ -269,16 +297,82 @@
         // Toast Notifications
         function showToast(message, isError = false) {
             const toast = document.getElementById("floating-message");
-            toast.textContent = message;
+            const iconClass = isError ? "bx bxs-error-circle" : "bx bxs-check-circle";
+            toast.innerHTML = `<i class='${iconClass}'></i> <span></span>`;
+            toast.querySelector('span').textContent = message;
             toast.className = isError ? "floating-message show error" : "floating-message show";
             setTimeout(() => toast.classList.remove("show"), 8000); // Increased to 8 seconds
         }
 
-        // Handle Reset Submission Mockup
-        function handleReset(e) {
-            e.preventDefault();
-            showToast("Reset request sent to IT Office.");
-            setTimeout(() => toggleModal('resetModal', false), 1500);
+        // Secure Password Reset Logic
+        let resetData = { email: '', code: '' };
+
+        async function requestResetCode() {
+            const identifier = document.getElementById('reset_identifier').value;
+            const btn = document.getElementById('btnRequestCode');
+            if(!identifier) return showToast("Identification is required", true);
+            
+            try {
+                btn.disabled = true;
+                btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Processing...";
+                const resp = await fetch('../actions/reset_request.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifier })
+                });
+                const result = await resp.json();
+                if(result.success) {
+                    resetData.email = result.email;
+                    document.getElementById('reset-step-1').style.display = 'none';
+                    document.getElementById('reset-step-2').style.display = 'block';
+                    document.getElementById('reset-modal-desc').innerText = result.message;
+                    showToast("Code Sent!");
+                } else throw new Error(result.message);
+            } catch(e) { showToast(e.message, true); }
+            finally {
+                btn.disabled = false;
+                btn.innerText = "Send Verification Code";
+            }
+        }
+
+        async function verifyResetCode() {
+            const code = document.getElementById('reset_otp').value;
+            try {
+                const resp = await fetch('../actions/verify_reset_code.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: resetData.email, code })
+                });
+                const result = await resp.json();
+                if(result.success) {
+                    resetData.code = code;
+                    document.getElementById('reset-step-2').style.display = 'none';
+                    document.getElementById('reset-step-3').style.display = 'block';
+                    document.getElementById('reset-modal-desc').innerText = "Verified! Set your new password.";
+                } else throw new Error(result.message);
+            } catch(e) { showToast(e.message, true); }
+        }
+
+        async function performPasswordReset() {
+            const password = document.getElementById('new_password').value;
+            if(password.length < 6) return showToast("Password too short (min 6 chars)", true);
+
+            try {
+                const resp = await fetch('../actions/update_password.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        email: resetData.email, 
+                        code: resetData.code,
+                        password: password 
+                    })
+                });
+                const result = await resp.json();
+                if(result.success) {
+                    showToast("Success! You can now sign in.");
+                    setTimeout(() => location.reload(), 2000);
+                } else throw new Error(result.message);
+            } catch(e) { showToast(e.message, true); }
         }
 
         // Login Validation
