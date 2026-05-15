@@ -5,102 +5,98 @@ class QueueModel {
     private $conn;
 
     public function __construct() {
-        global $conn;
-        $this->conn = $conn;
+        $this->conn = Database::getConnection();
+        $this->ensureTableExists();
     }
 
-    public function getActiveQueues() {
-        $stmt = $this->conn->prepare('SELECT id, queue_number, user_id, status, created_at, served_at FROM queue WHERE status IN ("waiting", "serving") ORDER BY created_at ASC');
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $queues = [];
-        while ($row = $result->fetch_assoc()) {
-            $queues[] = $row;
-        }
-        $stmt->close();
-        return $queues;
-    }
+    private function ensureTableExists() {
+        $tableName = 'queue_tickets'; // Use a variable for consistency
+        $sql = "CREATE TABLE IF NOT EXISTS `$tableName` (
+            `id` INT(11) NOT NULL AUTO_INCREMENT,
+            `user_id` INT(11) DEFAULT NULL,
+            `queue_number` VARCHAR(50) NOT NULL,
+            `student_name` VARCHAR(255) DEFAULT NULL,
+            `purpose` VARCHAR(255) DEFAULT NULL,
+            `status` ENUM('waiting', 'serving', 'completed', 'cancelled') NOT NULL DEFAULT 'waiting',
+            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `served_at` TIMESTAMP NULL DEFAULT NULL,
+            PRIMARY KEY (`id`),
+            KEY `idx_queue_user` (`user_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+        
+        try {
+            // Attempt to create the table. If it exists, this does nothing.
+            // If it doesn't exist and can't be created, mysqli_report should make this throw an exception.
+            $this->conn->query($sql);
+            error_log("QueueModel: Attempted to ensure table '$tableName' exists.");
 
-    public function getQueueCounts() {
-        $stmt = $this->conn->prepare('SELECT status, COUNT(*) AS total FROM queue GROUP BY status');
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $counts = [
-            'waiting' => 0,
-            'serving' => 0,
-            'completed' => 0,
-            'cancelled' => 0
-        ];
-        while ($row = $result->fetch_assoc()) {
-            $status = $row['status'];
-            if (array_key_exists($status, $counts)) {
-                $counts[$status] = (int) $row['total'];
+            // Verify table existence immediately after the CREATE IF NOT EXISTS statement
+            $checkSql = "SHOW TABLES LIKE '$tableName'";
+            $result = $this->conn->query($checkSql);
+
+            if ($result === false) {
+                error_log("QueueModel: Failed to execute SHOW TABLES query for '$tableName': " . $this->conn->error);
+                throw new Exception("Database error: Could not verify table '$tableName' existence.");
             }
+
+            if ($result->num_rows === 0) {
+                error_log("QueueModel: Critical error: Table '$tableName' does not exist after attempted creation. Check database permissions or connection.");
+                throw new Exception("Critical database error: Required table '$tableName' is missing or could not be created.");
+            }
+            error_log("QueueModel: Table '$tableName' confirmed to exist.");
+        } catch (mysqli_sql_exception $e) {
+            error_log("QueueModel: mysqli_sql_exception during table '$tableName' check/creation: " . $e->getMessage());
+            throw new Exception("Database schema initialization failed for table '$tableName': " . $e->getMessage());
+        } catch (Exception $e) {
+            error_log("QueueModel: General exception during table '$tableName' check/creation: " . $e->getMessage());
+            throw $e; // Re-throw to propagate
         }
-        $stmt->close();
-        return $counts;
     }
 
-    public function getById($queueId) {
-        $stmt = $this->conn->prepare('SELECT id, queue_number, user_id, status, created_at, served_at, student_name, purpose FROM queue WHERE id = ? LIMIT 1');
-        $stmt->bind_param('i', $queueId);
+    public function getTicketsByUserId($userId) {
+        $stmt = $this->conn->prepare("SELECT * FROM queue_tickets WHERE user_id = ? ORDER BY created_at DESC");
+        $stmt->bind_param("i", $userId);
         $stmt->execute();
         $result = $stmt->get_result();
-        $ticket = $result->fetch_assoc();
-        $stmt->close();
-        return $ticket;
+        return $result->fetch_all(MYSQLI_ASSOC);
     }
 
-    public function updateStatus($queueId, $status) {
-        $sql = 'UPDATE queue SET status = ?, served_at = CASE WHEN ? IN ("serving", "completed", "cancelled") THEN NOW() ELSE NULL END WHERE id = ?';
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param('ssi', $status, $status, $queueId);
-        $success = $stmt->execute();
-        $stmt->close();
-        return $success;
-    }
-
-    public function getNextQueueNumber() {
-        $sql = 'SELECT MAX(CAST(SUBSTRING(queue_number, 2) AS UNSIGNED)) AS max_num FROM queue WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)';
-        $result = $this->conn->query($sql);
-        $row = $result->fetch_assoc();
-        $nextNum = ($row['max_num'] ?? 0) + 1;
-        return 'Q' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
-    }
-
-    public function queueNumberExists($queueNumber) {
-        $stmt = $this->conn->prepare('SELECT COUNT(*) AS count FROM queue WHERE queue_number = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)');
-        $stmt->bind_param('s', $queueNumber);
+    public function getById($id) {
+        $stmt = $this->conn->prepare("SELECT * FROM queue_tickets WHERE id = ? LIMIT 1");
+        $stmt->bind_param("i", $id);
         $stmt->execute();
         $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        $stmt->close();
-        return (int) ($row['count'] ?? 0) > 0;
+        return $result->fetch_assoc();
     }
 
-    public function create($queueNumber = null, $userId = null, $studentName = '', $purpose = '') {
+    /**
+     * Creates a new queue ticket.
+     * @param int|null $userId Numeric user ID
+     * @param string|null $queueNumber Manual number or null for auto-gen
+     */
+    public function create($userId, $queueNumber, $studentName, $purpose) {
         if ($queueNumber === null) {
-            $queueNumber = $this->getNextQueueNumber();
+            $queueNumber = $this->generateQueueNumber();
         }
 
-        $attempt = 0;
-        while ($this->queueNumberExists($queueNumber) && $attempt < 5) {
-            $queueNumber = $this->getNextQueueNumber();
-            $attempt++;
+        $stmt = $this->conn->prepare("INSERT INTO queue_tickets (user_id, queue_number, student_name, purpose, status, created_at) VALUES (?, ?, ?, ?, 'waiting', NOW())");
+        $stmt->bind_param("isss", $userId, $queueNumber, $studentName, $purpose);
+        
+        if ($stmt->execute()) {
+            return ['id' => $this->conn->insert_id];
         }
+        return false;
+    }
 
-        if ($userId === null) {
-            $stmt = $this->conn->prepare('INSERT INTO queue (queue_number, student_name, purpose, status) VALUES (?, ?, ?, "waiting")');
-            $stmt->bind_param('sss', $queueNumber, $studentName, $purpose);
-        } else {
-            $stmt = $this->conn->prepare('INSERT INTO queue (queue_number, user_id, student_name, purpose, status) VALUES (?, ?, ?, ?, "waiting")');
-            $stmt->bind_param('siss', $queueNumber, $userId, $studentName, $purpose);
-        }
-
-        $success = $stmt->execute();
-        $insertId = $this->conn->insert_id;
-        $stmt->close();
-
-        return $success ? ['id' => $insertId, 'queue_number' => $queueNumber] : false;
+    private function generateQueueNumber() {
+        $today = date('Y-m-d');
+        $stmt = $this->conn->prepare("SELECT COUNT(*) as total FROM queue_tickets WHERE DATE(created_at) = ?");
+        $stmt->bind_param("s", $today);
+        $stmt->execute();
+        $res = $stmt->get_result()->fetch_assoc();
+        $count = ($res['total'] ?? 0) + 1;
+        
+        return "Q-" . str_pad($count, 3, '0', STR_PAD_LEFT);
     }
 }
+?>

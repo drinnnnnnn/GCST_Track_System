@@ -590,7 +590,7 @@
         const response = await fetchWithError('../../actions/generate_queue.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ queue_number: null, student_name: studentName, purpose: purpose })
+          body: JSON.stringify({ student_name: studentName, purpose: purpose })
         });
         if (!response.success) {
           showConfirmation(response.error || 'Failed to generate ticket', true);
@@ -665,6 +665,10 @@
     });
 
     document.getElementById('refresh-status-btn')?.addEventListener('click', () => {
+      const container = document.getElementById('tickets-container');
+      if (container) {
+        container.innerHTML = '<div class="loading"><div class="spinner"></div><span>Refreshing...</span></div>';
+      }
       refreshQueueStatus();
     });
 
