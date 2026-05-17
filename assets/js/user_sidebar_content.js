@@ -284,7 +284,6 @@ export function getSidebarHTML() {
     <nav class="flex-1">
         <a href="InUser_home.html" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
         <a href="user_browse_products.html" class="sidebar-link"><i class="fas fa-shopping-bag"></i> <span>Browse Products</span></a>
-        <a href="user_rentals.html" class="sidebar-link"><i class="fas fa-book"></i> <span>My Rentals</span></a>
         <a href="user_queue_tickets.html" class="sidebar-link"><i class="fas fa-ticket-alt"></i> <span>Queue Tickets</span></a>
         
         <p class="nav-section-label">Account</p>

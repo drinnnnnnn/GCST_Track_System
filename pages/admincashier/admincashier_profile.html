@@ -355,17 +355,17 @@
             </div>
             <div class="form-group">
               <label>Full Name</label>
-              <input type="text" id="full-name" placeholder="Full Name">
+              <input type="text" id="full-name" placeholder="Full Name" readonly>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>Email</label>
-              <input type="email" id="email" placeholder="Email address">
+              <input type="email" id="email" placeholder="Email address" readonly>
             </div>
             <div class="form-group">
               <label>Phone Number</label>
-              <input type="tel" id="phone" placeholder="Phone number">
+              <input type="tel" id="phone" placeholder="Phone number" readonly>
             </div>
           </div>
           <div class="form-row">
@@ -378,9 +378,6 @@
               <input type="text" id="admin-id" placeholder="Admin ID" readonly>
             </div>
           </div>
-          <button type="submit" class="save-button">
-            <i class="fas fa-check"></i> Save Changes
-          </button>
         </form>
       </div>
     </section>
@@ -403,26 +400,6 @@
             <div class="info-item-value" id="account-status" style="color: var(--success);">Active</div>
           </div>
         </div>
-
-        <h3 style="margin-top: 28px; margin-bottom: 18px;">Change Password</h3>
-        <form onsubmit="changePassword(event)" style="max-width: 500px;">
-          <div class="form-group">
-            <label>Current Password</label>
-            <input id="current-password" type="password" placeholder="Enter current password">
-          </div>
-          <div class="form-group">
-            <label>New Password</label>
-            <input id="new-password" type="password" placeholder="Enter new password">
-          </div>
-          <div class="form-group">
-            <label>Confirm Password</label>
-            <input id="confirm-password" type="password" placeholder="Confirm new password">
-          </div>
-          <button type="submit" class="save-button">
-            <i class="fas fa-lock"></i> Update Password
-          </button>
-        </form>
-      </div>
     </section>
 
     <!-- Tab: Notifications -->

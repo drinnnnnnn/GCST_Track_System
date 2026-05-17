@@ -1194,7 +1194,7 @@ function applyInventoryFilters() {
 function buildInventoryCategoryFilters() {
   const container = document.getElementById('category-filters');
   if (!container) return;
-  const base = ['All', 'Books', 'Uniform', 'Accessories'];
+  const base = ['All', 'Uniform', 'Accessories'];
   const extra = Array.from(new Set(inventoryProducts.map(p => p.product_category || 'Other'))).filter(c => c && !base.includes(c));
   container.innerHTML = '';
   [...base, ...extra].forEach(category => {
@@ -1235,7 +1235,7 @@ function updateInventoryDetailPanel() {
   }
 
   if (document.getElementById('detail-name-input')) document.getElementById('detail-name-input').value = selectedInventoryProduct.product_name || '';
-  if (document.getElementById('detail-category-input')) document.getElementById('detail-category-input').value = selectedInventoryProduct.product_category || 'Books';
+  if (document.getElementById('detail-category-input')) document.getElementById('detail-category-input').value = selectedInventoryProduct.product_category || 'Other';
   if (document.getElementById('detail-buy-input')) document.getElementById('detail-buy-input').value = Number(selectedInventoryProduct.buy_price || 0).toFixed(2);
   if (document.getElementById('detail-rent-input')) document.getElementById('detail-rent-input').value = isBook ? Number(selectedInventoryProduct.rent_price || 0).toFixed(2) : '0.00';
   if (document.getElementById('detail-barcode-input')) document.getElementById('detail-barcode-input').value = selectedInventoryProduct.barcode || '';
@@ -1453,7 +1453,6 @@ async function fetchSummaryMetrics() {
     if (document.getElementById('totalSalesToday')) document.getElementById('totalSalesToday').textContent = formatCurrency(dashboardData.total_sales_today ?? 0);
     if (document.getElementById('totalInventory')) document.getElementById('totalInventory').textContent = dashboardData.total_inventory ?? 0;
     if (document.getElementById('pendingQueue')) document.getElementById('pendingQueue').textContent = dashboardData.pending_queue ?? 0;
-    if (document.getElementById('booksRented')) document.getElementById('booksRented').textContent = dashboardData.books_rented ?? 0;
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
   }
