@@ -22,7 +22,7 @@ export function getSidebarHTML() {
         window.performLogout = function() {
             sessionStorage.clear();
             localStorage.clear();
-            window.location.replace('/GCST_Track_System/actions/log_out.php');
+            window.location.replace('/GCST_Track_System/actions/sign_out.php');
         };
 
         // Global listener to close modal on Escape key
