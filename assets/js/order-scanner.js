@@ -159,6 +159,26 @@ const OrderScanner = {
             });
             const result = await response.json();
 
+            // Handle "Already Paid" as a special success-like state for UI feedback
+            if (!result?.success && (result?.message === "Order Already Paid" || result?.message === "Transaction Already Completed")) {
+                const successOverlay = document.getElementById('scan-success-overlay');
+                const successText = successOverlay?.querySelector('p');
+                
+                if (successOverlay && successText) {
+                    successText.textContent = "Order Already Paid";
+                    successOverlay.classList.remove('hidden');
+                    
+                    if (typeof SCAN_SOUND !== 'undefined') {
+                        SCAN_SOUND.currentTime = 0;
+                        SCAN_SOUND.play().catch(() => {});
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    this.close();
+                    return;
+                }
+            }
+
             if (!result?.success || !result?.order || !Array.isArray(result?.order?.items)) {
                 const errorOverlay = document.getElementById('scan-error-overlay');
                 const modal = document.getElementById('qr-modal');
@@ -166,7 +186,18 @@ const OrderScanner = {
                 // If modal is open, show visual X animation
                 if (errorOverlay && modal && !modal.classList.contains('hidden')) {
                     const errorText = document.getElementById('scan-error-text');
-                    if (errorText) errorText.textContent = result?.message || 'Order Not Found';
+                    if (errorText) {
+                        // Specific message for expired/voided orders
+                        if (result?.message === "Order Expired or Voided" || result?.message === "QR Code Expired") {
+                            errorText.textContent = "QR Code Expired";
+                        } else if (result?.message === "Order Already Paid" || result?.message === "Transaction Already Completed") {
+                            // This case should ideally be caught by the success-like block above,
+                            // but as a fallback, treat it as an error here.
+                            errorText.textContent = "Order Already Paid";
+                        } else {
+                            errorText.textContent = result?.message || 'Order Not Found';
+                        }
+                    }
                     errorOverlay.classList.remove('hidden');
                     
                     if (typeof ERROR_SOUND !== 'undefined') {
@@ -192,12 +223,16 @@ const OrderScanner = {
 
             // Set verification state
             if (typeof state !== 'undefined') state.isQRScanned = true;
+            // Store original transaction number to prevent duplicates on finalize
+            if (typeof state !== 'undefined') state.scannedTxnNumber = result.order.transaction_number;
 
             await new Promise(resolve => setTimeout(resolve, 800));
             this.close();
 
             const order = result.order;
             const hasGlobalState = typeof state !== 'undefined';
+
+            console.log("Order Loaded from QR:", order.transaction_number);
 
             if (hasGlobalState) {
                 // Synchronize Page State

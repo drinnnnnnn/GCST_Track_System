@@ -47,7 +47,7 @@ $transactionNumber = $parsed['reference'];
 $cleanReference = str_replace('ORDER-', '', $transactionNumber);
 $prefixedReference = 'ORDER-' . $cleanReference;
 
-$query = "SELECT id, transaction_number, user_id, student_name, transaction_type, items, subtotal, discount_percent, discount_amount, total_amount, payment_status, created_at 
+$query = "SELECT id, transaction_number, user_id, student_name, transaction_type, items, subtotal, discount_percent, discount_amount, total_amount, payment_status, is_expired, created_at 
           FROM cashier_transactions 
           WHERE transaction_number = ? OR transaction_number = ? OR transaction_number = ? LIMIT 1";
 $stmt = $conn->prepare($query);
@@ -68,8 +68,13 @@ if (($_SESSION['role'] === 'student' || $_SESSION['role'] === 'user') && intval(
     QRService::respond(false, [], 'Unauthorized access: This order does not belong to you.');
 }
 
+// 4. Validation: Check for non-processable states (Already paid or expired)
 if ($order['payment_status'] === 'paid') {
-    QRService::respond(false, [], 'Order is already paid.');
+    QRService::respond(false, [], 'Transaction Already Completed'); // Explicit message for processed orders
+}
+
+if ($order['payment_status'] === 'voided' || (isset($order['is_expired']) && (int)$order['is_expired'] === 1)) {
+    QRService::respond(false, [], 'QR Code Expired'); // Blocks cancelled or timed-out orders
 }
 
 // Get user/student details to resolve student_id if possible

@@ -47,6 +47,24 @@ try {
             throw new Exception('Action Restricted: Transactions initiated by cashiers must be unlocked via a valid QR code scan.');
         }
     }
+    
+    // 1.5 Strict Transaction State Enforcement: Prevent reprocessing processed/expired orders
+    $originalTxnNumber = $payload['original_txn_number'] ?? null;
+    if ($originalTxnNumber) {
+        $checkStmt = $conn->prepare("SELECT payment_status, is_expired FROM cashier_transactions WHERE transaction_number = ? LIMIT 1");
+        $checkStmt->bind_param('s', $originalTxnNumber);
+        $checkStmt->execute();
+        $checkStmt->bind_result($existingStatus, $existingExpired);
+        if ($checkStmt->fetch()) {
+            if ($existingStatus === 'paid') {
+                throw new Exception('Transaction Already Completed: This order has already been finalized and paid.');
+            }
+            if ($existingStatus === 'voided' || (int)$existingExpired === 1) {
+                throw new Exception('QR Code Expired: This order reference is no longer valid for processing.');
+            }
+        }
+        $checkStmt->close();
+    }
 
     if (!$payload || !isset($payload['items']) || !is_array($payload['items']) || count($payload['items']) === 0) {
         throw new Exception('No items in cart.');
@@ -102,7 +120,7 @@ try {
         `total_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `payment_received` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `change_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-        `payment_status` ENUM('paid','pending') NOT NULL DEFAULT 'pending',
+        `payment_status` ENUM('paid','pending','voided') NOT NULL DEFAULT 'pending',
         `is_expired` TINYINT(1) NOT NULL DEFAULT 0,
         `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (`id`),
@@ -343,7 +361,13 @@ try {
     }
 
     $transactionType = count(array_unique($itemTypes)) === 1 ? $itemTypes[0] : 'mixed';
-    $transactionNumber = 'ORDER-' . time() . '-' . bin2hex(random_bytes(4));
+    
+    // If we are finalizing a scanned pending order, use the existing transaction number
+    if ($originalTxnNumber) {
+        $transactionNumber = $originalTxnNumber;
+    } else {
+        $transactionNumber = 'ORDER-' . time() . '-' . bin2hex(random_bytes(4));
+    }
     $itemsJson = json_encode($cartItems, JSON_UNESCAPED_UNICODE);
     $cashierId = $adminId ?? 0;
 
@@ -358,14 +382,40 @@ try {
         $existingReceipt->close();
     }
 
-    $insertStmt = $conn->prepare("INSERT INTO cashier_transactions (transaction_number, receipt_number, user_id, student_name, cashier_id, transaction_type, items, subtotal, discount_percent, discount_amount, total_amount, payment_received, change_amount, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    // Corrected type string: 14 parameters, s=string, i=int, d=double/float. Removed spaces.
-    $insertStmt->bind_param('ssisissdddddds', $transactionNumber, $receiptNumber, $userId, $studentFullName, $cashierId, $transactionType, $itemsJson, $subtotal, $discountPercent, $discountAmount, $totalAmount, $paymentReceived, $changeAmount, $paymentStatus);
+    // Use ON DUPLICATE KEY UPDATE to either update the scanned pending order to 'paid' 
+    // or insert a new transaction if it's a manual cashier-initiated sale.
+    $isExpiredFlag = ($paymentStatus === 'paid') ? 1 : 0; // Set is_expired to 1 if paid, 0 otherwise
+    $upsertSql = "INSERT INTO cashier_transactions ( 
+        transaction_number, receipt_number, user_id, student_name, cashier_id, 
+        transaction_type, items, subtotal, discount_percent, discount_amount,
+        total_amount, payment_received, change_amount, payment_status, is_expired 
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE 
+        receipt_number = VALUES(receipt_number),
+        cashier_id = VALUES(cashier_id),
+        items = VALUES(items),
+        subtotal = VALUES(subtotal),
+        discount_percent = VALUES(discount_percent),
+        discount_amount = VALUES(discount_amount),
+        total_amount = VALUES(total_amount),
+        payment_received = VALUES(payment_received),
+        change_amount = VALUES(change_amount),
+        payment_status = VALUES(payment_status), 
+        is_expired = VALUES(is_expired)"; // Ensure is_expired is updated based on payment status
+
+    $insertStmt = $conn->prepare($upsertSql);
+    // Corrected type string: 15 parameters, s=string, i=int, d=double/float. Removed spaces.
+    $insertStmt->bind_param('ssisissdddddsii', $transactionNumber, $receiptNumber, $userId, $studentFullName, $cashierId, $transactionType, $itemsJson, $subtotal, $discountPercent, $discountAmount, $totalAmount, $paymentReceived, $changeAmount, $paymentStatus, $isExpiredFlag);
     if (!$insertStmt->execute()) {
         throw new Exception('Could not save transaction: ' . $insertStmt->error);
     }
     $cashierTransactionId = $conn->insert_id; // Get the ID of the newly inserted cashier_transaction
     $insertStmt->close();
+
+    // If we updated an existing record, clear out old transaction_items before adding new ones
+    if ($originalTxnNumber && $cashierTransactionId) {
+        $conn->query("DELETE FROM transaction_items WHERE cashier_transaction_id = $cashierTransactionId");
+    }
 
     // Insert individual items into the transaction_items table
     $transactionItemInsert = $conn->prepare("INSERT INTO transaction_items (cashier_transaction_id, product_id, product_name, item_type, quantity, unit_price, duration, duration_unit, total_item_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -467,7 +517,8 @@ try {
                 if (!is_dir($tempDir)) @mkdir($tempDir, 0777, true);
 
                 // Prepare embedded image attachment (CID) for Gmail/Email clients
-                if ($qrBase64 && strpos($qrBase64, 'data:image') === 0) {
+                // Only include the QR code for Order Confirmations (Pending), not for finalized receipts
+                if ($paymentStatus !== 'paid' && $qrBase64 && strpos($qrBase64, 'data:image') === 0) {
                     $qrRawData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $qrBase64));
                     if ($qrRawData) {
                         $tempQrPath = $tempDir . DIRECTORY_SEPARATOR . 'email_qr_' . uniqid() . '.png';
@@ -493,8 +544,6 @@ try {
                         <h2 style='color: #4f46e5; text-align: center;'>Transaction Receipt</h2>
                         <p>Hi " . htmlspecialchars($studentFullName) . ",</p>
                         <p>Your payment has been processed. Here are your transaction details:</p>
-
-                        $inlineQr
 
                         <div style='background: #f8fafc; padding: 15px; border-radius: 12px; margin: 20px 0; border: 1px solid #e5e7eb;'>
                             <strong>Transaction #:</strong> $transactionNumber<br><strong>Processed by:</strong> " . htmlspecialchars($cashierName) . "<br><strong>Date:</strong> " . date('M d, Y h:i A') . "
@@ -573,7 +622,6 @@ try {
         'payment_status' => $paymentStatus,
         'receipt' => [
             'transaction_number' => $transactionNumber,
-            'qr_code' => $qrBase64,
             'receipt_number' => $receiptNumber,
             'cashier_name' => $cashierName,
             'transaction_type' => $transactionType,

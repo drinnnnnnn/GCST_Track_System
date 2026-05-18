@@ -34,8 +34,10 @@ try {
     }
 
     // Update transaction status
-    $stmt = $conn->prepare("UPDATE cashier_transactions SET payment_status = ? WHERE id = ?");
-    $stmt->bind_param('si', $newStatus, $transactionId);
+    // Set is_expired to 1 if the new status is 'paid' or 'voided'
+    $isExpiredValue = ($newStatus === 'paid' || $newStatus === 'voided') ? 1 : 0;
+    $stmt = $conn->prepare("UPDATE cashier_transactions SET payment_status = ?, is_expired = ? WHERE id = ?");
+    $stmt->bind_param('sii', $newStatus, $isExpiredValue, $transactionId);
     if (!$stmt->execute()) {
         throw new Exception('Failed to update transaction status: ' . $stmt->error);
     }

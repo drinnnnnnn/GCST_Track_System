@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -1128,14 +1128,6 @@
           <div class="receipt-line"><span>Status</span><strong id="receipt-status"></strong></div>
           <div class="receipt-line"><span>Date</span><strong id="receipt-date"></strong></div>
           
-          <div id="receipt-qr-section" style="text-align: center; margin: 24px 0; padding: 20px; background: #fff; border-radius: 20px; border: 2px dashed #e2e8f0;">
-              <img id="receipt-qr-image" src="" alt="Order QR Code" style="margin: 0 auto; width: 160px; height: 160px; display: block;">
-              <div style="margin-top: 12px;">
-                  <span id="receipt-qr-number" style="font-family: monospace; font-size: 0.85rem; font-weight: 700; color: #4f46e5; background: #eef2ff; padding: 4px 12px; border-radius: 8px;"></span>
-                  <p style="font-size: 0.7rem; color: #94a3b8; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Scan for Verification & Processing</p>
-              </div>
-          </div>
-
           <div id="receipt-items" class="receipt-item-list"></div>
           <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
               <div class="receipt-line"><span>Subtotal</span><strong id="receipt-subtotal"></strong></div>
@@ -1262,7 +1254,8 @@
       cashReceived: 0,
       paymentStatus: 'paid', // Default to paid
       studentId: '',
-      isQRScanned: false
+      isQRScanned: false,
+      scannedTxnNumber: null
     };
     function formatCurrency(value) {
       return '₱' + parseFloat(value || 0).toFixed(2);
@@ -1526,6 +1519,7 @@
       state.cashReceived = 0;
       state.paymentStatus = 'paid';
       state.isQRScanned = false;
+      state.scannedTxnNumber = null;
       document.getElementById('discount-percent').value = '0';
       document.getElementById('cash-received').value = '0.00';
       document.getElementById('cash-received').value = '';
@@ -1644,25 +1638,6 @@
       document.getElementById('receipt-paid').textContent = formatCurrency(receipt.payment_received);
       document.getElementById('receipt-change').textContent = formatCurrency(receipt.change_amount);
 
-      // Populate Reinstated QR Code
-      const qrImage = document.getElementById('receipt-qr-image');
-      const qrNumber = document.getElementById('receipt-qr-number');
-      if (qrImage) {
-          // Robust detection of valid Base64 data from backend
-          const hasValidQr = receipt.qr_code && receipt.qr_code.length > 100 && receipt.qr_code.startsWith('data:image');
-          const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(receipt.transaction_number)}`;
-
-          qrImage.src = hasValidQr ? receipt.qr_code : fallbackUrl;
-          
-          // Ensure visibility even if first attempt fails
-          qrImage.onerror = () => {
-              if (qrImage.src !== fallbackUrl) qrImage.src = fallbackUrl;
-          };
-      }
-      if (qrNumber) {
-          qrNumber.textContent = receipt.transaction_number;
-      }
-
       const receiptItems = document.getElementById('receipt-items');
       receiptItems.innerHTML = '';
       receipt.items.forEach(item => {
@@ -1713,6 +1688,7 @@
         student_id: state.studentId,
         transaction_type: state.transactionType,
         is_scanned: state.isQRScanned,
+        original_txn_number: state.scannedTxnNumber,
         items: selectedItems.map(item => ({ product_id: item.product_id, quantity: item.quantity, type: state.transactionType })),
         subtotal,
         discount_percent: state.discountPercent,
@@ -1745,6 +1721,7 @@
           updateCartSummary();
           loadProducts();
           loadRecentTransactions();
+          loadPendingOrders();
         })
         .catch(() => {
           completeButton.disabled = false;
@@ -2042,14 +2019,6 @@
           <div class="receipt-line"><span>Student ID</span><strong>${txn.student_id || 'N/A'}</strong></div>
           <div class="receipt-line"><span>Status</span><strong style="text-transform: uppercase; color: ${txn.payment_status === 'voided' ? '#ef4444' : 'inherit'};">${txn.payment_status}</strong></div>
           <div class="receipt-line"><span>Date</span><strong>${dateObj.toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}</strong></div>
-          <!-- Robust QR Code Section for Transaction History -->
-          <div style="text-align:center; margin: 20px 0; padding: 20px; background:#fff; border-radius:16px; border:2px dashed #e2e8f0;">
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(txn.transaction_number || 'UNKNOWN')}" alt="Order QR" style="margin:0 auto; width:160px; height:160px; display: block; border-radius: 8px;">
-              <div style="margin-top: 12px;">
-                  <span style="font-family: monospace; font-size: 0.85rem; font-weight: 700; color: #4f46e5; background: #eef2ff; padding: 4px 10px; border-radius: 6px;">${txn.transaction_number}</span>
-                  <p style="font-size: 0.65rem; color: #94a3b8; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Scan for processing</p>
-              </div>
-          </div>
           <div class="receipt-items" style="margin-top: 15px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
             ${itemsHtml}
           </div>
@@ -2116,6 +2085,7 @@
           console.log(`Auto-voided ${result.voided_count} expired pending orders.`);
           loadRecentTransactions();
           loadProducts();
+          loadPendingOrders();
         }
       } catch (error) {
         console.error('Error during auto-void check:', error);
@@ -2292,7 +2262,14 @@
       const count = document.getElementById('pending-order-count');
 
       body.innerHTML = '';
-      if (!data || data.length === 0) {
+
+      // Accuracy Filter: Ensure only truly pending, non-expired, and non-voided transactions are shown
+      const activePending = data.filter(item => 
+        (item.payment_status === 'pending' || !item.payment_status) && 
+        parseInt(item.is_expired || 0) === 0
+      );
+
+      if (!activePending || activePending.length === 0) {
         content.style.display = 'none';
         empty.classList.remove('hidden');
         count.textContent = '0 pending';
@@ -2301,9 +2278,9 @@
 
       content.style.display = 'block';
       empty.classList.add('hidden');
-      count.textContent = `${data.length} pending`;
+      count.textContent = `${activePending.length} pending`;
 
-      data.forEach(item => {
+      activePending.forEach(item => {
         const dateObj = new Date(item.created_at);
         const tr = document.createElement('tr');
         tr.style.backgroundColor = '#fffbe6'; // Light yellow background for pending
@@ -2318,8 +2295,10 @@
           <td>${item.student_display}</td>
           <td><span class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; text-transform: uppercase; font-size: 0.7rem;">${item.transaction_type}</span></td>
           <td style="font-weight: 700; color: #1e293b;">${formatCurrency(item.total_amount)}</td>
-          <td>
-            <button class="btn btn-primary" onclick="reprintReceipt('${item.transaction_number}')">View Details</button>
+          <td style="white-space: nowrap;">
+            <div style="display: flex; gap: 6px;">
+              <button class="btn btn-primary btn-sm" onclick="reprintReceipt('${item.transaction_number}')" title="View Details"><i class="fas fa-eye"></i></button>
+            </div>
           </td>
         `;
         body.appendChild(tr);
