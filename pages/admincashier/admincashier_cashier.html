@@ -521,6 +521,22 @@
       box-shadow: 0 0 15px #4f46e5;
       animation: scanLine 2s linear infinite;
     }
+    @keyframes checkmarkPop {
+      0% { transform: scale(0.4); opacity: 0; }
+      70% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .success-checkmark-pop {
+      animation: checkmarkPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes errorPop {
+      0% { transform: scale(0.4); opacity: 0; }
+      70% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .error-x-pop {
+      animation: errorPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
     @keyframes scanLine {
       0% { top: 0; }
       100% { top: 100%; }
@@ -587,8 +603,7 @@
         </div>
         <div class="search-group">
           <input id="product-search" class="search-input" type="text" placeholder="Search by name or Category" />
-          <button id="qr-scan-btn" class="btn btn-secondary" title="Scan Order QR Code"><i class="fas fa-qrcode">
-          </i> Scan Order</button>
+          <button id="qr-scan-btn" class="btn btn-secondary" title="Scan Order QR Code"><i class="fas fa-qrcode"></i> Scan Order</button>
           <button id="clear-search" class="btn btn-secondary">Clear</button>
         </div>
         <div class="filter-group" id="category-filters"></div>
@@ -682,11 +697,6 @@
             <button class="btn btn-secondary" onclick="loadPendingOrders()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
           </div>
           <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; justify-content: flex-end;">
-            <select id="pending-order-type-filter" class="search-input" style="width: auto; padding: 10px 16px; font-size: 0.85rem;" onchange="loadPendingOrders()">
-              <option value="">All Types</option>
-              <option value="buy">Purchase (Buy)</option>
-              <option value="rent">Rental (Rent)</option>
-            </select>
             <div style="position: relative; max-width: 300px; flex: 1;">
               <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem;"></i>
               <input id="pending-order-search" class="search-input" type="text" placeholder="Search order # or student..." style="padding: 10px 16px 10px 38px; font-size: 0.85rem; width: 100%;" />
@@ -715,30 +725,6 @@
       </div>
     </section>
 
-    <!-- Scan Order Modal -->
-    <div id="qr-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10000;">
-      <div class="panel qr-panel" style="text-align: center;">
-        <div class="panel-header">
-          <h2 id="qr-modal-title">Scan Order QR Code</h2>
-          <button type="button" onclick="closeQRScanner()" style="border:none; background:#f1f5f9; width:32px; height:32px; border-radius:50%; cursor:pointer; color:#6b7280;">×</button>
-        </div>
-        <div class="scanner-container">
-          <div id="camera-loading-placeholder" class="hidden" style="position:absolute; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; background:rgba(0,0,0,0.8);">
-            <i class="fas fa-circle-notch fa-spin fa-2x" style="margin-bottom:12px;"></i>
-            <span>Starting Camera...</span>
-          </div>
-          <div id="camera-error-message" class="hidden" style="position:absolute; inset:0; z-index:11; padding:20px; color:#ef4444; background:white; display:flex; align-items:center; justify-content:center; font-size:0.9rem; font-weight:600;"></div>
-          <div id="reader" style="width: 100%; height: 100%;"></div>
-          <div class="scan-overlay">
-            <div class="scan-region-frame"><div class="scan-line"></div></div>
-          </div>
-        </div>
-        <p class="scan-hint"><i class="fas fa-info-circle"></i> Position the QR code within the frame</p>
-        <input id="hardware-scan-input" type="text" style="position: absolute; left: -9999px; opacity: 0;" autocomplete="on">
-        <button class="btn btn-secondary" onclick="closeQRScanner()" style="width: 100%; padding: 14px;">Cancel</button>
-      </div>
-    </div>
-
     <div id="reject-reason-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
       <div class="panel" style="width: 100%; max-width: 450px;">
         <div class="panel-header">
@@ -755,44 +741,6 @@
             <button class="btn btn-secondary" style="flex: 1;" onclick="closeRejectModal()">Cancel</button>
           </div>
         </div>
-      </div>
-    </div>
-    <div id="quick-register-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
-      <div class="panel" style="width: 100%; max-width: 450px;">
-        <div class="panel-header">
-          <h2>Quick Student Registration</h2>
-          <button type="button" class="modal-close" onclick="closeQuickRegisterModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:#6b7280;">×</button>
-        </div>
-        <form id="quick-register-form">
-          <div class="summary-card">
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label for="quick-reg-student-id">Student ID</label>
-              <div style="display: flex; gap: 8px;">
-                <input type="text" name="student_id" id="quick-reg-student-id" required placeholder="GC-123456" pattern="GC-\d{6}" title="Format: GC-XXXXXX (e.g., GC-123456)" style="flex: 1;" />
-                <button type="button" class="btn btn-secondary" onclick="generateStudentId()" style="padding: 0 12px; font-size: 0.8rem; border-radius: 12px; white-space: nowrap;">Generate</button>
-              </div>
-            </div>
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label>First Name
-                <input type="text" name="first_name" required />
-              </label>
-            </div>
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label>Last Name
-                <input type="text" name="last_name" required />
-              </label>
-            </div>
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label>Email
-                <input type="email" name="email" required />
-              </label>
-            </div>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-              <button type="submit" class="btn btn-primary" style="flex: 1;">Register Student</button>
-              <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeQuickRegisterModal()">Cancel</button>
-            </div>
-          </div>
-        </form>
       </div>
     </div>
 
@@ -950,31 +898,25 @@
         </div>
 
         <div class="checkout-form" style="display: flex; flex-direction: column; gap: 20px;">
-          <!-- Transaction Info Section -->
-          <div class="checkout-section">
-            <label class="checkout-label">Transaction Details</label>
-            <select id="transaction-type" class="search-input" style="background: white; width: 100%;">
-                <option value="buy">Purchase (Buy Items)</option>
-                <option value="rent">Library Rental (Rent Books)</option>
-            </select>
-          </div>
-
           <!-- Customer Info Section -->
           <div class="checkout-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <label class="checkout-label" style="margin-bottom: 0;">Student Information</label>
-                <button type="button" class="btn btn-secondary" onclick="openQuickRegisterModal()" style="padding: 6px 12px; font-size: 0.75rem; border-radius: 10px;">
-                    <i class="fas fa-user-plus"></i> New Student
-                </button>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <input id="checkout-student-id" type="text" list="student-datalist" class="search-input" placeholder="Enter Student ID (e.g. GC-123456)" style="background: white; flex: 1;" />
-                <datalist id="student-datalist"></datalist>
-                <button type="button" class="btn btn-secondary" onclick="checkStudentId()" style="padding: 0 20px; border-radius: 16px;">
-                    Verify
-                </button>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">ID Reference</span>
+                <input id="checkout-student-id" type="text" class="search-input" placeholder="Waiting for scan..." style="background: #f8fafc; color: #64748b; font-weight: 600; cursor: not-allowed; border: 1px solid #e2e8f0; padding: 10px 16px;" readonly />
             </div>
-            <div id="student-check-msg" style="font-size: 0.8rem; font-weight: 600; margin-top: 8px; min-height: 1.2em; padding-left: 4px;"></div>
+            <div id="student-info-display" style="margin-top: 12px; padding: 12px; border-radius: 16px; background: #fff; border: 2px solid #f1f5f9; display: flex; align-items: center; gap: 14px; transition: all 0.3s ease;">
+                <div id="student-avatar-box" style="width: 44px; height: 44px; border-radius: 50%; background: #f8fafc; display: flex; align-items: center; justify-content: center; color: #94a3b8; border: 1px solid #e2e8f0;">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div style="flex: 1;">
+                    <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Authenticated Name</span>
+                    <div id="student-name-text" style="font-weight: 700; color: #1e293b; font-size: 1rem; line-height: 1.2;">Not Identified</div>
+                    <div id="student-status-text" style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; margin-top: 4px;"></div>
+                </div>
+            </div>
           </div>
 
           <!-- Financial Summary Section -->
@@ -1000,20 +942,13 @@
           </div>
 
           <!-- Payment Section -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <label class="checkout-label">Cash Received</label>
+          <div class="checkout-section" style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label class="checkout-label" style="margin-bottom: 0;">Cash Received</label>
                 <div style="position: relative;">
-                    <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-weight: 600;">₱</span>
-                    <input id="cash-received" type="number" min="0" step="0.01" value="0.00" class="search-input" style="padding-left: 30px; background: #fff;" />
+                    <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; font-weight: 600;">₱</span>
+                    <input id="cash-received" type="number" min="0" step="0.01" placeholder="0.00" class="search-input" style="padding-left: 30px; background: #fff;" />
                 </div>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <label class="checkout-label">Payment Status</label>
-                <select id="payment-status" class="search-input" style="background: #fff;">
-                    <option value="paid">Mark as Paid</option>
-                    <option value="pending">Keep as Pending</option>
-                </select>
             </div>
           </div>
 
@@ -1039,9 +974,17 @@
           </div>
 
           <div class="receipt-line"><span>Transaction #</span><strong id="receipt-number" class="receipt-id"></strong></div>
-          <div class="receipt-line"><span>Type</span><strong id="receipt-type"></strong></div>
           <div class="receipt-line"><span>Status</span><strong id="receipt-status"></strong></div>
           <div class="receipt-line"><span>Date</span><strong id="receipt-date"></strong></div>
+          
+          <div id="receipt-qr-section" style="text-align: center; margin: 24px 0; padding: 20px; background: #fff; border-radius: 20px; border: 2px dashed #e2e8f0;">
+              <img id="receipt-qr-image" src="" alt="Order QR Code" style="margin: 0 auto; width: 160px; height: 160px; display: block;">
+              <div style="margin-top: 12px;">
+                  <span id="receipt-qr-number" style="font-family: monospace; font-size: 0.85rem; font-weight: 700; color: #4f46e5; background: #eef2ff; padding: 4px 12px; border-radius: 8px;"></span>
+                  <p style="font-size: 0.7rem; color: #94a3b8; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Scan for Verification & Processing</p>
+              </div>
+          </div>
+
           <div id="receipt-items" class="receipt-item-list"></div>
           <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
               <div class="receipt-line"><span>Subtotal</span><strong id="receipt-subtotal"></strong></div>
@@ -1058,21 +1001,93 @@
         </div>
       </div>
     </div>
+
+        <!-- QR Scan Modal -->
+    <div id="qr-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10001;">
+      <div class="panel qr-panel" style="width: 100%; max-width: 480px;">
+        <div class="panel-header">
+          <h2 style="font-weight: 700;"><i class="fas fa-qrcode mr-2"></i> Scan Order</h2>
+          <button type="button" onclick="closeQRScanner()" style="border:none; background:#f1f5f9; width: 32px; height: 32px; border-radius: 50%; cursor:pointer; color:#64748b;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <p class="scan-hint" style="text-align: center; margin-bottom: 20px;">Position the student's Order QR code within the frame.</p>
+        
+        <div class="scanner-container">
+          <div id="reader"></div>
+          <div id="camera-loading-placeholder" class="scan-overlay">
+            <div class="text-white text-center">
+              <i class="fas fa-camera fa-spin fa-2x mb-2"></i>
+              <p>Initializing Camera...</p>
+            </div>
+          </div>
+          <div class="scan-overlay">
+            <div class="scan-region-frame">
+              <div class="scan-line"></div>
+            </div>
+          </div>
+          <div id="scan-success-overlay" class="scan-overlay hidden" style="background: rgba(16, 185, 129, 0.85); z-index: 10; pointer-events: auto;">
+             <div class="success-checkmark-pop flex flex-col items-center">
+                <i class="fas fa-check-circle text-white" style="font-size: 5.5rem;"></i>
+                <p class="text-white font-bold mt-4 text-lg">Scan Successful</p>
+             </div>
+          </div>
+          <div id="scan-error-overlay" class="scan-overlay hidden" style="background: rgba(239, 68, 68, 0.9); z-index: 10; pointer-events: auto;">
+             <div class="error-x-pop flex flex-col items-center p-6 w-full max-w-xs">
+                <i class="fas fa-times-circle text-white mb-2" style="font-size: 4rem;"></i>
+                <p id="scan-error-text" class="text-white font-bold mb-6 text-center text-lg">Order Not Found</p>
+                <div class="flex gap-4 w-full justify-center">
+                    <button onclick="OrderScanner.resetFromError()" class="btn" style="background: #ffffff; color: #ef4444; border:none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.9rem;">
+                        <i class="fas fa-sync-alt mr-2"></i> Retry
+                    </button>
+                    <button onclick="OrderScanner.showManualEntry()" class="btn" style="background: rgba(255,255,255,0.2); color: #ffffff; padding: 10px 18px; border-radius: 10px; font-weight: 600; border: 1px solid #ffffff; font-size: 0.9rem;">
+                        <i class="fas fa-keyboard mr-2"></i> Manual
+                    </button>
+                </div>
+             </div>
+          </div>
+          <div id="manual-entry-overlay" class="scan-overlay hidden" style="background: #ffffff; z-index: 20; pointer-events: auto; flex-direction: column;">
+             <div class="p-8 w-full max-w-sm">
+                <h3 class="text-gray-900 font-bold text-xl mb-2 text-center">Manual Order Entry</h3>
+                <p class="text-gray-500 text-xs mb-6 text-center uppercase tracking-wider">Enter the transaction number</p>
+                <input type="text" id="manual-order-input" class="search-input mb-4" placeholder="ORDER-XXXX-XXXX" style="width: 100%; border: 2px solid #e2e8f0; font-weight: 700; text-align: center; text-transform: uppercase;">
+                <div class="flex flex-col gap-3">
+                    <button onclick="OrderScanner.submitManualEntry()" class="btn btn-primary" style="width: 100%; border-radius: 14px; padding: 14px; font-weight: 700;">Load Order</button>
+                    <button onclick="OrderScanner.hideManualEntry()" class="btn btn-secondary" style="width: 100%; border-radius: 14px; padding: 12px;">Back to Scanner</button>
+                </div>
+             </div>
+          </div>
+        </div>
+
+        <div id="camera-error-message" class="hidden" style="color: #ef4444; background: #fee2e2; padding: 12px; border-radius: 12px; font-size: 0.85rem; margin-bottom: 20px; text-align: center; border: 1px solid #fecaca;"></div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button class="btn btn-secondary" onclick="closeQRScanner()" style="width: 100%; border-radius: 14px; padding: 12px;">Cancel</button>
+        </div>
+        <!-- Datalist for student search/autocomplete -->
+        <datalist id="student-datalist"></datalist>
+        <!-- Hidden input for hardware barcode scanners to focus on -->
+        <input type="text" id="hardware-scan-input" style="position: fixed; opacity: 0; pointer-events: none;" autocomplete="off">
+      </div>
+    </div>
   </main>
 
   <script src="../../assets/js/admincashier.js"></script>
+  <script src="../../assets/js/order-scanner.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script>
     const API_ROOT = window.location.origin + '/GCST_Track_System/actions';
     const ASSET_ROOT = window.location.origin + '/GCST_Track_System/assets';
     const IMAGE_FALLBACK = `${ASSET_ROOT}/images/icons/granbylogo.png`;
-    // Audio objects for scan feedback
+    
+    // Scanner Audio Feedback
     const SCAN_SOUND = new Audio('https://raw.githubusercontent.com/rafaelbotazini/floating-whatsapp/master/beep.mp3');
     const ERROR_SOUND = new Audio('https://www.soundjay.com/buttons/beep-05.mp3');
+    
     let html5QrCode = null;
-    // --- Global Hardware Scanner Listener variables ---
     let globalScanBuffer = '';
     let globalLastKeyTime = Date.now();
+    let isScannerBusy = false;
 
     let products = [];
     let cart = [];
@@ -1081,7 +1096,12 @@
     let overdueRentals = [];
     let pendingRenewals = [];
     let pendingOrders = []; // New array for pending orders
+    let studentList = []; // Global registry for instant name resolution
     let recentTransactions = [];
+    let txnAutoRefreshInterval = null;
+    let pendingAutoRefreshInterval = null;
+    const AUTO_REFRESH_MS = 30000; // 30 seconds
+
     const state = {
       category: 'All',
       query: '',
@@ -1089,8 +1109,8 @@
       discountPercent: 0,
       cashReceived: 0,
       paymentStatus: 'paid', // Default to paid
-      // studentId: '' // This is already handled by the input field
-      studentId: ''
+      studentId: '',
+      isQRScanned: false
     };
     function formatCurrency(value) {
       return '₱' + parseFloat(value || 0).toFixed(2);
@@ -1243,12 +1263,12 @@
         `;
         cartList.appendChild(div);
       });
-      const discountAmount = Math.max(0, subtotal * (state.discountPercent / 100));
-      const total = Math.max(0, subtotal - discountAmount);
+      const discountAmount = Math.round(subtotal * (state.discountPercent / 100) * 100) / 100;
+      const total = Math.round(Math.max(0, subtotal - discountAmount) * 100) / 100;
       const cashReceived = Math.max(0, parseFloat(state.cashReceived) || 0);
-      const change = cashReceived - total;
+      const change = Math.round((cashReceived - total) * 100) / 100;
       document.getElementById('subtotal-amount').textContent = formatCurrency(subtotal);
-      document.getElementById('discount-amount').textContent = formatCurrency(discountAmount);
+      document.getElementById('discount-amount').textContent = '-' + formatCurrency(discountAmount);
       document.getElementById('total-amount').textContent = formatCurrency(total);
       document.getElementById('cart-total-display').textContent = formatCurrency(total);
       document.getElementById('change-amount').textContent = formatCurrency(change >= 0 ? change : 0);
@@ -1256,8 +1276,8 @@
 
     function updateDateTime() {
       const now = new Date();
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-      const dateTimeString = now.toLocaleDateString('en-US', options);
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Manila' };
+      const dateTimeString = now.toLocaleString('en-US', options);
       const el = document.getElementById('current-date-time');
       if (el) el.textContent = dateTimeString;
     }
@@ -1282,14 +1302,24 @@
     }
 
     function syncCartProductPrices() {
+      if (!products || products.length === 0) {
+          updateCartSummary();
+          return;
+      }
       cart = cart.map(item => {
         const product = products.find(p => p.product_id == item.product_id);
+        if (!product) return item; 
         const unitPrice = state.transactionType === 'rent' ? getProductRentPrice(product) : getProductPrice(product);
         return { ...item, unitPrice };
       });
       updateCartSummary();
     }
     function addProductToCart(productId) {
+      if (!state.isQRScanned) {
+        alert('Action Restricted: Please scan a valid Order or Renewal QR code before adding items to the cart.');
+        openQRScanner();
+        return;
+      }
       const product = products.find(p => p.product_id == productId);
       if (!product) return;
 
@@ -1342,23 +1372,22 @@
       state.discountPercent = 0;
       state.cashReceived = 0;
       state.paymentStatus = 'paid';
+      state.isQRScanned = false;
       document.getElementById('discount-percent').value = '0';
       document.getElementById('cash-received').value = '0.00';
-      document.getElementById('payment-status').value = 'paid';
+      document.getElementById('cash-received').value = '';
       document.getElementById('checkout-student-id').value = '';
-      document.getElementById('student-check-msg').textContent = '';
-      document.getElementById('transaction-type').value = 'buy'; // Reset transaction type
       
       const selectAll = document.getElementById('select-all-cart');
       if (selectAll) selectAll.checked = false;
       
       // Removed reference to missing element 'payment-status-label'
       
-      document.getElementById('receipt-card').classList.add('hidden');
       updateCartSummary();
     }
     function openCheckoutModal() {
       if (cart.length === 0) return;
+      document.getElementById('receipt-card').classList.add('hidden');
       document.getElementById('checkout-modal').classList.remove('hidden');
     }
     function closeCheckoutModal() {
@@ -1406,49 +1435,54 @@
       document.getElementById('lost-penalty-input').value = totalPenalty.toFixed(2);
     }
 
+    function updateStudentDisplay(id) {
+      const nameText = document.getElementById('student-name-text');
+      const statusText = document.getElementById('student-status-text');
+      const avatarBox = document.getElementById('student-avatar-box');
+      
+      if (!id) {
+        nameText.textContent = 'Not Identified';
+        statusText.textContent = '';
+        avatarBox.style.color = '#94a3b8';
+        avatarBox.style.borderColor = '#e2e8f0';
+        return;
+      }
+
+      // Find student in pre-loaded studentList by ID or Database ID
+      const student = studentList.find(s => (s.student_id === id || s.id == id));
+      
+      if (student) {
+        nameText.textContent = student.name || `${student.first_name} ${student.last_name}`;
+        statusText.textContent = 'Verified Student';
+        statusText.style.color = '#10b981';
+        avatarBox.style.color = '#4f46e5';
+        avatarBox.style.borderColor = '#4f46e5';
+      } else {
+        nameText.textContent = 'Student Not Found';
+        statusText.textContent = 'Unregistered ID';
+        statusText.style.color = '#ef4444';
+        avatarBox.style.color = '#ef4444';
+        avatarBox.style.borderColor = '#fee2e2';
+      }
+    }
+
     function updateTransactionSettings() {
-      const previousType = state.transactionType;
-      const newType = document.getElementById('transaction-type').value;
-
-      // Prevent switching to Rent if cart has non-book items
-      const selectedItems = cart.filter(item => item.selected);
-      if (newType === 'rent' && selectedItems.length > 0) {
-        const hasNonBooks = selectedItems.some(item => {
-          const product = products.find(p => p.product_id == item.product_id);
-          return (product.product_category || '').toLowerCase() !== 'books';
-        });
-        if (hasNonBooks) {
-          alert('Rental is only available for Books. Please remove non-book items from the cart before switching to Rent.');
-          document.getElementById('transaction-type').value = 'buy';
-          state.transactionType = 'buy';
-          return;
-        }
-      }
-
-      state.transactionType = newType;
-
-      // Automatically filter to Books when Rent is selected
-      if (state.transactionType === 'rent' && previousType !== 'rent') {
-        state.category = 'Books';
-        buildCategoryFilters();
-        renderProducts();
-      } else if (state.transactionType === 'buy' && previousType === 'rent') {
-        state.category = 'All';
-        buildCategoryFilters();
-        renderProducts();
-      }
-
-      state.discountPercent = parseFloat(document.getElementById('discount-percent').value) || 0;
-      state.cashReceived = parseFloat(document.getElementById('cash-received').value) || 0;
-      state.paymentStatus = document.getElementById('payment-status').value;
+      state.discountPercent = Math.min(100, Math.max(0, parseFloat(document.getElementById('discount-percent').value) || 0));
+      state.cashReceived = Math.max(0, parseFloat(document.getElementById('cash-received').value) || 0);
       state.studentId = document.getElementById('checkout-student-id').value.trim();
-      syncCartProductPrices();
+      updateStudentDisplay(state.studentId);
+      updateCartSummary();
     }
     function showReceipt(receipt) {
+      if (!receipt) return;
+      
       const receiptCard = document.getElementById('receipt-card');
-      receiptCard.classList.remove('hidden');
+      const checkoutForm = document.querySelector('.checkout-form');
+      
+      if (receiptCard) receiptCard.classList.remove('hidden');
+      if (checkoutForm) checkoutForm.classList.add('hidden'); // Hide form to focus on confirmation
+
       document.getElementById('receipt-number').textContent = receipt.transaction_number;
-      document.getElementById('receipt-type').textContent = receipt.transaction_type.toUpperCase();
       document.getElementById('receipt-status').textContent = receipt.payment_status;
       document.getElementById('receipt-date').textContent = receipt.created_at;
       document.getElementById('receipt-subtotal').textContent = formatCurrency(receipt.subtotal);
@@ -1456,6 +1490,26 @@
       document.getElementById('receipt-total').textContent = formatCurrency(receipt.total_amount);
       document.getElementById('receipt-paid').textContent = formatCurrency(receipt.payment_received);
       document.getElementById('receipt-change').textContent = formatCurrency(receipt.change_amount);
+
+      // Populate Reinstated QR Code
+      const qrImage = document.getElementById('receipt-qr-image');
+      const qrNumber = document.getElementById('receipt-qr-number');
+      if (qrImage) {
+          // Robust detection of valid Base64 data from backend
+          const hasValidQr = receipt.qr_code && receipt.qr_code.length > 100 && receipt.qr_code.startsWith('data:image');
+          const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(receipt.transaction_number)}`;
+          
+          qrImage.src = hasValidQr ? receipt.qr_code : fallbackUrl;
+          
+          // Ensure visibility even if first attempt fails
+          qrImage.onerror = () => {
+              if (qrImage.src !== fallbackUrl) qrImage.src = fallbackUrl;
+          };
+      }
+      if (qrNumber) {
+          qrNumber.textContent = receipt.transaction_number;
+      }
+
       const receiptItems = document.getElementById('receipt-items');
       receiptItems.innerHTML = '';
       receipt.items.forEach(item => {
@@ -1464,8 +1518,10 @@
         entry.innerHTML = `<span>${item.product_name} x ${item.quantity}</span><strong>${formatCurrency(item.total)}</strong>`;
         receiptItems.appendChild(entry);
       });
-      // Scroll modal to bottom to show receipt
-      setTimeout(() => { document.getElementById('checkout-modal').scrollTo({ top: 500, behavior: 'smooth' }); }, 100);
+      
+      // Ensure modal is scrolled to the top to see the success message and QR
+      const modal = document.getElementById('checkout-modal');
+      if (modal) modal.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function completeTransaction() {
@@ -1482,7 +1538,7 @@
       updateTransactionSettings();
 
       if (state.transactionType === 'rent' && !state.studentId) {
-        alert('A valid Student ID is required for rental transactions. Please verify a student before proceeding.');
+        alert('A valid Student ID is required for rental transactions. Please enter a Student ID before proceeding.');
         return;
       }
 
@@ -1503,6 +1559,7 @@
       const payload = {
         student_id: state.studentId,
         transaction_type: state.transactionType,
+        is_scanned: state.isQRScanned,
         items: selectedItems.map(item => ({ product_id: item.product_id, quantity: item.quantity, type: state.transactionType })),
         subtotal,
         discount_percent: state.discountPercent,
@@ -1621,8 +1678,8 @@
               <td>${item.first_name} ${item.last_name} (${item.student_id})</td>
               <td>${item.product_name}</td>
               <td>${item.quantity}</td>
-              <td>${new Date(item.rental_date).toLocaleString()}</td>
-              <td>${new Date(item.return_date).toLocaleString()}</td>
+              <td>${new Date(item.rental_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}</td>
+              <td>${new Date(item.return_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}</td>
               <td>
                 <div style="display: flex; gap: 8px;">
                   <button class="btn btn-primary" onclick="handleRenewal(${item.rental_id}, 'approve')">Approve</button>
@@ -1728,8 +1785,8 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td style="font-size: 0.85rem; color: #64748b;">
-            <strong>${dateObj.toLocaleDateString()}</strong><br>
-            ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <strong>${dateObj.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' })}</strong><br>
+            ${dateObj.toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })}
           </td>
           <td style="font-weight: 600; color: #4f46e5;">${txn.transaction_number}</td>
           <td>
@@ -1830,10 +1887,16 @@
         content.innerHTML = `
           <div class="receipt-line"><span>Transaction #</span><strong>${txn.transaction_number}</strong></div>
           <div class="receipt-line"><span>Student ID</span><strong>${txn.student_id || 'N/A'}</strong></div>
-          <div class="receipt-line"><span>Type</span><strong style="text-transform: uppercase;">${txn.transaction_type}</strong></div>
           <div class="receipt-line"><span>Status</span><strong style="text-transform: uppercase; color: ${txn.payment_status === 'voided' ? '#ef4444' : 'inherit'};">${txn.payment_status}</strong></div>
-          <div class="receipt-line"><span>Cashier</span><strong>${txn.cashier_name || 'System'}</strong></div>
-          <div class="receipt-line"><span>Date</span><strong>${dateObj.toLocaleString()}</strong></div>
+          <div class="receipt-line"><span>Date</span><strong>${dateObj.toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}</strong></div>
+          <!-- Robust QR Code Section for Transaction History -->
+          <div style="text-align:center; margin: 20px 0; padding: 20px; background:#fff; border-radius:16px; border:2px dashed #e2e8f0;">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(txn.transaction_number || 'UNKNOWN')}" alt="Order QR" style="margin:0 auto; width:160px; height:160px; display: block; border-radius: 8px;">
+              <div style="margin-top: 12px;">
+                  <span style="font-family: monospace; font-size: 0.85rem; font-weight: 700; color: #4f46e5; background: #eef2ff; padding: 4px 10px; border-radius: 6px;">${txn.transaction_number}</span>
+                  <p style="font-size: 0.65rem; color: #94a3b8; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Scan for processing</p>
+              </div>
+          </div>
           <div class="receipt-items" style="margin-top: 15px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
             ${itemsHtml}
           </div>
@@ -1922,73 +1985,6 @@
       rejectionRentalId = null;
     }
 
-    function generateStudentId() {
-      fetch(`${API_ROOT}/get_next_student_id.php`)
-        .then(res => res.json())
-        .then(result => {
-          if (result.success) {
-            const input = document.getElementById('quick-reg-student-id');
-            if (input) {
-              input.value = result.next_student_id;
-            }
-          } else {
-            alert(result.message || 'Failed to generate Student ID.');
-          }
-        })
-        .catch(err => {
-          console.error('Error fetching next student ID:', err);
-          alert('An error occurred while generating Student ID.');
-        });
-    }
-
-    function openQuickRegisterModal() {
-      document.getElementById('quick-register-modal').classList.remove('hidden');
-    }
-
-    function closeQuickRegisterModal() {
-      document.getElementById('quick-register-modal').classList.add('hidden');
-      const form = document.getElementById('quick-register-form');
-      if (form) form.reset();
-    }
-
-    // Form submission for Quick Registration
-    document.getElementById('quick-register-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const submitBtn = this.querySelector('button[type="submit"]');
-      const formData = new FormData(this);
-      const payload = Object.fromEntries(formData.entries());
-
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
-
-      fetch(`${API_ROOT}/quick_register_student.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-      .then(res => res.json())
-      .then(result => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Register Student';
-        if (result.success) {
-          alert('Student registered successfully!');
-          const checkoutInput = document.getElementById('checkout-student-id');
-          if (checkoutInput) checkoutInput.value = payload.student_id;
-          checkStudentId();
-          closeQuickRegisterModal();
-          loadStudentList();
-        } else {
-          alert(result.message || 'Registration failed.');
-        }
-      })
-      .catch(err => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Register Student';
-        console.error('Registration Error:', err);
-        alert('A system error occurred during registration.');
-      });
-    });
-
     function confirmRejection() {
       const reason = document.getElementById('rejection-reason').value.trim();
       if (!reason) {
@@ -2031,7 +2027,7 @@
         `${item.first_name} ${item.last_name}`,
         item.product_name,
         item.quantity,
-        new Date(item.return_date).toLocaleString(),
+        new Date(item.return_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
         item.status.toUpperCase(),
         item.rejection_reason || ''
       ]);
@@ -2090,7 +2086,7 @@
           <td>${item.first_name} ${item.last_name} (${item.student_id})</td>
           <td>${item.product_name}</td>
           <td>${item.quantity}</td>
-          <td>${new Date(item.return_date).toLocaleString()}</td>
+          <td>${new Date(item.return_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}</td>
           <td style="color: #ef4444; font-weight: 700;">${formatCurrency(penalty)}</td>
           <td style="white-space: nowrap;">
             <div style="display: flex; gap: 6px;">
@@ -2107,8 +2103,7 @@
     function loadPendingOrders(page = 1) {
       pendingOrdersCurrentPage = page;
       const search = document.getElementById('pending-order-search').value.trim();
-      const type = document.getElementById('pending-order-type-filter').value;
-      fetch(`${API_ROOT}/get_pending_orders.php?search=${encodeURIComponent(search)}&type=${encodeURIComponent(type)}&page=${page}&limit=10`)
+      fetch(`${API_ROOT}/get_pending_orders.php?search=${encodeURIComponent(search)}&page=${page}&limit=10`)
         .then(res => res.json())
         .then(data => {
           pendingOrders = Array.isArray(data.orders) ? data.orders : [];
@@ -2163,8 +2158,8 @@
 
         tr.innerHTML = `
           <td style="font-size: 0.85rem; color: #64748b;">
-            <strong>${dateObj.toLocaleDateString()}</strong><br>
-            ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <strong>${dateObj.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' })}</strong><br>
+            ${dateObj.toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })}
           </td>
           <td style="font-weight: 600; color: #f59e0b;">${item.transaction_number}</td>
           <td>${item.student_display}</td>
@@ -2251,7 +2246,7 @@
               <td>${item.first_name} ${item.last_name} (${item.student_id})</td>
               <td>${item.product_name}</td>
               <td>${item.quantity}</td>
-              <td>${new Date(item.return_date).toLocaleString()}</td>
+              <td>${new Date(item.return_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}</td>
               <td><span class="badge" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; ${statusClass}">${statusLabel}</span> ${penaltyHtml} ${reasonHtml}</td>
               <td style="white-space: nowrap;">
                 <div style="display: flex; gap: 6px;">
@@ -2463,7 +2458,7 @@
           <td>${item.first_name} ${item.last_name} (${item.student_id})</td>
           <td>${item.product_name}</td>
           <td>${item.quantity}</td>
-          <td>${dateObj.toLocaleDateString()}</td>
+          <td>${dateObj.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' })}</td>
           <td style="font-weight: 700; color: #b91c1c;">${formatCurrency(item.penalty_amount)}</td>
           <td><span class="badge" style="background: #fee2e2; color: #b91c1c;">${item.status.toUpperCase()}</span></td>
           <td>
@@ -2499,14 +2494,13 @@
       });
     }
 
-    initializeAdminCashierPage(async (userData) => {
+    initializeAdminCashierPage(async (userData) => { // Made async to await loadStudentList
       const name = userData.name || 'Admin Cashier';
       const greetingElement = document.getElementById('greeting-message');
       if (greetingElement) {
         greetingElement.textContent = `Cashier • ${name}`;
       }
       loadProducts();
-      updateTransactionSettings();
       updateDateTime();
       setInterval(updateDateTime, 60000);
       loadPendingRenewals();
@@ -2515,8 +2509,13 @@
       loadPendingOrders(); // Load pending orders on page load
       loadLostBooks(); // Load lost books on page load
       loadRecentTransactions();
-      loadStudentList();
+      await loadStudentList(); // Await student list loading
+      updateTransactionSettings(); // Call after studentList is loaded
       autoVoidExpiredOrders();
+
+      // Enable auto-refresh functionality by default
+      toggleTxnAutoRefresh(true);
+      togglePendingAutoRefresh(true);
     });
     document.getElementById('product-search').addEventListener('input', () => {
       state.query = document.getElementById('product-search').value.trim();
@@ -2575,21 +2574,30 @@
       state.query = '';
       renderProducts();
     });
-    document.getElementById('transaction-type').addEventListener('change', () => {
-      updateTransactionSettings();
-    });
     document.getElementById('discount-percent').addEventListener('input', () => {
       updateTransactionSettings();
     });
     document.getElementById('cash-received').addEventListener('input', () => {
       updateTransactionSettings();
     });
-    document.getElementById('payment-status').addEventListener('change', () => {
-      updateTransactionSettings();
-    });
     document.getElementById('checkout-student-id').addEventListener('input', () => {
       updateTransactionSettings();
     });
+
+    // UX enhancement for Cash Received field: Clear zero on focus, format on blur
+    const cashInput = document.getElementById('cash-received');
+    if (cashInput) {
+      cashInput.addEventListener('focus', function() {
+        if (parseFloat(this.value || 0) === 0) this.value = '';
+      });
+      cashInput.addEventListener('blur', function() {
+        if (this.value !== '') {
+          this.value = parseFloat(this.value).toFixed(2);
+        }
+        updateTransactionSettings();
+      });
+    }
+
     document.getElementById('clear-cart').addEventListener('click', clearCart);
     
     // Added safety check for missing print-receipt button
@@ -2607,7 +2615,8 @@
               alert(`This renewal (${renewalRef}) has already been processed or is not in pending status.`);
               return;
             }
-            if (confirm(`Renewal Request Found:\n\nStudent: ${data.student}\nBook: ${data.product}\nNew Requested Due Date: ${new Date(data.new_date).toLocaleString()}\n\nDo you want to APPROVE this renewal?`)) {
+            if (confirm(`Renewal Request Found:\n\nStudent: ${data.student}\nBook: ${data.product}\nNew Requested Due Date: ${new Date(data.new_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}\n\nDo you want to APPROVE this renewal?`)) {
+              state.isQRScanned = true;
               executeRenewalAction(rentalId, 'approve', '');
             }
           } else {
@@ -2615,6 +2624,45 @@
           }
         })
         .catch(err => console.error('Error processing renewal scan:', err));
+    }
+
+    function loadOrderByQR(transactionNumber) {
+      fetch(`${API_ROOT}/get_order_by_qr.php?transaction_number=${encodeURIComponent(transactionNumber)}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.order) {
+            const order = data.order;
+            
+            // Populate state and UI
+            state.isQRScanned = true;
+            state.studentId = order.student_id || '';
+            state.transactionType = order.transaction_type;
+            document.getElementById('checkout-student-id').value = state.studentId;
+            
+            // Clear current cart and load order items
+            cart = order.items.map(item => ({
+              product_id: item.product_id,
+              product_name: item.product_name,
+              quantity: parseInt(item.quantity),
+              unitPrice: parseFloat(item.unit_price || (item.total / item.quantity)),
+              selected: true
+            }));
+
+            updateStudentDisplay(state.studentId);
+            updateCartSummary();
+            
+            // Provide feedback and open checkout
+            if (typeof SCAN_SOUND !== 'undefined') SCAN_SOUND.play();
+            alert(`Order ${transactionNumber} loaded for ${order.student_full_name || 'Student'}`);
+            openCheckoutModal();
+          } else {
+            if (typeof ERROR_SOUND !== 'undefined') ERROR_SOUND.play();
+            alert(data.message || 'Order not found or already processed.');
+          }
+        })
+        .catch(err => console.error('Error loading order:', err));
     }
 
     // --- Global Hardware Scanner Listener ---
@@ -2638,14 +2686,15 @@
       if (e.key === 'Enter') {
         if (globalScanBuffer.length > 2) { // Require at least 3 characters to avoid accidental single-key presses
           e.preventDefault(); // Prevent default Enter key behavior (e.g., form submission)
-          const code = globalScanBuffer.trim();
+          const code = globalScanBuffer.trim().replace(/[\u0000-\x1F\x7F-\x9F]/g, "");
           globalScanBuffer = ''; // Clear buffer after processing
 
-          const renewMatch = code.match(/RENEW-[a-zA-Z0-9-]+/i);
-          if (renewMatch) {
-            loadRenewalByQR(renewMatch[0]);
+          if (typeof OrderScanner !== 'undefined') {
+              OrderScanner.handleScanSuccess(code);
+          } else if (code.toUpperCase().startsWith('RENEW-')) {
+              loadRenewalByQR(code);
           } else {
-            loadOrderByQR(code);
+              loadOrderByQR(code);
           }
         }
       } else if (e.key.length === 1) { // Only append single character keys
@@ -2661,55 +2710,25 @@
       }
     });
 
-    function checkStudentId() {
-      const studentId = document.getElementById('checkout-student-id').value.trim();
-      const msg = document.getElementById('student-check-msg');
-      if (!studentId) {
-        msg.textContent = 'Please enter a Student ID.';
-        msg.style.color = '#ef4444';
-        return;
-      }
-      msg.textContent = 'Verifying...';
-      msg.style.color = '#6b7280';
-
-      fetch(`${API_ROOT}/check_student_id.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ student_id: studentId })
-      })
-      .then(res => res.json())
-      .then(result => {
-        if (result.success) {
-          msg.textContent = `Verified: ${result.name}`;
-          msg.style.color = '#10b981';
-        } else {
-          msg.textContent = result.message || 'Student not found.';
-          msg.style.color = '#ef4444';
-        }
-      })
-      .catch(() => {
-        msg.textContent = 'Error checking Student ID.';
-        msg.style.color = '#ef4444';
-      });
-    }
-
-    function loadStudentList() {
-      fetch(`${API_ROOT}/get_students.php`)
-        .then(res => res.json())
-        .then(data => {
-          const datalist = document.getElementById('student-datalist');
-          if (!datalist) return;
+    async function loadStudentList() { // Made async
+      try {
+        const response = await fetch(`${API_ROOT}/get_students.php`);
+        const data = await response.json();
+        studentList = Array.isArray(data) ? data : [];
+        const datalist = document.getElementById('student-datalist');
+        if (datalist) { // Added null check for datalist
           datalist.innerHTML = '';
-          if (Array.isArray(data)) {
-            data.forEach(student => {
-              const option = document.createElement('option');
-              option.value = student.id;
-              option.textContent = student.name;
-              datalist.appendChild(option);
-            });
-          }
-        })
-        .catch(err => console.error('Error loading student list:', err));
+          studentList.forEach(student => {
+            const option = document.createElement('option');
+            // Use the human-readable student_id as the primary value for seamless integration with scanning
+            option.value = student.student_id || student.id;
+            option.textContent = `${student.name} (${student.student_id || 'ID: ' + student.id})`;
+            datalist.appendChild(option);
+          });
+        }
+      } catch (err) {
+        console.error('Error loading student list:', err);
+      }
     }
 
     function toggleSelectAllRentals(isChecked) {
@@ -2759,143 +2778,49 @@
       });
     }
 
-    // --- QR Scanner Functions ---
-    async function openQRScanner() {
-      document.getElementById('qr-modal').classList.remove('hidden');
-      document.getElementById('camera-loading-placeholder').classList.remove('hidden');
-      document.getElementById('camera-error-message').classList.add('hidden');
-      document.getElementById('hardware-scan-input').focus(); // Focus for hardware scanners
-
-      if (!html5QrCode) {
-        html5QrCode = new Html5Qrcode("reader");
-      }
-
-      const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-        console.log(`QR Code detected: ${decodedText}`, decodedResult);
-        SCAN_SOUND.play();
-        
-        const renewMatch = decodedText.match(/RENEW-[a-zA-Z0-9-]+/i);
-        closeQRScanner(); // Stop camera immediately to release resources
-        if (renewMatch) {
-          loadRenewalByQR(renewMatch[0]);
+    /**
+     * Scanner Integration
+     * Unified logic using the OrderScanner module.
+     */
+    function openQRScanner() {
+        if (typeof OrderScanner !== 'undefined') {
+            OrderScanner.open();
         } else {
-          loadOrderByQR(decodedText);
+            console.error("OrderScanner module not loaded.");
         }
-      };
+    }
 
-      const qrCodeErrorCallback = (errorMessage) => {
-        // This can be noisy, only log if needed for debugging camera issues
-        // console.warn(`QR Code scanning error: ${errorMessage}`);
-      };
-
-      const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
-        disableFlip: false, // Set to true if you are not using front camera
-      };
-
-      try {
-        await html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback, qrCodeErrorCallback);
-        document.getElementById('camera-loading-placeholder').classList.add('hidden');
-        document.getElementById('reader').style.display = 'block';
-      } catch (err) {
-        console.error("Failed to start QR scanner:", err);
-        ERROR_SOUND.play();
-        document.getElementById('camera-loading-placeholder').classList.add('hidden');
-        document.getElementById('camera-error-message').classList.remove('hidden');
-        document.getElementById('camera-error-message').textContent = `Camera failed to start: ${err.message || err}. Please ensure camera access is granted.`;
-        document.getElementById('reader').style.display = 'none';
+    function toggleTxnAutoRefresh(enabled) {
+      if (txnAutoRefreshInterval) clearInterval(txnAutoRefreshInterval);
+      if (enabled) {
+        txnAutoRefreshInterval = setInterval(() => {
+          const search = document.getElementById('txn-history-search')?.value.trim() || '';
+          loadRecentTransactions(txnCurrentPage, search);
+        }, AUTO_REFRESH_MS);
+      } else {
+        txnAutoRefreshInterval = null;
       }
     }
 
-    async function closeQRScanner() {
-      document.getElementById('qr-modal').classList.add('hidden');
-      document.getElementById('camera-error-message').classList.add('hidden');
-      document.getElementById('hardware-scan-input').value = ''; // Clear hardware scan input
-      if (html5QrCode && html5QrCode.isScanning) {
-        try {
-          await html5QrCode.stop();
-          console.log("QR scanner stopped.");
-        } catch (err) {
-          console.error("Error stopping QR scanner:", err);
+    function togglePendingAutoRefresh(enabled) {
+      if (pendingAutoRefreshInterval) clearInterval(pendingAutoRefreshInterval);
+      if (enabled) {
+        pendingAutoRefreshInterval = setInterval(() => {
+          loadPendingOrders(pendingOrdersCurrentPage);
+        }, AUTO_REFRESH_MS);
+      } else {
+        pendingAutoRefreshInterval = null;
+      }
+    }
+
+    function closeQRScanner() {
+        if (typeof OrderScanner !== 'undefined') {
+            OrderScanner.close();
         }
-      }
     }
-
-    async function loadOrderByQR(qrCodeData) {
-      console.log('Attempting to load order for QR data:', qrCodeData);
-
-      try {
-        // Send raw data. The backend parser (QRService::parse) handles prefix recognition.
-        const response = await fetch(`${API_ROOT}/get_order_by_qr.php?transaction_number=${encodeURIComponent(qrCodeData)}`, {
-          method: 'GET',
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        const result = await response.json();
-
-        console.log('Server response for QR scan:', result); // Log the full response for debugging
-
-        if (result.success && result.order) {
-          loadOrderIntoCart(result.order);
-          alert('Order loaded successfully!');
-        } else {
-          ERROR_SOUND.play();
-          alert('Order scan failed: ' + (result.message || 'Order not found or invalid format.'));
-        }
-      } catch (error) {
-        console.error('Error fetching order by QR:', error);
-        ERROR_SOUND.play();
-        alert('An error occurred while fetching order details.');
-      }
-    }
-
-    function loadOrderIntoCart(order) {
-      if (!order) return;
-      
-      clearCart();
-      state.studentId = order.student_id || '';
-      document.getElementById('checkout-student-id').value = order.student_id || '';
-      document.getElementById('transaction-type').value = order.transaction_type || 'buy';
-      document.getElementById('discount-percent').value = order.discount_percent || 0;
-      document.getElementById('payment-status').value = order.payment_status || 'pending';
-
-      if (order.student_id) {
-        checkStudentId();
-      }
-
-      // Fix: Verify items exist and handle JSON string format if necessary
-      let items = order.items;
-      if (typeof items === 'string') {
-        try { items = JSON.parse(items); } catch (e) { items = []; }
-      }
-
-      if (!items || !Array.isArray(items)) {
-        console.error('Invalid or missing order items:', order.items);
-        alert('The order contains invalid item details.');
-        return;
-      }
-
-      items.forEach(orderItem => {
-        const product = products.find(p => String(p.product_id) === String(orderItem.product_id));
-        cart.push({
-          product_id: orderItem.product_id,
-          product_name: product ? product.product_name : (orderItem.product_name || `Product #${orderItem.product_id}`),
-          quantity: parseInt(orderItem.quantity) || 1,
-          unitPrice: 0, // syncCartProductPrices will update this based on transaction type
-          selected: true
-        });
-      });
-      updateTransactionSettings(); // Recalculate totals and update UI
-      updateCartSummary();
-      openCheckoutModal(); // Open checkout modal with pre-filled order
-    }
-
-    // Event listener for the QR scan button
-    document.getElementById('qr-scan-btn').addEventListener('click', openQRScanner);
 
     // Event listener for hardware scanner input (hidden input field)
-    document.getElementById('hardware-scan-input').addEventListener('keypress', function(e) {
+    document.getElementById('hardware-scan-input')?.addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
         e.preventDefault();
         const scannedCode = this.value.trim();
@@ -2910,6 +2835,12 @@
           closeQRScanner(); // Close scanner modal after processing
         }
       }
+    });
+
+    // Safe attachment of Scan Order button
+    document.addEventListener('DOMContentLoaded', () => {
+        const scanBtn = document.getElementById('qr-scan-btn');
+        if (scanBtn) scanBtn.addEventListener('click', openQRScanner);
     });
   </script>
 </body>

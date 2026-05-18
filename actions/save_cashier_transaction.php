@@ -6,7 +6,7 @@ ob_start(); // Buffer any accidental output
 
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['student', 'admin', 'admincashier', 'superadmin']);
+requireAuth(['student', 'user', 'admin', 'admincashier', 'superadmin']);
 
 try {
     // Ensure the Database class is available and get the connection
@@ -35,8 +35,19 @@ try {
     if (!$checkQR['success']) throw new Exception($checkQR['message']);
 
     $adminId = $_SESSION['admin_id'] ?? null;
+    $cashierName = $_SESSION['name'] ?? 'Admin Cashier';
     $payload = json_decode(file_get_contents('php://input'), true);
     
+    // Security Enforcement: Restrict manual admin transactions without QR scan
+    $userRole = $_SESSION['role'] ?? '';
+    // Only enforce for PAID transactions finalize at the POS. PENDING orders (student self-service)
+    // bypass the manual cashier-unlock mechanism as they are handled by the user themselves.
+    if (in_array($userRole, ['admin', 'admincashier', 'superadmin']) && ($payload['payment_status'] ?? 'paid') === 'paid') {
+        if (!isset($payload['is_scanned']) || $payload['is_scanned'] !== true) {
+            throw new Exception('Action Restricted: Transactions initiated by cashiers must be unlocked via a valid QR code scan.');
+        }
+    }
+
     if (!$payload || !isset($payload['items']) || !is_array($payload['items']) || count($payload['items']) === 0) {
         throw new Exception('No items in cart.');
     }
@@ -56,7 +67,7 @@ try {
         $lName = '';
         $lookupStmt->bind_result($userId, $fName, $lName);
         if ($lookupStmt->fetch() && $userId) {
-            $studentFullName = trim($fName . ' ' . $lName);
+            $studentFullName = trim((string)$fName . ' ' . (string)$lName);
         } else {
             $lookupStmt->close();
             throw new Exception('Unable to resolve student ID: ' . $studentId);
@@ -64,17 +75,10 @@ try {
         $lookupStmt->close();
     }
 
-    $subtotal = isset($payload['subtotal']) ? floatval($payload['subtotal']) : 0.0;
     $discountPercent = isset($payload['discount_percent']) ? floatval($payload['discount_percent']) : 0.0;
-    $discountAmount = isset($payload['discount_amount']) ? floatval($payload['discount_amount']) : 0.0;
-    $totalAmount = isset($payload['total_amount']) ? floatval($payload['total_amount']) : 0.0;
     $paymentReceived = isset($payload['payment_received']) ? floatval($payload['payment_received']) : 0.0;
     $paymentStatus = isset($payload['payment_status']) && in_array($payload['payment_status'], ['paid', 'pending'], true) ? $payload['payment_status'] : 'paid';
-    $changeAmount = isset($payload['change_amount']) ? floatval($payload['change_amount']) : 0.0;
     $receiptNumber = isset($payload['receipt_number']) ? trim((string)$payload['receipt_number']) : null;
-
-    if ($totalAmount < 0 || $subtotal < 0) throw new Exception('Invalid amount values.');
-    if ($paymentStatus === 'paid' && $paymentReceived < $totalAmount) throw new Exception('Payment must cover total amount for paid status.');
 
     $allowedTypes = ['buy', 'rent'];
     $itemTypes = [];
@@ -260,6 +264,7 @@ try {
     }
     if (!$rentCheck || $rentCheck->num_rows === 0) { $rentPriceCol = '0.00'; } // Fallback if no rent price exists
 
+    $calculatedSubtotal = 0;
     foreach ($payload['items'] as $item) {
         $productId = intval($item['product_id'] ?? 0);
         $quantity = intval($item['quantity'] ?? 0);
@@ -298,20 +303,17 @@ try {
         }
 
         $unitPrice = $type === 'rent' ? floatval($product['rent_price']) : floatval($product['buy_price']);
-        if ($unitPrice <= 0) {
-            throw new Exception('Invalid selected price for ' . $product['product_name']);
-        }
-
         $duration = ($type === 'rent') ? intval($item['duration'] ?? 1) : 1;
-        $durationUnit = $item['duration_unit'] ?? ($type === 'rent' ? 'days' : null);
+        
+        $itemTotal = round($unitPrice * $duration * $quantity, 2);
+        $calculatedSubtotal += $itemTotal;
 
         $returnDate = null;
         if ($type === 'rent') {
+            $durationUnit = $item['duration_unit'] ?? 'days';
             $unit = in_array($durationUnit, ['hours', 'days', 'weeks', 'months']) ? $durationUnit : 'days';
             $returnDate = date('Y-m-d H:i:s', strtotime("+$duration $unit"));
         }
-
-        $itemTotal = round($unitPrice * $duration * $quantity, 2);
 
         $cartItems[] = [
             'product_id' => $productId,
@@ -320,7 +322,7 @@ try {
             'quantity' => $quantity,
             'unit_price' => $unitPrice,
             'duration' => $duration,
-            'duration_unit' => $durationUnit,
+            'duration_unit' => $item['duration_unit'] ?? ($type === 'rent' ? 'days' : null),
             'return_date' => $returnDate,
             'total' => $itemTotal,
         ];
@@ -329,6 +331,15 @@ try {
         $updateStmt->bind_param('ii', $quantity, $productId);
         $updateStmt->execute();
         $updateStmt->close();
+    }
+
+    $subtotal = $calculatedSubtotal;
+    $discountAmount = round($subtotal * ($discountPercent / 100), 2);
+    $totalAmount = max(0, $subtotal - $discountAmount);
+    $changeAmount = max(0, $paymentReceived - $totalAmount);
+
+    if ($paymentStatus === 'paid' && $paymentReceived < ($totalAmount - 0.01)) {
+        throw new Exception('Payment must cover total amount for paid status.');
     }
 
     $transactionType = count(array_unique($itemTypes)) === 1 ? $itemTypes[0] : 'mixed';
@@ -395,6 +406,40 @@ try {
 
     $conn->commit();
 
+    // Generate QR code for the confirmation screen receipt
+    $qrBase64 = null;
+    try {
+        $tempDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'temp';
+        if (!is_dir($tempDir)) @mkdir($tempDir, 0777, true);
+        $tempQrPath = $tempDir . DIRECTORY_SEPARATOR . 'receipt_qr_' . uniqid() . '.png';
+        
+        // Generate scannable Order QR. We try local generation first for performance/privacy.
+        if (function_exists('generateLocalQrCode') && extension_loaded('gd')) {
+            if (generateLocalQrCode($transactionNumber, $tempQrPath, 'H', 10, 4)) {
+                clearstatcache(true, $tempQrPath);
+                $qrRawData = (file_exists($tempQrPath) && filesize($tempQrPath) > 0) ? @file_get_contents($tempQrPath) : false;
+                if ($qrRawData !== false) {
+                    $qrBase64 = 'data:image/png;base64,' . base64_encode($qrRawData);
+                }
+                @unlink($tempQrPath);
+            }
+        }
+        
+        // Fallback: If local generation failed or PHP GD is unavailable, fetch via Remote API
+        if (!$qrBase64) {
+            $remoteUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($transactionNumber);
+            $remoteData = @file_get_contents($remoteUrl);
+            if ($remoteData !== false) {
+                $qrBase64 = 'data:image/png;base64,' . base64_encode($remoteData);
+                error_log("Used remote QR fallback for transaction: $transactionNumber");
+            } else {
+                error_log("Failed both local and remote QR generation for transaction: $transactionNumber");
+            }
+        }
+    } catch (Throwable $e) { 
+        error_log("Receipt QR Generation Error: " . $e->getMessage()); 
+    }
+
     $emailStatus = 'skipped';
     $userEmail = null;
     if ($userId) {
@@ -414,6 +459,24 @@ try {
                 $attachments = [];
                 $emailBody = "";
                 $subject = "";
+                $inlineQr = "";
+                $tempQrPath = null;
+                $tempDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'temp';
+
+                // Ensure temp directory is available for email attachments
+                if (!is_dir($tempDir)) @mkdir($tempDir, 0777, true);
+
+                // Prepare embedded image attachment (CID) for Gmail/Email clients
+                if ($qrBase64 && strpos($qrBase64, 'data:image') === 0) {
+                    $qrRawData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $qrBase64));
+                    if ($qrRawData) {
+                        $tempQrPath = $tempDir . DIRECTORY_SEPARATOR . 'email_qr_' . uniqid() . '.png';
+                        if (file_put_contents($tempQrPath, $qrRawData)) {
+                            $attachments[] = ['path' => $tempQrPath, 'name' => 'transaction_qr.png', 'cid' => 'order_qr_code'];
+                            $inlineQr = "<div style='text-align:center;margin:25px 0;padding:20px;border:2px dashed #4f46e5;border-radius:16px;background:#f8fafc;'><div style='font-size:14px;font-weight:bold;color:#4f46e5;margin-bottom:15px;'>TRANSACTION QR CODE</div><img src='cid:order_qr_code' width='200' height='200' alt='QR Code' style='display:block;margin:0 auto;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;' /><p style='font-size:11px;color:#64748b;margin-top:10px;font-family:monospace;font-weight:bold;'>$transactionNumber</p></div>";
+                        }
+                    }
+                }
 
                 if ($paymentStatus === 'paid') {
                     $subject = 'Official Receipt - GCST Tracking System';
@@ -430,8 +493,11 @@ try {
                         <h2 style='color: #4f46e5; text-align: center;'>Transaction Receipt</h2>
                         <p>Hi " . htmlspecialchars($studentFullName) . ",</p>
                         <p>Your payment has been processed. Here are your transaction details:</p>
+
+                        $inlineQr
+
                         <div style='background: #f8fafc; padding: 15px; border-radius: 12px; margin: 20px 0; border: 1px solid #e5e7eb;'>
-                            <strong>Transaction #:</strong> $transactionNumber<br><strong>Date:</strong> " . date('M d, Y h:i A') . "
+                            <strong>Transaction #:</strong> $transactionNumber<br><strong>Processed by:</strong> " . htmlspecialchars($cashierName) . "<br><strong>Date:</strong> " . date('M d, Y h:i A') . "
                         </div>
                         <table style='width: 100%; border-collapse: collapse;'>
                             <thead>
@@ -456,19 +522,6 @@ try {
                     </div>";
                 } else {
                     $subject = 'Your GCST Order QR Code';
-                    $tempDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'temp';
-                    if (!is_dir($tempDir)) @mkdir($tempDir, 0777, true);
-                    $tempQrPath = $tempDir . DIRECTORY_SEPARATOR . uniqid('qr_') . '.png';
-                    $inlineQr = '';
-                    try {
-                        $qrContent = $transactionNumber; // Only encode the ID for machine readability
-
-                        if (function_exists('generateLocalQrCode') && generateLocalQrCode($qrContent, $tempQrPath, 'H', 10, 4)) {
-                            $attachments[] = ['path' => $tempQrPath, 'name' => 'order_qr_code.png', 'cid' => 'order_qr_code'];
-                            $inlineQr = "<div style='text-align:center;margin:30px 0;padding:20px;border:2px dashed #2563eb;border-radius:16px;background:#f8fafc;'><div style='font-size:18px;font-weight:bold;color:#2563eb;margin-bottom:15px;'>PRESENT TO CASHIER</div><img src='cid:order_qr_code' style='max-width:300px;height:auto;' /></div>";
-                        }
-                    } catch (Throwable $e) { error_log($e->getMessage()); }
-
                     $itemsHtml = '';
                     foreach ($cartItems as $item) {
                         $itemsHtml .= "<p style='margin: 5px 0;'>- {$item['product_name']} x {$item['quantity']} (₱" . number_format($item['unit_price'], 2) . " each)</p>";
@@ -481,6 +534,7 @@ try {
                         
                         <div style='background: #f8fafc; padding: 15px; border-radius: 12px; margin: 20px 0; border: 1px solid #e5e7eb;'>
                             <p style='margin: 5px 0;'><strong>Transaction #:</strong> <span style='color: #4f46e5; font-weight: bold;'>$transactionNumber</span></p>
+                            <p style='margin: 5px 0;'><strong>Processed by:</strong> " . htmlspecialchars($cashierName) . "</p>
                             <p style='margin: 5px 0;'><strong>Transaction Type:</strong> " . ucfirst($transactionType) . "</p>
                             <p style='margin: 5px 0;'><strong>Date:</strong> " . date('M d, Y h:i A') . "</p>
                         </div>
@@ -519,7 +573,9 @@ try {
         'payment_status' => $paymentStatus,
         'receipt' => [
             'transaction_number' => $transactionNumber,
+            'qr_code' => $qrBase64,
             'receipt_number' => $receiptNumber,
+            'cashier_name' => $cashierName,
             'transaction_type' => $transactionType,
             'items' => $cartItems,
             'subtotal' => number_format($subtotal, 2, '.', ''),

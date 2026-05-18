@@ -637,24 +637,6 @@
         </div>
 
         <button id="checkout-button" class="btn-action btn-buy checkout-button" type="button">Checkout</button>
-
-        <div id="checkout-result" class="checkout-result hidden">
-          <div class="checkout-message">
-            <div style="font-size: 2rem; color: var(--primary); margin-bottom: 8px;"><i class="fas fa-barcode"></i></div>
-            <h3>Order ready for cashier</h3>
-            <p>Show this QR code at checkout. <br><small style="color: #ef4444; font-weight: 700;">Valid for 48 hours only.</small></p>
-          </div>
-          <div class="qr-box">
-            <div class="qr-scan-animation"></div>
-            <img id="checkout-qr" src="" alt="Order QR Code" />
-            <div style="margin-top: 12px; font-size: 0.75rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;">Scan at Counter</div>
-          </div>
-          <div class="order-reference">
-            <strong>Order Reference:</strong>
-            <span id="order-reference"></span>
-          </div>
-        </div>
-      </aside>
     </div>
 
   </main>
@@ -988,6 +970,7 @@
       const payload = {
         student_id: currentStudentId, // Explicitly include student_id in the payload
         transaction_type: hasRental ? 'rent' : 'buy',
+        is_scanned: true, // Authorized: Student self-initiated orders are trusted as they are already authenticated.
         items: selectedItems.map(item => ({
           product_id: item.product_id,
           quantity: item.quantity,
@@ -1029,9 +1012,13 @@
         const qrData = String(reference).trim().startsWith('ORDER-') ? reference.trim() : `ORDER-${reference.trim()}`;
 
         // Use local QR API
-        document.getElementById('checkout-qr').src = `../../actions/generate_qr_api.php?data=${encodeURIComponent(qrData.trim())}`;
-        document.getElementById('order-reference').textContent = reference;
-        document.getElementById('checkout-result').classList.remove('hidden');
+        const qrImg = document.getElementById('checkout-qr');
+        const refText = document.getElementById('order-reference');
+        const resPanel = document.getElementById('checkout-result');
+
+        if (qrImg) qrImg.src = `../../actions/generate_qr_api.php?data=${encodeURIComponent(qrData.trim())}`;
+        if (refText) refText.textContent = reference;
+        if (resPanel) resPanel.classList.remove('hidden');
         
         let successMessage = 'Checkout successful! Show the QR code to the cashier for scanning.';
         if (result.email_status === 'sent') {

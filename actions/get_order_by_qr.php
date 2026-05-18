@@ -3,6 +3,9 @@
 ini_set('display_errors', '0');
 if (ob_get_level() == 0) ob_start();
 
+// Set system timezone to Manila
+date_default_timezone_set('Asia/Manila');
+
 require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/QRService.php';
 secureSessionStart();
@@ -22,11 +25,11 @@ if (!$conn || $conn->connect_error) {
 }
 
 // 1.5 Apply Rate Limiting (5 attempts per minute)
-QRService::checkRateLimit($conn, 'order_scan', 5, 60);
+QRService::checkRateLimit($conn, 'order_scan', 10, 60); // Slightly increased for high-traffic cashier use
 
 // 2. Use QRService to parse and sanitize the input
 $rawInput = $_GET['transaction_number'] ?? '';
-$parsed = QRService::parse($rawInput);
+$parsed = QRService::parse(trim($rawInput));
 
 // Log the attempt regardless of whether it parses correctly to prevent probing
 QRService::logAttempt($conn, 'order_scan');
@@ -42,12 +45,13 @@ $transactionNumber = $parsed['reference'];
  * to ensure compatibility regardless of how it's stored in the database.
  */
 $cleanReference = str_replace('ORDER-', '', $transactionNumber);
+$prefixedReference = 'ORDER-' . $cleanReference;
 
 $query = "SELECT id, transaction_number, user_id, student_name, transaction_type, items, subtotal, discount_percent, discount_amount, total_amount, payment_status, created_at 
           FROM cashier_transactions 
-          WHERE transaction_number = ? OR transaction_number = ? LIMIT 1";
+          WHERE transaction_number = ? OR transaction_number = ? OR transaction_number = ? LIMIT 1";
 $stmt = $conn->prepare($query);
-$stmt->bind_param('ss', $transactionNumber, $cleanReference);
+$stmt->bind_param('sss', $transactionNumber, $cleanReference, $prefixedReference);
 
 if ($stmt->execute()) {
     $result = $stmt->get_result();
@@ -70,16 +74,19 @@ if ($order['payment_status'] === 'paid') {
 
 // Get user/student details to resolve student_id if possible
 $studentId = null;
+// Get user/student details to resolve student_id and current registered name
 if (!empty($order['user_id'])) {
-    $uStmt = $conn->prepare("SELECT student_id FROM users WHERE id = ? AND student_id IS NOT NULL LIMIT 1");
+    $uStmt = $conn->prepare("SELECT student_id, first_name, last_name FROM users WHERE id = ? LIMIT 1");
     $uStmt->bind_param('i', $order['user_id']);
     $uStmt->execute();
-    $uStmt->bind_result($studentId);
-    $uStmt->fetch();
+    $uStmt->bind_result($db_student_id, $fName, $lName);
+    if ($uStmt->fetch()) {
+        $order['student_id'] = $db_student_id;
+        // Prioritize actual registered name over the snapshot stored in transaction
+        $order['student_full_name'] = trim($fName . ' ' . $lName);
+    }
     $uStmt->close();
 }
-
-$order['student_id'] = $studentId;
 
 // Ensure items are properly decoded into an array for the frontend
 if (is_string($order['items'])) {

@@ -14,7 +14,6 @@ try {
     $offset = ($page - 1) * $limit;
 
     $search = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
-    $type = isset($_GET['type']) ? $conn->real_escape_string($_GET['type']) : '';
 
     $where = "WHERE ct.payment_status = 'pending'";
 
@@ -25,9 +24,6 @@ try {
 
     if ($search) {
         $where .= " AND (ct.transaction_number LIKE '%$search%' OR ct.student_name LIKE '%$search%' OR u.student_id LIKE '%$search%')";
-    }
-    if ($type) {
-        $where .= " AND ct.transaction_type = '$type'";
     }
 
     // Count total rows for pagination
