@@ -9,6 +9,11 @@ const OrderScanner = {
     lastScanTime: 0,
 
     async open() {
+        if (typeof Html5Qrcode === 'undefined') {
+            console.error("html5-qrcode library is not loaded.");
+            return;
+        }
+
         if (this.isBusy || (this.instance && this.instance.getState() === 2)) return;
 
         const modal = document.getElementById('qr-modal');
@@ -32,12 +37,15 @@ const OrderScanner = {
             if (!this.instance) {
                 this.instance = new Html5Qrcode("reader");
             }
+            
+            // Ensure any previous session is stopped (safety check)
+            if (this.instance.getState() === 2) await this.instance.stop();
 
             await this.instance.start(
                 { facingMode: "environment" },
                 { 
                     fps: 20, 
-                    qrbox: { width: 250, height: 250 },
+                    qrbox: { width: 220, height: 220 },
                     aspectRatio: 1.0
                 },
                 (text) => this.handleScanSuccess(text)
@@ -55,12 +63,16 @@ const OrderScanner = {
 
     async close() {
         if (this.instance) {
-            try { await this.instance.stop(); } catch (e) {}
+            try { 
+                if (this.instance.getState() === 2) await this.instance.stop(); 
+            } catch (e) {
+                console.warn("Scanner stop error:", e);
+            }
             this.instance = null; // Reset instance to ensure fresh initialization next time
         }
-        document.getElementById('qr-modal').classList.add('hidden');
-        document.getElementById('camera-loading-placeholder').classList.add('hidden');
-        document.getElementById('camera-error-message').classList.add('hidden');
+        document.getElementById('qr-modal')?.classList.add('hidden');
+        document.getElementById('camera-loading-placeholder')?.classList.add('hidden');
+        document.getElementById('camera-error-message')?.classList.add('hidden');
         const successOverlay = document.getElementById('scan-success-overlay');
         if (successOverlay) successOverlay.classList.add('hidden');
         const errorOverlay = document.getElementById('scan-error-overlay');
@@ -185,42 +197,58 @@ const OrderScanner = {
             this.close();
 
             const order = result.order;
+            const hasGlobalState = typeof state !== 'undefined';
 
-            // Synchronize Page State
-            state.transactionType = order.transaction_type;
-            const typeEl = document.getElementById('transaction-type');
-            if (typeEl) typeEl.value = order.transaction_type;
-            
-            state.discountPercent = parseFloat(order.discount_percent);
-            const discountEl = document.getElementById('discount-percent');
-            if (discountEl) discountEl.value = order.discount_percent;
+            if (hasGlobalState) {
+                // Synchronize Page State
+                state.transactionType = order.transaction_type || 'buy';
+                state.discountPercent = parseFloat(order.discount_percent) || 0;
+                state.studentId = order.student_id || '';
+                state.isQRScanned = true;
 
-            if (order.student_id) {
-                state.studentId = order.student_id;
+                // Update UI fields in modal/sidebar if they exist
+                const typeEl = document.getElementById('transaction-type');
+                if (typeEl) typeEl.value = state.transactionType;
+                
+                const discountEl = document.getElementById('discount-percent');
+                if (discountEl) discountEl.value = state.discountPercent;
+
                 const studentEl = document.getElementById('checkout-student-id');
-                if (studentEl) studentEl.value = order.student_id;
+                if (studentEl) studentEl.value = state.studentId;
+
+                // Map items to Cart
+                if (typeof cart !== 'undefined') {
+                    cart = order.items.map(item => ({
+                        product_id: item.product_id,
+                        product_name: item.product_name,
+                        quantity: parseInt(item.quantity) || 0,
+                        unitPrice: parseFloat(item.unit_price || (item.total / item.quantity)) || 0,
+                        selected: true
+                    }));
+                }
+
+                // Re-sync with current database prices and student info
+                if (typeof syncCartProductPrices === 'function') syncCartProductPrices();
+                if (typeof updateStudentDisplay === 'function') updateStudentDisplay(state.studentId);
+                if (typeof updateTransactionSettings === 'function') updateTransactionSettings();
+                if (typeof updateCartSummary === 'function') updateCartSummary();
+                
+                // Open the checkout view automatically
+                if (typeof openCheckoutModal === 'function') openCheckoutModal();
+                
+                alert(`Order ${txnNumber} loaded for ${order.student_full_name || 'Student'}`);
+            } else {
+                // Fallback for non-cashier pages if ever needed
+                console.log("Order Data Loaded:", order);
+                alert(`Order ${txnNumber} found.`);
             }
-
-            // Map items to Cart
-            cart = order.items.map(item => ({
-                product_id: item.product_id,
-                product_name: item.product_name,
-                quantity: parseInt(item.quantity) || 0,
-                unitPrice: 0, // Will be synced with current prices
-                selected: true
-            }));
-
-            if (typeof updateTransactionSettings === 'function') updateTransactionSettings();
-            if (typeof updateCartSummary === 'function') updateCartSummary();
-            if (typeof openCheckoutModal === 'function') openCheckoutModal();
-            
-            alert(`Successfully loaded Order: ${txnNumber}`);
         } catch (err) {
+            console.error("Order Load Error:", err);
             if (typeof ERROR_SOUND !== 'undefined') {
                 ERROR_SOUND.currentTime = 0;
                 ERROR_SOUND.play().catch(() => {});
             }
-            alert(err.message);
+            alert("Error: " + err.message);
         }
     }
 };

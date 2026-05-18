@@ -589,7 +589,7 @@
   <div class="content-wrapper">
   <main class="max-w-7xl mx-auto px-6 py-8">
     <section class="greeting-section">
-      <div class="greeting-content">
+      <div class="greeting-content" id="greeting-message">
         <h1>Transaction Management</h1>
         <p id="current-date-time">Loading date and time...</p>
       </div>
@@ -722,6 +722,157 @@
         </div>
         <div id="pending-orders-pagination" style="display: flex; justify-content: center; gap: 8px; margin-top: 15px; padding-bottom: 10px;"></div>
         <div id="pending-orders-empty" class="empty-state hidden">No pending orders found.</div>
+      </div>
+    </section>
+
+    <!-- New Section for Rental Management -->
+    <section class="management-section" style="margin-top: 24px; padding: 0 20px;">
+      <div class="panel">
+        <div class="panel-header" style="flex-wrap: wrap; gap: 20px;">
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <h2>Active Rentals</h2>
+            <span id="active-rental-count" class="badge" style="background: #eef2ff; color: #4338ca;">0 active</span>
+            <button class="btn btn-secondary" onclick="loadActiveRentals()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; justify-content: flex-end;">
+            <div style="position: relative; max-width: 300px; flex: 1;">
+              <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem;"></i>
+              <input id="active-rental-search" class="search-input" type="text" placeholder="Search student or product..." style="padding: 10px 16px 10px 38px; font-size: 0.85rem; width: 100%;" />
+            </div>
+            <button id="sort-active-rentals-date" class="btn btn-secondary" onclick="sortActiveRentalsByDate()" style="padding: 6px 12px; font-size: 0.8rem;">
+              Due Date <i id="sort-icon-date" class="fas fa-sort"></i>
+            </button>
+            <button id="bulk-return-btn" class="btn btn-primary hidden" onclick="processBulkReturn()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-undo"></i> Bulk Return</button>
+            <button class="btn btn-secondary" onclick="exportActiveRentalsToCSV()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-file-csv"></i> Export CSV</button>
+          </div>
+        </div>
+        <div id="active-rentals-content">
+          <table class="data-table">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="select-all-rentals" onchange="toggleSelectAllRentals(this.checked)" style="width: 16px; height: 16px; cursor: pointer; accent-color: #4f46e5;"></th>
+                  <th>Student</th>
+                  <th>Product</th>
+                  <th>Qty</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="active-rentals-body">
+                <tr><td colspan="7" class="empty-state">Loading active rentals...</td></tr>
+              </tbody>
+          </table>
+        </div>
+        <div id="active-rentals-empty" class="empty-state hidden">No active rentals found.</div>
+      </div>
+    </section>
+
+    <section class="management-section" style="margin-top: 24px; padding: 0 20px;">
+      <div class="panel">
+        <div class="panel-header" style="flex-wrap: wrap; gap: 20px;">
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <h2>Overdue Rentals</h2>
+            <span id="overdue-rental-count" class="badge" style="background: #fee2e2; color: #b91c1c;">0 overdue</span>
+            <button class="btn btn-secondary" onclick="loadOverdueRentals()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; justify-content: flex-end;">
+            <div style="position: relative; max-width: 300px; flex: 1;">
+              <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem;"></i>
+              <input id="overdue-rental-search" class="search-input" type="text" placeholder="Search student or product..." style="padding: 10px 16px 10px 38px; font-size: 0.85rem; width: 100%;" />
+            </div>
+          </div>
+        </div>
+        <div id="overdue-rentals-content">
+          <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Product</th>
+                  <th>Qty</th>
+                  <th>Due Date</th>
+                  <th>Penalty</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="overdue-rentals-body">
+                <tr><td colspan="6" class="empty-state">Loading overdue rentals...</td></tr>
+              </tbody>
+          </table>
+        </div>
+        <div id="overdue-rentals-empty" class="empty-state hidden">No overdue rentals found.</div>
+      </div>
+    </section>
+
+    <section class="management-section" style="margin-top: 24px; padding: 0 20px;">
+      <div class="panel">
+        <div class="panel-header" style="flex-wrap: wrap; gap: 20px;">
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <h2>Pending Renewals</h2>
+            <span id="renewal-count" class="badge" style="background: #fffbe6; color: #b45309;">0 pending</span>
+            <button class="btn btn-secondary" onclick="loadPendingRenewals()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; justify-content: flex-end;">
+            <div style="display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 4px 14px; border-radius: 14px; border: 1px solid #d1d5db;">
+              <i class="far fa-calendar-alt" style="color: #64748b; font-size: 0.85rem;"></i>
+              <input id="renewal-date-to" class="search-input" type="date" style="padding: 8px 0; font-size: 0.85rem; width: auto; border: none; background: transparent; cursor: pointer;" title="Due Date Up To" />
+            </div>
+            <div style="position: relative; max-width: 300px; flex: 1;">
+              <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem;"></i>
+              <input id="renewal-search" class="search-input" type="text" placeholder="Search student or product..." style="padding: 10px 16px 10px 38px; font-size: 0.85rem; width: 100%;" />
+            </div>
+          </div>
+        </div>
+        <div id="renewals-content">
+          <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Product</th>
+                  <th>Qty</th>
+                  <th>Rental Date</th>
+                  <th>Current Due Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="renewals-body">
+                <tr><td colspan="6" class="empty-state">Loading pending renewals...</td></tr>
+              </tbody>
+          </table>
+        </div>
+        <div id="renewals-empty" class="empty-state hidden">No pending renewals found.</div>
+      </div>
+    </section>
+
+    <section class="management-section" style="margin-top: 24px; padding: 0 20px;">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Lost Books</h2>
+          <span id="lost-books-count" class="badge" style="background: #fee2e2; color: #b91c1c;">0 lost</span>
+          <button class="btn btn-secondary" onclick="loadLostBooks()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+        </div>
+        <div class="search-group">
+          <input id="lost-books-search" class="search-input" type="text" placeholder="Search student or product..." />
+        </div>
+        <div id="lost-books-content">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Product</th>
+                <th>Qty Lost</th>
+                <th>Date Reported</th>
+                <th>Penalty</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="lost-books-body">
+              <tr><td colspan="7" class="empty-state">Loading lost books...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="lost-books-empty" class="empty-state hidden">No lost books found.</div>
       </div>
     </section>
 
@@ -901,7 +1052,7 @@
           <!-- Customer Info Section -->
           <div class="checkout-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <label class="checkout-label" style="margin-bottom: 0;">Student Information</label>
+                <label class="checkout-label" for="checkout-student-id" style="margin-bottom: 0;">Student Information</label>
             </div>
             <div style="display: flex; flex-direction: column; gap: 6px;">
                 <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">ID Reference</span>
@@ -1065,6 +1216,7 @@
           <button class="btn btn-secondary" onclick="closeQRScanner()" style="width: 100%; border-radius: 14px; padding: 12px;">Cancel</button>
         </div>
         <!-- Datalist for student search/autocomplete -->
+        <input type="text" id="checkout-student-id-autocomplete" list="student-datalist" class="search-input hidden" placeholder="Search student by ID or Name">
         <datalist id="student-datalist"></datalist>
         <!-- Hidden input for hardware barcode scanners to focus on -->
         <input type="text" id="hardware-scan-input" style="position: fixed; opacity: 0; pointer-events: none;" autocomplete="off">
@@ -1311,6 +1463,7 @@
         if (!product) return item; 
         const unitPrice = state.transactionType === 'rent' ? getProductRentPrice(product) : getProductPrice(product);
         return { ...item, unitPrice };
+
       });
       updateCartSummary();
     }
@@ -1377,7 +1530,6 @@
       document.getElementById('cash-received').value = '0.00';
       document.getElementById('cash-received').value = '';
       document.getElementById('checkout-student-id').value = '';
-      
       const selectAll = document.getElementById('select-all-cart');
       if (selectAll) selectAll.checked = false;
       
@@ -1439,7 +1591,7 @@
       const nameText = document.getElementById('student-name-text');
       const statusText = document.getElementById('student-status-text');
       const avatarBox = document.getElementById('student-avatar-box');
-      
+
       if (!id) {
         nameText.textContent = 'Not Identified';
         statusText.textContent = '';
@@ -1450,7 +1602,7 @@
 
       // Find student in pre-loaded studentList by ID or Database ID
       const student = studentList.find(s => (s.student_id === id || s.id == id));
-      
+
       if (student) {
         nameText.textContent = student.name || `${student.first_name} ${student.last_name}`;
         statusText.textContent = 'Verified Student';
@@ -1470,6 +1622,7 @@
       state.discountPercent = Math.min(100, Math.max(0, parseFloat(document.getElementById('discount-percent').value) || 0));
       state.cashReceived = Math.max(0, parseFloat(document.getElementById('cash-received').value) || 0);
       state.studentId = document.getElementById('checkout-student-id').value.trim();
+      // Also update from the autocomplete field if it's visible/used
       updateStudentDisplay(state.studentId);
       updateCartSummary();
     }
@@ -1479,7 +1632,7 @@
       const receiptCard = document.getElementById('receipt-card');
       const checkoutForm = document.querySelector('.checkout-form');
       
-      if (receiptCard) receiptCard.classList.remove('hidden');
+      if (receiptCard) receiptCard.classList.remove('hidden'); // Ensure receipt card is shown
       if (checkoutForm) checkoutForm.classList.add('hidden'); // Hide form to focus on confirmation
 
       document.getElementById('receipt-number').textContent = receipt.transaction_number;
@@ -1498,7 +1651,7 @@
           // Robust detection of valid Base64 data from backend
           const hasValidQr = receipt.qr_code && receipt.qr_code.length > 100 && receipt.qr_code.startsWith('data:image');
           const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(receipt.transaction_number)}`;
-          
+
           qrImage.src = hasValidQr ? receipt.qr_code : fallbackUrl;
           
           // Ensure visibility even if first attempt fails
@@ -1843,7 +1996,7 @@
 
     async function reprintReceipt(txnNumber) {
       let txn = recentTransactions.find(t => t.transaction_number == txnNumber);
-      
+
       // If transaction is not found in the current list or details are missing, fetch from database
       if (!txn || !txn.items || (typeof txn.items === 'string' && txn.items === '[]')) {
         try {
@@ -1865,7 +2018,7 @@
 
       if (txn) {
         const content = document.getElementById('view-txn-content');
-        const dateObj = txn.created_at ? new Date(txn.created_at) : new Date();
+        const dateObj = txn.created_at ? new Date(txn.created_at) : new Date(); // Fallback to current date if created_at is missing
         
         let itemsHtml = '';
         let items = [];
@@ -1956,7 +2109,7 @@
     async function autoVoidExpiredOrders() {
       try {
         const response = await fetch(`${API_ROOT}/auto_void_expired.php`, {
-          method: 'POST'
+          method: 'POST' // Changed to POST as it modifies data
         });
         const result = await response.json();
         if (result.success && result.voided_count > 0) {
@@ -1999,7 +2152,7 @@
       fetch(`${API_ROOT}/approve_renewal.php`, { // Now points to the new PHP file
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rental_id: rentalId, action, reason })
+        body: JSON.stringify({ rental_id: rentalId, action: action, reason: reason }) // Ensure action and reason are explicitly passed
       })
       .then(res => res.json())
       .then(result => {
@@ -2028,7 +2181,7 @@
         item.product_name,
         item.quantity,
         new Date(item.return_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
-        item.status.toUpperCase(),
+        (item.status || 'N/A').toUpperCase(), // Ensure status is not null
         item.rejection_reason || ''
       ]);
       const csvContent = headers.join(",") + "\n" + rows.map(r => r.map(f => `"${String(f).replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -2063,7 +2216,7 @@
       const empty = document.getElementById('overdue-rentals-empty');
       const content = document.getElementById('overdue-rentals-content');
       const count = document.getElementById('overdue-rental-count');
-      
+
       body.innerHTML = '';
       if (!data || data.length === 0) {
         content.style.display = 'none';
@@ -2071,7 +2224,7 @@
         count.textContent = '0 overdue';
         return;
       }
-      
+
       content.style.display = 'block';
       empty.classList.add('hidden');
       count.textContent = `${data.length} overdue`;
@@ -2237,7 +2390,7 @@
             }
 
             const statusClass = (item.status === 'overdue' || penalty > 0) ? 'background: #fee2e2; color: #b91c1c;' : 'background: #e0e7ff; color: #4338ca;';
-            const statusLabel = (item.status === 'overdue' || penalty > 0) ? 'Overdue' : 'Active';
+            const statusLabel = (item.status === 'overdue' || penalty > 0) ? 'Overdue' : (item.status || 'Active'); // Use item.status if available
             const reasonHtml = item.rejection_reason ? `<div style="font-size: 0.8rem; color: #ef4444; margin-top: 4px;"><strong>Rejection Note:</strong> ${item.rejection_reason}</div>` : '';
             const penaltyHtml = penalty > 0 ? `<div style="font-weight:bold; color:#b91c1c; margin-top: 4px;">Penalty: ${formatCurrency(penalty)}</div>` : '';
 
@@ -2497,7 +2650,7 @@
     initializeAdminCashierPage(async (userData) => { // Made async to await loadStudentList
       const name = userData.name || 'Admin Cashier';
       const greetingElement = document.getElementById('greeting-message');
-      if (greetingElement) {
+      if (greetingElement) { // Ensure greetingElement exists
         greetingElement.textContent = `Cashier • ${name}`;
       }
       loadProducts();
@@ -2581,7 +2734,7 @@
       updateTransactionSettings();
     });
     document.getElementById('checkout-student-id').addEventListener('input', () => {
-      updateTransactionSettings();
+      updateTransactionSettings(); // This will trigger updateStudentDisplay
     });
 
     // UX enhancement for Cash Received field: Clear zero on focus, format on blur
@@ -2599,7 +2752,6 @@
     }
 
     document.getElementById('clear-cart').addEventListener('click', clearCart);
-    
     // Added safety check for missing print-receipt button
     const printBtn = document.getElementById('print-receipt');
     if (printBtn) printBtn.addEventListener('click', printReceipt);
@@ -2638,7 +2790,7 @@
             // Populate state and UI
             state.isQRScanned = true;
             state.studentId = order.student_id || '';
-            state.transactionType = order.transaction_type;
+            state.transactionType = order.transaction_type; // Set transaction type from scanned order
             document.getElementById('checkout-student-id').value = state.studentId;
             
             // Clear current cart and load order items
@@ -2647,7 +2799,7 @@
               product_name: item.product_name,
               quantity: parseInt(item.quantity),
               unitPrice: parseFloat(item.unit_price || (item.total / item.quantity)),
-              selected: true
+              selected: true // All items from a scanned order are initially selected
             }));
 
             updateStudentDisplay(state.studentId);
@@ -2721,7 +2873,7 @@
           studentList.forEach(student => {
             const option = document.createElement('option');
             // Use the human-readable student_id as the primary value for seamless integration with scanning
-            option.value = student.student_id || student.id;
+            option.value = student.student_id || student.id; // Use student_id as value
             option.textContent = `${student.name} (${student.student_id || 'ID: ' + student.id})`;
             datalist.appendChild(option);
           });
@@ -2733,7 +2885,7 @@
 
     function toggleSelectAllRentals(isChecked) {
       document.querySelectorAll('.rental-checkbox').forEach(cb => cb.checked = isChecked);
-      updateBulkReturnButtonVisibility();
+      updateBulkReturnButtonVisibility(); // Update button state after toggling all
     }
 
     function updateBulkReturnButtonVisibility() {
@@ -2745,7 +2897,7 @@
     function processBulkReturn() {
       const selectedCheckboxes = document.querySelectorAll('.rental-checkbox:checked');
       const rentalIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-      
+
       if (rentalIds.length === 0) return;
       if (!confirm(`Are you sure you want to mark ${rentalIds.length} items as returned? Stock will be updated.`)) return;
 
@@ -2766,7 +2918,7 @@
           alert(result.message);
           loadActiveRentals();
           loadProducts();
-          document.getElementById('select-all-rentals').checked = false;
+          document.getElementById('select-all-rentals').checked = false; // Deselect all after processing
         } else {
           alert(result.message || 'Bulk return failed.');
         }
@@ -2826,7 +2978,7 @@
         const scannedCode = this.value.trim();
         if (scannedCode) {
           const renewMatch = scannedCode.match(/RENEW-[a-zA-Z0-9-]+/i);
-          if (renewMatch) {
+          if (renewMatch) { // Check for renewal code pattern
             loadRenewalByQR(renewMatch[0]);
           } else {
             loadOrderByQR(scannedCode);
