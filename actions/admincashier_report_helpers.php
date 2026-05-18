@@ -2,6 +2,9 @@
 function connectAdminCashierDb() {
     require_once __DIR__ . '/../config/db_connect.php';
     $conn->set_charset('utf8mb4');
+    // Ensure both PHP and MySQL use the same local timezone for calculations
+    date_default_timezone_set('Asia/Manila');
+    $conn->query("SET time_zone = '+08:00'");
     return $conn;
 }
 

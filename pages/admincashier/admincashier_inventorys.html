@@ -696,7 +696,7 @@
     <section class="inventory-board">
       <div class="inventory-toolbar">
         <div class="inventory-search">
-          <input id="inventory-search" type="search" placeholder="Search products by name, category, barcode..." />
+          <input id="inventory-search" type="search" placeholder="Search products by name, category..." />
           <button id="btn-open-add-product" type="button" class="btn btn-secondary">Add New Product</button>
           <button id="refresh-button" type="button">Refresh</button>
         </div>
@@ -741,21 +741,8 @@
                   <input id="new-product-price" name="buy_price" type="number" min="0" step="0.01" required />
                 </div>
                 <div class="form-group">
-                  <label for="new-product-rent">Rent Price</label>
-                  <input id="new-product-rent" name="rent_price" type="number" min="0" step="0.01" required />
-                </div>
-                <div class="form-group">
                   <label for="new-product-stock">Stock Quantity</label>
                   <input id="new-product-stock" name="stock_count" type="number" min="0" step="1" required />
-                </div>
-                <div class="form-group">
-                  <label for="new-product-barcode">Barcode / QR Code</label>
-                  <div style="display: flex; gap: 10px;">
-                    <input id="new-product-barcode" name="barcode" type="text" required style="flex: 1;" />
-                    <button type="button" id="btn-generate-barcode" class="btn btn-secondary" style="padding: 10px 15px; font-size: 0.9rem; white-space: nowrap;">
-                      <i class="fas fa-barcode"></i> Generate
-                    </button>
-                  </div>
                 </div>
                 <div class="form-group">
                   <label for="new-product-status">Status</label>
@@ -811,7 +798,6 @@
                   <th>Category</th>
                   <th>Stock</th>
                   <th>Price</th>
-                  <th>Rent</th>
                   <th>Status</th>
                   <th>Action</th>
                 </tr>
@@ -856,14 +842,6 @@
               <div class="form-group">
                 <label for="detail-buy-input">Buy Price</label>
                 <input id="detail-buy-input" type="number" min="0" step="0.01" />
-              </div>
-              <div class="form-group">
-                <label for="detail-rent-input">Rent Price</label>
-                <input id="detail-rent-input" type="number" min="0" step="0.01" />
-              </div>
-              <div class="form-group">
-                <label for="detail-barcode-input">Barcode</label>
-                <input id="detail-barcode-input" type="text" />
               </div>
               <div class="form-group">
                 <label for="detail-status-input">Product Status</label>

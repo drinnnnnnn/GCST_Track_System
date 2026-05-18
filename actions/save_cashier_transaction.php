@@ -8,6 +8,9 @@ require_once __DIR__ . '/security.php';
 secureSessionStart();
 requireAuth(['student', 'user', 'admin', 'admincashier', 'superadmin']);
 
+// Set system timezone to Manila for accurate "Today" calculations
+date_default_timezone_set('Asia/Manila');
+
 try {
     // Ensure the Database class is available and get the connection
     require_once __DIR__ . '/../database/connection.php';
@@ -15,6 +18,9 @@ try {
     if ($conn->connect_error) {
         throw new Exception('Database connection failed: ' . $conn->connect_error);
     }
+
+    // Ensure the database session also uses the correct timezone for CURRENT_TIMESTAMP
+    $conn->query("SET time_zone = '+08:00'");
 
     // Safe include helper to ensure helpers have access to the database connection
     function safeInclude($path, $name) {

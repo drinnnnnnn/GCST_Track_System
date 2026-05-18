@@ -1,7 +1,8 @@
-﻿﻿let currentAdminId = null;
+﻿﻿﻿﻿﻿﻿﻿﻿let currentAdminId = null;
 let currentTicket = null;
 let emailLogs = [];
 let notificationPollInterval = null;
+let queuePollInterval = null;
 
 /**
  * Initialize menu and notification listeners
@@ -55,7 +56,7 @@ function initializeAdminCashierUI() {
  * Check authentication and redirect if not logged in
  */
 function checkAuthentication() {
-  return fetch('http://localhost/GCST_Track_System/actions/get_user.php')
+  return fetch('../../actions/get_user.php')
     .then(res => res.json())
     .then(data => {
       // Strictly enforce admin roles for admincashier pages
@@ -69,7 +70,7 @@ function checkAuthentication() {
       return data;
     })
     .catch(() => {
-      window.location.href = "http://localhost/GCST_Track_System/pages/sign_in_admin_cashier.html";
+      window.location.href = "../../pages/sign_in_admin_cashier.html";
       return null;
     });
 }
@@ -108,7 +109,7 @@ function updateDateTime() {
  */
 function loadNotifications() {
   if (!currentAdminId) return;
-  fetch(`http://localhost/GCST_Track_System/actions/get_notifications.php?admin_id=${encodeURIComponent(currentAdminId)}`)
+  fetch(`../../actions/get_notifications.php?admin_id=${encodeURIComponent(currentAdminId)}`)
     .then(res => res.json())
     .then(data => {
       const notificationsList = document.getElementById('notifications-list');
@@ -159,7 +160,7 @@ function loadNotifications() {
  */
 function clearAllNotifications() {
   if (!currentAdminId) return;
-  fetch('http://localhost/GCST_Track_System/actions/mark_notifications_read.php', {
+  fetch('../../actions/mark_notifications_read.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ admin_id: currentAdminId })
@@ -247,6 +248,32 @@ function showError(element, message = 'An error occurred') {
 }
 
 /**
+ * Show a temporary toast notification using Tailwind classes
+ * @param {string} message - Message to display
+ * @param {string} type - 'success' or 'error'
+ */
+window.showInventoryToast = function(message, type = 'success') {
+  const toast = document.createElement('div');
+  // Styling using Tailwind utility classes to match the dashboard aesthetic
+  toast.className = `fixed bottom-6 right-6 px-6 py-4 rounded-2xl shadow-2xl z-[9999] flex items-center gap-3 text-white font-medium transform transition-all duration-300 translate-y-20 opacity-0`;
+  
+  if (type === 'success') {
+    toast.classList.add('bg-emerald-600');
+    toast.innerHTML = `<i class="fas fa-check-circle text-xl"></i><span>${message}</span>`;
+  } else {
+    toast.classList.add('bg-rose-600');
+    toast.innerHTML = `<i class="fas fa-exclamation-triangle text-xl"></i><span>${message}</span>`;
+  }
+
+  document.body.appendChild(toast);
+  setTimeout(() => toast.classList.remove('translate-y-20', 'opacity-0'), 10);
+  setTimeout(() => {
+    toast.classList.add('translate-y-20', 'opacity-0');
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+};
+
+/**
  * Initialize page - call this in every page's DOMContentLoaded
  * @param {Function} pageCallback - Callback function to initialize page-specific content
  */
@@ -290,6 +317,7 @@ window.initializeAdminCashierPage = function(pageCallback) {
   // Clean up on page unload
   window.addEventListener('beforeunload', () => {
     stopNotifPolling();
+    if (typeof stopQueuePolling === 'function') stopQueuePolling();
   });
 }
 
@@ -314,7 +342,7 @@ function fetchWithError(url, options = {}) {
   GMAIL NOTIFICATION FUNCTIONS
    ===================================================== */
 
-const GMAIL_API_URL = 'http://localhost/GCST_Track_System/actions/get_admincashier_gmail_notifications.php';
+const GMAIL_API_URL = '../../actions/get_admincashier_gmail_notifications.php';
 
 window.loadGmailData = function() {
   const params = new URLSearchParams();
@@ -328,13 +356,16 @@ window.loadGmailData = function() {
   fetch(`${GMAIL_API_URL}?${params.toString()}`)
     .then(res => res.json())
     .then(data => {
+      // Support both structured { success: true, data: { ... } } and flat responses
+      const payload = data.data || data;
+
       ['sentToday', 'failedEmails', 'pendingEmails', 'totalEmailsSent'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.textContent = data[id.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`)] ?? 0;
+        if (el) el.textContent = payload[id.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`)] ?? 0;
       });
-      emailLogs = Array.isArray(data.email_logs) ? data.email_logs : [];
+      emailLogs = Array.isArray(payload.email_logs) ? payload.email_logs : [];
       renderEmailLogs(emailLogs);
-      populateEmailTypes(data.email_types || []);
+      populateEmailTypes(payload.email_types || []);
     })
     .catch(err => {
       console.error('Gmail data error:', err);
@@ -402,7 +433,7 @@ window.submitSendEmail = function() {
     email_type: document.getElementById('modalType').value.trim()
   };
   fetch(GMAIL_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-    .then(res => res.json()).then(res => res.success ? (closeEmailModal(), loadGmailData()) : alert(res.error)).catch(() => alert('Send failed.'));
+    .then(res => res.json()).then(res => res.success ? (closeEmailModal(), loadGmailData(), showInventoryToast('Notification sent successfully!')) : showInventoryToast(res.error, 'error')).catch(() => showInventoryToast('Send failed.', 'error'));
 };
 
 window.handleEmailRowAction = function(action, id) {
@@ -436,7 +467,7 @@ function escapeHtml(value) {
 window.openQueueDisplay = function() {
   const panel = document.getElementById('queue-display-panel');
   if (panel) panel.style.display = 'flex';
-  loadQueueStatus();
+  window.loadQueueStatus();
 }
 
 window.closeQueueDisplay = function() {
@@ -444,8 +475,8 @@ window.closeQueueDisplay = function() {
   if (panel) panel.style.display = 'none';
 }
 
-function loadQueueStatus() {
-  fetch('http://localhost/GCST_Track_System/actions/get_queue_status.php')
+window.loadQueueStatus = function() {
+  fetch('../../actions/get_queue_status.php')
     .then(res => res.json())
     .then(data => {
       const timeEl = document.getElementById('display-current-time');
@@ -459,22 +490,23 @@ function loadQueueStatus() {
 }
 
 window.generateQueue = function() {
-  fetch('http://localhost/GCST_Track_System/actions/generate_queue.php', { method: 'POST' })
+  fetch('../../actions/generate_queue.php', { method: 'POST' })
     .then(res => res.json())
     .then(data => {
       if (data.success) {
         currentTicket = data.ticket || {};
-        showTicketPreview(currentTicket);
-        loadActiveQueues();
-        loadQueueStatus();
+        window.showTicketPreview(currentTicket);
+        window.loadActiveQueues();
+        window.loadQueueStatus();
+        showInventoryToast('New queue number generated!');
       } else {
-        alert('Failed to generate queue: ' + data.error);
+        showInventoryToast('Failed to generate queue: ' + data.error, 'error');
       }
     })
     .catch(err => console.error('Error generating queue:', err));
 }
 
-function showTicketPreview(ticket) {
+window.showTicketPreview = function(ticket) {
   const panel = document.getElementById('ticket-preview-panel');
   const numEl = document.getElementById('preview-queue-number');
   const timeEl = document.getElementById('preview-generated-at');
@@ -502,7 +534,7 @@ window.printTicket = function() {
 }
 
 window.loadActiveQueues = function() {
-  fetch('http://localhost/GCST_Track_System/actions/get_active_queues.php')
+  fetch('../../actions/get_active_queues.php')
     .then(res => res.json())
     .then(data => {
       const queueList = document.getElementById('queue-list');
@@ -510,7 +542,7 @@ window.loadActiveQueues = function() {
       queueList.innerHTML = '';
       const queues = data.queues || [];
       if (queues.length === 0) {
-        queueList.innerHTML = '<p>No active queues.</p>';
+        queueList.innerHTML = '<div class="empty-state"><p>No active queues at the moment.</p></div>';
         return;
       }
       queues.forEach(queue => {
@@ -537,7 +569,7 @@ window.loadActiveQueues = function() {
 }
 
 window.updateQueueStatus = function(queueId, status) {
-  fetch('http://localhost/GCST_Track_System/actions/update_queue_status.php', {
+  fetch('../../actions/update_queue_status.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ queue_id: queueId, status: status })
@@ -545,14 +577,32 @@ window.updateQueueStatus = function(queueId, status) {
   .then(res => res.json())
   .then(data => {
     if (data.success) {
-      loadActiveQueues();
-      loadQueueStatus();
+      window.loadActiveQueues();
+      window.loadQueueStatus();
+      showInventoryToast(`Queue status updated to ${status}.`);
     } else {
-      alert('Error: ' + data.error);
+      showInventoryToast('Error: ' + data.error, 'error');
     }
   })
   .catch(err => console.error('Error updating status:', err));
 }
+
+/**
+ * Polling logic for Queue System Dashboard
+ */
+window.startQueuePolling = function() {
+  if (queuePollInterval) clearInterval(queuePollInterval);
+  queuePollInterval = setInterval(() => {
+    if (document.getElementById('queue-list')) {
+      window.loadActiveQueues();
+      window.loadQueueStatus();
+    }
+  }, 10000); // 10s sync
+};
+
+window.stopQueuePolling = function() {
+  if (queuePollInterval) { clearInterval(queuePollInterval); queuePollInterval = null; }
+};
 
 /* =====================================================
   SIDEBAR AUTO-LOADER & LOGIC
@@ -627,7 +677,7 @@ async function autoLoadSidebar() {
  */
 document.addEventListener('DOMContentLoaded', () => {
   // Centralized backend connection check
-  fetch('http://localhost/GCST_Track_System/actions/get_user.php')
+  fetch('../../actions/get_user.php')
     .then(res => res.json())
     .then(data => {
       if (data.admin_id) {
@@ -1112,7 +1162,6 @@ function renderInventoryViews() {
         const stock = Number(product.stock_count) || 0;
         const description = (product.product_description || '').trim();
         const snippet = description.length > 100 ? `${description.slice(0, 100)}...` : description;
-        const rentText = isInventoryBookCategory(product.product_category) ? formatCurrency(product.rent_price) : 'N/A';
         card.innerHTML = `
           <img src="${image}" alt="${product.product_name}" />
           <div class="inventory-card-body">
@@ -1120,14 +1169,12 @@ function renderInventoryViews() {
             ${snippet ? `<p class="product-description">${snippet}</p>` : ''}
             <div class="inventory-card-meta">
               <span>${product.product_category || 'Other'}</span>
-              <span>${product.barcode || 'No barcode'}</span>
             </div>
             <div class="inventory-card-meta">
               <span>${formatCurrency(product.buy_price)}</span>
               <span class="status-pill ${getInventoryStatusClass(stock)}">${product.product_status === 'unavailable' ? 'Unavailable' : getInventoryStockStatus(stock)}</span>
             </div>
             <div class="inventory-card-meta">
-              <span>${rentText}</span>
               <span>${stock} item${stock === 1 ? '' : 's'}</span>
             </div>
             <div class="inventory-card-footer">
@@ -1154,7 +1201,6 @@ function renderInventoryViews() {
           <td>${product.product_category || 'Other'}</td>
           <td>${stock}</td>
           <td>${formatCurrency(product.buy_price)}</td>
-          <td>${isInventoryBookCategory(product.product_category) ? formatCurrency(product.rent_price) : 'N/A'}</td>
           <td><span class="status-pill ${getInventoryStatusClass(stock)}">${product.product_status === 'unavailable' ? 'Unavailable' : getInventoryStockStatus(stock)}</span></td>
           <td>
             <button class="btn btn-secondary" type="button" onclick="window.selectInventoryProduct(${product.product_id})">Edit</button>
@@ -1184,7 +1230,7 @@ function applyInventoryFilters() {
   const cat = inventoryFilterState.category;
   filteredInventoryProducts = inventoryProducts.filter(p => {
     const matchesCat = cat === 'All' || (p.product_category || 'Other') === cat;
-    const text = `${p.product_name || ''} ${p.product_category || ''} ${p.barcode || ''}`.toLowerCase();
+    const text = `${p.product_name || ''} ${p.product_category || ''}`.toLowerCase();
     return matchesCat && (!query || text.includes(query));
   });
   renderInventoryViews();
@@ -1222,7 +1268,6 @@ function updateInventoryDetailPanel() {
   emptySection?.classList.add('hidden');
 
   const stock = Number(selectedInventoryProduct.stock_count) || 0;
-  const isBook = isInventoryBookCategory(selectedInventoryProduct.product_category);
 
   if (document.getElementById('detail-image')) document.getElementById('detail-image').src = resolveInventoryImagePath(selectedInventoryProduct.product_image);
   if (document.getElementById('detail-name')) document.getElementById('detail-name').textContent = selectedInventoryProduct.product_name || 'Unnamed';
@@ -1237,19 +1282,8 @@ function updateInventoryDetailPanel() {
   if (document.getElementById('detail-name-input')) document.getElementById('detail-name-input').value = selectedInventoryProduct.product_name || '';
   if (document.getElementById('detail-category-input')) document.getElementById('detail-category-input').value = selectedInventoryProduct.product_category || 'Other';
   if (document.getElementById('detail-buy-input')) document.getElementById('detail-buy-input').value = Number(selectedInventoryProduct.buy_price || 0).toFixed(2);
-  if (document.getElementById('detail-rent-input')) document.getElementById('detail-rent-input').value = isBook ? Number(selectedInventoryProduct.rent_price || 0).toFixed(2) : '0.00';
-  if (document.getElementById('detail-barcode-input')) document.getElementById('detail-barcode-input').value = selectedInventoryProduct.barcode || '';
   if (document.getElementById('detail-status-input')) document.getElementById('detail-status-input').value = selectedInventoryProduct.product_status || 'available';
   if (document.getElementById('detail-stock-input')) document.getElementById('detail-stock-input').value = stock;
-  
-  const categoryInput = document.getElementById('detail-category-input');
-  const buyInput = document.getElementById('detail-buy-input');
-  const rentInput = document.getElementById('detail-rent-input');
-  if (categoryInput && buyInput && rentInput) {
-    const rentable = isInventoryBookCategory(categoryInput.value);
-    rentInput.disabled = !rentable;
-    buyInput.disabled = rentable;
-  }
 }
 
 window.selectInventoryProduct = function(productId) {
@@ -1266,12 +1300,16 @@ window.deleteInventoryProduct = function(productId) {
   })
     .then(res => res.json())
     .then(data => {
-      if (!data.success) { alert(data.message); return; }
+      if (!data.success) { showInventoryToast(data.message || 'Unable to delete product.', 'error'); return; }
       inventoryProducts = inventoryProducts.filter(p => Number(p.product_id) !== Number(productId));
       if (selectedInventoryProduct && Number(selectedInventoryProduct.product_id) === Number(productId)) selectedInventoryProduct = null;
       applyInventoryFilters();
       updateInventoryDetailPanel();
-      alert('Product deleted successfully.');
+      showInventoryToast(data.message || 'Product deleted successfully.');
+    })
+    .catch(err => {
+      console.error('Delete error:', err);
+      showInventoryToast('A network error occurred while deleting the product.', 'error');
     });
 }
 
@@ -1304,20 +1342,6 @@ window.initAdminCashierInventoryPage = function() {
     p.classList.toggle('hidden', !show);
     if (show) {
       p.scrollIntoView({ behavior: 'smooth' });
-      const barcode = document.getElementById('new-product-barcode');
-      if (barcode) barcode.value = `GCST-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-      
-      const cat = document.getElementById('new-product-category');
-      const buy = document.getElementById('new-product-price');
-      const rent = document.getElementById('new-product-rent');
-      const updateFields = () => {
-        const isBook = isInventoryBookCategory(cat.value);
-        if (rent) rent.disabled = !isBook;
-        if (buy) buy.disabled = isBook;
-        if (isBook && buy) buy.value = 0; else if (rent) rent.value = 0;
-      };
-      cat?.addEventListener('change', updateFields);
-      updateFields();
     } else {
       document.getElementById('add-product-form')?.reset();
     }
@@ -1332,15 +1356,25 @@ window.initAdminCashierInventoryPage = function() {
     if (file && preview) preview.innerHTML = `<img src="${URL.createObjectURL(file)}" style="height:100%;width:100%;object-fit:cover;" />`;
   });
 
+  document.getElementById('detail-product-image')?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    const preview = document.getElementById('detail-image');
+    if (file && preview) preview.src = URL.createObjectURL(file);
+  });
+
   document.getElementById('add-product-form')?.addEventListener('submit', (e) => {
     e.preventDefault();
     fetch(PRODUCT_CREATE_API, { method: 'POST', body: new FormData(e.target) })
       .then(r => r.json()).then(data => {
-        if (!data.success) { alert(data.message); return; }
+        if (!data.success) { showInventoryToast(data.message || 'Failed to add product.', 'error'); return; }
         inventoryProducts.unshift(data.product);
         applyInventoryFilters();
         togglePanel(false);
-        alert('Product added.');
+        showInventoryToast(data.message || 'Product added successfully!');
+      })
+      .catch(err => {
+        console.error('Create error:', err);
+        showInventoryToast('A network error occurred while adding the product.', 'error');
       });
   });
 
@@ -1355,11 +1389,6 @@ window.initAdminCashierInventoryPage = function() {
   document.getElementById('view-table')?.addEventListener('click', () => setView('table'));
 
   document.getElementById('detail-category-input')?.addEventListener('change', (e) => {
-    const isBook = isInventoryBookCategory(e.target.value);
-    const rentIn = document.getElementById('detail-rent-input');
-    const buyIn = document.getElementById('detail-buy-input');
-    if (rentIn) rentIn.disabled = !isBook;
-    if (buyIn) buyIn.disabled = isBook;
     if (selectedInventoryProduct) {
        selectedInventoryProduct.product_category = e.target.value;
        updateInventoryDetailPanel();
@@ -1382,8 +1411,6 @@ window.initAdminCashierInventoryPage = function() {
     fd.append('product_name', document.getElementById('detail-name-input').value.trim());
     fd.append('product_category', document.getElementById('detail-category-input').value);
     fd.append('buy_price', document.getElementById('detail-buy-input').value);
-    fd.append('rent_price', document.getElementById('detail-rent-input').value);
-    fd.append('barcode', document.getElementById('detail-barcode-input').value.trim());
     fd.append('product_status', document.getElementById('detail-status-input').value);
     fd.append('stock_count', document.getElementById('detail-stock-input').value);
     const img = document.getElementById('detail-product-image').files[0];
@@ -1391,24 +1418,23 @@ window.initAdminCashierInventoryPage = function() {
 
     fetch(INVENTORY_UPDATE_API, { method: 'POST', body: fd })
       .then(r => r.json()).then(data => {
-        if (!data.success) { alert(data.message); return; }
+        if (!data.success) { showInventoryToast(data.message || 'Update failed.', 'error'); return; }
         selectedInventoryProduct = data.product;
         const idx = inventoryProducts.findIndex(p => Number(p.product_id) === Number(selectedInventoryProduct.product_id));
         if (idx !== -1) inventoryProducts[idx] = selectedInventoryProduct;
         applyInventoryFilters();
         updateInventoryDetailPanel();
-        alert('Updated.');
+        showInventoryToast(data.message || 'Product details updated successfully!');
+      })
+      .catch(err => {
+        console.error('Update error:', err);
+        showInventoryToast('A network error occurred while saving product changes.', 'error');
       });
   });
 
   document.getElementById('btn-clear-selection')?.addEventListener('click', () => {
     selectedInventoryProduct = null;
     updateInventoryDetailPanel();
-  });
-
-  document.getElementById('btn-generate-barcode')?.addEventListener('click', () => {
-    const input = document.getElementById('new-product-barcode');
-    if (input) input.value = `GCST-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   });
 };
 
@@ -1428,8 +1454,11 @@ async function fetchTopSellingTable() {
     if (!tableBody) return;
     tableBody.innerHTML = '';
 
-    if (data.top_products && data.top_products.length > 0) {
-      data.top_products.forEach(item => {
+    // Ensure we handle both structured and flat API responses
+    const payload = data.data || data;
+
+    if (payload.top_products && payload.top_products.length > 0) {
+      payload.top_products.forEach(item => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td style="font-weight: 600; color: var(--text);">${item.name}</td>
@@ -1450,9 +1479,18 @@ async function fetchTopSellingTable() {
 async function fetchSummaryMetrics() {
   try {
     const dashboardData = await fetchWithError('../../actions/get_admincashier_dashboard.php');
-    if (document.getElementById('totalSalesToday')) document.getElementById('totalSalesToday').textContent = formatCurrency(dashboardData.total_sales_today ?? 0);
-    if (document.getElementById('totalInventory')) document.getElementById('totalInventory').textContent = dashboardData.total_inventory ?? 0;
-    if (document.getElementById('pendingQueue')) document.getElementById('pendingQueue').textContent = dashboardData.pending_queue ?? 0;
+    
+    // Extract metrics from the 'data' wrapper if it exists (standard for this API)
+    const metrics = dashboardData.data || dashboardData;
+
+    // Use fallback property names to ensure compatibility with different backend implementations
+    const totalSales = Number(metrics.total_sales_today ?? metrics.total_sales ?? 0);
+    const totalInv = metrics.total_inventory ?? metrics.inventory_count ?? metrics.total_items ?? 0;
+    const pendingQ = metrics.pending_queue ?? metrics.queue_count ?? metrics.active_queue ?? 0;
+
+    if (document.getElementById('totalSalesToday')) document.getElementById('totalSalesToday').textContent = formatCurrency(totalSales);
+    if (document.getElementById('totalInventory')) document.getElementById('totalInventory').textContent = totalInv;
+    if (document.getElementById('pendingQueue')) document.getElementById('pendingQueue').textContent = pendingQ;
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
   }
@@ -1461,6 +1499,8 @@ async function fetchSummaryMetrics() {
 async function fetchAnalyticsCharts() {
   try {
     const chartData = await fetchWithError('../../actions/get_admincashier_charts.php');
+    // Support structured response
+    const data = chartData.data || chartData;
     
     // Sales Chart
     const salesCtx = document.getElementById('salesChart')?.getContext('2d');
@@ -1468,10 +1508,10 @@ async function fetchAnalyticsCharts() {
       dashSalesChartInstance = new Chart(salesCtx, {
         type: 'line',
         data: {
-          labels: chartData.sales_labels || [],
+          labels: data.sales_labels || [],
           datasets: [{
             label: 'Daily Sales (₱)',
-            data: chartData.sales_data || [],
+            data: data.sales_data || [],
             borderColor: '#667eea',
             backgroundColor: 'rgba(102, 126, 234, 0.1)',
             tension: 0.4,
@@ -1485,8 +1525,8 @@ async function fetchAnalyticsCharts() {
         }
       });
     } else if (dashSalesChartInstance) {
-      dashSalesChartInstance.data.labels = chartData.sales_labels || [];
-      dashSalesChartInstance.data.datasets[0].data = chartData.sales_data || [];
+      dashSalesChartInstance.data.labels = data.sales_labels || [];
+      dashSalesChartInstance.data.datasets[0].data = data.sales_data || [];
       dashSalesChartInstance.update();
     }
 
@@ -1496,9 +1536,9 @@ async function fetchAnalyticsCharts() {
       dashInventoryChartInstance = new Chart(inventoryCtx, {
         type: 'doughnut',
         data: {
-          labels: chartData.inventory_labels || [],
+          labels: data.inventory_labels || [],
           datasets: [{
-            data: chartData.inventory_data || [],
+            data: data.inventory_data || [],
             backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe']
           }]
         },
@@ -1509,8 +1549,8 @@ async function fetchAnalyticsCharts() {
         }
       });
     } else if (dashInventoryChartInstance) {
-      dashInventoryChartInstance.data.labels = chartData.inventory_labels || [];
-      dashInventoryChartInstance.data.datasets[0].data = chartData.inventory_data || [];
+      dashInventoryChartInstance.data.labels = data.inventory_labels || [];
+      dashInventoryChartInstance.data.datasets[0].data = data.inventory_data || [];
       dashInventoryChartInstance.update();
     }
 
@@ -1520,10 +1560,10 @@ async function fetchAnalyticsCharts() {
       dashTopProductsChartInstance = new Chart(productsCtx, {
         type: 'bar',
         data: {
-          labels: chartData.products_labels || [],
+          labels: data.products_labels || [],
           datasets: [{
             label: 'Units Sold',
-            data: chartData.products_data || [],
+            data: data.products_data || [],
             backgroundColor: '#667eea'
           }]
         },
@@ -1535,8 +1575,8 @@ async function fetchAnalyticsCharts() {
         }
       });
     } else if (dashTopProductsChartInstance) {
-      dashTopProductsChartInstance.data.labels = chartData.products_labels || [];
-      dashTopProductsChartInstance.data.datasets[0].data = chartData.products_data || [];
+      dashTopProductsChartInstance.data.labels = data.products_labels || [];
+      dashTopProductsChartInstance.data.datasets[0].data = data.products_data || [];
       dashTopProductsChartInstance.update();
     }
   } catch (error) {

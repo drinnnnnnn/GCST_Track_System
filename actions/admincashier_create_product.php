@@ -1,6 +1,10 @@
-﻿﻿<?php
-session_start();
+﻿﻿﻿﻿<?php
+// Force JSON output even if errors occur
 header('Content-Type: application/json');
+ini_set('display_errors', '0'); // Prevent HTML error output
+ob_start(); // Buffer any accidental output
+
+session_start();
 require_once __DIR__ . '/../config/db_connect.php';
 
 if ($conn->connect_error) {
@@ -8,11 +12,11 @@ if ($conn->connect_error) {
     exit;
 }
 
-$adminId = $_SESSION['admin_id'] ?? null;
-if (!$adminId) {
-    echo json_encode(['success' => false, 'message' => 'Authentication required.']);
-    exit;
-}
+try {
+    $adminId = $_SESSION['admin_id'] ?? null;
+    if (!$adminId) {
+        throw new Exception('Authentication required.');
+    }
 
 $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
 if (strpos($contentType, 'application/json') !== false) {
@@ -25,9 +29,7 @@ $productName = trim($payload['product_name'] ?? '');
 $category = trim($payload['product_category'] ?? '');
 $description = trim($payload['product_description'] ?? '');
 $productStatus = trim($payload['product_status'] ?? 'available');
-$barcode = trim($payload['barcode'] ?? '');
 $buyPrice = isset($payload['buy_price']) ? floatval($payload['buy_price']) : null;
-$rentPrice = isset($payload['rent_price']) ? floatval($payload['rent_price']) : null;
 $stockCount = isset($payload['stock_count']) ? intval($payload['stock_count']) : null;
 
 // If the product is a book, its buy price should be 0.
@@ -36,24 +38,16 @@ if (strtolower($category) === 'books') {
 }
 
 if ($productName === '') {
-    echo json_encode(['success' => false, 'message' => 'Product name is required.']);
-    exit;
+    throw new Exception('Product name is required.');
 }
 
 if ($stockCount === null || $stockCount < 0) {
-    echo json_encode(['success' => false, 'message' => 'Stock quantity must be a non-negative number.']);
-    exit;
+    throw new Exception('Stock quantity must be a non-negative number.');
 }
 
 // Validate buyPrice only if it's NOT a book
 if (strtolower($category) !== 'books' && ($buyPrice === null || $buyPrice < 0)) {
-    echo json_encode(['success' => false, 'message' => 'Price must be a valid non-negative number.']);
-    exit;
-}
-
-if ($rentPrice === null || $rentPrice < 0) {
-    echo json_encode(['success' => false, 'message' => 'Rent price must be a valid number.']);
-    exit;
+    throw new Exception('Price must be a valid non-negative number.');
 }
 
 $productStatus = in_array($productStatus, ['available', 'unavailable'], true) ? $productStatus : 'available';
@@ -89,23 +83,20 @@ if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] === UPL
     }
 }
 
-$sql = "INSERT INTO products (product_name, product_category, product_description, product_status, barcode, $priceColumn, rent_price, $stockColumn, product_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+$sql = "INSERT INTO products (product_name, product_category, product_description, product_status, $priceColumn, $stockColumn, product_image) VALUES (?, ?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
-    echo json_encode(['success' => false, 'message' => 'Failed to prepare insert statement.']);
-    exit;
+    throw new Exception('Failed to prepare insert statement.');
 }
 
-$stmt->bind_param('sssssddis', $productName, $category, $description, $productStatus, $barcode, $buyPrice, $rentPrice, $stockCount, $imagePath);
+$stmt->bind_param('ssssdis', $productName, $category, $description, $productStatus, $buyPrice, $stockCount, $imagePath);
 if (!$stmt->execute()) {
-    echo json_encode(['success' => false, 'message' => 'Unable to create product: ' . $stmt->error]);
-    $stmt->close();
-    exit;
+    throw new Exception('Unable to create product: ' . $stmt->error);
 }
 $productId = $stmt->insert_id;
 $stmt->close();
 
-$selectSql = "SELECT product_id, product_name, COALESCE(stock_count, stock, 0) AS stock_count, COALESCE(buy_price, price, 0.00) AS buy_price, COALESCE(rent_price, 0.00) AS rent_price, product_category, product_image, barcode, COALESCE(product_status, 'available') AS product_status, CASE WHEN COALESCE(stock_count, stock, 0) = 0 THEN 'Out of Stock' WHEN COALESCE(stock_count, stock, 0) < 10 THEN 'Low Stock' ELSE 'In Stock' END AS status FROM products WHERE product_id = ? LIMIT 1";
+$selectSql = "SELECT product_id, product_name, COALESCE(stock_count, stock, 0) AS stock_count, COALESCE(buy_price, price, 0.00) AS buy_price, product_category, product_image, COALESCE(product_status, 'available') AS product_status, CASE WHEN COALESCE(stock_count, stock, 0) = 0 THEN 'Out of Stock' WHEN COALESCE(stock_count, stock, 0) < 10 THEN 'Low Stock' ELSE 'In Stock' END AS status FROM products WHERE product_id = ? LIMIT 1";
 $selectStmt = $conn->prepare($selectSql);
 $selectStmt->bind_param('i', $productId);
 $selectStmt->execute();
@@ -114,10 +105,18 @@ $product = $result->fetch_assoc();
 $selectStmt->close();
 
 if (!$product) {
-    echo json_encode(['success' => false, 'message' => 'Product created but could not load product data.']);
-    exit;
+    throw new Exception('Product created but could not load product data.');
 }
 
-echo json_encode(['success' => true, 'message' => 'Product created successfully.', 'product' => $product]);
+    echo json_encode(['success' => true, 'message' => 'Product created successfully.', 'product' => $product]);
+
+} catch (Exception $e) {
+    ob_clean();
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+} finally {
+    if (isset($conn) && $conn instanceof mysqli) {
+        $conn->close();
+    }
+}
 exit;
 ?>

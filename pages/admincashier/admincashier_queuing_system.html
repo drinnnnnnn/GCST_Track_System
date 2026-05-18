@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -223,6 +223,7 @@
 </style>
 </head>
 
+<body class="antialiased">
   <!-- Queue Display Panel -->
   <div class="queue-display-panel" id="queue-display-panel">
     <div class="queue-display-content">
@@ -245,7 +246,6 @@
     </div>
   </div>
 
-<body class="antialiased">
   <!-- Sidebar Component -->
   <div id="sidebar-container"></div>
   <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -311,6 +311,7 @@
       // page-specific data loading
       loadActiveQueues();
       loadQueueStatus();
+      startQueuePolling();
     });
   </script>
 </body>

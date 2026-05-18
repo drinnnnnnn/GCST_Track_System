@@ -1,4 +1,4 @@
-﻿<?php
+﻿﻿<?php
 // Force JSON output even if errors occur
 header('Content-Type: application/json');
 ini_set('display_errors', '0'); // Prevent HTML error output
@@ -75,12 +75,10 @@ try {
     $productName = filter_input(INPUT_POST, 'product_name', FILTER_SANITIZE_STRING);
     $productCategory = filter_input(INPUT_POST, 'product_category', FILTER_SANITIZE_STRING);
     $buyPrice = filter_input(INPUT_POST, 'buy_price', FILTER_VALIDATE_FLOAT);
-    $rentPrice = filter_input(INPUT_POST, 'rent_price', FILTER_VALIDATE_FLOAT);
-    $barcode = filter_input(INPUT_POST, 'barcode', FILTER_SANITIZE_STRING);
     $productStatus = filter_input(INPUT_POST, 'product_status', FILTER_SANITIZE_STRING);
     $stockCount = filter_input(INPUT_POST, 'stock_count', FILTER_VALIDATE_INT);
 
-    if (!$productName || !$productCategory || $buyPrice === false || $rentPrice === false || !$barcode || !$productStatus || $stockCount === false) {
+    if (!$productName || !$productCategory || $buyPrice === false || !$productStatus || $stockCount === false) {
         throw new Exception('Invalid or missing product data.');
     }
 
@@ -89,8 +87,6 @@ try {
                         product_name = ?, 
                         product_category = ?, 
                         buy_price = ?, 
-                        rent_price = ?, 
-                        barcode = ?, 
                         product_status = ?, 
                         stock_count = ?, 
                         product_image = ? 
@@ -102,12 +98,10 @@ try {
     }
 
     $stmt->bind_param(
-        'ssddssisi',
+        'ssdsisi',
         $productName,
         $productCategory,
         $buyPrice,
-        $rentPrice,
-        $barcode,
         $productStatus,
         $stockCount,
         $productImage,
