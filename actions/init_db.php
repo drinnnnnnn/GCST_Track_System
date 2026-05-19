@@ -106,6 +106,21 @@ $mysqli->query(
 );
 
 $mysqli->query(
+    "CREATE TABLE IF NOT EXISTS `queue_tickets` (
+        `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        `user_id` INT(11) DEFAULT NULL,
+        `queue_number` VARCHAR(50) NOT NULL,
+        `student_name` VARCHAR(255) DEFAULT NULL,
+        `purpose` VARCHAR(255) DEFAULT NULL,
+        `status` ENUM('waiting', 'serving', 'completed', 'cancelled') NOT NULL DEFAULT 'waiting',
+        `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `served_at` TIMESTAMP NULL DEFAULT NULL,
+        `alert_sent` TINYINT(1) DEFAULT 0,
+        FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+);
+
+$mysqli->query(
     "CREATE TABLE IF NOT EXISTS `notification_preferences` (
         `student_id` VARCHAR(50) NOT NULL,
         `preferences` JSON NOT NULL,
@@ -193,6 +208,24 @@ $mysqli->query(
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
 );
 
+$mysqli->query(
+    "CREATE TABLE IF NOT EXISTS `superadmins` (
+        `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        `first_name` VARCHAR(50) NOT NULL,
+        `last_name` VARCHAR(50) NOT NULL,
+        `username` VARCHAR(50) NOT NULL UNIQUE,
+        `email` VARCHAR(100) NOT NULL UNIQUE,
+        `password_hash` VARCHAR(255) NOT NULL,
+        `security_pin_hash` VARCHAR(255) NOT NULL,
+        `status` ENUM('active', 'pending', 'suspended', 'rejected') DEFAULT 'pending',
+        `failed_login_attempts` INT DEFAULT 0,
+        `lockout_until` DATETIME DEFAULT NULL,
+        `last_login_at` DATETIME DEFAULT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+);
+
 // Add missing columns or alter column types in existing schemas.
 addColumnIfNotExists($mysqli, 'users', 'role', "ENUM('user','admin','cashier','admincashier','superadmin') NOT NULL DEFAULT 'user'");
 addColumnIfNotExists($mysqli, 'users', 'phone', "VARCHAR(25) DEFAULT NULL");
@@ -211,6 +244,7 @@ addColumnIfNotExists($mysqli, 'queue', 'queue_number', "VARCHAR(20) NOT NULL");
 addColumnIfNotExists($mysqli, 'queue', 'served_at', "TIMESTAMP NULL DEFAULT NULL");
 addColumnIfNotExists($mysqli, 'queue', 'user_id', "INT(11) DEFAULT NULL");
 addColumnIfNotExists($mysqli, 'queue', 'status', "ENUM('waiting','serving','completed','cancelled') NOT NULL DEFAULT 'waiting'");
+addColumnIfNotExists($mysqli, 'queue_tickets', 'alert_sent', "TINYINT(1) DEFAULT 0 AFTER `served_at` ");
 
 // Ensure critical columns exist in active_rentals for the renewal system
 addColumnIfNotExists($mysqli, 'active_rentals', 'rental_date', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `quantity` ");

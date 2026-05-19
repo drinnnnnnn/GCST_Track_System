@@ -7,14 +7,24 @@ require_once __DIR__ . '/../database/connection.php';
 require_once __DIR__ . '/../database/models/QueueModel.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
+$school_id = trim($data['school_id'] ?? '');
 $student_name = trim($data['student_name'] ?? 'Walk-in Student');
 $purpose = trim($data['purpose'] ?? 'General Inquiry');
 
 $conn = Database::getConnection();
 $userId = $_SESSION['user_id'] ?? null;
 
-// Ensure user_id is resolved from student_id if missing in session
-if (!$userId && isset($_SESSION['student_id'])) {
+// Priority: Resolve user_id if school_id is provided via manual form entry
+if ($school_id) {
+    $stmt = $conn->prepare("SELECT id FROM users WHERE student_id = ? LIMIT 1");
+    $stmt->bind_param("s", $school_id);
+    $stmt->execute();
+    $stmt->bind_result($resolvedId);
+    if ($stmt->fetch()) $userId = $resolvedId;
+    $stmt->close();
+}
+// Fallback: Ensure user_id is resolved from student_id if missing in session
+elseif (!$userId && isset($_SESSION['student_id'])) {
     $stmt = $conn->prepare("SELECT id FROM users WHERE student_id = ? LIMIT 1");
     $stmt->bind_param("s", $_SESSION['student_id']);
     $stmt->execute();
@@ -33,7 +43,8 @@ try {
         throw new Exception('Failed to create queue ticket');
     }
 
-    $ticket = $model->getById((int)$res['id']);
+    // Fetch with joined user details (school_id)
+    $ticket = $model->getByIdWithDetails((int)$res['id']);
     if (!$ticket) throw new Exception('Unable to fetch created ticket');
 
     echo json_encode(['success' => true, 'ticket' => $ticket, 'queue_number' => $ticket['queue_number']]);

@@ -20,6 +20,7 @@ class QueueModel {
             `status` ENUM('waiting', 'serving', 'completed', 'cancelled') NOT NULL DEFAULT 'waiting',
             `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `served_at` TIMESTAMP NULL DEFAULT NULL,
+            `alert_sent` TINYINT(1) DEFAULT 0,
             PRIMARY KEY (`id`),
             KEY `idx_queue_user` (`user_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
@@ -28,7 +29,14 @@ class QueueModel {
             // Attempt to create the table. If it exists, this does nothing.
             // If it doesn't exist and can't be created, mysqli_report should make this throw an exception.
             $this->conn->query($sql);
-            error_log("QueueModel: Attempted to ensure table '$tableName' exists.");
+
+            // Ensure alert_sent column exists for existing tables (Fixes: Unknown column 'q.alert_sent')
+            $res = $this->conn->query("SHOW COLUMNS FROM `$tableName` LIKE 'alert_sent'");
+            if ($res && $res->num_rows === 0) {
+                $this->conn->query("ALTER TABLE `$tableName` ADD COLUMN `alert_sent` TINYINT(1) DEFAULT 0 AFTER `served_at` ");
+            }
+
+            error_log("QueueModel: Attempted to ensure table '$tableName' structure is correct.");
 
             // Verify table existence immediately after the CREATE IF NOT EXISTS statement
             $checkSql = "SHOW TABLES LIKE '$tableName'";
@@ -66,6 +74,125 @@ class QueueModel {
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $result = $stmt->get_result();
+        return $result->fetch_assoc();
+    }
+
+    public function getByIdWithDetails($id) {
+        $stmt = $this->conn->prepare("SELECT q.*, u.student_id as school_id 
+                                     FROM queue_tickets q 
+                                     LEFT JOIN users u ON q.user_id = u.id 
+                                     WHERE q.id = ? LIMIT 1");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_assoc();
+    }
+
+    /**
+     * Alias for getAllActive to maintain compatibility with action scripts.
+     */
+    public function getActiveQueues() {
+        return $this->getAllActive();
+    }
+
+    /**
+     * Fetches counts for today's queue tickets.
+     */
+    public function getQueueCounts() {
+        $today = date('Y-m-d');
+        $stmt = $this->conn->prepare("
+            SELECT 
+                COUNT(CASE WHEN status = 'waiting' THEN 1 END) as waiting,
+                COUNT(CASE WHEN status = 'serving' THEN 1 END) as serving,
+                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed
+            FROM queue_tickets 
+            WHERE DATE(created_at) = ?
+        ");
+        $stmt->bind_param("s", $today);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
+    }
+
+    public function getAllActive() {
+        $sql = "SELECT q.*, u.student_id as school_id 
+                FROM queue_tickets q 
+                LEFT JOIN users u ON q.user_id = u.id 
+                WHERE q.status IN ('waiting', 'serving') 
+                ORDER BY q.status ASC, q.created_at ASC";
+        $result = $this->conn->query($sql);
+        return $result->fetch_all(MYSQLI_ASSOC);
+    }
+
+    /**
+     * Automatically cancels tickets that have been waiting or serving for more than 1 minute.
+     */
+    public function expireTickets() {
+        // Use SQL intervals to ensure consistency with the database clock
+        $sql = "UPDATE queue_tickets 
+                SET status = 'cancelled' 
+                WHERE status IN ('waiting', 'serving') 
+                AND (
+                    (status = 'waiting' AND created_at < (NOW() - INTERVAL 1 MINUTE)) OR 
+                    (status = 'serving' AND served_at < (NOW() - INTERVAL 1 MINUTE))
+                )";
+        $this->conn->query($sql);
+        return $this->conn->affected_rows;
+    }
+
+    /**
+     * Retrieves the next person in line who hasn't been alerted yet.
+     */
+    public function getNextToNotify() {
+        $sql = "SELECT q.*, u.phone, u.contact_number 
+                FROM queue_tickets q 
+                LEFT JOIN users u ON q.user_id = u.id 
+                WHERE q.status = 'waiting' AND q.alert_sent = 0 
+                ORDER BY q.created_at ASC LIMIT 1";
+        $result = $this->conn->query($sql);
+        return $result->fetch_assoc();
+    }
+
+    /**
+     * Marks a ticket as having been notified.
+     */
+    public function markAlertSent($id) {
+        $stmt = $this->conn->prepare("UPDATE queue_tickets SET alert_sent = 1 WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        return $stmt->execute();
+    }
+
+    public function updateStatus($id, $status) {
+        $this->conn->begin_transaction();
+        try {
+            // Prevent processing tickets that have already expired or been completed
+            $current = $this->getById($id);
+            if ($current && in_array($current['status'], ['cancelled', 'completed']) && in_array($status, ['serving', 'completed'])) {
+                throw new Exception("Ticket #{$current['queue_number']} is already {$current['status']} and cannot be modified.");
+            }
+
+            // Logic: Only one ticket can be 'serving' at a time.
+            // If we start serving a new one, mark others as completed.
+            if ($status === 'serving') {
+                $this->conn->query("UPDATE queue_tickets SET status = 'completed', served_at = NOW() WHERE status = 'serving'");
+            }
+
+            // Set served_at timestamp for processed tickets
+            $servedAtPart = in_array($status, ['serving', 'completed', 'cancelled']) ? ", served_at = IFNULL(served_at, NOW())" : "";
+
+            $stmt = $this->conn->prepare("UPDATE queue_tickets SET status = ? $servedAtPart WHERE id = ?");
+            $stmt->bind_param("si", $status, $id);
+            $success = $stmt->execute();
+
+            $this->conn->commit();
+            return $success;
+        } catch (Exception $e) {
+            $this->conn->rollback();
+            throw $e;
+        }
+    }
+
+    public function getLatestGenerated() {
+        $result = $this->conn->query("SELECT * FROM queue_tickets ORDER BY id DESC LIMIT 1");
         return $result->fetch_assoc();
     }
 

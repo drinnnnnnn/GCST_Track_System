@@ -25,11 +25,11 @@ if (!validateCsrfToken($csrf_token)) {
     exit();
 }
 
-$email = trim(filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL) ?? '');
+$identifier = trim($_POST['identifier'] ?? '');
 $password = $_POST['password'] ?? '';
 $pin = $_POST['pin'] ?? '';
 
-if ($email === '' || $password === '') {
+if ($identifier === '' || $password === '' || $pin === '') {
     header('Location: ../pages/sign_in_superadmin.html?error=invalid');
     exit();
 }
@@ -37,7 +37,7 @@ if ($email === '' || $password === '') {
 $superAdminModel = new SuperAdminModel();
 
 // Authenticate using the specialized model to handle brute-force protection and the correct table
-$admin = $superAdminModel->authenticate($email, $password, $pin);
+$admin = $superAdminModel->authenticate($identifier, $password, $pin);
 
 if (!$admin) {
     header('Location: ../pages/sign_in_superadmin.html?error=invalid');

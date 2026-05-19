@@ -65,6 +65,9 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
     }
 
     // Log the notification to the database
+    // The 'status' column will store 'sent', 'failed', or 'pending'.
+    // 'created_at' is a TIMESTAMP, useful for date-based filtering.
+    // 'notification_type' stores the category of the email.
     try {
         // Ensure the email_notifications table exists with all required columns
         $conn->query("CREATE TABLE IF NOT EXISTS email_notifications (
@@ -76,6 +79,12 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
             error_message TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )");
+
+        // Ensure created_at exists for older database versions
+        $checkTime = $conn->query("SHOW COLUMNS FROM `email_notifications` LIKE 'created_at'");
+        if ($checkTime && $checkTime->num_rows === 0) {
+            $conn->query("ALTER TABLE `email_notifications` ADD COLUMN `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER `error_message` ");
+        }
 
         $checkColumn = $conn->query("SHOW COLUMNS FROM `email_notifications` LIKE 'email_body'");
         if ($checkColumn && $checkColumn->num_rows === 0) {

@@ -13,6 +13,18 @@ requireAuth(['admin', 'admincashier', 'superadmin']);
 try {
     require_once __DIR__ . '/../database/connection.php';
     $conn = Database::getConnection();
+    require_once __DIR__ . '/email_helpers.php';
+
+    // Ensure table structure matches code requirements
+    $conn->query("CREATE TABLE IF NOT EXISTS email_notifications (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        recipient VARCHAR(255) NOT NULL,
+        subject VARCHAR(255),
+        notification_type VARCHAR(50),
+        status VARCHAR(20),
+        error_message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
 
     // Handle POST actions (Delete Log / Retry)
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -26,8 +38,23 @@ try {
             $success = $stmt->execute();
             echo json_encode(['success' => $success]);
             exit;
+        } elseif ($action === 'send_email') {
+            $res = sendEmailWithLog($conn, $input['recipient'], $input['subject'], $input['message'], $input['email_type']);
+            echo json_encode($res);
+            exit;
+        } elseif ($action === 'retry_email' && $id) {
+            $stmt = $conn->prepare("SELECT * FROM email_notifications WHERE id = ?");
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $log = $stmt->get_result()->fetch_assoc();
+            if ($log) {
+                $res = sendEmailWithLog($conn, $log['recipient'], $log['subject'], $log['email_body'], $log['notification_type']);
+                echo json_encode($res);
+            } else {
+                echo json_encode(['success' => false, 'error' => 'Log not found']);
+            }
+            exit;
         }
-        // Note: Retry logic would call functions from email_helpers.php
     }
 
     // Handle GET parameters for filtering
@@ -56,6 +83,11 @@ try {
     $whereClause = implode(" AND ", $where);
 
     // 1. Fetch metrics for the dashboard cards
+    // These metrics are:
+    // - sent_today: Number of emails with status 'sent' created today.
+    // - failed_emails: Total number of emails with status 'failed'.
+    // - pending_emails: Total number of emails with status 'pending'.
+    // - total_emails_sent: Total number of emails with status 'sent'.
     $metricsSql = "SELECT 
         COUNT(CASE WHEN DATE(created_at) = CURDATE() AND status = 'sent' THEN 1 END) as sent_today,
         COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed_emails,
@@ -65,6 +97,7 @@ try {
     $metrics = $conn->query($metricsSql)->fetch_assoc();
 
     // 2. Fetch unique notification types for the filter dropdown
+    // The column name for notification type is 'notification_type'.
     $typeResult = $conn->query("SELECT DISTINCT notification_type FROM email_notifications WHERE notification_type IS NOT NULL");
     $uniqueTypes = [];
     while ($row = $typeResult->fetch_assoc()) {
@@ -72,7 +105,7 @@ try {
     }
 
     // 3. Fetch the actual logs
-    $logsSql = "SELECT id, recipient, subject, notification_type, status, created_at, error_message 
+    $logsSql = "SELECT id, recipient, subject, notification_type, status, created_at, error_message, email_body as message 
                 FROM email_notifications 
                 WHERE $whereClause 
                 ORDER BY created_at DESC LIMIT 100";

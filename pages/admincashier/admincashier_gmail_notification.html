@@ -7,7 +7,6 @@
   <title>GCST Admin Cashier Gmail Notifications</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <link rel="stylesheet" href="http://localhost/GCST_Track_System/assets/css/admincashier.css" />
-  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -230,18 +229,18 @@
   </style>
 </head>
 
-<body class="antialiased">
+<body>
   <!-- Sidebar Component -->
   <div id="sidebar-container"></div>
   <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
   <div class="content-wrapper">
-  <main class="max-w-7xl mx-auto px-6 py-8">
+
+<main>
     <!-- Greeting Section -->
     <section class="greeting-section">
       <div class="greeting-content">
-        <h1 id="greeting-message">Welcome, Admin Cashier!</h1>
-        <p id="current-date-time"></p>
+        <h1>Gmail Notifications</h1>
+        <p>Manage and monitor your email notifications here.</p>
       </div>
       <div class="greeting-icon">📩</div>
     </section>
@@ -352,9 +351,12 @@
   <script>
     // Use the central initializer from admincashier.js
     initializeAdminCashierPage((userData) => {
-      // page-specific data loading
-      loadActiveQueues();
-      loadQueueStatus();
+      // Page-specific data loading for Gmail notifications
+      if (typeof window.loadGmailData === 'function') {
+        window.loadGmailData();
+        window.attachEmailFilters();
+        window.startGmailPolling();
+      }
     });
   </script>
 </body>

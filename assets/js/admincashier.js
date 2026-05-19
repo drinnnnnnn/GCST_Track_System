@@ -1,6 +1,7 @@
-﻿﻿﻿﻿﻿﻿﻿﻿let currentAdminId = null;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿let currentAdminId = null;
 let currentTicket = null;
 let emailLogs = [];
+let gmailPollInterval = null; // New: For Gmail logs polling
 let notificationPollInterval = null;
 let queuePollInterval = null;
 
@@ -187,6 +188,27 @@ function startNotifPolling() {
 }
 
 /**
+ * Start polling Gmail logs every minute
+ */
+window.startGmailPolling = function() {
+  // Clear any existing interval
+  if (gmailPollInterval) {
+    clearInterval(gmailPollInterval);
+  }
+  gmailPollInterval = setInterval(window.loadGmailData, 30000); // Poll every 30 seconds
+};
+
+/**
+ * Stop Gmail logs polling
+ */
+window.stopGmailPolling = function() {
+  if (gmailPollInterval) {
+    clearInterval(gmailPollInterval);
+    gmailPollInterval = null;
+  }
+}
+
+/**
  * Stop notification polling
  */
 function stopNotifPolling() {
@@ -317,6 +339,7 @@ window.initializeAdminCashierPage = function(pageCallback) {
   // Clean up on page unload
   window.addEventListener('beforeunload', () => {
     stopNotifPolling();
+    stopGmailPolling(); // Stop Gmail polling on unload
     if (typeof stopQueuePolling === 'function') stopQueuePolling();
   });
 }
@@ -384,9 +407,9 @@ function renderEmailLogs(logs) {
       <td>${log.id}</td>
       <td>${escapeHtml(log.recipient)}</td>
       <td>${escapeHtml(log.subject)}</td>
-      <td>${escapeHtml(log.email_type)}</td>
+      <td>${escapeHtml(log.notification_type)}</td>
       <td><span class="status-badge ${statusClass}">${escapeHtml(log.status)}</span></td>
-      <td>${new Date(log.timestamp).toLocaleString()}</td>
+      <td>${new Date(log.created_at).toLocaleString()}</td>
       <td>
         <div class="action-buttons">
           <button class="action-button view" onclick="openEmailModal('view', ${log.id})">View</button>
@@ -419,7 +442,7 @@ window.openEmailModal = function(mode, logIdOrObj) {
   document.getElementById('modalRecipient').value = log?.recipient || '';
   document.getElementById('modalSubject').value = log?.subject || '';
   document.getElementById('modalMessage').value = log?.message || '';
-  document.getElementById('modalType').value = log?.email_type || 'System Alert';
+  document.getElementById('modalType').value = log?.notification_type || 'System Alert';
 };
 
 window.closeEmailModal = function() { document.getElementById('emailModal')?.classList.remove('open'); };
@@ -686,7 +709,11 @@ document.addEventListener('DOMContentLoaded', () => {
         loadNotifications();
         startNotifPolling();
         // Auto-init Gmail features if the container exists
-        if (document.getElementById('emailLogsBody')) { loadGmailData(); attachEmailFilters(); }
+        if (document.getElementById('emailLogsBody')) { 
+          loadGmailData(); 
+          attachEmailFilters(); 
+          window.startGmailPolling();
+        }
       }
     });
 
@@ -1113,8 +1140,7 @@ let filteredInventoryProducts = [];
 let selectedInventoryProduct = null;
 const inventoryFilterState = {
   query: '',
-  category: 'All',
-  view: 'cards'
+  category: 'All'
 };
 
 const INVENTORY_API = '../../actions/get_admincashier_products.php';
@@ -1148,7 +1174,6 @@ function isInventoryBookCategory(category) {
 
 function renderInventoryViews() {
   const cardContainer = document.getElementById('products-cards');
-  const tableBody = document.getElementById('products-table-body');
   
   if (cardContainer) {
     cardContainer.innerHTML = '';
@@ -1156,8 +1181,9 @@ function renderInventoryViews() {
       cardContainer.innerHTML = '<div class="empty-state">No products match the current search or filters.</div>';
     } else {
       filteredInventoryProducts.forEach(product => {
+        const isSelected = selectedInventoryProduct && Number(selectedInventoryProduct.product_id) === Number(product.product_id);
         const card = document.createElement('article');
-        card.className = 'inventory-card';
+        card.className = `inventory-card ${isSelected ? 'selected' : ''}`;
         const image = resolveInventoryImagePath(product.product_image);
         const stock = Number(product.stock_count) || 0;
         const description = (product.product_description || '').trim();
@@ -1187,30 +1213,6 @@ function renderInventoryViews() {
       });
     }
   }
-
-  if (tableBody) {
-    tableBody.innerHTML = '';
-    if (filteredInventoryProducts.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--muted);">No inventory rows found.</td></tr>';
-    } else {
-      filteredInventoryProducts.forEach(product => {
-        const stock = Number(product.stock_count) || 0;
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${product.product_name || 'Untitled'}</td>
-          <td>${product.product_category || 'Other'}</td>
-          <td>${stock}</td>
-          <td>${formatCurrency(product.buy_price)}</td>
-          <td><span class="status-pill ${getInventoryStatusClass(stock)}">${product.product_status === 'unavailable' ? 'Unavailable' : getInventoryStockStatus(stock)}</span></td>
-          <td>
-            <button class="btn btn-secondary" type="button" onclick="window.selectInventoryProduct(${product.product_id})">Edit</button>
-            <button class="btn btn-danger" type="button" onclick="window.deleteInventoryProduct(${product.product_id})">Delete</button>
-          </td>
-        `;
-        tableBody.appendChild(row);
-      });
-    }
-  }
 }
 
 function updateInventorySummary() {
@@ -1222,7 +1224,27 @@ function updateInventorySummary() {
   if (document.getElementById('summary-total')) document.getElementById('summary-total').textContent = total;
   if (document.getElementById('summary-low')) document.getElementById('summary-low').textContent = lowStock;
   if (document.getElementById('summary-available')) document.getElementById('summary-available').textContent = available;
-  if (document.getElementById('summary-value')) document.getElementById('summary-value').textContent = formatCurrency(value);
+
+  const valueEl = document.getElementById('summary-value');
+  if (valueEl) {
+    const formatted = formatCurrency(value);
+    valueEl.textContent = formatted;
+
+    // Automatic Font Scaling Logic: 
+    // Dynamically adjusts the font-size clamp based on character length 
+    // to prevent layout overflow when reaching millions or billions.
+    const len = formatted.length;
+    let dynamicSize = ''; // Reverts to CSS default if value is small
+
+    if (len > 15) {
+      dynamicSize = 'clamp(0.9rem, 2.2vw, 1.05rem)';
+    } else if (len > 12) {
+      dynamicSize = 'clamp(1.0rem, 2.6vw, 1.25rem)';
+    } else if (len > 10) {
+      dynamicSize = 'clamp(1.1rem, 3vw, 1.45rem)';
+    }
+    valueEl.style.fontSize = dynamicSize;
+  }
 }
 
 function applyInventoryFilters() {
@@ -1289,33 +1311,59 @@ function updateInventoryDetailPanel() {
 window.selectInventoryProduct = function(productId) {
   selectedInventoryProduct = inventoryProducts.find(p => Number(p.product_id) === Number(productId)) || null;
   updateInventoryDetailPanel();
+  renderInventoryViews();
+
+  // Smooth scroll to details on mobile/tablet for better visibility of the "expansion"
+  if (window.innerWidth < 1200 && selectedInventoryProduct) {
+    const detailPanel = document.querySelector('.inventory-panel');
+    detailPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 window.deleteInventoryProduct = function(productId) {
   if (!productId || !confirm('Are you sure you want to delete this product?')) return;
-  fetch(PRODUCT_DELETE_API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ product_id: productId })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (!data.success) { showInventoryToast(data.message || 'Unable to delete product.', 'error'); return; }
+  (async () => {
+    try {
+      const response = await fetch(PRODUCT_DELETE_API, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ product_id: productId })
+      });
+
+      if (!response.ok) throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+      
+      const text = await response.text();
+      let data;
+      try { data = JSON.parse(text); } catch (e) { throw new Error('Invalid server response format.'); }
+
+      if (!data.success) throw new Error(data.message || 'Unable to delete product.');
+
       inventoryProducts = inventoryProducts.filter(p => Number(p.product_id) !== Number(productId));
-      if (selectedInventoryProduct && Number(selectedInventoryProduct.product_id) === Number(productId)) selectedInventoryProduct = null;
+      if (selectedInventoryProduct && Number(selectedInventoryProduct.product_id) === Number(productId)) {
+        selectedInventoryProduct = null;
+      }
       applyInventoryFilters();
       updateInventoryDetailPanel();
       showInventoryToast(data.message || 'Product deleted successfully.');
-    })
-    .catch(err => {
-      console.error('Delete error:', err);
-      showInventoryToast('A network error occurred while deleting the product.', 'error');
-    });
-}
+    } catch (err) {
+      console.error('Delete operation failed:', err);
+      showInventoryToast(err.message || 'A network error occurred while deleting the product.', 'error');
+    }
+  })();
+};
 
 async function refreshInventoryData() {
+  const btn = document.getElementById('refresh-button');
+  const icon = btn?.querySelector('i');
   const cards = document.getElementById('products-cards');
+  
+  if (btn) btn.disabled = true;
+  if (icon) icon.classList.add('fa-spin');
   if (cards) cards.innerHTML = '<div class="empty-state">Loading inventory...</div>';
+
   try {
     const data = await fetchWithError(INVENTORY_API);
     inventoryProducts = Array.isArray(data) ? data : [];
@@ -1324,6 +1372,9 @@ async function refreshInventoryData() {
     applyInventoryFilters();
   } catch (e) {
     if (cards) cards.innerHTML = '<div class="empty-state">Unable to load inventory.</div>';
+  } finally {
+    if (btn) btn.disabled = false;
+    if (icon) icon.classList.remove('fa-spin');
   }
 }
 
@@ -1362,31 +1413,42 @@ window.initAdminCashierInventoryPage = function() {
     if (file && preview) preview.src = URL.createObjectURL(file);
   });
 
-  document.getElementById('add-product-form')?.addEventListener('submit', (e) => {
+  document.getElementById('add-product-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    fetch(PRODUCT_CREATE_API, { method: 'POST', body: new FormData(e.target) })
-      .then(r => r.json()).then(data => {
-        if (!data.success) { showInventoryToast(data.message || 'Failed to add product.', 'error'); return; }
-        inventoryProducts.unshift(data.product);
-        applyInventoryFilters();
-        togglePanel(false);
-        showInventoryToast(data.message || 'Product added successfully!');
-      })
-      .catch(err => {
-        console.error('Create error:', err);
-        showInventoryToast('A network error occurred while adding the product.', 'error');
-      });
-  });
+    const form = e.target;
+    const btn = form.querySelector('button[type="submit"]');
+    const originalContent = btn.innerHTML;
 
-  const setView = (v) => {
-    inventoryFilterState.view = v;
-    document.getElementById('view-cards')?.classList.toggle('active', v === 'cards');
-    document.getElementById('view-table')?.classList.toggle('active', v === 'table');
-    document.getElementById('products-cards')?.classList.toggle('hidden', v !== 'cards');
-    document.getElementById('products-table-wrapper')?.classList.toggle('hidden', v !== 'table');
-  };
-  document.getElementById('view-cards')?.addEventListener('click', () => setView('cards'));
-  document.getElementById('view-table')?.addEventListener('click', () => setView('table'));
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    try {
+      const response = await fetch(PRODUCT_CREATE_API, { 
+        method: 'POST', 
+        body: new FormData(form),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      
+      if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+      
+      const text = await response.text();
+      let data;
+      try { data = JSON.parse(text); } catch (e) { throw new Error('Malformed JSON from server.'); }
+
+      if (!data.success) throw new Error(data.message || 'Failed to add product.');
+
+      inventoryProducts.unshift(data.product);
+      applyInventoryFilters();
+      togglePanel(false);
+      showInventoryToast(data.message || 'New product added to inventory successfully!');
+    } catch (err) {
+      console.error('Create operation failed:', err);
+      showInventoryToast(err.message || 'A network error occurred while adding the product.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalContent;
+    }
+  });
 
   document.getElementById('detail-category-input')?.addEventListener('change', (e) => {
     if (selectedInventoryProduct) {
@@ -1404,8 +1466,14 @@ window.initAdminCashierInventoryPage = function() {
     if (i) i.value = Math.max(0, (parseInt(i.value) || 0) - 1);
   });
 
-  document.getElementById('btn-save-product')?.addEventListener('click', () => {
-    if (!selectedInventoryProduct) return;
+  document.getElementById('btn-save-product')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    if (!selectedInventoryProduct || btn.disabled) return;
+
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Saving...</span>';
+
     const fd = new FormData();
     fd.append('product_id', selectedInventoryProduct.product_id);
     fd.append('product_name', document.getElementById('detail-name-input').value.trim());
@@ -1413,28 +1481,65 @@ window.initAdminCashierInventoryPage = function() {
     fd.append('buy_price', document.getElementById('detail-buy-input').value);
     fd.append('product_status', document.getElementById('detail-status-input').value);
     fd.append('stock_count', document.getElementById('detail-stock-input').value);
+    
     const img = document.getElementById('detail-product-image').files[0];
-    if (img) fd.append('product_image', img);
+    if (img) {
+      if (img.size > 2 * 1024 * 1024) { // 2MB limit check
+        showInventoryToast('Image file is too large (max 2MB)', 'error');
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+        return;
+      }
+      fd.append('product_image', img);
+    }
 
-    fetch(INVENTORY_UPDATE_API, { method: 'POST', body: fd })
-      .then(r => r.json()).then(data => {
-        if (!data.success) { showInventoryToast(data.message || 'Update failed.', 'error'); return; }
-        selectedInventoryProduct = data.product;
-        const idx = inventoryProducts.findIndex(p => Number(p.product_id) === Number(selectedInventoryProduct.product_id));
-        if (idx !== -1) inventoryProducts[idx] = selectedInventoryProduct;
-        applyInventoryFilters();
-        updateInventoryDetailPanel();
-        showInventoryToast(data.message || 'Product details updated successfully!');
-      })
-      .catch(err => {
-        console.error('Update error:', err);
-        showInventoryToast('A network error occurred while saving product changes.', 'error');
+    try {
+      const response = await fetch(INVENTORY_UPDATE_API, { 
+        method: 'POST', 
+        body: fd,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
+      
+      if (!response.ok) throw new Error(`Server returned error code ${response.status}`);
+
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (jsonErr) {
+        console.error('Server returned non-JSON response:', text);
+        throw new Error('The server returned an invalid response. Check the console for details.');
+      }
+
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to update product data.');
+      }
+
+      selectedInventoryProduct = data.product;
+      const idx = inventoryProducts.findIndex(p => Number(p.product_id) === Number(selectedInventoryProduct.product_id));
+      if (idx !== -1) inventoryProducts[idx] = selectedInventoryProduct;
+      
+      applyInventoryFilters();
+      updateInventoryDetailPanel();
+      showInventoryToast(data.message || 'Product changes have been saved successfully!');
+    } catch (err) {
+      console.error('Update operation failed:', err);
+      showInventoryToast(err.message || 'A network error occurred while saving product changes.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalContent;
+    }
   });
 
   document.getElementById('btn-clear-selection')?.addEventListener('click', () => {
     selectedInventoryProduct = null;
     updateInventoryDetailPanel();
+  });
+
+  document.getElementById('btn-close-details')?.addEventListener('click', () => {
+    selectedInventoryProduct = null;
+    updateInventoryDetailPanel();
+    renderInventoryViews();
   });
 };
 

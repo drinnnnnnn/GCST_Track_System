@@ -1,34 +1,29 @@
 <?php
 header('Content-Type: application/json');
 require_once __DIR__ . '/security.php';
+require_once __DIR__ . '/../database/models/QueueModel.php';
+
 secureSessionStart();
 requireAuth(['admincashier', 'superadmin']);
 
-require_once __DIR__ . '/../database/models/QueueModel.php';
-
-$model = new QueueModel();
 try {
-    $expiredCount = $model->expireTickets();
-    $tickets = $model->getActiveQueues();
+    $model = new QueueModel();
+    $tickets = $model->getAllActive();
     
-    // Determine status values for the display panel
     $nowServing = null;
     $nextQueue = null;
     
     foreach($tickets as $t) {
-        $details = ($t['student_name'] ?: 'Guest') . ' (' . ($t['school_id'] ?: 'Walk-in') . ')';
         if ($t['status'] === 'serving' && !$nowServing) {
-            $nowServing = $details;
+            $nowServing = $t['queue_number'];
         } elseif ($t['status'] === 'waiting' && !$nextQueue) {
-            $nextQueue = $details;
+            $nextQueue = $t['queue_number'];
         }
     }
 
     echo json_encode([
         'success' => true, 
         'tickets' => $tickets,
-        'expired_count' => $expiredCount,
-        'queues' => $tickets, // Maintained for admincashier.js compatibility
         'status' => [
             'nowServing' => $nowServing ?? 'None',
             'nextQueue' => $nextQueue ?? 'None'

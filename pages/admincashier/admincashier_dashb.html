@@ -7,18 +7,17 @@
   <title>GCST Admin Cashier - Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <link rel="stylesheet" href="../../assets/css/admincashier.css" />
-  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
-<body class="antialiased">
+<body>
   <!-- Sidebar Component -->
   <div id="sidebar-container"></div>
   <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
   <div class="content-wrapper">
-  <main class="max-w-7xl mx-auto px-6 py-8">
+  
+<main>
     <!-- Greeting Section -->
     <section class="greeting-section">
       <div class="greeting-content">
@@ -28,40 +27,21 @@
       <div class="greeting-icon">📚</div>
     </section>
 
-    <!-- Quick Actions -->
-    <section class="quick-actions">
-      <h2>Quick Actions</h2>
-      <div class="action-grid">
-        <a href="admincashier_sale.html" class="action-card">
-          <i class="fas fa-cash-register"></i>
-          <h3>New Sale</h3>
-        </a>
-        <a href="admincashier_inventorys.html" class="action-card">
-          <i class="fas fa-boxes"></i>
-          <h3>Manage Inventory</h3>
-        </a>
-        <a href="admincashier_cashier.html" class="action-card">
-          <i class="fas fa-chart-line"></i>
-          <h3>View Cashier</h3>
-        </a>
-      </div>
-    </section>
-
     <!-- Summary Section -->
     <section class="balance-section">
       <h2>Dashboard Summary</h2>
       <div class="balance-cards">
         <div class="balance-card">
-          <h3>Total Sales Today</h3>
-          <p class="amount" id="totalSalesToday">₱0.00</p>
-        </div>
-        <div class="balance-card">
           <h3>Items in Inventory</h3>
           <p class="amount" id="totalInventory">0</p>
-        </div>
+        </div> 
         <div class="balance-card">
           <h3>Pending Queue</h3>
           <p class="amount" id="pendingQueue">0</p>
+        </div>
+        <div class="balance-card">
+          <h3>Total Sales (Today)</h3>
+          <p class="amount">  <span id="totalSalesToday"></span></p>
         </div>
       </div>
     </section>
@@ -113,6 +93,31 @@
   <script>
     // Initialize the dashboard page using the central JS helper
     initializeAdminCashierPage(window.initAdminCashierDashboardPage);
+
+    /**
+     * Fetches real-time dashboard statistics and updates the UI elements.
+     * This ensures the Total Sales Report and other summary metrics stay current.
+     */
+    async function updateDashboardMetrics() {
+      try {
+        const response = await fetch('../../actions/get_dashboard_stats.php');
+        const result = await response.json();
+        
+        if (result.success) {
+          const { total_sales_today, total_inventory, pending_queue } = result.metrics;
+          
+          document.getElementById('totalSalesToday').textContent = total_sales_today.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          document.getElementById('totalInventory').textContent = total_inventory;
+          document.getElementById('pendingQueue').textContent = pending_queue;
+        }
+      } catch (error) {
+        console.error('Error updating dashboard metrics:', error);
+      }
+    }
+
+    // Perform initial fetch and set interval for real-time updates (every 30 seconds)
+    updateDashboardMetrics();
+    setInterval(updateDashboardMetrics, 30000);
   </script>
 </body>
 </html>

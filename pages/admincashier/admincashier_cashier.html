@@ -6,7 +6,6 @@
   <title>GCST Admin Cashier - Point of Sale</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="../../assets/css/admincashier.css" />
-  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
@@ -170,7 +169,7 @@
       padding: 18px;
       display: grid;
       gap: 10px;
-    }
+    }B
     .product-body h3 {
       font-size: 1rem;
       margin: 0;
@@ -580,18 +579,17 @@
   </style>
 </head>
 
-<body class="antialiased">
+<body>
   <!-- Sidebar Component -->
   <div id="sidebar-container"></div>
   <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
-
   <div class="content-wrapper">
-  <main class="max-w-7xl mx-auto px-6 py-8">
+
+<main>
     <section class="greeting-section">
-      <div class="greeting-content" id="greeting-message">
+      <div class="greeting-content">
         <h1>Transaction Management</h1>
-        <p id="current-date-time">Loading date and time...</p>
+        <p>Managing Secure and Fast Transactions</p>
       </div>
       <div class="greeting-icon">💳</div>
     </section>
@@ -725,176 +723,6 @@
       </div>
     </section>
 
-    <!-- New Section for Rental Management -->
-    <section class="management-section" style="margin-top: 24px; padding: 0 20px;">
-      <div class="panel">
-        <div class="panel-header" style="flex-wrap: wrap; gap: 20px;">
-          <div style="display: flex; align-items: center; gap: 15px;">
-            <h2>Active Rentals</h2>
-            <span id="active-rental-count" class="badge" style="background: #eef2ff; color: #4338ca;">0 active</span>
-            <button class="btn btn-secondary" onclick="loadActiveRentals()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
-          </div>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; justify-content: flex-end;">
-            <div style="position: relative; max-width: 300px; flex: 1;">
-              <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem;"></i>
-              <input id="active-rental-search" class="search-input" type="text" placeholder="Search student or product..." style="padding: 10px 16px 10px 38px; font-size: 0.85rem; width: 100%;" />
-            </div>
-            <button id="sort-active-rentals-date" class="btn btn-secondary" onclick="sortActiveRentalsByDate()" style="padding: 6px 12px; font-size: 0.8rem;">
-              Due Date <i id="sort-icon-date" class="fas fa-sort"></i>
-            </button>
-            <button id="bulk-return-btn" class="btn btn-primary hidden" onclick="processBulkReturn()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-undo"></i> Bulk Return</button>
-            <button class="btn btn-secondary" onclick="exportActiveRentalsToCSV()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-file-csv"></i> Export CSV</button>
-          </div>
-        </div>
-        <div id="active-rentals-content">
-          <table class="data-table">
-              <thead>
-                <tr>
-                  <th><input type="checkbox" id="select-all-rentals" onchange="toggleSelectAllRentals(this.checked)" style="width: 16px; height: 16px; cursor: pointer; accent-color: #4f46e5;"></th>
-                  <th>Student</th>
-                  <th>Product</th>
-                  <th>Qty</th>
-                  <th>Due Date</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="active-rentals-body">
-                <tr><td colspan="7" class="empty-state">Loading active rentals...</td></tr>
-              </tbody>
-          </table>
-        </div>
-        <div id="active-rentals-empty" class="empty-state hidden">No active rentals found.</div>
-      </div>
-    </section>
-
-    <section class="management-section" style="margin-top: 24px; padding: 0 20px;">
-      <div class="panel">
-        <div class="panel-header" style="flex-wrap: wrap; gap: 20px;">
-          <div style="display: flex; align-items: center; gap: 15px;">
-            <h2>Overdue Rentals</h2>
-            <span id="overdue-rental-count" class="badge" style="background: #fee2e2; color: #b91c1c;">0 overdue</span>
-            <button class="btn btn-secondary" onclick="loadOverdueRentals()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
-          </div>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; justify-content: flex-end;">
-            <div style="position: relative; max-width: 300px; flex: 1;">
-              <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem;"></i>
-              <input id="overdue-rental-search" class="search-input" type="text" placeholder="Search student or product..." style="padding: 10px 16px 10px 38px; font-size: 0.85rem; width: 100%;" />
-            </div>
-          </div>
-        </div>
-        <div id="overdue-rentals-content">
-          <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Product</th>
-                  <th>Qty</th>
-                  <th>Due Date</th>
-                  <th>Penalty</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="overdue-rentals-body">
-                <tr><td colspan="6" class="empty-state">Loading overdue rentals...</td></tr>
-              </tbody>
-          </table>
-        </div>
-        <div id="overdue-rentals-empty" class="empty-state hidden">No overdue rentals found.</div>
-      </div>
-    </section>
-
-    <section class="management-section" style="margin-top: 24px; padding: 0 20px;">
-      <div class="panel">
-        <div class="panel-header" style="flex-wrap: wrap; gap: 20px;">
-          <div style="display: flex; align-items: center; gap: 15px;">
-            <h2>Pending Renewals</h2>
-            <span id="renewal-count" class="badge" style="background: #fffbe6; color: #b45309;">0 pending</span>
-            <button class="btn btn-secondary" onclick="loadPendingRenewals()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
-          </div>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; justify-content: flex-end;">
-            <div style="display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 4px 14px; border-radius: 14px; border: 1px solid #d1d5db;">
-              <i class="far fa-calendar-alt" style="color: #64748b; font-size: 0.85rem;"></i>
-              <input id="renewal-date-to" class="search-input" type="date" style="padding: 8px 0; font-size: 0.85rem; width: auto; border: none; background: transparent; cursor: pointer;" title="Due Date Up To" />
-            </div>
-            <div style="position: relative; max-width: 300px; flex: 1;">
-              <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem;"></i>
-              <input id="renewal-search" class="search-input" type="text" placeholder="Search student or product..." style="padding: 10px 16px 10px 38px; font-size: 0.85rem; width: 100%;" />
-            </div>
-          </div>
-        </div>
-        <div id="renewals-content">
-          <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Product</th>
-                  <th>Qty</th>
-                  <th>Rental Date</th>
-                  <th>Current Due Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="renewals-body">
-                <tr><td colspan="6" class="empty-state">Loading pending renewals...</td></tr>
-              </tbody>
-          </table>
-        </div>
-        <div id="renewals-empty" class="empty-state hidden">No pending renewals found.</div>
-      </div>
-    </section>
-
-    <section class="management-section" style="margin-top: 24px; padding: 0 20px;">
-      <div class="panel">
-        <div class="panel-header">
-          <h2>Lost Books</h2>
-          <span id="lost-books-count" class="badge" style="background: #fee2e2; color: #b91c1c;">0 lost</span>
-          <button class="btn btn-secondary" onclick="loadLostBooks()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
-        </div>
-        <div class="search-group">
-          <input id="lost-books-search" class="search-input" type="text" placeholder="Search student or product..." />
-        </div>
-        <div id="lost-books-content">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Product</th>
-                <th>Qty Lost</th>
-                <th>Date Reported</th>
-                <th>Penalty</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="lost-books-body">
-              <tr><td colspan="7" class="empty-state">Loading lost books...</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div id="lost-books-empty" class="empty-state hidden">No lost books found.</div>
-      </div>
-    </section>
-
-    <div id="reject-reason-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
-      <div class="panel" style="width: 100%; max-width: 450px;">
-        <div class="panel-header">
-          <h2>Reject Renewal Request</h2>
-        </div>
-        <div class="summary-card">
-          <div class="summary-row">
-            <label>Reason for rejection:
-              <textarea id="rejection-reason" class="search-input" style="height: 120px; width: 100%; margin-top: 10px; padding: 12px;" placeholder="Enter reason here..."></textarea>
-            </label>
-          </div>
-          <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button class="btn btn-danger" style="flex: 1;" onclick="confirmRejection()">Reject Request</button>
-            <button class="btn btn-secondary" style="flex: 1;" onclick="closeRejectModal()">Cancel</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div id="view-txn-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;">
       <div class="panel" style="width: 100%; max-width: 550px; max-height: 90vh; overflow-y: auto;">
         <div class="panel-header">
@@ -978,61 +806,6 @@
             <div style="display: flex; gap: 10px; margin-top: 20px;">
               <button type="submit" class="btn btn-primary" style="flex: 1;">Process Return</button>
               <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closePartialReturnModal()">Cancel</button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Report Lost Modal -->
-    <div id="report-lost-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
-      <div class="panel" style="width: 100%; max-width: 500px;">
-        <div class="panel-header">
-          <h2>Report Item as Lost</h2>
-          <button type="button" class="modal-close" onclick="closeReportLostModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:#6b7280;">×</button>
-        </div>
-        <form id="report-lost-form">
-          <input type="hidden" id="lost-rental-id" name="rental_id">
-          <input type="hidden" id="lost-product-id" name="product_id">
-          <input type="hidden" id="lost-student-id" name="student_id">
-          <div class="summary-card">
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label>Student Name:
-                <input type="text" id="lost-student-name" readonly style="background: #f8fafc;" />
-              </label>
-            </div>
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label>Product Name:
-                <input type="text" id="lost-product-name" readonly style="background: #f8fafc;" />
-              </label>
-            </div>
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label>Currently Out:
-                <input type="number" id="lost-current-quantity" readonly style="background: #f8fafc;" />
-              </label>
-            </div>
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label>Quantity Lost:
-                <input type="number" id="lost-quantity-input" name="quantity" min="1" required />
-              </label>
-            </div>
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label>Calculated Penalty (PHP):
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <input type="number" id="lost-penalty-input" name="penalty_amount" step="0.01" style="flex: 1;" required />
-                <button type="button" class="btn btn-secondary" onclick="recalculateLostPenalty()" title="Recalculate based on input qty"><i class="fas fa-sync-alt"></i></button>
-                </div>
-                <small style="color: #64748b;">Includes replacement cost + accumulated overdue fees.</small>
-              </label>
-            </div>
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label>Notes (Required):
-                <textarea id="lost-notes" name="notes" rows="3" placeholder="Explain the situation (e.g., Lost during commute)" required></textarea>
-              </label>
-            </div>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-              <button type="submit" class="btn btn-danger" style="flex: 1;">Confirm Lost</button>
-              <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeReportLostModal()">Cancel</button>
             </div>
           </div>
         </form>
@@ -1235,10 +1008,6 @@
 
     let products = [];
     let cart = [];
-    let activeRentals = [];
-    let lostBooks = []; // New array for lost books
-    let overdueRentals = [];
-    let pendingRenewals = [];
     let pendingOrders = []; // New array for pending orders
     let studentList = []; // Global registry for instant name resolution
     let recentTransactions = [];
@@ -1566,20 +1335,6 @@
       return hoursOverdue * 2; // 2 pesos per hour
     }
 
-    function recalculateLostPenalty() {
-      const productId = document.getElementById('lost-product-id').value;
-      const rentalId = document.getElementById('lost-rental-id').value;
-      const qtyLost = parseInt(document.getElementById('lost-quantity-input').value) || 0;
-      
-      const product = products.find(p => p.product_id == productId);
-      const rental = activeRentals.find(r => r.rental_id == rentalId) || overdueRentals.find(r => r.rental_id == rentalId);
-      
-      let replacementPrice = product ? getProductPrice(product) : 0;
-      let overdueFees = rental ? calculateOverduePenalty(rental.return_date) : 0;
-      
-      const totalPenalty = (replacementPrice * qtyLost) + overdueFees;
-      document.getElementById('lost-penalty-input').value = totalPenalty.toFixed(2);
-    }
 
     function updateStudentDisplay(id) {
       const nameText = document.getElementById('student-name-text');
@@ -1821,27 +1576,6 @@
           });
     }
 
-    let activeRentalSortAsc = true;
-    function sortActiveRentalsByDate() {
-      activeRentalSortAsc = !activeRentalSortAsc;
-      activeRentals.sort((a, b) => {
-        const dateA = new Date(a.return_date);
-        const dateB = new Date(b.return_date);
-        return activeRentalSortAsc ? dateA - dateB : dateB - dateA;
-      });
-      const icon = document.getElementById('sort-icon-date');
-      if (icon) {
-        icon.className = activeRentalSortAsc ? 'fas fa-sort-up' : 'fas fa-sort-down';
-      }
-      const query = document.getElementById('active-rental-search').value.toLowerCase();
-      const filtered = activeRentals.filter(item => {
-        const studentName = `${item.first_name} ${item.last_name}`.toLowerCase();
-        return studentName.includes(query) || 
-              item.student_id.toLowerCase().includes(query) || 
-              item.product_name.toLowerCase().includes(query);
-      });
-      renderActiveRentals(filtered);
-    }
 
     let pendingRenewalSortAsc = true;
     function sortPendingRenewalsByDate() {
@@ -2092,135 +1826,7 @@
       }
     }
 
-    let rejectionRentalId = null;
-    function handleRenewal(rentalId, action) {
-      if (action === 'reject') {
-        rejectionRentalId = rentalId;
-        document.getElementById('reject-reason-modal').classList.remove('hidden');
-        return;
-      }
-      executeRenewalAction(rentalId, 'approve', '');
-    }
 
-    function closeRejectModal() {
-      document.getElementById('reject-reason-modal').classList.add('hidden');
-      document.getElementById('rejection-reason').value = '';
-      rejectionRentalId = null;
-    }
-
-    function confirmRejection() {
-      const reason = document.getElementById('rejection-reason').value.trim();
-      if (!reason) {
-        alert('Please provide a reason for rejection.');
-        return;
-      }
-      executeRenewalAction(rejectionRentalId, 'reject', reason);
-      closeRejectModal();
-    }
-
-    function executeRenewalAction(rentalId, action, reason) {
-      fetch(`${API_ROOT}/approve_renewal.php`, { // Now points to the new PHP file
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rental_id: rentalId, action: action, reason: reason }) // Ensure action and reason are explicitly passed
-      })
-      .then(res => res.json())
-      .then(result => {
-        if (result.success) {
-          alert(`Renewal ${action === 'approve' ? 'approved' : 'rejected'} successfully.`);
-          loadPendingRenewals();
-        } else {
-          alert(result.error || 'Failed to process renewal.');
-        }
-      })
-      .catch(err => {
-        console.error('Renewal Error:', err);
-        alert('A system error occurred while processing the renewal. Please check the console for details.');
-      });
-    }
-
-    function exportActiveRentalsToCSV() {
-      if (!activeRentals || activeRentals.length === 0) {
-        alert('No active rentals to export.');
-        return;
-      }
-      const headers = ['Student ID', 'Student Name', 'Product', 'Quantity', 'Due Date', 'Status', 'Rejection Note'];
-      const rows = activeRentals.map(item => [
-        item.student_id,
-        `${item.first_name} ${item.last_name}`,
-        item.product_name,
-        item.quantity,
-        new Date(item.return_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
-        (item.status || 'N/A').toUpperCase(), // Ensure status is not null
-        item.rejection_reason || ''
-      ]);
-      const csvContent = headers.join(",") + "\n" + rows.map(r => r.map(f => `"${String(f).replace(/"/g, '""')}"`).join(",")).join("\n");
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `active_rentals_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    function loadActiveRentals() {
-      fetch(`${API_ROOT}/get_active_rentals.php`)
-        .then(res => res.json())
-        .then(data => {
-          activeRentals = Array.isArray(data) ? data : [];
-          renderActiveRentals(activeRentals);
-        });
-    }
-    function loadOverdueRentals() {
-      fetch(`${API_ROOT}/get_overdue_rentals.php`)
-        .then(res => res.json())
-        .then(data => {
-          overdueRentals = Array.isArray(data) ? data : [];
-          renderOverdueRentals(overdueRentals);
-        });
-    }
-    function renderOverdueRentals(data) {
-      const body = document.getElementById('overdue-rentals-body');
-      const empty = document.getElementById('overdue-rentals-empty');
-      const content = document.getElementById('overdue-rentals-content');
-      const count = document.getElementById('overdue-rental-count');
-
-      body.innerHTML = '';
-      if (!data || data.length === 0) {
-        content.style.display = 'none';
-        empty.classList.remove('hidden');
-        count.textContent = '0 overdue';
-        return;
-      }
-
-      content.style.display = 'block';
-      empty.classList.add('hidden');
-      count.textContent = `${data.length} overdue`;
-      
-      data.forEach(item => {
-        const penalty = calculateOverduePenalty(item.return_date);
-        const tr = document.createElement('tr');
-        tr.style.backgroundColor = '#fff5f5';
-        tr.style.boxShadow = 'inset 4px 0 0 #ef4444';
-
-        tr.innerHTML = `
-          <td>${item.first_name} ${item.last_name} (${item.student_id})</td>
-          <td>${item.product_name}</td>
-          <td>${item.quantity}</td>
-          <td>${new Date(item.return_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}</td>
-          <td style="color: #ef4444; font-weight: 700;">${formatCurrency(penalty)}</td>
-          <td style="white-space: nowrap;">
-            <div style="display: flex; gap: 6px;">
-              <button class="btn btn-primary btn-sm" onclick="openPartialReturnModal(${item.rental_id}, ${item.quantity}, '${item.product_name}', '${item.first_name} ${item.last_name}')">Return</button>
-              <button class="btn btn-danger btn-sm" onclick="openReportLostModal(${item.rental_id}, ${item.quantity}, '${item.product_name}', '${item.first_name} ${item.last_name}', '${item.student_id}', ${item.product_id})">Lost</button>
-            </div>
-          </td>
-        `;
-        body.appendChild(tr);
-      });
-    }
     // New function to load pending orders
     let pendingOrdersCurrentPage = 1;
     function loadPendingOrders(page = 1) {
@@ -2340,128 +1946,6 @@
         alert(`An error occurred while ${status} order.`);
       });
     }
-    function renderActiveRentals(data) {
-          const body = document.getElementById('active-rentals-body');
-          const empty = document.getElementById('active-rentals-empty');
-          const content = document.getElementById('active-rentals-content');
-          const count = document.getElementById('active-rental-count');
-          
-          body.innerHTML = '';
-          if (!data || data.length === 0) {
-            content.style.display = 'none';
-            empty.classList.remove('hidden');
-            count.textContent = '0 active';
-            return;
-          }
-          
-          content.style.display = 'block';
-          empty.classList.add('hidden');
-          count.textContent = `${data.length} active`;
-          
-          updateBulkReturnButtonVisibility();
-          
-          data.forEach(item => {
-            const tr = document.createElement('tr');
-            const penalty = calculateOverduePenalty(item.return_date);
-            if (item.status === 'overdue') {
-              tr.style.backgroundColor = '#fff5f5';
-              tr.style.boxShadow = 'inset 4px 0 0 #ef4444';
-            }
-
-            const statusClass = (item.status === 'overdue' || penalty > 0) ? 'background: #fee2e2; color: #b91c1c;' : 'background: #e0e7ff; color: #4338ca;';
-            const statusLabel = (item.status === 'overdue' || penalty > 0) ? 'Overdue' : (item.status || 'Active'); // Use item.status if available
-            const reasonHtml = item.rejection_reason ? `<div style="font-size: 0.8rem; color: #ef4444; margin-top: 4px;"><strong>Rejection Note:</strong> ${item.rejection_reason}</div>` : '';
-            const penaltyHtml = penalty > 0 ? `<div style="font-weight:bold; color:#b91c1c; margin-top: 4px;">Penalty: ${formatCurrency(penalty)}</div>` : '';
-
-            tr.innerHTML = `
-              <td><input type="checkbox" class="rental-checkbox" value="${item.rental_id}" onchange="updateBulkReturnButtonVisibility()"></td>
-              <td>${item.first_name} ${item.last_name} (${item.student_id})</td>
-              <td>${item.product_name}</td>
-              <td>${item.quantity}</td>
-              <td>${new Date(item.return_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}</td>
-              <td><span class="badge" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; ${statusClass}">${statusLabel}</span> ${penaltyHtml} ${reasonHtml}</td>
-              <td style="white-space: nowrap;">
-                <div style="display: flex; gap: 6px;">
-                  <button class="btn btn-primary btn-sm" onclick="openPartialReturnModal(${item.rental_id}, ${item.quantity}, '${item.product_name}', '${item.first_name} ${item.last_name}')">Return</button>
-                  <button class="btn btn-danger btn-sm" onclick="openReportLostModal(${item.rental_id}, ${item.quantity}, '${item.product_name}', '${item.first_name} ${item.last_name}', '${item.student_id}', ${item.product_id})">Lost</button>
-                </div>
-              </td>
-            `;
-            body.appendChild(tr);
-          });
-    }
-
-    // --- Report Lost Functions (Corrected Position) ---
-    function openReportLostModal(rentalId, currentQuantity, productName, studentName, studentId, productId) {
-      document.getElementById('lost-rental-id').value = rentalId;
-      document.getElementById('lost-product-id').value = productId;
-      document.getElementById('lost-student-id').value = studentId;
-      document.getElementById('lost-student-name').value = studentName;
-      document.getElementById('lost-product-name').value = productName;
-      document.getElementById('lost-current-quantity').value = currentQuantity;
-      document.getElementById('lost-quantity-input').max = currentQuantity;
-      document.getElementById('lost-quantity-input').value = currentQuantity;
-      document.getElementById('lost-notes').value = '';
-      recalculateLostPenalty();
-      document.getElementById('report-lost-modal').classList.remove('hidden');
-    }
-
-    function closeReportLostModal() {
-      document.getElementById('report-lost-modal').classList.add('hidden');
-      document.getElementById('report-lost-form').reset();
-    }
-
-    document.getElementById('report-lost-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const rentalId = document.getElementById('lost-rental-id').value;
-      const quantity = parseInt(document.getElementById('lost-quantity-input').value, 10);
-      const notes = document.getElementById('lost-notes').value.trim();
-      const penaltyAmount = parseFloat(document.getElementById('lost-penalty-input').value) || 0;
-      const currentQty = parseInt(document.getElementById('lost-current-quantity').value, 10);
-
-      if (quantity <= 0 || quantity > currentQty) {
-        alert('Invalid quantity.');
-        return;
-      }
-
-      if (!confirm(`Are you sure you want to mark ${quantity} item(s) as LOST? This action is permanent.`)) return;
-
-      const submitBtn = this.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reporting...';
-
-      fetch(`${API_ROOT}/report_lost_book.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rental_id: rentalId,
-          quantity: quantity,
-          notes: notes,
-          product_id: document.getElementById('lost-product-id').value,
-          student_id: document.getElementById('lost-student-id').value,
-          penalty_amount: penaltyAmount
-        })
-      })
-      .then(res => res.json())
-      .then(result => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Confirm Lost';
-        if (result.success) {
-          alert(result.message);
-          loadActiveRentals();
-          loadOverdueRentals();
-          loadLostBooks();
-          closeReportLostModal();
-        } else {
-          alert(result.message || 'Failed to report lost book.');
-        }
-      })
-      .catch(err => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Confirm Lost';
-        console.error('Report Lost Error:', err);
-      });
-    });
 
     function processReturn(rentalId) {
       // This function is now replaced by openPartialReturnModal and executeReturn
@@ -2521,7 +2005,6 @@
         submitBtn.textContent = 'Process Return';
         if (result.success) {
           alert(result.message);
-          loadActiveRentals();
           loadProducts();
         } else {
           alert(result.message || 'Failed to process return.');
@@ -2536,96 +2019,6 @@
       });
     });
 
-    // New function to load lost books
-    function loadLostBooks() {
-      fetch(`${API_ROOT}/get_lost_books.php`) // New backend endpoint
-        .then(res => res.json())
-        .then(data => {
-          lostBooks = Array.isArray(data) ? data : [];
-          filterLostBooks(''); // Render all initially
-        })
-        .catch(err => {
-          console.error('Error loading lost books:', err);
-          document.getElementById('lost-books-body').innerHTML = '<tr><td colspan="6" class="empty-state">Error loading lost books. Please refresh.</td></tr>';
-        });
-    }
-
-    // New function to filter and render lost books
-    function filterLostBooks(query) {
-      const filtered = lostBooks.filter(item => {
-        const studentName = `${item.first_name} ${item.last_name}`.toLowerCase();
-        return studentName.includes(query.toLowerCase()) || 
-               item.student_id.toLowerCase().includes(query.toLowerCase()) || 
-               item.product_name.toLowerCase().includes(query.toLowerCase());
-      });
-      renderLostBooks(filtered);
-    }
-
-    // New function to render lost books
-    function renderLostBooks(data) {
-      const body = document.getElementById('lost-books-body');
-      const empty = document.getElementById('lost-books-empty');
-      const content = document.getElementById('lost-books-content');
-      const count = document.getElementById('lost-books-count');
-
-      body.innerHTML = '';
-      if (!data || data.length === 0) {
-        content.style.display = 'none';
-        empty.classList.remove('hidden');
-        count.textContent = '0 lost';
-        return;
-      }
-
-      content.style.display = 'block';
-      empty.classList.add('hidden');
-      count.textContent = `${data.length} lost`;
-
-      data.forEach(item => {
-        const dateObj = new Date(item.lost_date);
-        const tr = document.createElement('tr');
-        tr.style.backgroundColor = '#fff5f5'; // Light red background for lost
-        tr.style.boxShadow = 'inset 4px 0 0 #ef4444'; // Red left border
-
-        tr.innerHTML = `
-          <td>${item.first_name} ${item.last_name} (${item.student_id})</td>
-          <td>${item.product_name}</td>
-          <td>${item.quantity}</td>
-          <td>${dateObj.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' })}</td>
-          <td style="font-weight: 700; color: #b91c1c;">${formatCurrency(item.penalty_amount)}</td>
-          <td><span class="badge" style="background: #fee2e2; color: #b91c1c;">${item.status.toUpperCase()}</span></td>
-          <td>
-            <button class="btn btn-primary" onclick="markBookAsFound(${item.lost_book_id})">Mark as Found</button>
-          </td>
-        `;
-        body.appendChild(tr);
-      });
-    }
-
-    // New function to mark a lost book as found
-    function markBookAsFound(lostBookId) {
-      if (!confirm('Are you sure you want to mark this book as FOUND? Stock will be updated.')) return;
-      // Implement AJAX call to mark_book_found.php
-      fetch(`${API_ROOT}/mark_book_found.php`, { // New backend endpoint
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lost_book_id: lostBookId })
-      })
-      .then(res => res.json())
-      .then(result => {
-        if (result.success) {
-          alert(result.message);
-          loadLostBooks(); // Reload lost books list
-          loadProducts(); // Reload products to update stock
-        } else {
-          alert(result.message || 'Failed to mark book as found.');
-        }
-      })
-      .catch(err => {
-        console.error('Error marking book as found:', err);
-        alert('An error occurred while marking the book as found.');
-      });
-    }
-
     initializeAdminCashierPage(async (userData) => { // Made async to await loadStudentList
       const name = userData.name || 'Admin Cashier';
       const greetingElement = document.getElementById('greeting-message');
@@ -2635,11 +2028,7 @@
       loadProducts();
       updateDateTime();
       setInterval(updateDateTime, 60000);
-      loadPendingRenewals();
-      loadOverdueRentals();
-      loadActiveRentals();
       loadPendingOrders(); // Load pending orders on page load
-      loadLostBooks(); // Load lost books on page load
       loadRecentTransactions();
       await loadStudentList(); // Await student list loading
       updateTransactionSettings(); // Call after studentList is loaded
@@ -2663,28 +2052,12 @@
       });
       renderActiveRentals(filtered);
     });
-    document.getElementById('overdue-rental-search').addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase();
-      const filtered = overdueRentals.filter(item => {
-        const studentName = `${item.first_name} ${item.last_name}`.toLowerCase();
-        return studentName.includes(query) || 
-              item.student_id.toLowerCase().includes(query) || 
-              item.product_name.toLowerCase().includes(query);
-      });
-      renderOverdueRentals(filtered);
-    });
     let pendingOrderSearchTimeout = null;
     document.getElementById('pending-order-search').addEventListener('input', (e) => {
       clearTimeout(pendingOrderSearchTimeout);
       pendingOrderSearchTimeout = setTimeout(() => {
         loadPendingOrders();
       }, 400);
-    });
-    document.getElementById('renewal-search').addEventListener('input', (e) => {
-      filterRenewals();
-    });
-    document.getElementById('renewal-date-to').addEventListener('change', () => {
-      filterRenewals();
     });
     let txnSearchTimeout = null;
     document.getElementById('txn-history-search').addEventListener('input', (e) => {
@@ -2735,27 +2108,6 @@
     const printBtn = document.getElementById('print-receipt');
     if (printBtn) printBtn.addEventListener('click', printReceipt);
     
-
-    function loadRenewalByQR(renewalRef) {
-      const rentalId = renewalRef.replace('RENEW-', '');
-      fetch(`${API_ROOT}/get_renewal_details.php?rental_id=${rentalId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            if (data.status !== 'pending_renewal') {
-              alert(`This renewal (${renewalRef}) has already been processed or is not in pending status.`);
-              return;
-            }
-            if (confirm(`Renewal Request Found:\n\nStudent: ${data.student}\nBook: ${data.product}\nNew Requested Due Date: ${new Date(data.new_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}\n\nDo you want to APPROVE this renewal?`)) {
-              state.isQRScanned = true;
-              executeRenewalAction(rentalId, 'approve', '');
-            }
-          } else {
-            alert(data.error || 'Renewal record not found.');
-          }
-        })
-        .catch(err => console.error('Error processing renewal scan:', err));
-    }
 
     function loadOrderByQR(transactionNumber) {
       fetch(`${API_ROOT}/get_order_by_qr.php?transaction_number=${encodeURIComponent(transactionNumber)}`, {
@@ -2822,8 +2174,6 @@
 
           if (typeof OrderScanner !== 'undefined') {
               OrderScanner.handleScanSuccess(code);
-          } else if (code.toUpperCase().startsWith('RENEW-')) {
-              loadRenewalByQR(code);
           } else {
               loadOrderByQR(code);
           }
@@ -2895,7 +2245,6 @@
         bulkBtn.textContent = 'Bulk Return';
         if (result.success) {
           alert(result.message);
-          loadActiveRentals();
           loadProducts();
           document.getElementById('select-all-rentals').checked = false; // Deselect all after processing
         } else {
@@ -2956,12 +2305,7 @@
         e.preventDefault();
         const scannedCode = this.value.trim();
         if (scannedCode) {
-          const renewMatch = scannedCode.match(/RENEW-[a-zA-Z0-9-]+/i);
-          if (renewMatch) { // Check for renewal code pattern
-            loadRenewalByQR(renewMatch[0]);
-          } else {
-            loadOrderByQR(scannedCode);
-          }
+          loadOrderByQR(scannedCode);
           this.value = ''; // Clear input after processing
           closeQRScanner(); // Close scanner modal after processing
         }

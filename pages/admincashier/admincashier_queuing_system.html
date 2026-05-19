@@ -12,61 +12,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
 <style>
-  .queue-display-panel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  .queue-display-content {
-    background: white;
-    border-radius: 12px;
-    padding: 40px;
-    text-align: center;
-    max-width: 600px;
-    width: 90%;
-  }
-  .queue-display-content h2 {
-    margin-top: 0;
-    color: #333;
-  }
-  .queue-info {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin: 30px 0;
-  }
-  .queue-info-item {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-  }
-  .queue-info-item h3 {
-    margin: 0 0 10px 0;
-    color: #667eea;
-  }
-  .queue-info-item p {
-    font-size: 24px;
-    font-weight: bold;
-    margin: 0;
-    color: #333;
-  }
-  .close-panel {
-    background: #667eea;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-  }
-
   .quick-actions {
     background: white;
     border-radius: 12px;
@@ -223,35 +168,13 @@
 </style>
 </head>
 
-<body class="antialiased">
-  <!-- Queue Display Panel -->
-  <div class="queue-display-panel" id="queue-display-panel">
-    <div class="queue-display-content">
-      <h2>Queue Display</h2>
-      <div class="queue-info">
-        <div class="queue-info-item">
-          <h3>Current Time</h3>
-          <p id="display-current-time">--:--:--</p>
-        </div>
-        <div class="queue-info-item">
-          <h3>Now Serving</h3>
-          <p id="display-now-serving">None</p>
-        </div>
-        <div class="queue-info-item">
-          <h3>Next Queue</h3>
-          <p id="display-next-queue">None</p>
-        </div>
-      </div>
-      <button class="close-panel" onclick="closeQueueDisplay()">Close</button>
-    </div>
-  </div>
-
+<body>
   <!-- Sidebar Component -->
   <div id="sidebar-container"></div>
   <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
   <div class="content-wrapper">
-  <main class="max-w-7xl mx-auto px-6 py-8">
+
+<main>
     <!-- Greeting Section -->
     <section class="greeting-section">
       <div class="greeting-content">
@@ -261,15 +184,45 @@
       <div class="greeting-icon">👋</div>
     </section>
 
+    <!-- Live Queue Status Overview -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center">
+        <div class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Live Clock</div>
+        <div class="text-2xl font-bold text-gray-800" id="display-current-time">--:--:--</div>
+      </div>
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center z-10">
+        <div class="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">Now Serving</div>
+        <div class="text-xl font-bold text-gray-800" id="display-now-serving">None</div>
+      </div>
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center">
+        <div class="text-xs font-bold text-amber-500 uppercase tracking-widest mb-2">Next in Line</div>
+        <div class="text-lg font-bold text-gray-800" id="display-next-queue">None</div>
+      </div>
+    </section>
+
     <!-- Quick Actions -->
     <section class="quick-actions">
-      <h2>Queue Management</h2>
-      <div class="action-buttons">
-        <button class="action-btn" onclick="openQueueDisplay()">
-          <i class="fas fa-tv"></i> View Queue Display
-        </button>
-        <button class="action-btn" onclick="generateQueue()">
-          <i class="fas fa-plus"></i> Generate Queue Number
+      <h2 class="mb-4">Manual Queue Entry</h2>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">School ID</label>
+          <input type="text" id="input-school-id" placeholder="e.g. 2023-0001" class="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:border-indigo-500 transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Student Name</label>
+          <input type="text" id="input-student-name" placeholder="Enter Full Name" class="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:border-indigo-500 transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Purpose</label>
+          <select id="input-purpose" class="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:border-indigo-500 transition-colors">
+            <option value="General Inquiry">General Inquiry</option>
+            <option value="Tuition Payment">Tuition Payment</option>
+            <option value="Document Request">Document Request</option>
+            <option value="Enrollment">Enrollment</option>
+          </select>
+        </div>
+        <button class="action-btn h-[42px] justify-center" onclick="generateQueue()">
+          <i class="fas fa-plus"></i> Generate Number
         </button>
       </div>
     </section>
@@ -279,9 +232,12 @@
       <h2>Last Generated Ticket</h2>
       <div class="ticket-card ticket-preview-card">
         <div class="ticket-preview-body">
-          <div class="ticket-label">Ticket Number</div>
-          <div class="ticket-number" id="preview-queue-number">--</div>
-          <div class="ticket-info">Generated: <span id="preview-generated-at">--</span></div>
+          <div class="ticket-label">Student Details</div>
+          <div class="ticket-number text-lg" id="preview-student-info">--</div>
+          <div class="ticket-info">
+            Ticket #: <span class="font-bold text-indigo-600" id="preview-queue-number">--</span> | 
+            Generated: <span id="preview-generated-at">--</span>
+          </div>
         </div>
         <div class="ticket-actions">
           <button class="action-btn" id="save-ticket-btn" onclick="saveTicket()">
@@ -308,11 +264,172 @@
   <script>
     // Use the central initializer from admincashier.js
     initializeAdminCashierPage((userData) => {
-      // page-specific data loading
       loadActiveQueues();
-      loadQueueStatus();
       startQueuePolling();
+      // dedicated 1-second clock update for smoother real-time feel
+      setInterval(() => {
+        const timeEl = document.getElementById('display-current-time');
+        if (timeEl) timeEl.textContent = new Date().toLocaleTimeString();
+      }, 1000);
     });
+
+    let lastQueueState = null;
+    let isFetching = false;
+
+    function loadActiveQueues() {
+      if (isFetching) return Promise.resolve();
+      isFetching = true;
+
+      return fetch('../../actions/get_active_queues.php')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            // Only re-render the list if the tickets have actually changed
+            const stateString = JSON.stringify(data.tickets);
+            if (stateString !== lastQueueState) {
+              lastQueueState = stateString;
+              renderQueueList(data.tickets);
+            }
+            
+            updateDisplayPanel(data.status);
+            if (data.expired_count > 0) console.warn(`${data.expired_count} ticket(s) expired.`);
+          }
+        })
+        .catch(err => console.error("Queue fetch failed:", err))
+        .finally(() => { isFetching = false; });
+    }
+    function renderQueueList(tickets) {
+      const container = document.getElementById('queue-list');
+      if (tickets.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 italic">No active queues at the moment.</p>';
+        return;
+      }
+
+      container.innerHTML = tickets.map(t => `
+        <div class="queue-item ${t.status === 'serving' ? 'border-blue-500 bg-blue-50' : ''}" id="ticket-${t.id}">
+          <div class="expiration-timer text-[10px] text-red-400 font-bold absolute top-1 right-2">
+            ${t.status === 'serving' ? 'Active session' : 'Waiting...'}
+          </div>
+          <div class="queue-details">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="status-badge status-${t.status}">${t.status.toUpperCase()}</span>
+              <span class="font-bold text-gray-800">${t.student_name || 'Walk-in'}</span>
+              <span class="text-xs text-gray-400 font-mono">[${t.school_id || 'N/A'}]</span>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="opacity-70">Purpose:</span> ${t.purpose || 'General Inquiry'} 
+              <span class="mx-2 opacity-30">|</span> 
+              <span class="text-indigo-600 font-medium">#${t.queue_number}</span>
+            </div>
+          </div>
+          <div class="queue-actions">
+            ${t.status === 'waiting' ? 
+              `<button class="queue-btn btn-serve" onclick="updateStatus(${t.id}, 'serving')">Serve</button>` : 
+              `<button class="queue-btn btn-complete" onclick="updateStatus(${t.id}, 'completed')">Complete</button>`
+            }
+            <button class="queue-btn btn-remove" onclick="updateStatus(${t.id}, 'cancelled')">Remove</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateStatus(id, status) {
+      if (status === 'cancelled' && !confirm('Remove this ticket from the active queue?')) {
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('id', id);
+      formData.append('status', status);
+
+      fetch('../../actions/update_queue_status.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          alert('Error: ' + (data.error || 'Failed to update ticket status.'));
+        }
+        loadActiveQueues();
+      })
+      .catch(err => {
+        console.error('Update failed:', err);
+      });
+    }
+
+    function generateQueue() {
+      const schoolId = document.getElementById('input-school-id').value.trim();
+      const studentName = document.getElementById('input-student-name').value.trim();
+      const purpose = document.getElementById('input-purpose').value;
+
+      if (!studentName) {
+        alert('Please enter a student name.');
+        return;
+      }
+
+      fetch('../../actions/generate_queue.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          school_id: schoolId,
+          student_name: studentName,
+          purpose: purpose
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          // Reset form
+          document.getElementById('input-school-id').value = '';
+          document.getElementById('input-student-name').value = '';
+          
+          showTicketPreview(data.ticket);
+          loadActiveQueues();
+        } else {
+          alert('Error: ' + data.error);
+        }
+      });
+    }
+
+    function showTicketPreview(ticket) {
+      const panel = document.getElementById('ticket-preview-panel');
+      document.getElementById('preview-student-info').textContent = (ticket.student_name || 'Walk-in') + ' [' + (ticket.school_id || 'No ID') + ']';
+      document.getElementById('preview-queue-number').textContent = ticket.queue_number;
+      document.getElementById('preview-generated-at').textContent = new Date(ticket.created_at).toLocaleTimeString();
+      panel.style.display = 'block';
+    }
+
+    function updateDisplayPanel(status) {
+      // Update Dashboard elements
+      const servingEl = document.getElementById('display-now-serving');
+      const nextEl = document.getElementById('display-next-queue');
+
+      if (servingEl) servingEl.textContent = status.nowServing;
+      if (nextEl) nextEl.textContent = status.nextQueue;
+    }
+
+    function startQueuePolling() {
+      // Use recursive timeout to prevent request stacking and check for tab visibility
+      setTimeout(async () => {
+        if (!document.hidden) {
+          await loadActiveQueues();
+        } else {
+          console.log("Polling paused: Tab is hidden");
+        }
+        startQueuePolling();
+      }, 5000);
+    }
+
+    // Placeholder functions for printing/saving
+    function printTicket() {
+      window.print();
+    }
+
+    function saveTicket() {
+      const ticketNum = document.getElementById('preview-queue-number').textContent;
+      alert('Ticket ' + ticketNum + ' details saved to your downloads.');
+    }
   </script>
 </body>
 </html>

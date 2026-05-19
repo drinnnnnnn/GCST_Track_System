@@ -20,6 +20,8 @@
   --radius: 16px;
   --radius-lg: 24px;
   --shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+  --sidebar-width: 280px;
+  --sidebar-minimized-width: 90px;
   --shadow-lg: 0 18px 45px rgba(15, 23, 42, 0.08);
 }
 
@@ -55,6 +57,25 @@ header {
   background: var(--surface);
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
   transition: all 0.3s ease;
+}
+
+@media (min-width: 1025px) {
+  header {
+    left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    transition: left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+  }
+  header.minimized {
+    left: var(--sidebar-minimized-width);
+    width: calc(100% - var(--sidebar-minimized-width));
+  }
+  .content-wrapper {
+    margin-left: var(--sidebar-width);
+    transition: margin-left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+  }
+  .content-wrapper.minimized {
+    margin-left: var(--sidebar-minimized-width);
+  }
 }
 
 .logo {
@@ -989,51 +1010,6 @@ button:disabled, .btn:disabled {
   animation: scanMove 2.5s infinite ease-in-out;
 }
 
-@keyframes scanMove {
-  0%, 100% { top: 15%; opacity: 0.2; }
-  50% { top: 85%; opacity: 1; }
-}
-
-.scan-hint {
-  font-size: 0.85rem;
-  color: var(--muted);
-  margin-bottom: 20px;
-  font-weight: 500;
-}
-
-/* =====================================================
-  SIDEBAR LAYOUT & TRANSITIONS
-  ===================================================== */
-
-/* Global transition for content and header shifts */
-.content-wrapper {
-  transition: margin-left 0.3s ease;
-}
-
-/* Mobile Sidebar Overlay */
-#sidebar-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(4px);
-  z-index: 999; /* Changed from 900 to 999 */
-  display: none;
-}
-
-#sidebar-overlay.active {
-  display: block;
-}
-
-/* Layout shifts for screens with the sidebar (Desktop) */
-@media (min-width: 1025px) {
-  .content-wrapper { margin-left: 280px; }
-  header { left: 280px; width: calc(100% - 280px); }
-
-  /* Minimized state shifts (80px icon-only sidebar) */
-  .content-wrapper.minimized { margin-left: 80px; }
-  header.minimized { left: 80px; width: calc(100% - 80px); }
-}
-
 /* ===== CASHIER PAGE SPECIFIC STYLES ===== */
 .cashier-layout {
   display: grid; 
@@ -1543,6 +1519,20 @@ button:disabled, .btn:disabled {
   position: relative;
 }
 
+.sidebar-brand h1 { 
+  font-size: 1.1rem; 
+  font-weight: 800; 
+  color: var(--text); 
+  margin: 0; 
+}
+.sidebar-brand span { 
+  font-size: 0.7rem; 
+  font-weight: 700; 
+  color: var(--primary); 
+  text-transform: uppercase; 
+  display: block; 
+}
+
 .sidebar-brand img {
   width: 42px;
   height: 42px;
@@ -1578,6 +1568,16 @@ button:disabled, .btn:disabled {
   display: none;
 }
 
+.sidebar.minimized .sidebar-brand {
+  padding-left: 0;
+  justify-content: center;
+}
+
+.sidebar.minimized .sidebar-link {
+  justify-content: center;
+  padding: 1rem 0.5rem;
+}
+
 .nav-section-label {
   font-size: 0.7rem;
   font-weight: 800;
@@ -1587,6 +1587,22 @@ button:disabled, .btn:disabled {
   margin: 1.5rem 0 0.75rem 1rem;
   opacity: 0.7;
 }
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-right: -4px; /* Hide scrollbar gutter */
+}
+
+/* Custom Scrollbar for Sidebar Nav */
+.sidebar-nav::-webkit-scrollbar { width: 4px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb { 
+  background: var(--border); 
+  border-radius: 10px; 
+}
+.sidebar-nav::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
 .sidebar-link {
   display: flex;
@@ -1611,7 +1627,7 @@ button:disabled, .btn:disabled {
   background: var(--primary) !important; 
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
   color: white !important; 
-  box-shadow: 0 8px 16px -4px rgba(102, 126, 234, 0.4); 
+  box-shadow: 0 10px 20px -5px rgba(102, 126, 234, 0.4), inset 0 0 0 1px rgba(255,255,255,0.1); 
 }
 .sidebar-link.active i { color: white; }
 
@@ -1629,15 +1645,37 @@ button:disabled, .btn:disabled {
 }
 .sidebar.minimized .sidebar-badge {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  padding: 0.15rem 0.4rem;
+  top: 8px;
+  right: 8px;
+  padding: 2px 5px;
+  font-size: 0.6rem;
   display: block !important;
 }
 
-.sidebar-footer { margin-top: auto; padding-top: 1.5rem; border-top: 1px solid var(--border-soft); }
+.sidebar-footer { 
+  margin-top: auto; 
+  padding-top: 1rem; 
+  border-top: 1px solid var(--border-soft); 
+}
+
 .btn-logout { background: transparent; color: var(--danger); }
 .btn-logout:hover { background: var(--danger); color: white; box-shadow: 0 8px 16px -4px rgba(239, 68, 68, 0.4); }
+
+/* Mobile-specific Sidebar Drawer Logic */
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+    box-shadow: 20px 0 50px rgba(0,0,0,0.1);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 280px;
+  }
+  .sidebar.active {
+    transform: translateX(0);
+  }
+  .sidebar-minimize-btn {
+    display: none;
+  }
+}
 
 /* ===== LOGOUT MODAL ===== */
 .logout-modal-overlay {

@@ -54,8 +54,9 @@
       z-index: 100;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
+      justify-content: flex-start;
+      padding: 0 20px;
+      gap: 16px;
       height: var(--header-height);
       background: var(--surface);
       box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
@@ -68,6 +69,7 @@
       gap: 14px;
       font-weight: 700;
       color: var(--text);
+      flex-shrink: 0;
     }
 
     .logo img {
@@ -143,6 +145,13 @@
       font-size: 1.5rem;
       text-decoration: none;
       transition: all 0.2s ease;
+      flex-shrink: 0;
+      display: none; /* Only mobile */
+    }
+
+    @media (max-width: 1024px) {
+      .menu-icon { display: inline-flex; }
+      .logo strong { font-size: 1rem; }
     }
 
     .menu-icon:hover {
@@ -976,7 +985,13 @@
     /* ===== RESPONSIVE DESIGN ===== */
     @media (max-width: 1024px) {
       .content-wrapper { margin-left: 0 !important; }
-      header { left: 0 !important; width: 100% !important; }
+      header { 
+        left: 0 !important; 
+        width: 100% !important; 
+        padding: 0 16px;
+        height: 70px;
+        justify-content: space-between;
+      }
 
       .sidebar {
         width: 280px;
@@ -996,7 +1011,7 @@
       }
 
       .charts-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
       }
 
       .balance-cards {
@@ -1010,26 +1025,29 @@
 
     @media (max-width: 768px) {
       header {
-        padding: 14px 16px;
-        flex-wrap: wrap;
-        gap: 8px;
+        height: 64px;
+        gap: 12px;
       }
 
-      .logo {
-        order: 1;
+      .logo img {
+        width: 36px;
+        height: 36px;
       }
 
-      .nav-links {
-        order: 2;
+      .logo strong {
+        font-size: 0.95rem;
       }
 
       .greeting-section {
-        flex-direction: column;
-        padding: 20px;
+        flex-direction: column-reverse;
+        padding: 1.5rem;
+        text-align: center;
+        align-items: center;
       }
 
       .greeting-content h1 {
-        font-size: 1.6rem;
+        font-size: 1.75rem;
+        margin-top: 1rem;
       }
 
       .balance-cards {
@@ -1037,11 +1055,13 @@
       }
 
       .search-bar {
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
       }
 
       .products-grid {
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        grid-template-columns: 1fr;
       }
 
       .action-grid {
@@ -1064,20 +1084,17 @@
     }
 
     @media (max-width: 480px) {
-      header {
-        justify-content: space-between;
-      }
-
       .logo strong {
         display: none;
       }
 
       .greeting-content h1 {
-        font-size: 1.3rem;
+        font-size: 1.4rem;
       }
 
       main {
-        padding: 0 10px 15px;
+        padding: 1rem 0.75rem 2rem;
+        gap: 1.5rem;
       }
 
       .balance-card {

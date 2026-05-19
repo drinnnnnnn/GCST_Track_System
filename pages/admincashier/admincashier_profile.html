@@ -7,7 +7,6 @@
   <title>GCST User - My Profile</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <link rel="stylesheet" href="../../assets/css/admincashier.css" />
-  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -309,13 +308,13 @@
   </style>
 </head>
 
-<body class="antialiased">
+<body>
   <!-- Sidebar Component -->
   <div id="sidebar-container"></div>
   <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
   <div class="content-wrapper">
-  <main class="max-w-7xl mx-auto px-6 py-8">
+
+<main>
     <!-- Greeting Section -->
     <section class="greeting-section">
       <div class="greeting-content">
@@ -329,7 +328,7 @@
     <div class="profile-card">
       <h2 class="profile-name" id="profile-name">Loading...</h2>
       <div class="profile-info" style="font-size: 1rem;">
-        <span id="profile-admin-id">Admin ID: ---</span> • <span id="profile-role">Role: ---</span>
+        <span id="profile-admin-id">Admin ID: ---</span>
       </div>
       <div class="profile-status" id="profile-status">Active</div>
     </div>
@@ -350,29 +349,15 @@
         <form onsubmit="saveChanges(event)">
           <div class="form-row">
             <div class="form-group">
-              <label>Username</label>
-              <input type="text" id="username" placeholder="Username" readonly>
-            </div>
-            <div class="form-group">
               <label>Full Name</label>
               <input type="text" id="full-name" placeholder="Full Name" readonly>
             </div>
-          </div>
-          <div class="form-row">
             <div class="form-group">
               <label>Email</label>
               <input type="email" id="email" placeholder="Email address" readonly>
             </div>
-            <div class="form-group">
-              <label>Phone Number</label>
-              <input type="tel" id="phone" placeholder="Phone number" readonly>
-            </div>
           </div>
           <div class="form-row">
-            <div class="form-group">
-              <label>Role</label>
-              <input type="text" id="role" placeholder="Role" readonly>
-            </div>
             <div class="form-group">
               <label>Admin ID</label>
               <input type="text" id="admin-id" placeholder="Admin ID" readonly>

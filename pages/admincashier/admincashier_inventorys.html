@@ -6,7 +6,6 @@
   <title>GCST Admin Cashier Inventory</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="../../assets/css/admincashier.css" />
-  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -40,14 +39,14 @@
     } 
 
     .inventory-board {
-      margin-top: 30px;
+      margin-top: 12px;
       display: grid;
       gap: 24px;
     }
 
     .inventory-toolbar {
       display: grid;
-      gap: 16px;
+      gap: 20px;
       grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr);
       align-items: center;
     }
@@ -293,69 +292,53 @@
 
     .inventory-grid {
       display: grid;
-      grid-template-columns: 1.8fr 0.9fr;
+      grid-template-columns: minmax(0, 1.8fr) minmax(0, 0.9fr);
       gap: 24px;
+      align-items: start; /* Prevents sidebar from forcing items to stretch vertically */
     }
 
     .inventory-main {
       display: grid;
-      gap: 20px;
+      gap: 24px;
+      min-width: 0; /* Ensures content doesn't push grid boundaries */
     }
 
     .summary-cards {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 18px;
+      gap: 20px;
     }
 
     .summary-card {
       background: var(--panel-bg);
       border-radius: 24px;
-      padding: 22px;
+      padding: 24px;
       border: 1px solid #f0f4ff;
       box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
     }
 
     .summary-card h3 {
-      margin: 0 0 10px;
+      margin: 0 0 12px;
       font-size: 0.95rem;
       color: var(--muted);
       font-weight: 600;
     }
 
     .summary-card strong {
-      font-size: 1.85rem;
+      /* Use clamp for responsive font size, allowing it to shrink if needed */
+      font-size: clamp(1.1rem, 3.5vw, 1.6rem);
       color: var(--text);
       display: block;
-    }
-
-    .view-toggle {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .view-toggle button {
-      padding: 10px 18px;
-      border-radius: 14px;
-      border: 1px solid #dbe3f0;
-      background: white;
-      color: var(--text);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .view-toggle button.active {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
+      overflow-wrap: break-word; /* Ensures long numbers break to the next line */
+      word-break: break-word; /* Fallback for older browsers */
+      line-height: 1.2; /* Adjust line height for better multi-line display */
+      transition: font-size 0.3s ease; /* Smoothly scale text when values change */
     }
 
     .products-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 18px;
+      gap: 20px;
     }
 
     .inventory-card {
@@ -367,6 +350,20 @@
       display: flex;
       flex-direction: column;
       min-height: 320px;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+    }
+
+    .inventory-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+    }
+
+    .inventory-card.selected {
+      transform: scale(1.03);
+      border-color: var(--primary);
+      box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.15), 0 10px 10px -5px rgba(59, 130, 246, 0.05);
+      background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
     }
 
     .inventory-card img {
@@ -377,9 +374,9 @@
     }
 
     .inventory-card-body {
-      padding: 18px;
+      padding: 20px;
       display: grid;
-      gap: 12px;
+      gap: 14px;
       flex: 1;
     }
 
@@ -439,42 +436,17 @@
       min-width: 118px;
     }
 
-    .inventory-table-wrapper {
-      background: var(--panel-bg);
-      border-radius: 24px;
-      padding: 18px;
-      border: 1px solid #f0f4ff;
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
-      overflow-x: auto;
-    }
-
-    .inventory-table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 860px;
-    }
-
-    .inventory-table th,
-    .inventory-table td {
-      padding: 14px 16px;
-      text-align: left;
-      border-bottom: 1px solid #eef2f7;
-      font-size: 0.95rem;
-    }
-
-    .inventory-table th {
-      background: #f7f9ff;
-      color: var(--muted);
-      font-weight: 700;
-    }
-
-    .inventory-table tbody tr:hover {
-      background: #f5f7ff;
-    }
-
     .inventory-panel {
       display: grid;
       gap: 18px;
+      position: sticky;
+      top: 20px; /* Keeps the details panel visible while scrolling the inventory list */
+    }
+
+    @media screen and (max-width: 1200px) {
+      .inventory-panel {
+        position: static;
+      }
     }
 
     .panel-card {
@@ -483,7 +455,7 @@
       padding: 24px;
       border: 1px solid #f0f4ff;
       box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
-      overflow-y: auto;
+      overflow: hidden; /* Changed to hidden to manage internal scroll via details */
     }
 
     .panel-card h2 {
@@ -491,14 +463,55 @@
       font-size: 1.2rem;
     }
 
+    .panel-header-flex {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .btn-close-details {
+      display: none;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      align-items: center;
+      justify-content: center;
+      background: #f1f5f9;
+      border-radius: 12px;
+      color: var(--muted);
+      transition: all 0.2s ease;
+    }
+
+    .btn-close-details:hover {
+      background: #e2e8f0;
+      color: var(--danger);
+    }
+
+    @media screen and (max-width: 1200px) {
+      .btn-close-details {
+        display: flex;
+      }
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
     .product-details {
       display: grid;
-      gap: 14px;
+      gap: 20px;
+      animation: slideInRight 0.4s ease-out;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding-right: 4px;
+      scrollbar-width: thin;
     }
 
     .product-preview {
       display: grid;
-      gap: 14px;
+      gap: 16px;
       border-radius: 20px;
       overflow: hidden;
       background: #eef2ff;
@@ -521,7 +534,7 @@
     .product-preview .product-meta {
       display: flex;
       justify-content: space-between;
-      gap: 10px;
+      gap: 12px;
       flex-wrap: wrap;
       color: var(--muted);
       font-size: 0.9rem;
@@ -529,7 +542,7 @@
 
     .form-group {
       display: grid;
-      gap: 10px;
+      gap: 8px;
     }
 
     .form-group label {
@@ -551,13 +564,13 @@
 
     .detail-actions {
       display: grid;
-      gap: 12px;
+      gap: 16px;
     }
 
     .detail-actions .action-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 16px;
     }
 
     .detail-actions button {
@@ -614,6 +627,7 @@
     @media screen and (max-width: 1200px) {
       .inventory-grid {
         grid-template-columns: 1fr;
+        gap: 32px;
       }
       .summary-cards {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -624,8 +638,8 @@
     }
 
     @media screen and (max-width: 760px) {
-      .greeting-section {
-        grid-template-columns: 1fr;
+      main {
+        padding-bottom: 40px !important;
       }
       .inventory-search {
         flex-direction: column;
@@ -648,8 +662,8 @@
     .product-info-header {
       display: flex; /* Use flexbox for horizontal layout */
       align-items: center; /* Vertically align items */
-      gap: 15px; /* Space between image and text */
-      margin-bottom: 15px; /* Space below this section */
+      gap: 20px; /* Space between image and text */
+      margin-bottom: 20px; /* Space below this section */
     }
 
     .product-info-header .image-preview {
@@ -673,19 +687,16 @@
       font-size: 1.2rem;
       color: var(--text);
     }
-
-    /* End new styles */
   </style>
 </head>
 
-<body class="antialiased">
+<body>
   <!-- Sidebar Component -->
   <div id="sidebar-container"></div>
   <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
   <div class="content-wrapper">
-  <main class="max-w-7xl mx-auto px-6 py-8">
 
+<main>  
     <section class="greeting-section">
       <div class="greeting-content">
         <h1>Inventory Management</h1>
@@ -698,7 +709,10 @@
         <div class="inventory-search">
           <input id="inventory-search" type="search" placeholder="Search products by name, category..." />
           <button id="btn-open-add-product" type="button" class="btn btn-secondary">Add New Product</button>
-          <button id="refresh-button" type="button">Refresh</button>
+          <button id="refresh-button" type="button" class="btn btn-secondary">
+            <i class="fas fa-sync-alt"></i>
+            <span>Refresh</span>
+          </button>
         </div>
         <div class="filter-pills" id="category-filters"></div>
       </div>
@@ -785,30 +799,16 @@
               <strong id="summary-value">₱0.00</strong>
             </div>
           </div>
-          <div class="view-toggle">
-            <button type="button" data-view="cards" class="active" id="view-cards">Cards</button>
-            <button type="button" data-view="table" id="view-table">Table</button>
-          </div>
           <div id="products-cards" class="products-grid"></div>
-          <div id="products-table-wrapper" class="inventory-table-wrapper hidden">
-            <table class="inventory-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Category</th>
-                  <th>Stock</th>
-                  <th>Price</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="products-table-body"></tbody>
-            </table>
-          </div>
         </section>
         <aside class="inventory-panel">
           <div class="panel-card">
-            <h2>Product details</h2>
+            <div class="panel-header-flex">
+              <h2>Product details</h2>
+              <button id="btn-close-details" class="btn-close-details" title="Close details panel">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
             <div id="detail-empty" class="empty-state">
               Select a product from the list to view and update inventory details.
             </div>
@@ -862,9 +862,6 @@
                 <button id="btn-save-product" type="button" class="btn btn-primary">Save Changes</button>
                 <button id="btn-clear-selection" type="button" class="btn btn-danger">Clear Selection</button>
               </div>
-            </div>
-            <div class="quick-note">
-              Inventory updates are saved securely with prepared statements. Sales and rental activity will automatically reduce inventory when processed through the cashier and rental modules.
             </div>
           </div>
         </aside>

@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Superadmin Sign In</title>
-    <!-- Premium Fonts and Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Super Admin Sign In | GCST Tracking System</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-glow: rgba(79, 70, 229, 0.4);
-            --text-dark: #0f172a;
-            --text-muted: #64748b;
+            --primary: #5d83e2;
+            --primary-glow: rgba(93, 131, 226, 0.4);
+            --text-dark: #1f2b45;
+            --text-muted: #5b6c8f;
             --glass: rgba(255, 255, 255, 0.85);
+            --overlay: rgba(31, 43, 69, 0.4);
         }
 
         * {
@@ -22,6 +22,8 @@
             padding: 0;
             box-sizing: border-box;
             font-family: 'Plus Jakarta Sans', sans-serif;
+            text-decoration: none;
+            list-style: none;
         }
 
         body {
@@ -29,11 +31,12 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(-45deg, #c9d6ff, #e2e2e2, #aec0ff, #f0f2f5);
+            background: linear-gradient(-45deg, #c9d6ff, #eef4ff, #aec0ff, #ffffff);
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
-            overflow: hidden;
-            padding: 20px;
+            overflow-x: hidden;
+            padding: 24px;
+            color: var(--text-dark);
         }
 
         @keyframes gradientBG {
@@ -42,18 +45,20 @@
             100% { background-position: 0% 50%; }
         }
 
-        .login-card {
+        /* Main Login Container */
+        .container {
+            position: relative;
             width: 100%;
-            max-width: 420px;
-            padding: 50px 40px;
+            max-width: 500px;
             background: var(--glass);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            border-radius: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            text-align: center;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 34px;
+            box-shadow: 0 24px 60px rgba(35, 75, 155, 0.12);
+            padding: 48px 40px;
+            border: 1px solid rgba(255, 255, 255, 0.7);
             animation: cardEntrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            z-index: 10;
         }
 
         @keyframes cardEntrance {
@@ -61,216 +66,346 @@
             to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
-        /* Icon Styling */
-        .header-icon {
-            width: 80px;
-            height: 80px;
-            display: flex;
-            align-items: center;
+        /* Global Modal Styling */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--overlay);
+            backdrop-filter: blur(8px);
+            display: none;
             justify-content: center;
-            background: linear-gradient(135deg, var(--primary), #764ba2);
-            border-radius: 24px;
-            color: #ffffff;
-            font-size: 42px;
-            margin: 0 auto 24px;
-            box-shadow: 0 15px 35px var(--primary-glow);
-            animation: iconFloat 3s ease-in-out infinite;
-        }
-
-        @keyframes iconFloat {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        /* Staggered Content Animation */
-        .animate-item {
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
             opacity: 0;
-            animation: fadeInUp 0.5s ease forwards;
+            transition: opacity 0.3s ease;
         }
 
-        .login-card h1 { animation-delay: 0.2s; font-size: 1.8rem; font-weight: 800; color: var(--text-dark); margin-bottom: 8px; letter-spacing: -1px; }
-        .login-card p { animation-delay: 0.3s; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 35px; }
-        .input-box:nth-child(1) { animation-delay: 0.4s; }
-        .input-box:nth-child(2) { animation-delay: 0.5s; }
-        .input-box:nth-child(3) { animation-delay: 0.55s; }
-        .submit-btn { animation-delay: 0.6s; }
+        .modal-overlay.active { display: flex; opacity: 1; }
 
+        .modal-box {
+            background: var(--glass);
+            max-width: 450px;
+            width: 100%;
+            padding: 40px;
+            border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transform: scale(0.8);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-overlay.active .modal-box { transform: scale(1); }
+
+        /* UI Elements */
+        .form-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .header-icon {
+            width: 80px; height: 80px;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #5d83e2, #7ea0f0);
+            border-radius: 24px; color: #ffffff; font-size: 40px;
+            box-shadow: 0 15px 35px var(--primary-glow);
+            animation: iconPulse 3s infinite ease-in-out;
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .input-box { position: relative; margin-bottom: 20px; }
+
+        .input-box input {
+            width: 100%; padding: 16px 50px 16px 20px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 16px; border: 1.5px solid #e7ecff;
+            outline: none; font-size: 15px; color: var(--text-dark);
+            font-weight: 500; transition: all 0.3s ease;
+        }
+
+        .input-box input:focus {
+            background: #fff; border-color: var(--primary);
+            box-shadow: 0 10px 20px -5px var(--primary-glow);
+            transform: translateY(-2px);
+        }
+
+        .input-box i { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 22px; color: #94a3b8; }
+        .toggle-password { cursor: pointer; z-index: 10; }
+
+        .btn {
+            width: 100%; height: 56px;
+            background: var(--text-dark); border-radius: 16px; border: none;
+            cursor: pointer; font-size: 16px; color: #fff; font-weight: 700;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 20px rgba(31, 43, 69, 0.2);
+            margin-top: 10px;
+        }
+
+        .btn:hover { background: var(--primary); transform: translateY(-3px); box-shadow: 0 15px 30px var(--primary-glow); }
+
+        .signup-link { text-align: center; margin-top: 24px; font-size: 14px; color: var(--text-muted); }
+        .signup-link a { color: var(--primary); font-weight: 700; cursor: pointer; }
+
+        /* Animation Classes */
+        .animate-item { opacity: 0; animation: fadeInUp 0.5s ease forwards; }
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .header-anim { animation-delay: 0.1s; }
+        .input-anim-1 { animation-delay: 0.2s; }
+        .input-anim-2 { animation-delay: 0.3s; }
+        .btn-anim { animation-delay: 0.5s; }
+        .footer-anim { animation-delay: 0.6s; }
 
-        .input-box {
-            position: relative;
-            margin-bottom: 25px;
-            text-align: left;
+        /* Floating Toast */
+        .floating-message {
+            position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-20px);
+            min-width: 300px; background: var(--text-dark); color: white;
+            padding: 16px 24px; border-radius: 20px; font-weight: 600;
+            text-align: center; opacity: 0; transition: all 0.4s ease;
+            z-index: 3000; pointer-events: none;
+            display: flex; align-items: center; justify-content: center; gap: 12px;
         }
+        .floating-message.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .floating-message.error { background: #dc2626; }
+        .floating-message i { font-size: 24px; }
 
-        .input-box label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--primary);
-            margin-bottom: 8px;
-            display: block;
-            margin-left: 5px;
+        .info-highlight {
+            background: rgba(255, 255, 255, 0.5); padding: 16px;
+            border-radius: 16px; border: 1px dashed var(--primary);
+            margin: 20px 0; font-weight: 600; font-size: 13px;
         }
-
-        .input-box input {
-            width: 100%;
-            padding: 14px 18px;
-            padding-right: 50px;
-            background: rgba(255, 255, 255, 0.6);
-            border: 2px solid transparent;
-            border-radius: 16px;
-            font-size: 0.95rem;
-            color: var(--text-dark);
-            outline: none;
-            transition: all 0.3s ease;
-        }
-
-        .input-box input:focus {
-            background: #fff;
-            border-color: var(--primary);
-            box-shadow: 0 10px 15px -3px var(--primary-glow);
-            transform: translateY(-2px);
-        }
-
-        .input-box i {
-            position: absolute;
-            right: 18px;
-            bottom: 14px;
-            font-size: 1.3rem;
-            color: #94a3b8;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .input-box i:hover { color: var(--primary); }
-
-        .submit-btn {
-            width: 100%;
-            padding: 16px;
-            background: var(--text-dark);
-            color: white;
-            border: none;
-            border-radius: 18px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-
-        .submit-btn:hover {
-            background: var(--primary);
-            transform: translateY(-3px);
-            box-shadow: 0 12px 24px var(--primary-glow);
-        }
-
-        /* Status UI */
-        #status-area {
-            display: none;
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-        .msg-error { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
-        .msg-success { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
     </style>
 </head>
+
 <body>
+    <div id="floating-message" class="floating-message"></div>
 
-<div class="login-card">
-    <!-- Shield/Admin Icon Added Here -->
-    <div class="header-icon animate-item"><i class='bx bx-shield-quarter'></i></div>
+    <div class="container">
+        <!-- Main Login Form -->
+        <form action="../actions/process_superadmin.php" method="POST" onsubmit="return validateForm(this)">
+            <!-- Security: CSRF Token should be injected here by the server if renamed to .php -->
+            <input type="hidden" name="_csrf_token" value="placeholder_token">
 
-    <h1 class="animate-item">Superadmin Login</h1>
-    <p class="animate-item">Superadmin access only — authorized entry required.</p>
+            <div class="form-header header-anim animate-item">
+                <div class="header-icon"><i class='bx bxs-shield-quarter'></i></div>
+                <div>
+                    <h1>Super Admin</h1>
+                    <p>Enter your administrative credentials</p>
+                </div>
+            </div>
 
-    <div id="status-area" class="animate-item"></div>
+            <div class="input-box input-anim-1 animate-item">
+                <input type="text" name="identifier" placeholder="Username or Email" required>
+                <i class='bx bxs-user-circle'></i>
+            </div>
 
-    <form action="http://localhost/GCST_Track_System/actions/process_superadmin.php" method="POST" id="authForm">
-        <!-- Security Token Placeholder: Ensure server-side logic populates this in production -->
-        <input type="hidden" name="_csrf_token" value="">
+            <div class="input-box input-anim-2 animate-item">
+                <input type="password" name="password" id="loginPass" placeholder="Password" required>
+                <i class='bx bx-show toggle-password' id="toggleLoginPass"></i>
+            </div>
 
-        <div class="input-box animate-item">
-            <label>Superadmin Email</label>
-            <input type="email" name="email" placeholder="superadmin@gcst.edu" autocomplete="email" required>
-            <i class='bx bxs-envelope'></i>
+            <div class="input-box input-anim-2 animate-item">
+                <input type="password" name="pin" placeholder="4-Digit Security PIN" maxlength="4" required>
+                <i class='bx bxs-key'></i>
+            </div>
+
+            <div style="text-align: right; margin-bottom: 24px;" class="animate-item link-anim">
+                <a href="javascript:void(0)" onclick="toggleModal('resetModal', true)" style="font-size: 14px; color: var(--primary); font-weight: 700;">Forgot Password?</a>
+            </div>
+
+            <button type="submit" class="btn btn-anim animate-item" id="submitBtn">Sign In</button>
+            
+            <div class="signup-link footer-anim animate-item">
+                Don't have an account? <a href="../../pages/superadmin/sign_up.html">Sign Up</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="modal-overlay" id="resetModal">
+        <div class="modal-box">
+            <div class="header-icon"><i class='bx bx-reset'></i></div>
+            <h2>Reset Password</h2>
+            <p id="reset-modal-desc" style="margin: 15px 0; color: var(--text-muted); font-size: 14px;">Enter your registered Email address to receive a verification code.</p>
+            
+            <div id="reset-step-1">
+                <div class="input-box">
+                    <input type="email" id="reset_identifier" placeholder="Registered Email Address" required>
+                    <i class='bx bxs-envelope'></i>
+                </div>
+                <button type="button" class="btn" id="btnRequestCode" onclick="requestResetCode()">Send Verification Code</button>
+            </div>
+
+            <div id="reset-step-2" style="display:none;">
+                <div class="input-box">
+                    <input type="text" id="reset_otp" placeholder="6-Digit Code" maxlength="6" style="text-align: center; letter-spacing: 4px;">
+                </div>
+                <button type="button" class="btn" onclick="verifyResetCode()">Verify Code</button>
+            </div>
+
+            <div id="reset-step-3" style="display:none;">
+                <div class="input-box">
+                    <input type="password" id="new_password" placeholder="New Password" required>
+                    <i class='bx bx-lock-alt'></i>
+                </div>
+                <button type="button" class="btn" onclick="performPasswordReset()">Update Password</button>
+            </div>
+
+            <button type="button" class="btn" style="background: transparent; color: var(--text-muted); box-shadow: none;" onclick="toggleModal('resetModal', false)">Back to Sign In</button>
         </div>
+    </div>
 
-        <div class="input-box animate-item">
-            <label>Password</label>
-            <input type="password" name="password" id="password" placeholder="••••••••" autocomplete="current-password" required>
-            <i class='bx bx-show' id="toggleBtn"></i>
-        </div>
+    <script>
+        // Handle status messages from URL parameters
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+            const success = urlParams.get('success');
+            if (error === 'invalid') {
+                showToast("Incorrect credentials or password.", true);
+            } else if (error === 'pending') {
+                showToast("Access Denied: Your account is currently pending approval. Please check back later.", true);
+            } else if (error === 'rejected') {
+                showToast("Access Denied: Your registration request was rejected. Please contact the administrative office.", true);
+            } else if (error === 'suspended') {
+                showToast("Access Restricted: Your account has been suspended. Please contact support for assistance.", true);
+            } else if (success === 'registered') {
+                showToast("Account created successfully! Your registration is now pending review.", false);
+            } else if (error === 'locked') {
+                showToast("Account Locked: Too many failed attempts. Please try again in 15 minutes.", true);
+            } else if (error === 'invalid_pin') {
+                showToast("Security PIN is incorrect.", true);
+            }
+        });
 
-        <div class="input-box animate-item">
-            <label>Security PIN</label>
-            <input type="password" name="pin" placeholder="••••" maxlength="4" pattern="\d*" inputmode="numeric" required>
-            <i class='bx bx-dialpad'></i>
-        </div>
-
-        <button type="submit" class="submit-btn animate-item" id="loginBtn">
-            Sign In
-        </button>
-    </form>
-</div>
-
-<script>
-    // Password visibility toggle
-    const toggleBtn = document.getElementById("toggleBtn");
-    const passwordField = document.getElementById("password");
-
-    toggleBtn.addEventListener("click", () => {
-        const isPass = passwordField.type === "password";
-        passwordField.type = isPass ? "text" : "password";
-        toggleBtn.classList.toggle("bx-show");
-        toggleBtn.classList.toggle("bx-hide");
-    });
-
-    // Handle status messages from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const statusArea = document.getElementById("status-area");
-
-    if (urlParams.has('error') || urlParams.has('success')) {
-        statusArea.style.display = "block";
-        const error = urlParams.get('error');
-        
-        if (urlParams.get('success') === '1') {
-            statusArea.className = "animate-item msg-success";
-            statusArea.innerText = "Identity verified. Please proceed with login.";
-        } else {
-            statusArea.className = "animate-item msg-error";
-            switch(error) {
-                case 'invalid':
-                    statusArea.innerText = "Invalid credentials. Please verify your email and password.";
-                    break;
-                case 'invalid_pin':
-                    statusArea.innerText = "The Security PIN entered is incorrect.";
-                    break;
-                case 'unauthorized':
-                    statusArea.innerText = "Only active superadmin accounts are authorized to enter.";
-                    break;
-                case 'locked':
-                    statusArea.innerText = "This account is temporarily locked due to repeated failures.";
-                    break;
-                case 'database':
-                    statusArea.innerText = "Connection Error: Unable to reach authentication server.";
-                    break;
-                case 'csrf':
-                    statusArea.innerText = "Security Validation Failed: Your session may have expired.";
-                    break;
-                default:
-                    statusArea.innerText = "An unexpected login error occurred.";
+        // Modal Control
+        function toggleModal(modalId, show) {
+            const modal = document.getElementById(modalId);
+            if (show) {
+                modal.classList.add('active');
+            } else {
+                modal.classList.remove('active');
             }
         }
-    }
-</script>
 
+        // Close when clicking outside the modal box
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.classList.remove('active');
+            }
+        }
+
+        // Toast Notifications
+        function showToast(message, isError = false) {
+            const toast = document.getElementById("floating-message");
+            const iconClass = isError ? "bx bxs-error-circle" : "bx bxs-check-circle";
+            toast.innerHTML = `<i class='${iconClass}'></i> <span></span>`;
+            toast.querySelector('span').textContent = message;
+            toast.className = isError ? "floating-message show error" : "floating-message show";
+            setTimeout(() => toast.classList.remove("show"), 8000); // Increased to 8 seconds
+        }
+
+        // Secure Password Reset Logic
+        let resetData = { email: '', code: '' };
+
+        async function requestResetCode() {
+            const identifier = document.getElementById('reset_identifier').value;
+            const btn = document.getElementById('btnRequestCode');
+            if(!identifier) return showToast("Identification is required", true);
+            
+            try {
+                btn.disabled = true;
+                btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Processing...";
+                const resp = await fetch('../actions/reset_request.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifier })
+                });
+                const result = await resp.json();
+                if(result.success) {
+                    resetData.email = result.email;
+                    document.getElementById('reset-step-1').style.display = 'none';
+                    document.getElementById('reset-step-2').style.display = 'block';
+                    document.getElementById('reset-modal-desc').innerText = result.message;
+                    showToast("Code Sent!");
+                } else throw new Error(result.message);
+            } catch(e) { showToast(e.message, true); }
+            finally {
+                btn.disabled = false;
+                btn.innerText = "Send Verification Code";
+            }
+        }
+
+        async function verifyResetCode() {
+            const code = document.getElementById('reset_otp').value;
+            try {
+                const resp = await fetch('../actions/verify_reset_code.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: resetData.email, code })
+                });
+                const result = await resp.json();
+                if(result.success) {
+                    resetData.code = code;
+                    document.getElementById('reset-step-2').style.display = 'none';
+                    document.getElementById('reset-step-3').style.display = 'block';
+                    document.getElementById('reset-modal-desc').innerText = "Verified! Set your new password.";
+                } else throw new Error(result.message);
+            } catch(e) { showToast(e.message, true); }
+        }
+
+        async function performPasswordReset() {
+            const password = document.getElementById('new_password').value;
+            if(password.length < 6) return showToast("Password too short (min 6 chars)", true);
+
+            try {
+                const resp = await fetch('../actions/update_password.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        email: resetData.email, 
+                        code: resetData.code,
+                        password: password 
+                    })
+                });
+                const result = await resp.json();
+                if(result.success) {
+                    showToast("Success! You can now sign in.");
+                    setTimeout(() => location.reload(), 2000);
+                } else throw new Error(result.message);
+            } catch(e) { showToast(e.message, true); }
+        }
+
+        // Login Validation
+        function validateForm(form) {
+            const btn = document.getElementById("submitBtn");
+            if (!form.identifier.value || !form.password.value || !form.pin.value) {
+                showToast("All fields are required", true);
+                return false;
+            }
+            btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Authenticating...";
+            return true;
+        }
+
+        // Password Toggle logic
+        document.getElementById('toggleLoginPass').addEventListener('click', function() {
+            const passInput = document.getElementById('loginPass');
+            const isPass = passInput.type === 'password';
+            passInput.type = isPass ? 'text' : 'password';
+            this.classList.toggle('bx-show', !isPass);
+            this.classList.toggle('bx-hide', isPass);
+        });
+    </script>
 </body>
 </html>

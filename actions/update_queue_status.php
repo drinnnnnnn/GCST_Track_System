@@ -2,44 +2,41 @@
 header('Content-Type: application/json');
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['admin', 'admincashier', 'superadmin']);
+requireAuth(['admincashier', 'superadmin']);
+require_once __DIR__ . '/NotificationService.php';
 
-require_once __DIR__ . '/../database/connection.php';
-$conn = Database::getConnection();
+require_once __DIR__ . '/../database/models/QueueModel.php';
 
-$data = json_decode(file_get_contents('php://input'), true);
-$queue_id = intval($data['queue_id'] ?? 0);
-$status = trim($data['status'] ?? '');
+// Support both POST (FormData) and JSON input
+$id = $_POST['id'] ?? $_POST['queue_id'] ?? null;
+$status = $_POST['status'] ?? null;
 
-if ($queue_id <= 0 || !in_array($status, ['waiting', 'serving', 'completed', 'cancelled'], true)) {
-    echo json_encode(['success' => false, 'error' => 'Invalid data']);
+if (!$id || !$status) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $id = $data['id'] ?? $data['queue_id'] ?? null;
+    $status = $data['status'] ?? null;
+}
+
+if (!$id || !in_array($status, ['waiting', 'serving', 'completed', 'cancelled'])) {
+    echo json_encode(['success' => false, 'error' => 'Missing or invalid parameters']);
     exit;
 }
 
 try {
-    $conn->begin_transaction();
+    $model = new QueueModel();
+    $success = $model->updateStatus((int)$id, $status);
 
-    // Ensure only one 'serving' ticket exists. If we're switching one to 'serving',
-    // mark any other currently serving tickets as 'completed' and set served_at.
-    if ($status === 'serving') {
-        $conn->query("UPDATE queue SET status = 'completed', served_at = NOW() WHERE status = 'serving'");
+    // Trigger "Next in Line" alerts when a ticket is moved to 'serving'
+    if ($success && $status === 'serving') {
+        $nextTicket = $model->getNextToNotify();
+        if ($nextTicket) {
+            NotificationService::sendQueueAlert($nextTicket);
+            $model->markAlertSent($nextTicket['id']);
+        }
     }
 
-    $stmt = $conn->prepare("UPDATE queue SET status = ?, served_at = CASE WHEN ? IN ('serving','completed','cancelled') THEN NOW() ELSE NULL END WHERE id = ?");
-    if (!$stmt) {
-        throw new Exception($conn->error);
-    }
-    $stmt->bind_param('ssi', $status, $status, $queue_id);
-    $success = $stmt->execute();
-    if (!$success) {
-        throw new Exception($stmt->error);
-    }
-
-    $conn->commit();
-    echo json_encode(['success' => true]);
+    echo json_encode(['success' => $success]);
 } catch (Exception $e) {
-    $conn->rollback();
-    http_response_code(500);
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
 ?>

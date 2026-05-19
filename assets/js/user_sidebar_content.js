@@ -144,11 +144,14 @@ export function getSidebarHTML() {
         .sidebar { 
             transform: translateX(-110%); 
             border-radius: 0 2rem 2rem 0;
-            width: 280px;
-            max-width: 85vw;
+            width: 300px;
+            max-width: 80vw;
             box-shadow: 10px 0 30px rgba(15, 23, 42, 0.15);
         }
         .sidebar.active { transform: translateX(0); }
+        .sidebar-minimize-btn { display: none; }
+        .sidebar-mobile-close { display: flex !important; }
+        .sidebar-brand { margin-bottom: 2rem; }
 
         /* Enhanced Touch Targets */
         .sidebar-link {
@@ -162,12 +165,13 @@ export function getSidebarHTML() {
         .sidebar-mobile-close {
             display: flex;
             position: absolute;
-            top: 1.5rem;
-            right: 1.25rem;
+            top: 1rem;
+            right: 1rem;
             background: var(--surface-soft);
-            border: none; width: 36px; height: 36px; border-radius: 10px;
+            border: 1px solid var(--border); width: 40px; height: 40px; border-radius: 12px;
             align-items: center; justify-content: center;
             color: var(--muted); cursor: pointer;
+            z-index: 1002;
         }
     }
 

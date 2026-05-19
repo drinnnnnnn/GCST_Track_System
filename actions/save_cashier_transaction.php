@@ -536,72 +536,115 @@ try {
                 }
 
                 if ($paymentStatus === 'paid') {
-                    $subject = 'Official Receipt - GCST Tracking System';
+                    $subject = 'Official Transaction Receipt - GCST Tracking System';
                     $itemsHtml = '';
                     foreach ($cartItems as $item) {
                         $itemsHtml .= "<tr>
-                            <td style='padding:8px; border-bottom:1px solid #eee; text-align:left;'>{$item['product_name']}</td>
-                            <td style='padding:8px; border-bottom:1px solid #eee; text-align:center;'>{$item['quantity']}</td>
-                            <td style='padding:8px; border-bottom:1px solid #eee; text-align:right;'>₱" . number_format($item['unit_price'], 2) . "</td>
-                            <td style='padding:8px; border-bottom:1px solid #eee; text-align:right;'>₱" . number_format($item['total'], 2) . "</td>
+                            <td style='padding: 12px 8px; border-bottom: 1px solid #f1f5f9; color: #334155;'>{$item['product_name']}</td>
+                            <td style='padding: 12px 8px; border-bottom: 1px solid #f1f5f9; text-align: center; color: #334155;'>{$item['quantity']}</td>
+                            <td style='padding: 12px 8px; border-bottom: 1px solid #f1f5f9; text-align: right; color: #334155;'>₱" . number_format($item['unit_price'], 2) . "</td>
+                            <td style='padding: 12px 8px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #0f172a;'>₱" . number_format($item['total'], 2) . "</td>
                         </tr>";
                     }
-                    $emailBody = "<div style='font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 15px;'>
-                        <h2 style='color: #4f46e5; text-align: center;'>Transaction Receipt</h2>
-                        <p>Hi " . htmlspecialchars($studentFullName) . ",</p>
-                        <p>Your payment has been processed. Here are your transaction details:</p>
-
-                        <div style='background: #f8fafc; padding: 15px; border-radius: 12px; margin: 20px 0; border: 1px solid #e5e7eb;'>
-                            <strong>Transaction #:</strong> $transactionNumber<br><strong>Processed by:</strong> " . htmlspecialchars($cashierName) . "<br><strong>Date:</strong> " . date('M d, Y h:i A') . "
+                    $emailBody = "
+                    <div style='font-family: \"Outfit\", \"Segoe UI\", Helvetica, Arial, sans-serif; max-width: 600px; margin: 20px auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'>
+                        <div style='background-color: #4f46e5; padding: 30px 20px; text-align: center; color: #ffffff;'>
+                            <h1 style='margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em;'>GCST Tracking System</h1>
+                            <p style='margin: 5px 0 0; opacity: 0.9; font-size: 14px;'>Official Transaction Receipt</p>
                         </div>
-                        <table style='width: 100%; border-collapse: collapse;'>
-                            <thead>
-                                <tr style='background: #f1f5f9;'>
-                                    <th style='padding: 8px; text-align: left;'>Item</th>
-                                    <th style='padding: 8px; text-align: center;'>Qty</th>
-                                    <th style='padding: 8px; text-align: right;'>Unit Price</th>
-                                    <th style='padding: 8px; text-align: right;'>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>$itemsHtml</tbody>
-                        </table>
+                        <div style='padding: 30px;'>
+                            <p style='color: #1e293b; font-size: 16px; line-height: 1.5;'>Dear " . htmlspecialchars($studentFullName) . ",</p>
+                            <p style='color: #475569; font-size: 15px; line-height: 1.5;'>Thank you for your transaction. Your payment has been successfully processed. Please find the details of your receipt below:</p>
 
-                        <div style='text-align: right; margin-top: 20px; padding-top: 15px; border-top: 1px dashed #ccc;'>
-                            <p style='margin: 5px 0;'><strong>Subtotal:</strong> ₱" . number_format($subtotal, 2) . "</p>
-                            <p style='margin: 5px 0; color: #ef4444;'><strong>Discount (" . number_format($discountPercent, 0) . "%):</strong> -₱" . number_format($discountAmount, 2) . "</p>
-                            <h3 style='margin: 15px 0 5px; color: #4f46e5; font-size: 1.5rem;'>Total Paid: ₱" . number_format($totalAmount, 2) . "</h3>
-                            <p style='margin: 5px 0;'><strong>Cash Received:</strong> ₱" . number_format($paymentReceived, 2) . "</p>
-                            <p style='margin: 5px 0;'><strong>Change:</strong> ₱" . number_format($changeAmount, 2) . "</p>
+                            <div style='background-color: #f8fafc; padding: 20px; border-radius: 12px; margin: 25px 0; border: 1px solid #e2e8f0;'>
+                                <table style='width: 100%; font-size: 14px; border-collapse: collapse;'>
+                                    <tr><td style='color: #64748b; padding-bottom: 8px;'>Transaction Reference:</td><td style='text-align: right; color: #0f172a; font-weight: 600; padding-bottom: 8px;'>$transactionNumber</td></tr>
+                                    <tr><td style='color: #64748b; padding-bottom: 8px;'>Processed By:</td><td style='text-align: right; color: #0f172a; padding-bottom: 8px;'>" . htmlspecialchars($cashierName) . "</td></tr>
+                                    <tr><td style='color: #64748b;'>Date & Time:</td><td style='text-align: right; color: #0f172a;'>" . date('F d, Y h:i A') . "</td></tr>
+                                </table>
+                            </div>
+
+                            <table style='width: 100%; border-collapse: collapse; margin-bottom: 25px;'>
+                                <thead>
+                                    <tr style='border-bottom: 2px solid #e2e8f0;'>
+                                        <th style='padding: 12px 8px; text-align: left; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;'>Description</th>
+                                        <th style='padding: 12px 8px; text-align: center; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;'>Qty</th>
+                                        <th style='padding: 12px 8px; text-align: right; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;'>Price</th>
+                                        <th style='padding: 12px 8px; text-align: right; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;'>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>$itemsHtml</tbody>
+                            </table>
+
+                            <div style='background-color: #ffffff; border-top: 1px solid #e2e8f0; padding-top: 15px;'>
+                                <table style='width: 100%; font-size: 14px;'>
+                                    <tr><td style='padding: 4px 0; color: #64748b;'>Subtotal:</td><td style='text-align: right; color: #0f172a;'>₱" . number_format($subtotal, 2) . "</td></tr>
+                                    <tr><td style='padding: 4px 0; color: #ef4444;'>Discount (" . number_format($discountPercent, 0) . "%):</td><td style='text-align: right; color: #ef4444;'>-₱" . number_format($discountAmount, 2) . "</td></tr>
+                                    <tr><td style='padding: 15px 0 4px; color: #4f46e5; font-size: 18px; font-weight: 700;'>Total Amount Paid:</td><td style='text-align: right; color: #4f46e5; font-size: 18px; font-weight: 700;'>₱" . number_format($totalAmount, 2) . "</td></tr>
+                                    <tr><td style='padding: 4px 0; color: #64748b;'>Cash Received:</td><td style='text-align: right; color: #0f172a;'>₱" . number_format($paymentReceived, 2) . "</td></tr>
+                                    <tr><td style='padding: 4px 0; color: #64748b;'>Change:</td><td style='text-align: right; color: #0f172a;'>₱" . number_format($changeAmount, 2) . "</td></tr>
+                                </table>
+                            </div>
+
+                            <div style='margin-top: 40px; padding: 20px; background-color: #eff6ff; border-radius: 12px; text-align: center;'>
+                                <p style='margin: 0; color: #1e40af; font-size: 14px; font-weight: 500;'>Thank you for choosing Granby College of Science and Technology!</p>
+                            </div>
                         </div>
-                        <p style='text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 30px;'>Thank you for choosing GCST Tracking System. Please keep this receipt for your records.</p>
+                        <div style='background-color: #f8fafc; padding: 25px; text-align: center; border-top: 1px solid #e2e8f0;'>
+                            <p style='margin: 0; color: #64748b; font-size: 12px;'>&copy; " . date('Y') . " Granby College of Science and Technology. All rights reserved.</p>
+                            <p style='margin: 8px 0 0; color: #94a3b8; font-size: 11px; line-height: 1.4;'>This is an automated system notification regarding your recent transaction. Please do not reply directly to this email.</p>
+                        </div>
                     </div>";
                 } else {
-                    $subject = 'Your GCST Order QR Code';
+                    $subject = 'Order Confirmation - GCST Tracking System';
                     $itemsHtml = '';
                     foreach ($cartItems as $item) {
-                        $itemsHtml .= "<p style='margin: 5px 0;'>- {$item['product_name']} x {$item['quantity']} (₱" . number_format($item['unit_price'], 2) . " each)</p>";
+                        $itemsHtml .= "<tr>
+                            <td style='padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 14px;'>{$item['product_name']} x {$item['quantity']}</td>
+                            <td style='padding: 10px 0; border-bottom: 1px solid #f1f5f9; text-align: right; color: #0f172a; font-weight: 500;'>₱" . number_format($item['total'], 2) . "</td>
+                        </tr>";
                     }
 
-                    $emailBody = "<div style='font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 15px; background-color: #fdfdfd;'>
-                        <h2 style='color: #4f46e5; text-align: center; margin-bottom: 20px;'>Order Confirmation</h2>
-                        <p style='margin-bottom: 10px;'>Hi " . htmlspecialchars($studentFullName) . ",</p>
-                        <p style='margin-bottom: 20px;'>Your order has been placed successfully and is awaiting payment/pickup. Please present the QR code below to the cashier to finalize your transaction.</p>
-                        
-                        <div style='background: #f8fafc; padding: 15px; border-radius: 12px; margin: 20px 0; border: 1px solid #e5e7eb;'>
-                            <p style='margin: 5px 0;'><strong>Transaction #:</strong> <span style='color: #4f46e5; font-weight: bold;'>$transactionNumber</span></p>
-                            <p style='margin: 5px 0;'><strong>Processed by:</strong> " . htmlspecialchars($cashierName) . "</p>
-                            <p style='margin: 5px 0;'><strong>Transaction Type:</strong> " . ucfirst($transactionType) . "</p>
-                            <p style='margin: 5px 0;'><strong>Date:</strong> " . date('M d, Y h:i A') . "</p>
+                    $emailBody = "
+                    <div style='font-family: \"Outfit\", \"Segoe UI\", Helvetica, Arial, sans-serif; max-width: 600px; margin: 20px auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'>
+                        <div style='background-color: #4f46e5; padding: 30px 20px; text-align: center; color: #ffffff;'>
+                            <h1 style='margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em;'>GCST Tracking System</h1>
+                            <p style='margin: 5px 0 0; opacity: 0.9; font-size: 14px;'>Order Confirmation & QR Code</p>
                         </div>
+                        <div style='padding: 30px;'>
+                            <p style='color: #1e293b; font-size: 16px; line-height: 1.5;'>Dear " . htmlspecialchars($studentFullName) . ",</p>
+                            <p style='color: #475569; font-size: 15px; line-height: 1.5;'>Your order has been placed successfully. Please present the transaction details or the QR code below to the cashier to finalize your payment and collect your items.</p>
+                            
+                            <div style='background-color: #f8fafc; padding: 20px; border-radius: 12px; margin: 25px 0; border: 1px solid #e2e8f0;'>
+                                <table style='width: 100%; font-size: 14px; border-collapse: collapse;'>
+                                    <tr><td style='color: #64748b; padding-bottom: 8px;'>Order Number:</td><td style='text-align: right; color: #4f46e5; font-weight: 700; padding-bottom: 8px;'>$transactionNumber</td></tr>
+                                    <tr><td style='color: #64748b; padding-bottom: 8px;'>Status:</td><td style='text-align: right; color: #f59e0b; font-weight: 600; padding-bottom: 8px;'>Awaiting Payment</td></tr>
+                                    <tr><td style='color: #64748b; padding-bottom: 8px;'>Order Type:</td><td style='text-align: right; color: #0f172a; padding-bottom: 8px;'>" . ucfirst($transactionType) . "</td></tr>
+                                    <tr><td style='color: #64748b;'>Created On:</td><td style='text-align: right; color: #0f172a;'>" . date('F d, Y h:i A') . "</td></tr>
+                                </table>
+                            </div>
 
-                        <p style='margin-bottom: 10px;'><strong>Items in your order:</strong></p>
-                        <div style='margin-left: 15px; margin-bottom: 20px;'>$itemsHtml</div>
-
-                        <p style='text-align: right; margin-top: 10px;'><strong>Total Payable: ₱" . number_format($totalAmount, 2) . "</strong></p>
-                        
-                        $inlineQr
-                        
-                        <p style='text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 30px;'>Thank you for your order! We look forward to serving you.</p>
+                            <h3 style='font-size: 14px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;'>Order Summary</h3>
+                            <table style='width: 100%; border-collapse: collapse; margin-bottom: 20px;'>
+                                <tbody>$itemsHtml</tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td style='padding: 15px 0; color: #0f172a; font-weight: 700; font-size: 16px;'>Total Payable:</td>
+                                        <td style='padding: 15px 0; text-align: right; color: #4f46e5; font-weight: 700; font-size: 18px;'>₱" . number_format($totalAmount, 2) . "</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                            
+                            $inlineQr
+                            
+                            <div style='margin-top: 30px; text-align: center;'>
+                                <p style='color: #64748b; font-size: 13px; font-style: italic;'>Note: This QR code is required for the cashier to process your order.</p>
+                            </div>
+                        </div>
+                        <div style='background-color: #f8fafc; padding: 25px; text-align: center; border-top: 1px solid #e2e8f0;'>
+                            <p style='margin: 0; color: #64748b; font-size: 12px;'>&copy; " . date('Y') . " Granby College of Science and Technology. All rights reserved.</p>
+                            <p style='margin: 8px 0 0; color: #94a3b8; font-size: 11px; line-height: 1.4;'>This is an automated system notification. We look forward to serving you.</p>
+                        </div>
                     </div>";
                 }
 
