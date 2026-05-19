@@ -1,37 +1,49 @@
 export function getSidebarHTML() {
     // Define global utility functions for the sidebar
-    if (!window.logoutUser) {
+    if (!window.__GCST_SIDEBAR_INITIALIZED__) {
+        window.__GCST_SIDEBAR_INITIALIZED__ = true;
+
+        const isMobile = () => window.matchMedia("(max-width: 1024px)").matches;
+
         window.logoutUser = function() {
             const modal = document.getElementById('sidebar-logout-modal');
             if (modal) {
                 modal.style.display = 'flex';
-                setTimeout(() => modal.classList.add('active'), 10);
+                // Force reflow to ensure the transition triggers
+                void modal.offsetHeight;
+                modal.classList.add('active');
                 document.body.style.overflow = 'hidden';
             }
         };
 
         window.closeLogoutModal = function() {
             const modal = document.getElementById('sidebar-logout-modal');
-            if (modal) {
-                modal.classList.remove('active');
-                setTimeout(() => modal.style.display = 'none', 200);
-                document.body.style.overflow = 'auto';
-            }
+            if (!modal) return;
+
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+
+            // Use a one-time listener for cleaner cleanup
+            const onTransitionEnd = (e) => {
+                if (e.propertyName === 'opacity' || e.propertyName === 'visibility') {
+                    modal.style.display = 'none';
+                    modal.removeEventListener('transitionend', onTransitionEnd);
+                }
+            };
+            modal.addEventListener('transitionend', onTransitionEnd);
+            
+            // Fallback for safety
+            setTimeout(() => { if (modal.style.display === 'flex' && !modal.classList.contains('active')) modal.style.display = 'none'; }, 350);
         };
 
         window.performLogout = function() {
-            sessionStorage.clear();
-            localStorage.clear();
+            const toClear = ['sidebar-minimized']; // Only clear specific keys or keep full clear if desired
+            toClear.forEach(key => localStorage.removeItem(key));
+            sessionStorage.clear(); 
             window.location.replace('/GCST_Track_System/actions/sign_out.php');
         };
 
-        // Global listener to close modal on Escape key
-        window.addEventListener('keydown', (e) => { 
-            if(e.key === 'Escape') window.closeLogoutModal(); 
-        });
-
-        // Global utility to toggle sidebar (mobile/tablet drawer)
-        window.toggleSidebar = function() {
+        window.toggleSidebar = function(forceClose = false) {
             const sidebar = document.getElementById('main-sidebar');
             const overlay = document.getElementById('sidebar-overlay');
             if (sidebar && overlay) {
@@ -40,15 +52,14 @@ export function getSidebarHTML() {
                 
                 // Accessibility and body scroll lock
                 sidebar.setAttribute('aria-hidden', !isActive);
-                if (window.innerWidth <= 1024) {
+                if (isMobile()) {
                     document.body.style.overflow = isActive ? 'hidden' : 'auto';
                 }
             }
         };
 
-        // Handle link clicks to auto-close sidebar on mobile
         window.handleSidebarLinkClick = function() {
-            if (window.innerWidth <= 1024) {
+            if (isMobile()) {
                 window.toggleSidebar();
             }
         };
@@ -63,10 +74,14 @@ export function getSidebarHTML() {
                 const isMinimized = sidebar.classList.toggle('minimized');
                 contentWrapper?.classList.toggle('minimized');
                 header?.classList.toggle('minimized');
-
-                localStorage.setItem('sidebar-minimized', isMinimized ? 'true' : 'false');
+                localStorage.setItem('sidebar-minimized', isMinimized);
             }
         };
+
+        // Global keyboard listeners
+        window.addEventListener('keydown', (e) => { 
+            if (e.key === 'Escape') window.closeLogoutModal(); 
+        });
 
         // Ensure the sidebar overlay exists for mobile view
         if (!document.getElementById('sidebar-overlay')) {
@@ -78,10 +93,10 @@ export function getSidebarHTML() {
     // Ensure the logout modal exists in the body
     if (!document.getElementById('sidebar-logout-modal')) {
         const modalHTML = `
-        <div id="sidebar-logout-modal" class="logout-modal-overlay" style="display:none;">
+        <div id="sidebar-logout-modal" class="logout-modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="logout-title">
             <div class="logout-modal-card">
                 <div class="logout-modal-icon"><i class="fas fa-sign-out-alt"></i></div>
-                <h2 class="logout-modal-title">Confirm Logout</h2>
+                <h2 class="logout-modal-title" id="logout-title">Confirm Logout</h2>
                 <p class="logout-modal-text">Are you sure you want to end your session? Make sure all transaction data has been saved.</p>
                 <div class="logout-modal-actions">
                     <button onclick="closeLogoutModal()" class="btn-modal btn-modal-cancel">Stay</button>
