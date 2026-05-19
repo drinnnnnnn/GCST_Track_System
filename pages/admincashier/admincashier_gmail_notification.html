@@ -199,22 +199,33 @@
     }
     .action-buttons {
       display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: flex-start;
+      gap: 6px;
+      justify-content: flex-end;
     }
-    .action-button {
-      border: 1px solid transparent;
-      border-radius: 12px;
-      padding: 8px 12px;
-      font-size: 0.85rem;
-      line-height: 1;
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
       cursor: pointer;
-      transition: background 0.15s ease, border-color 0.15s ease;
+      font-size: 0.85rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .action-button.view { color: #2563eb; background: rgba(37, 99, 235, 0.08); }
-    .action-button.retry { color: #d97706; background: rgba(251, 191, 36, 0.14); }
-    .action-button.delete { color: #dc2626; background: rgba(239, 68, 68, 0.12); }
+    .btn-icon.view { color: #2563eb; background: #eff6ff; }
+    .btn-icon.retry { color: #d97706; background: #fffbeb; }
+    .btn-icon.delete { color: #dc2626; background: #fef2f2; }
+
+    .btn-icon:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    }
+    .btn-icon.view:hover { background: #2563eb; color: #fff; }
+    .btn-icon.retry:hover { background: #d97706; color: #fff; }
+    .btn-icon.delete:hover { background: #dc2626; color: #fff; }
+
     @media (max-width: 900px) {
       .logs-toolbar { flex-direction: column; }
       .toolbar-group { width: 100%; justify-content: flex-start; }
@@ -301,7 +312,7 @@
               <th>Notification Type</th>
               <th>Status</th>
               <th>Date & Time Sent</th>
-              <th>Actions</th>
+              <th class="text-right">Actions</th>
             </tr>
           </thead>
           <tbody id="emailLogsBody">

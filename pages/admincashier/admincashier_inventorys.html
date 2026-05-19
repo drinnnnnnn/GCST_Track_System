@@ -11,43 +11,17 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .logo img {
-      width: 42px;
-      height: 42px;
-      object-fit: contain;
-    }
-
-    .logo strong {
-      font-size: 1.1rem;
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    } 
-
+    /* === PAGE LAYOUT === */
     .inventory-board {
       margin-top: 12px;
       display: grid;
       gap: 24px;
     }
 
+    /* === TOOLBAR & FILTERS === */
     .inventory-toolbar {
       display: grid;
-      gap: 20px;
+      gap: 16px;
       grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr);
       align-items: center;
     }
@@ -60,23 +34,24 @@
     .inventory-search {
       display: flex;
       gap: 12px;
-      background: var(--panel-bg);
-      border-radius: 18px;
-      padding: 16px;
-      box-shadow: 0 12px 25px rgba(15, 23, 42, 0.06);
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 12px;
+      box-shadow: var(--shadow);
       align-items: center;
-      justify-content: space-between;
+      border: 1px solid var(--border-soft);
     }
 
     .inventory-search input {
       flex: 1;
       min-width: 0;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px 16px;
-      font-size: 0.95rem;
+      border: none;
+      background: var(--surface-soft);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
       outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: all 0.2s ease;
     }
 
     .inventory-search input:focus {
@@ -88,25 +63,29 @@
       background: var(--primary);
       color: white;
       border: none;
-      border-radius: 14px;
-      padding: 14px 20px;
+      border-radius: 12px;
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      padding: 12px 24px;
       cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      transition: all 0.2s ease;
       white-space: nowrap;
       flex-shrink: 0;
+      font-weight: 600;
+      font-size: 0.9rem;
     }
 
-    .inventory-search button:hover,
-    .inventory-search button:focus {
+    .inventory-search button:hover {
       transform: translateY(-1px);
-      box-shadow: 0 12px 20px rgba(59, 130, 246, 0.14);
-      outline: none;
+      box-shadow: 0 8px 15px rgba(102, 126, 234, 0.25);
+      box-shadow: var(--shadow-lg);
     }
 
+    /* === ADD PRODUCT PANEL === */
     .add-product-panel {
       display: grid;
       gap: 18px;
-      margin-top: 12px;
+      margin-top: 8px;
     }
 
     .add-product-panel .panel-card {
@@ -311,15 +290,28 @@
     }
 
     .summary-card {
-      background: var(--panel-bg);
+      background: var(--surface);
       border-radius: 24px;
-      padding: 24px;
-      border: 1px solid #f0f4ff;
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+      padding: 20px 24px;
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .summary-card i {
+      position: absolute;
+      right: -10px;
+      bottom: -10px;
+      font-size: 5rem;
+      opacity: 0.03;
+      transform: rotate(-15deg);
     }
 
     .summary-card h3 {
-      margin: 0 0 12px;
+      margin: 0 0 8px;
       font-size: 0.95rem;
       color: var(--muted);
       font-weight: 600;
@@ -338,26 +330,30 @@
 
     .products-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Changed auto-fill to auto-fit, minmax from 260px to 280px */
+      gap: 24px; /* Changed from 20px to 24px for consistency with inventory-grid */
+      /* Responsive grid layout handled by global admincashier.css */
     }
+    /* === INVENTORY CARDS === */
 
     .inventory-card {
       border-radius: 24px;
       overflow: hidden;
-      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-      border: 1px solid #e5e7eb;
-      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
       display: flex;
       flex-direction: column;
-      min-height: 320px;
+      height: 100%; /* Ensure cards in grid have equal height */
       transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease, box-shadow 0.3s ease;
       cursor: pointer;
+      position: relative;
     }
 
     .inventory-card:hover {
-      transform: translateY(-5px);
+      transform: translateY(-4px);
       box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+      border-color: var(--primary-soft);
     }
 
     .inventory-card.selected {
@@ -367,35 +363,86 @@
       background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
     }
 
-    .inventory-card img {
+    .card-image-wrapper {
+      position: relative;
       width: 100%;
-      height: 180px;
-      object-fit: cover;
-      background: #e5e7eb;
+      height: 160px;
+      overflow: hidden;
+      background: #f1f5f9;
     }
 
+    .category-badge-overlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(4px);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      z-index: 2;
+    }
+
+    .inventory-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+
+    .inventory-card:hover img { transform: scale(1.05); }
+
     .inventory-card-body {
-      padding: 20px;
-      display: grid;
-      gap: 14px;
-      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-grow: 1;
     }
 
     .inventory-card-title {
-      margin: 0;
-      font-size: 1.05rem;
+      margin: 0 0 4px;
+      font-size: 1rem;
       font-weight: 700;
       color: var(--text);
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-description {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 2.4em;
+      margin-bottom: 4px;
     }
 
     .inventory-card-meta {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .card-price {
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 1.05rem;
+    }
+
+    .card-stock-info {
       color: var(--muted);
-      font-size: 0.9rem;
+      font-size: 0.75rem;
     }
 
     .status-pill {
@@ -406,6 +453,11 @@
       border-radius: 999px;
       font-size: 0.8rem;
       font-weight: 700;
+      min-width: 100px; /* Ensure consistent width for status pills */
+      text-align: center;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
     }
 
     .status-instock {
@@ -424,19 +476,21 @@
     }
 
     .inventory-card-footer {
-      margin-top: auto;
+      margin-top: 6px;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-soft);
     }
 
-    .inventory-card-footer button {
+    .inventory-card-footer .btn {
       flex: 1;
-      min-width: 118px;
+      padding: 10px 4px;
+      font-size: 0.75rem;
+      justify-content: center;
     }
 
+    /* === PRODUCT DETAILS PANEL === */
     .inventory-panel {
       display: grid;
       gap: 18px;
@@ -452,6 +506,7 @@
 
     .panel-card {
       background: var(--panel-bg);
+      background: var(--surface);
       border-radius: 24px;
       padding: 24px;
       border: 1px solid #f0f4ff;
@@ -541,6 +596,7 @@
       font-size: 0.9rem;
     }
 
+    /* === FORMS & INPUTS === */
     .form-group {
       display: grid;
       gap: 8px;
@@ -625,6 +681,7 @@
       font-size: 0.94rem;
     }
 
+    /* === RESPONSIVE OVERRIDES === */
     @media screen and (max-width: 1200px) {
       .inventory-grid {
         grid-template-columns: 1fr;
@@ -636,12 +693,20 @@
       .inventory-toolbar {
         grid-template-columns: 1fr;
       }
+      .inventory-panel { position: static; }
+      .inventory-grid { grid-template-columns: 1fr; gap: 32px; }
+      .btn-close-details { display: flex; }
+      .summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .inventory-toolbar { grid-template-columns: 1fr; }
+    }
+
+    @media screen and (max-width: 980px) {
+      .add-product-form .form-body-wrapper { flex-direction: column; }
+      .add-product-form .image-upload-section { flex: none; width: 100%; }
+      .add-product-form .form-inputs-grid { grid-template-columns: 1fr; }
     }
 
     @media screen and (max-width: 760px) {
-      main {
-        padding-bottom: 40px !important;
-      }
       .inventory-search {
         flex-direction: column;
       }
@@ -657,9 +722,15 @@
       .summary-cards {
         grid-template-columns: 1fr;
       }
+      .add-product-panel { margin-top: 0; }
+      .inventory-search { flex-direction: column; align-items: stretch; }
+      .inventory-search button, .inventory-search input { width: 100%; }
+      .filter-pills { justify-content: flex-start; }
+      .detail-actions .action-row, .summary-cards { grid-template-columns: 1fr; }
     }
 
     /* New styles for product details panel header */
+    /* Panel Specific Header Styling */
     .product-info-header {
       display: flex; /* Use flexbox for horizontal layout */
       align-items: center; /* Vertically align items */
@@ -784,18 +855,22 @@
         <section class="inventory-main">
           <div class="summary-cards">
             <div class="summary-card">
+              <i class="fas fa-boxes"></i>
               <h3>Total products</h3>
               <strong id="summary-total">0</strong>
             </div>
             <div class="summary-card">
+              <i class="fas fa-exclamation-triangle"></i>
               <h3>Low stock</h3>
               <strong id="summary-low">0</strong>
             </div>
             <div class="summary-card">
+              <i class="fas fa-check-circle"></i>
               <h3>Available stock</h3>
               <strong id="summary-available">0</strong>
             </div>
             <div class="summary-card">
+              <i class="fas fa-wallet"></i>
               <h3>Inventory value</h3>
               <strong id="summary-value">₱0.00</strong>
             </div>
@@ -815,53 +890,60 @@
             </div>
             <!-- Consolidated product details section -->
             <div id="product-details" class="product-details hidden">
-              <div class="product-info-header"> <!-- New container for image and text details -->
+              <div class="product-info-header">
                 <div id="detail-image-preview" class="image-preview">
                   <img id="detail-image" src="" alt="Product image" />
                 </div>
-                <div>
-                  <h3 id="detail-name"></h3>
-                  <div class="product-meta"> <span id="detail-category"></span> <span id="detail-stock" class="status-pill status-instock"></span> </div>
+                <div class="flex-1 min-w-0 flex flex-col">
+                  <h3 id="detail-name" class="truncate font-bold text-gray-800"></h3>
+                  <div class="product-meta mt-1 flex items-center gap-3">
+                    <span id="detail-category" class="text-primary font-medium text-sm"></span>
+                    <span id="detail-stock" class="status-pill"></span>
+                  </div>
                 </div>
               </div>
-              <div class="form-group">
-                <label for="detail-product-image">Product Image</label>
-                <input id="detail-product-image" name="product_image" type="file" accept="image/*" />
-              </div>
-              <div class="form-group">
-                <label for="detail-name-input">Product Name</label>
-                <input id="detail-name-input" type="text" />
-              </div>
-              <div class="form-group">
-                <label for="detail-category-input">Category</label>
-                <select id="detail-category-input">
-                  <option>Uniform</option>
-                  <option>Accessories</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="detail-buy-input">Buy Price</label>
-                <input id="detail-buy-input" type="number" min="0" step="0.01" />
-              </div>
-              <div class="form-group">
-                <label for="detail-status-input">Product Status</label>
-                <select id="detail-status-input">
-                  <option value="available">Available</option>
-                  <option value="unavailable">Unavailable</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="detail-stock-input">Stock Quantity</label>
-                <input id="detail-stock-input" type="number" min="0" step="1" />
-              </div>
-              <div class="detail-actions">
-                <div class="action-row">
-                  <button id="btn-add-stock" type="button" class="btn btn-secondary">Add Stock</button>
-                  <button id="btn-reduce-stock" type="button" class="btn btn-secondary">Reduce Stock</button>
+              
+              <div class="space-y-4 mt-2">
+                <div class="form-group">
+                  <label for="detail-product-image" class="!mb-1 text-xs text-gray-500 font-bold uppercase"><i class="fas fa-camera mr-1"></i> Update Image</label>
+                  <input id="detail-product-image" name="product_image" type="file" accept="image/*" class="text-xs file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700" />
                 </div>
-                <button id="btn-save-product" type="button" class="btn btn-primary">Save Changes</button>
-                <button id="btn-clear-selection" type="button" class="btn btn-danger">Clear Selection</button>
+                <div class="form-group">
+                  <label for="detail-name-input">Product Name</label>
+                  <input id="detail-name-input" type="text" placeholder="Enter name" />
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="form-group">
+                    <label for="detail-category-input">Category</label>
+                    <select id="detail-category-input">
+                      <option value="Uniform">Uniform</option>
+                      <option value="Accessories">Accessories</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="detail-status-input">Visibility</label>
+                    <select id="detail-status-input">
+                      <option value="available">Available</option>
+                      <option value="unavailable">Unavailable</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="form-group">
+                    <label for="detail-buy-input">Price (₱)</label>
+                    <input id="detail-buy-input" type="number" min="0" step="0.01" />
+                  </div>
+                  <div class="form-group">
+                    <label for="detail-stock-input">Current Stock</label>
+                    <input id="detail-stock-input" type="number" min="0" step="1" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="detail-actions pt-5 border-t border-gray-100 mt-5">
+                <button id="btn-save-product" type="button" class="btn btn-primary w-full !py-3.5 mb-3"><i class="fas fa-save mr-2"></i> Save Changes</button>
+                <button id="btn-clear-selection" type="button" class="btn btn-danger w-full !bg-gray-100 !text-gray-500 !border-gray-200 !py-2 !text-xs font-bold uppercase tracking-wider">Cancel Selection</button>
               </div>
             </div>
           </div>

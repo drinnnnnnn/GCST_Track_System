@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -12,53 +12,38 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
 <style>
-  .quick-actions {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  /* Consolidated & Optimized Styles */
+  .queue-card {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: transform 0.2s ease;
   }
-  .action-buttons {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-  }
-  .action-btn {
-    padding: 15px 30px;
-    background: #667eea;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .action-btn:hover {
-    background: #5a67d8;
-  }
-
+  
   .queue-dashboard {
     background: white;
-    border-radius: 12px;
+    border-radius: 20px;
     padding: 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
+  
   .queue-list {
     margin-top: 20px;
   }
+  
   .queue-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    border: 1px solid #eef2f7;
+    border-radius: 14px;
     margin-bottom: 10px;
     background: #f9f9f9;
+    position: relative;
   }
+  
   .queue-details {
     display: flex;
     flex-direction: column;
@@ -68,39 +53,44 @@
     font-weight: bold;
     color: #333;
   }
+  
   .queue-status {
     font-size: 14px;
     color: #666;
   }
+  
   .status-badge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
   }
-  .status-waiting {
-    background: #fff3cd;
-    color: #856404;
-  }
-  .status-serving {
-    background: #d1ecf1;
-    color: #0c5460;
-  }
-  .status-completed {
-    background: #d4edda;
-    color: #155724;
-  }
+  
+  .status-waiting { background: #fffbeb; color: #b45309; }
+  .status-serving { background: #eff6ff; color: #1e40af; }
+  .status-completed { background: #ecfdf5; color: #065f46; }
+  
   .queue-actions {
     display: flex;
     gap: 10px;
   }
+  
   .queue-btn {
-    padding: 6px 12px;
+    padding: 8px 16px;
     border: none;
-    border-radius: 4px;
+    border-radius: 10px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
   }
+  
+  .queue-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(0.95);
+  }
+  
   .btn-serve {
     background: #28a745;
     color: white;
@@ -113,57 +103,77 @@
     background: #dc3545;
     color: white;
   }
+  
   .ticket-preview-panel {
     background: white;
-    border-radius: 12px;
+    border-radius: 20px;
     padding: 20px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   }
+  
   .ticket-preview-card {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 20px;
     padding: 20px;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    border: 2px dashed #667eea;
+    border-radius: 16px;
     background: #f8fafc;
   }
+  
   .ticket-preview-body {
     display: flex;
     flex-direction: column;
     gap: 8px;
     text-align: left;
   }
+  
   .ticket-label {
     text-transform: uppercase;
     color: #667eea;
     font-size: 0.85rem;
     letter-spacing: 0.05em;
   }
+  
   .ticket-number {
     font-size: 2rem;
     font-weight: 700;
     color: #1f2937;
   }
+  
   .ticket-info {
     color: #4b5563;
     font-size: 0.95rem;
   }
+  
   .action-btn {
-    padding: 12px 22px;
-    background: #667eea;
+    padding: 14px 24px;
+    background: #4f46e5;
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     cursor: pointer;
     font-size: 14px;
+    font-weight: 700;
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
   }
+  
   .action-btn:hover {
-    background: #5563d4;
+    background: #4338ca;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+  }
+  
+  .action-btn:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 </style>
 </head>
@@ -201,30 +211,57 @@
     </section>
 
     <!-- Quick Actions -->
-    <section class="quick-actions">
-      <h2 class="mb-4">Manual Queue Entry</h2>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+    <section class="queue-card p-8 mb-10 overflow-hidden relative">
+      <div class="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+        <i class="fas fa-ticket-alt text-8xl text-indigo-600"></i>
+      </div>
+      <div class="flex items-center justify-between mb-6">
         <div>
-          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">School ID</label>
-          <input type="text" id="input-school-id" placeholder="e.g. 2023-0001" class="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:border-indigo-500 transition-colors">
+          <h2 class="text-2xl font-extrabold text-gray-800 tracking-tight">Manual Ticket Issuance</h2>
+          <p class="text-sm text-gray-500 mt-1">Generate new queue numbers for walk-in transactions and inquiries.</p>
         </div>
-        <div>
-          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Student Name</label>
-          <input type="text" id="input-student-name" placeholder="Enter Full Name" class="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:border-indigo-500 transition-colors">
+        <div class="p-3 bg-indigo-50 rounded-xl text-indigo-600">
+          <i class="fas fa-user-plus fa-lg"></i>
         </div>
-        <div>
-          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Purpose</label>
-          <select id="input-purpose" class="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:border-indigo-500 transition-colors">
+      </div>
+      
+      <form id="manual-queue-form" onsubmit="return false;" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div class="form-group lg:col-span-3">
+          <label for="input-school-id" class="block text-[11px] font-black text-gray-400 uppercase mb-2 tracking-widest">Student ID (Optional)</label>
+          <input type="text" id="input-school-id" placeholder="e.g. GC-XXXXX" 
+                 class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+        </div>
+
+        <div class="form-group lg:col-span-5">
+          <label for="input-student-name" class="block text-[11px] font-black text-gray-400 uppercase mb-2 tracking-widest">Student Name <span class="text-indigo-500">*</span></label>
+          <div class="relative">
+            <i class="far fa-user absolute left-5 top-1/2 -translate-y-1/2 text-gray-300"></i>
+            <input type="text" id="input-student-name" placeholder="Enter full name" required
+                   class="w-full pl-12 pr-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+          </div>
+        </div>
+
+        <div class="form-group lg:col-span-4">
+          <label for="input-purpose" class="block text-[11px] font-black text-gray-400 uppercase mb-2 tracking-widest">Purpose of Visit</label>
+          <select id="input-purpose" 
+                  class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white appearance-none transition-all text-sm font-medium cursor-pointer">
             <option value="General Inquiry">General Inquiry</option>
             <option value="Tuition Payment">Tuition Payment</option>
             <option value="Document Request">Document Request</option>
             <option value="Enrollment">Enrollment</option>
           </select>
         </div>
-        <button class="action-btn h-[42px] justify-center" onclick="generateQueue()">
-          <i class="fas fa-plus"></i> Generate Number
-        </button>
-      </div>
+
+        <div class="lg:col-span-12 flex justify-end gap-3 pt-4 border-t border-gray-50 mt-2">
+          <button type="reset" class="px-6 py-3 text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors uppercase tracking-wider">
+            Clear Form
+          </button>
+          <button id="btn-generate-ticket" onclick="generateQueue()" 
+                  class="action-btn !py-4 px-10 text-sm flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <i class="fas fa-plus-circle"></i> Create Ticket
+          </button>
+        </div>
+      </form>
     </section>
 
     <!-- Ticket Preview Panel -->
@@ -238,14 +275,6 @@
             Ticket #: <span class="font-bold text-indigo-600" id="preview-queue-number">--</span> | 
             Generated: <span id="preview-generated-at">--</span>
           </div>
-        </div>
-        <div class="ticket-actions">
-          <button class="action-btn" id="save-ticket-btn" onclick="saveTicket()">
-            <i class="fas fa-download"></i> Save Ticket
-          </button>
-          <button class="action-btn" id="print-ticket-btn" onclick="printTicket()">
-            <i class="fas fa-print"></i> Print Ticket
-          </button>
         </div>
       </div>
     </section>
@@ -358,38 +387,52 @@
       });
     }
 
-    function generateQueue() {
-      const schoolId = document.getElementById('input-school-id').value.trim();
+    async function generateQueue() {
+      const btn = document.getElementById('btn-generate-ticket');
+      const schoolIdInput = document.getElementById('input-school-id');
+      const schoolId = schoolIdInput ? schoolIdInput.value.trim() : '';
       const studentName = document.getElementById('input-student-name').value.trim();
       const purpose = document.getElementById('input-purpose').value;
 
       if (!studentName) {
-        alert('Please enter a student name.');
+        alert('Required Field: Please enter the student\'s full name.');
         return;
       }
 
-      fetch('../../actions/generate_queue.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          school_id: schoolId,
-          student_name: studentName,
-          purpose: purpose
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
+      // Visual feedback: Loading state
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+      try {
+        const response = await fetch('../../actions/generate_queue.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            school_id: schoolId,
+            student_name: studentName,
+            purpose: purpose
+          })
+        });
+
+        const data = await response.json();
+
         if (data.success) {
-          // Reset form
-          document.getElementById('input-school-id').value = '';
-          document.getElementById('input-student-name').value = '';
-          
+          // Reset form on success
+          document.getElementById('manual-queue-form').reset();
           showTicketPreview(data.ticket);
-          loadActiveQueues();
+          await loadActiveQueues();
         } else {
-          alert('Error: ' + data.error);
+          throw new Error(data.error || 'The system encountered an error issuing the ticket.');
         }
-      });
+      } catch (err) {
+        console.error('Queue generation failed:', err);
+        alert('Queue Error: ' + err.message);
+      } finally {
+        // Restore button state
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
     }
 
     function showTicketPreview(ticket) {

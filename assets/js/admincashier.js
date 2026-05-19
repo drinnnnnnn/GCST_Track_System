@@ -1,9 +1,10 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿let currentAdminId = null;
+﻿﻿﻿﻿﻿﻿let currentAdminId = null;
 let currentTicket = null;
 let emailLogs = [];
 let gmailPollInterval = null; // New: For Gmail logs polling
 let notificationPollInterval = null;
 let queuePollInterval = null;
+let inventoryPollInterval = null;
 
 /**
  * Initialize menu and notification listeners
@@ -270,32 +271,6 @@ function showError(element, message = 'An error occurred') {
 }
 
 /**
- * Show a temporary toast notification using Tailwind classes
- * @param {string} message - Message to display
- * @param {string} type - 'success' or 'error'
- */
-window.showInventoryToast = function(message, type = 'success') {
-  const toast = document.createElement('div');
-  // Styling using Tailwind utility classes to match the dashboard aesthetic
-  toast.className = `fixed bottom-6 right-6 px-6 py-4 rounded-2xl shadow-2xl z-[9999] flex items-center gap-3 text-white font-medium transform transition-all duration-300 translate-y-20 opacity-0`;
-  
-  if (type === 'success') {
-    toast.classList.add('bg-emerald-600');
-    toast.innerHTML = `<i class="fas fa-check-circle text-xl"></i><span>${message}</span>`;
-  } else {
-    toast.classList.add('bg-rose-600');
-    toast.innerHTML = `<i class="fas fa-exclamation-triangle text-xl"></i><span>${message}</span>`;
-  }
-
-  document.body.appendChild(toast);
-  setTimeout(() => toast.classList.remove('translate-y-20', 'opacity-0'), 10);
-  setTimeout(() => {
-    toast.classList.add('translate-y-20', 'opacity-0');
-    setTimeout(() => toast.remove(), 300);
-  }, 4000);
-};
-
-/**
  * Initialize page - call this in every page's DOMContentLoaded
  * @param {Function} pageCallback - Callback function to initialize page-specific content
  */
@@ -317,9 +292,11 @@ window.initializeAdminCashierPage = function(pageCallback) {
       updateDateTime();
       setInterval(updateDateTime, 60000); // Update every minute
 
-      // Load notifications
-      loadNotifications();
-      startNotifPolling();
+      // Load notifications - skipped on inventory page
+      if (!window.location.pathname.includes('admincashier_inventorys.html')) {
+        loadNotifications();
+        startNotifPolling();
+      }
 
       // Call page-specific callback
       if (pageCallback && typeof pageCallback === 'function') {
@@ -341,6 +318,7 @@ window.initializeAdminCashierPage = function(pageCallback) {
     stopNotifPolling();
     stopGmailPolling(); // Stop Gmail polling on unload
     if (typeof stopQueuePolling === 'function') stopQueuePolling();
+    if (typeof stopInventoryPolling === 'function') stopInventoryPolling();
   });
 }
 
@@ -399,22 +377,28 @@ window.loadGmailData = function() {
 function renderEmailLogs(logs) {
   const body = document.getElementById('emailLogsBody');
   if (!body) return;
-  body.innerHTML = logs.length ? '' : '<tr><td colspan="7" class="empty-state">No logs available.</td></tr>';
+  
+  if (logs.length === 0) {
+    body.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fas fa-inbox"></i><p>No transmission records found for the selected filters.</p></td></tr>';
+    return;
+  }
+
+  body.innerHTML = '';
   logs.forEach(log => {
     const row = document.createElement('tr');
     const statusClass = log.status === 'sent' ? 'status-sent' : log.status === 'failed' ? 'status-failed' : 'status-pending';
     row.innerHTML = `
-      <td>${log.id}</td>
-      <td>${escapeHtml(log.recipient)}</td>
-      <td>${escapeHtml(log.subject)}</td>
-      <td>${escapeHtml(log.notification_type)}</td>
-      <td><span class="status-badge ${statusClass}">${escapeHtml(log.status)}</span></td>
-      <td>${new Date(log.created_at).toLocaleString()}</td>
-      <td>
+      <td class="log-id">#${log.id}</td>
+      <td class="log-recipient">${escapeHtml(log.recipient)}</td>
+      <td class="log-subject" title="${escapeHtml(log.subject)}">${escapeHtml(log.subject || '(No Subject)')}</td>
+      <td class="text-sm text-gray-500 font-medium">${escapeHtml(log.notification_type)}</td>
+      <td class="text-center"><span class="status-badge ${statusClass}">${escapeHtml(log.status)}</span></td>
+      <td class="text-xs text-gray-400 font-medium">${new Date(log.created_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}</td>
+      <td class="text-right">
         <div class="action-buttons">
-          <button class="action-button view" onclick="openEmailModal('view', ${log.id})">View</button>
-          <button class="action-button retry" onclick="handleEmailRowAction('retry', ${log.id})">Retry</button>
-          <button class="action-button delete" onclick="handleEmailRowAction('delete', ${log.id})">Delete</button>
+          <button class="btn-icon view" title="View Full Content" onclick="openEmailModal('view', ${log.id})"><i class="fas fa-eye"></i></button>
+          <button class="btn-icon retry" title="Resend Notification" onclick="handleEmailRowAction('retry', ${log.id})"><i class="fas fa-redo"></i></button>
+          <button class="btn-icon delete" title="Permanently Delete Log" onclick="handleEmailRowAction('delete', ${log.id})"><i class="fas fa-trash"></i></button>
         </div>
       </td>`;
     body.appendChild(row);
@@ -456,7 +440,7 @@ window.submitSendEmail = function() {
     email_type: document.getElementById('modalType').value.trim()
   };
   fetch(GMAIL_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-    .then(res => res.json()).then(res => res.success ? (closeEmailModal(), loadGmailData(), showInventoryToast('Notification sent successfully!')) : showInventoryToast(res.error, 'error')).catch(() => showInventoryToast('Send failed.', 'error'));
+    .then(res => res.json()).then(res => res.success ? (closeEmailModal(), loadGmailData()) : null).catch(() => {});
 };
 
 window.handleEmailRowAction = function(action, id) {
@@ -512,22 +496,37 @@ window.loadQueueStatus = function() {
     .catch(err => console.error('Error loading queue status:', err));
 }
 
-window.generateQueue = function() {
-  fetch('../../actions/generate_queue.php', { method: 'POST' })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        currentTicket = data.ticket || {};
-        window.showTicketPreview(currentTicket);
-        window.loadActiveQueues();
-        window.loadQueueStatus();
-        showInventoryToast('New queue number generated!');
-      } else {
-        showInventoryToast('Failed to generate queue: ' + data.error, 'error');
-      }
-    })
-    .catch(err => console.error('Error generating queue:', err));
-}
+/**
+ * Enhanced global queue generation logic
+ * @param {Object} manualData - Optional data from manual form entry
+ */
+window.generateQueue = async function(manualData = null) {
+  const payload = manualData || {};
+  
+  try {
+    const response = await fetch('../../actions/generate_queue.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      currentTicket = data.ticket || {};
+      if (typeof window.showTicketPreview === 'function') window.showTicketPreview(currentTicket);
+      if (typeof window.loadActiveQueues === 'function') window.loadActiveQueues();
+      if (typeof window.loadQueueStatus === 'function') window.loadQueueStatus();
+      return data;
+    } else {
+      throw new Error(data.error || 'Unknown error occurred');
+    }
+  } catch (err) {
+    console.error('Queue generation failed:', err);
+    alert('System Error: ' + err.message);
+    return { success: false, error: err.message };
+  }
+};
 
 window.showTicketPreview = function(ticket) {
   const panel = document.getElementById('ticket-preview-panel');
@@ -602,9 +601,8 @@ window.updateQueueStatus = function(queueId, status) {
     if (data.success) {
       window.loadActiveQueues();
       window.loadQueueStatus();
-      showInventoryToast(`Queue status updated to ${status}.`);
     } else {
-      showInventoryToast('Error: ' + data.error, 'error');
+      console.error('Error updating queue status:', data.error);
     }
   })
   .catch(err => console.error('Error updating status:', err));
@@ -706,8 +704,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.admin_id) {
         currentAdminId = data.admin_id;
         updateGreeting(data.name || data.username || 'Admin');
-        loadNotifications();
-        startNotifPolling();
+        
+        if (!window.location.pathname.includes('admincashier_inventorys.html')) {
+          loadNotifications();
+          startNotifPolling();
+        }
+        
         // Auto-init Gmail features if the container exists
         if (document.getElementById('emailLogsBody')) { 
           loadGmailData(); 
@@ -795,16 +797,19 @@ function renderSalesHistory(history) {
     history.forEach(entry => {
       const items = entry.item ? entry.item.split(', ') : [];
       const itemsHtml = items.map(i => `<span class="product-tag">${i}</span>`).join('');
+      // Ensure we use the best available identifier (ID or Transaction Number)
+      const displayId = entry.transaction_number || entry.transaction_id || entry.id || '—';
+      const internalId = entry.transaction_id || entry.transaction_number || entry.id;
       
       const row = document.createElement('tr');
       row.innerHTML = `
         <td>${formatDate(entry.date)}</td>
-        <td>${entry.transaction_id ?? '—'}</td>
+        <td>${displayId}</td>
         <td><div class="product-tag-list">${itemsHtml}</div></td>
         <td>${entry.quantity}</td>
         <td>${formatCurrency(entry.amount)}</td>
         <td style="text-align: center;">
-          <button onclick="window.viewReceiptDetails('${entry.transaction_id}')" class="view-details-btn" title="View Details">
+          <button onclick="window.viewReceiptDetails('${internalId}')" class="view-details-btn" title="View Details">
             <i class="fas fa-eye"></i>
           </button>
         </td>
@@ -869,38 +874,98 @@ window.viewReceiptDetails = async function(transactionId) {
   const modal = document.getElementById('receiptModal');
   const content = document.getElementById('receiptContent');
   
-  modal.style.display = 'block';
-  content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin fa-2x text-blue-500"></i><p class="mt-2 text-gray-500">Fetching receipt...</p></div>';
+  if (!modal || !content) return;
+
+  modal.classList.add('active'); // Use a class to control visibility for better animation/transitions
+  content.innerHTML = `
+    <div class="flex flex-col items-center justify-center py-12 text-gray-400">
+      <i class="fas fa-circle-notch fa-spin text-2xl mb-3"></i>
+      <p class="text-sm">Fetching transaction details...</p>
+    </div>`;
 
   try {
     const response = await fetch(`../../actions/get_transaction_details.php?id=${encodeURIComponent(transactionId)}`);
     const data = await response.json();
 
     if (data.success) {
-      const t = data.transaction;
-      content.innerHTML = `
-        <div class="bg-gray-50 p-4 rounded-2xl mb-4">
-          <div class="flex justify-between text-sm text-gray-500 mb-1"><span>Ref No:</span><span class="font-mono font-bold text-gray-800">${t.transaction_number}</span></div>
-          <div class="flex justify-between text-sm text-gray-500"><span>Date:</span><span class="text-gray-800">${new Date(t.created_at).toLocaleString()}</span></div>
-        </div>
-        <div class="space-y-2">
-          <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wider">Items</h4>
-          <div class="border-y border-dashed border-gray-200 py-3">
-            ${t.items.map(item => `
-              <div class="flex justify-between py-1">
-                <span class="text-gray-700">${item.product_name} x ${item.quantity}</span>
-                <span class="font-semibold">${formatCurrency(item.total_item_amount)}</span>
-              </div>
-            `).join('')}
+      const t = data.transaction; // Assuming the backend returns a 'transaction' object
+
+      // Format items for display
+      const itemsHtml = t.items.map(item => `
+        <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+          <div class="flex-1 pr-2">
+            <p class="text-gray-800 font-medium">${item.product_name}</p>
+            <p class="text-gray-500 text-xs">${item.quantity} x ${formatCurrency(item.unit_price)}</p>
+            ${item.item_type === 'rent' && item.duration ? `<p class="text-gray-500 text-xs">Rental: ${item.duration} ${item.duration_unit}</p>` : ''}
           </div>
-          <div class="flex justify-between pt-2 text-lg font-bold text-blue-600">
-            <span>Total Amount</span>
-            <span>${formatCurrency(t.total_amount)}</span>
+          <span class="font-semibold text-gray-700">${formatCurrency(item.total_item_amount)}</span>
+        </div>
+      `).join('');
+
+      content.innerHTML = `
+        <div class="space-y-6">
+          <!-- Transaction Summary -->
+          <div class="bg-gray-50 p-4 rounded-xl">
+            <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wider mb-3">Transaction Summary</h4>
+            <div class="space-y-1 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-500">Ref No:</span>
+                <span class="font-mono font-bold text-gray-800">${t.transaction_number}</span>
+              </div>
+              ${t.receipt_number ? `
+              <div class="flex justify-between">
+                <span class="text-gray-500">Receipt No:</span>
+                <span class="font-mono text-gray-800">${t.receipt_number}</span>
+              </div>` : ''}
+              <div class="flex justify-between">
+                <span class="text-gray-500">Date:</span>
+                <span class="text-gray-800">${new Date(t.created_at).toLocaleString()}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Cashier:</span>
+                <span class="text-gray-800">${t.cashier_name || 'N/A'}</span>
+              </div>
+              ${t.student_name ? `
+              <div class="flex justify-between">
+                <span class="text-gray-500">Customer:</span>
+                <span class="text-gray-800">${t.student_name}</span>
+              </div>` : ''}
+              <div class="flex justify-between">
+                <span class="text-gray-500">Type:</span>
+                <span class="text-gray-800 capitalize">${t.transaction_type}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Items List -->
+          <div>
+            <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wider mb-3">Items Purchased</h4>
+            <div class="bg-white p-4 rounded-xl border border-gray-100 space-y-2">
+              ${itemsHtml}
+            </div>
+          </div>
+
+          <!-- Payment Details -->
+          <div class="bg-gray-50 p-4 rounded-xl">
+            <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wider mb-3">Payment Details</h4>
+            <div class="space-y-1 text-sm">
+              <div class="flex justify-between"><span>Subtotal:</span><span class="text-gray-700">${formatCurrency(t.subtotal)}</span></div>
+              <div class="flex justify-between"><span>Discount (${t.discount_percent}%):</span><span class="text-rose-500">- ${formatCurrency(t.discount_amount)}</span></div>
+              <div class="flex justify-between text-lg font-bold text-blue-600 pt-2"><span>Total Amount:</span><span>${formatCurrency(t.total_amount)}</span></div>
+              <div class="flex justify-between"><span>Payment Received:</span><span class="text-gray-700">${formatCurrency(t.payment_received)}</span></div>
+              <div class="flex justify-between"><span>Change:</span><span class="text-gray-700">${formatCurrency(t.change_amount)}</span></div>
+              <div class="flex justify-between"><span>Status:</span><span class="font-bold ${t.payment_status === 'paid' ? 'text-emerald-600' : 'text-orange-500'} capitalize">${t.payment_status}</span></div>
+            </div>
           </div>
         </div>
       `;
     } else {
-      content.innerHTML = `<div class="text-center text-red-500 p-4">Failed to load transaction details: ${data.message || 'Unknown error'}.</div>`;
+      content.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-12 text-center text-rose-500 opacity-80">
+          <i class="fas fa-exclamation-triangle text-2xl mb-3"></i>
+          <p class="text-sm font-medium">Failed to load transaction details:</p>
+          <p class="text-xs mt-1">${data.message || 'Unknown error'}.</p>
+        </div>`;
     }
   } catch (error) {
     console.error('Error fetching transaction details:', error);
@@ -909,7 +974,7 @@ window.viewReceiptDetails = async function(transactionId) {
 }
 
 window.closeReceiptModal = function() {
-  document.getElementById('receiptModal').style.display = 'none';
+  document.getElementById('receiptModal')?.classList.remove('active');
 }
 
 function startSalesPolling() {
@@ -961,7 +1026,7 @@ window.initAdminCashierSalesPage = function(userData) {
     button.addEventListener('click', () => {
       currentSalesPeriod = button.dataset.period;
       setActivePeriodButton(currentSalesPeriod);
-      loadSalesData(currentSalesPeriod);
+      loadSalesData(currentSalesPeriod); 
       startSalesPolling(); // Reset interval timer on manual change
     });
   });
@@ -975,7 +1040,7 @@ window.initAdminCashierSalesPage = function(userData) {
     searchInput.addEventListener('input', (e) => {
       const query = e.target.value.toLowerCase();
       const filtered = lastFetchedSalesHistory.filter(entry => {
-        const text = `${entry.transaction_id || ''} ${entry.item || ''} ${entry.date || ''}`.toLowerCase();
+        const text = `${entry.transaction_id || ''} ${entry.transaction_number || ''} ${entry.item || ''} ${entry.date || ''}`.toLowerCase();
         return text.includes(query);
       });
       renderSalesHistory(filtered);
@@ -1187,25 +1252,31 @@ function renderInventoryViews() {
         const image = resolveInventoryImagePath(product.product_image);
         const stock = Number(product.stock_count) || 0;
         const description = (product.product_description || '').trim();
-        const snippet = description.length > 100 ? `${description.slice(0, 100)}...` : description;
+        
         card.innerHTML = `
-          <img src="${image}" alt="${product.product_name}" />
+          <div class="card-image-wrapper">
+            <div class="category-badge-overlay">${product.product_category || 'Other'}</div>
+            <img src="${image}" alt="${product.product_name}" loading="lazy" />
+          </div>
           <div class="inventory-card-body">
-            <h3 class="inventory-card-title">${product.product_name || 'Untitled'}</h3>
-            ${snippet ? `<p class="product-description">${snippet}</p>` : ''}
-            <div class="inventory-card-meta">
-              <span>${product.product_category || 'Other'}</span>
+            <div class="flex-1">
+              <h3 class="inventory-card-title" title="${product.product_name}">${product.product_name || 'Untitled'}</h3>
+              <p class="card-description">${description || 'No description provided.'}</p>
             </div>
             <div class="inventory-card-meta">
-              <span>${formatCurrency(product.buy_price)}</span>
-              <span class="status-pill ${getInventoryStatusClass(stock)}">${product.product_status === 'unavailable' ? 'Unavailable' : getInventoryStockStatus(stock)}</span>
+              <span class="card-price font-bold text-primary">${formatCurrency(product.buy_price)}</span>
+              <span class="card-stock-info font-medium text-muted">${stock} in stock</span>
             </div>
-            <div class="inventory-card-meta">
-              <span>${stock} item${stock === 1 ? '' : 's'}</span>
+            <div class="mt-1">
+              <span class="status-pill !py-1 !px-3 !text-[0.7rem] ${getInventoryStatusClass(stock)}">${product.product_status === 'unavailable' ? 'Unavailable' : getInventoryStockStatus(stock)}</span>
             </div>
             <div class="inventory-card-footer">
-              <button class="btn btn-primary" type="button" onclick="window.selectInventoryProduct(${product.product_id})">Manage</button>
-              <button class="btn btn-danger" type="button" onclick="window.deleteInventoryProduct(${product.product_id})">Delete</button>
+              <button class="btn btn-primary !rounded-xl" type="button" onclick="window.selectInventoryProduct(${product.product_id})">
+                <i class="fas fa-cog mr-1"></i> <span>Manage</span>
+              </button>
+              <button class="btn btn-danger !bg-rose-50 !text-rose-600 !border-rose-100 !rounded-xl" type="button" onclick="window.deleteInventoryProduct(${product.product_id})">
+                <i class="fas fa-trash-alt"></i>
+              </button>
             </div>
           </div>
         `;
@@ -1278,34 +1349,79 @@ function buildInventoryCategoryFilters() {
   });
 }
 
+/**
+ * Updates the Product Details panel with the selected product's information.
+ */
 function updateInventoryDetailPanel() {
   const detailSection = document.getElementById('product-details');
   const emptySection = document.getElementById('detail-empty');
+  
   if (!selectedInventoryProduct) {
     detailSection?.classList.add('hidden');
     emptySection?.classList.remove('hidden');
     return;
   }
+
   detailSection?.classList.remove('hidden');
   emptySection?.classList.add('hidden');
 
-  const stock = Number(selectedInventoryProduct.stock_count) || 0;
+  // Reset file input when switching items
+  const fileInput = document.getElementById('detail-product-image');
+  if (fileInput) fileInput.value = '';
 
-  if (document.getElementById('detail-image')) document.getElementById('detail-image').src = resolveInventoryImagePath(selectedInventoryProduct.product_image);
-  if (document.getElementById('detail-name')) document.getElementById('detail-name').textContent = selectedInventoryProduct.product_name || 'Unnamed';
-  if (document.getElementById('detail-category')) document.getElementById('detail-category').textContent = selectedInventoryProduct.product_category || 'Other';
+  const { product_name, product_category, product_image, product_status, buy_price, stock_count } = selectedInventoryProduct;
+  const stock = Number(stock_count) || 0;
+
+  // Render Panel Header Summary
+  const headerImg = document.getElementById('detail-image');
+  if (headerImg) headerImg.src = resolveInventoryImagePath(product_image);
   
-  const stockLabel = document.getElementById('detail-stock');
-  if (stockLabel) {
-    stockLabel.textContent = `${stock} item${stock === 1 ? '' : 's'}`;
-    stockLabel.className = `status-pill ${getInventoryStatusClass(stock)}`;
+  const headerName = document.getElementById('detail-name');
+  if (headerName) headerName.textContent = product_name || 'Unnamed Product';
+  
+  const headerCat = document.getElementById('detail-category');
+  if (headerCat) headerCat.textContent = product_category || 'Other';
+  
+  const headerStock = document.getElementById('detail-stock');
+  if (headerStock) {
+    headerStock.textContent = `${stock} item${stock === 1 ? '' : 's'}`;
+    headerStock.className = `status-pill ${getInventoryStatusClass(stock)}`;
   }
 
-  if (document.getElementById('detail-name-input')) document.getElementById('detail-name-input').value = selectedInventoryProduct.product_name || '';
-  if (document.getElementById('detail-category-input')) document.getElementById('detail-category-input').value = selectedInventoryProduct.product_category || 'Other';
-  if (document.getElementById('detail-buy-input')) document.getElementById('detail-buy-input').value = Number(selectedInventoryProduct.buy_price || 0).toFixed(2);
-  if (document.getElementById('detail-status-input')) document.getElementById('detail-status-input').value = selectedInventoryProduct.product_status || 'available';
-  if (document.getElementById('detail-stock-input')) document.getElementById('detail-stock-input').value = stock;
+  // Populate Form Fields
+  const fields = {
+    'detail-name-input': product_name || '',
+    'detail-category-input': product_category || 'Other',
+    'detail-buy-input': Number(buy_price || 0).toFixed(2),
+    'detail-status-input': product_status || 'available',
+    'detail-stock-input': stock
+  };
+
+  Object.entries(fields).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  });
+}
+
+/**
+ * Real-time synchronization helper for the detail panel UI components
+ */
+function syncInventoryDetailHeader() {
+  const name = document.getElementById('detail-name-input')?.value;
+  const cat = document.getElementById('detail-category-input')?.value;
+  const stockVal = document.getElementById('detail-stock-input')?.value;
+  const stock = parseInt(stockVal) || 0;
+
+  const hName = document.getElementById('detail-name');
+  const hCat = document.getElementById('detail-category');
+  const hStock = document.getElementById('detail-stock');
+
+  if (hName) hName.textContent = name || 'Unnamed Product';
+  if (hCat) hCat.textContent = cat || 'Other';
+  if (hStock) {
+    hStock.textContent = `${stock} item${stock === 1 ? '' : 's'}`;
+    hStock.className = `status-pill ${getInventoryStatusClass(stock)}`;
+  }
 }
 
 window.selectInventoryProduct = function(productId) {
@@ -1333,13 +1449,24 @@ window.deleteInventoryProduct = function(productId) {
         body: JSON.stringify({ product_id: productId })
       });
 
-      if (!response.ok) throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+      if (!response.ok) {
+        console.error(`Product deletion failed: Server responded with status ${response.status}`);
+        return;
+      }
       
       const text = await response.text();
       let data;
-      try { data = JSON.parse(text); } catch (e) { throw new Error('Invalid server response format.'); }
+      try { 
+        data = JSON.parse(text); 
+      } catch (e) { 
+        console.error('Product deletion failed: Invalid server response format', text);
+        return;
+      }
 
-      if (!data.success) throw new Error(data.message || 'Unable to delete product.');
+      if (!data || !data.success) {
+        console.error('Product deletion failed:', data?.message || 'Operation unsuccessful');
+        return;
+      }
 
       inventoryProducts = inventoryProducts.filter(p => Number(p.product_id) !== Number(productId));
       if (selectedInventoryProduct && Number(selectedInventoryProduct.product_id) === Number(productId)) {
@@ -1347,12 +1474,43 @@ window.deleteInventoryProduct = function(productId) {
       }
       applyInventoryFilters();
       updateInventoryDetailPanel();
-      showInventoryToast(data.message || 'Product deleted successfully.');
     } catch (err) {
       console.error('Delete operation failed:', err);
-      showInventoryToast(err.message || 'A network error occurred while deleting the product.', 'error');
     }
   })();
+};
+
+/**
+ * Polling logic for Inventory Page
+ */
+window.startInventoryPolling = function() {
+  if (inventoryPollInterval) clearInterval(inventoryPollInterval);
+  // Poll every 20 seconds to keep data fresh without overloading the server
+  inventoryPollInterval = setInterval(window.fetchInventorySilent, 20000);
+};
+
+window.stopInventoryPolling = function() {
+  if (inventoryPollInterval) {
+    clearInterval(inventoryPollInterval);
+    inventoryPollInterval = null;
+  }
+};
+
+window.fetchInventorySilent = async function() {
+  try {
+    const data = await fetchWithError(INVENTORY_API);
+    inventoryProducts = Array.isArray(data) ? data : [];
+    
+    // Sync the selected product reference if it exists to maintain UI consistency
+    if (selectedInventoryProduct) {
+      const updated = inventoryProducts.find(p => Number(p.product_id) === Number(selectedInventoryProduct.product_id));
+      if (updated) selectedInventoryProduct = updated;
+    }
+    
+    applyInventoryFilters();
+  } catch (e) {
+    console.error('Silent inventory update failed:', e);
+  }
 };
 
 async function refreshInventoryData() {
@@ -1380,6 +1538,7 @@ async function refreshInventoryData() {
 
 window.initAdminCashierInventoryPage = function() {
   refreshInventoryData();
+  startInventoryPolling();
   
   document.getElementById('inventory-search')?.addEventListener('input', (e) => {
     inventoryFilterState.query = e.target.value;
@@ -1429,21 +1588,30 @@ window.initAdminCashierInventoryPage = function() {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
       
-      if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+      if (!response.ok) {
+        console.error(`Product addition failed: Server responded with status ${response.status}`);
+        return;
+      }
       
       const text = await response.text();
       let data;
-      try { data = JSON.parse(text); } catch (e) { throw new Error('Malformed JSON from server.'); }
+      try { 
+        data = JSON.parse(text); 
+      } catch (e) { 
+        console.error('Product addition failed: Invalid server response format', text);
+        return;
+      }
 
-      if (!data.success) throw new Error(data.message || 'Failed to add product.');
+      if (!data || !data.success) {
+        console.error('Product addition failed:', data?.message || 'Operation unsuccessful');
+        return;
+      }
 
       inventoryProducts.unshift(data.product);
       applyInventoryFilters();
       togglePanel(false);
-      showInventoryToast(data.message || 'New product added to inventory successfully!');
     } catch (err) {
       console.error('Create operation failed:', err);
-      showInventoryToast(err.message || 'A network error occurred while adding the product.', 'error');
     } finally {
       btn.disabled = false;
       btn.innerHTML = originalContent;
@@ -1452,18 +1620,33 @@ window.initAdminCashierInventoryPage = function() {
 
   document.getElementById('detail-category-input')?.addEventListener('change', (e) => {
     if (selectedInventoryProduct) {
-       selectedInventoryProduct.product_category = e.target.value;
-       updateInventoryDetailPanel();
+       syncInventoryDetailHeader();
     }
   });
 
   document.getElementById('btn-add-stock')?.addEventListener('click', () => {
     const i = document.getElementById('detail-stock-input');
-    if (i) i.value = (parseInt(i.value) || 0) + 1;
+    if (i) {
+      i.value = (parseInt(i.value) || 0) + 1;
+      syncInventoryDetailHeader();
+    }
   });
+
   document.getElementById('btn-reduce-stock')?.addEventListener('click', () => {
     const i = document.getElementById('detail-stock-input');
-    if (i) i.value = Math.max(0, (parseInt(i.value) || 0) - 1);
+    if (i) {
+      i.value = Math.max(0, (parseInt(i.value) || 0) - 1);
+      syncInventoryDetailHeader();
+    }
+  });
+
+  // Attach real-time header sync for smoother input interaction
+  ['detail-name-input', 'detail-category-input', 'detail-stock-input'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', syncInventoryDetailHeader);
+      el.addEventListener('change', syncInventoryDetailHeader);
+    }
   });
 
   document.getElementById('btn-save-product')?.addEventListener('click', async (e) => {
@@ -1482,16 +1665,14 @@ window.initAdminCashierInventoryPage = function() {
     fd.append('product_status', document.getElementById('detail-status-input').value);
     fd.append('stock_count', document.getElementById('detail-stock-input').value);
     
-    const img = document.getElementById('detail-product-image').files[0];
-    if (img) {
-      if (img.size > 2 * 1024 * 1024) { // 2MB limit check
-        showInventoryToast('Image file is too large (max 2MB)', 'error');
-        btn.disabled = false;
-        btn.innerHTML = originalContent;
-        return;
-      }
-      fd.append('product_image', img);
+    const img = document.getElementById('detail-product-image')?.files[0];
+    if (img && img.size > 2 * 1024 * 1024) {
+      console.error('Product update blocked: Image size exceeds 2MB limit');
+      btn.disabled = false;
+      btn.innerHTML = originalContent;
+      return;
     }
+    if (img) fd.append('product_image', img);
 
     try {
       const response = await fetch(INVENTORY_UPDATE_API, { 
@@ -1499,20 +1680,24 @@ window.initAdminCashierInventoryPage = function() {
         body: fd,
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
-      
-      if (!response.ok) throw new Error(`Server returned error code ${response.status}`);
+
+      if (!response.ok) {
+        console.error(`Product update failed: Server responded with status ${response.status}`);
+        return;
+      }
 
       const text = await response.text();
       let data;
       try {
         data = JSON.parse(text);
       } catch (jsonErr) {
-        console.error('Server returned non-JSON response:', text);
-        throw new Error('The server returned an invalid response. Check the console for details.');
+        console.error('Product update failed: Malformed response from server', text);
+        return;
       }
 
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to update product data.');
+      if (!data || !data.success) {
+        console.error('Product update failed:', data?.message || 'Operation unsuccessful');
+        return;
       }
 
       selectedInventoryProduct = data.product;
@@ -1521,10 +1706,8 @@ window.initAdminCashierInventoryPage = function() {
       
       applyInventoryFilters();
       updateInventoryDetailPanel();
-      showInventoryToast(data.message || 'Product changes have been saved successfully!');
     } catch (err) {
       console.error('Update operation failed:', err);
-      showInventoryToast(err.message || 'A network error occurred while saving product changes.', 'error');
     } finally {
       btn.disabled = false;
       btn.innerHTML = originalContent;
@@ -1551,33 +1734,59 @@ let dashInventoryChartInstance = null;
 let dashTopProductsChartInstance = null;
 
 async function fetchTopSellingTable() {
+  const container = document.getElementById('topSellingContainer');
+  if (!container) return;
+
   try {
     const response = await fetch('../../actions/get_admincashier_sales.php?period=month');
     const data = await response.json();
-    const tableBody = document.getElementById('topSellingTableBody');
     
-    if (!tableBody) return;
-    tableBody.innerHTML = '';
+    container.innerHTML = '';
 
     // Ensure we handle both structured and flat API responses
     const payload = data.data || data;
 
     if (payload.top_products && payload.top_products.length > 0) {
-      payload.top_products.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="font-weight: 600; color: var(--text);">${item.name}</td>
-          <td style="text-align: right;">
-            <span class="badge" style="background: var(--primary-soft); color: var(--primary); font-weight: 700; padding: 4px 10px; border-radius: 8px;">${item.quantity} sold</span>
-          </td>
+      // Calculate max quantity to scale progress bars
+      const maxQty = Math.max(...payload.top_products.map(p => p.quantity));
+
+      payload.top_products.forEach((item, index) => {
+        const percentage = (item.quantity / maxQty) * 100;
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'flex flex-col gap-1.5 transition-all duration-300 hover:translate-x-1';
+        itemDiv.innerHTML = `
+          <div class="flex justify-between items-center text-sm">
+            <div class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-[10px] font-bold">${index + 1}</span>
+              <span class="font-semibold text-gray-700 truncate max-w-[140px] md:max-w-[200px]" title="${item.name}">${item.name}</span>
+            </div>
+            <span class="font-bold text-blue-600 text-xs">${item.quantity} <span class="text-[9px] text-gray-400 font-normal uppercase ml-0.5">Units</span></span>
+          </div>
+          <div class="w-full bg-gray-50 rounded-full h-1.5 overflow-hidden border border-gray-100">
+            <div class="bg-gradient-to-r from-blue-400 to-blue-600 h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%" data-target-width="${percentage}%"></div>
+          </div>
         `;
-        tableBody.appendChild(tr);
+        container.appendChild(itemDiv);
+        
+        // Animate bar on next frame
+        requestAnimationFrame(() => {
+          const bar = itemDiv.querySelector('[data-target-width]');
+          if (bar) bar.style.width = bar.getAttribute('data-target-width');
+        });
       });
     } else {
-      tableBody.innerHTML = '<tr><td colspan="2" class="empty-state">No sales recorded this month.</td></tr>';
+      container.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-12 text-center opacity-60">
+          <div class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+            <i class="fas fa-box-open text-gray-300"></i>
+          </div>
+          <p class="text-sm font-medium text-gray-500">No sales this month</p>
+          <p class="text-[10px] text-gray-400 px-6 mt-1">Monthly data will appear here as transactions are completed.</p>
+        </div>`;
     }
   } catch (error) {
     console.error('Error fetching top products table:', error);
+    container.innerHTML = '<div class="text-xs text-rose-500 text-center py-8">Error loading monthly sales data</div>';
   }
 }
 

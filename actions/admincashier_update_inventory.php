@@ -1,4 +1,4 @@
-﻿﻿<?php
+﻿﻿﻿﻿<?php
 // Force JSON output even if errors occur
 header('Content-Type: application/json');
 ini_set('display_errors', '0'); // Prevent HTML error output
@@ -6,7 +6,7 @@ ob_start(); // Buffer any accidental output
 
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['admin', 'admincashier', 'superadmin']);
+requireAuth(['admin', 'admincashier', 'superadmin', 'cashier']);
 
 try {
     require_once __DIR__ . '/../database/connection.php';
@@ -72,10 +72,10 @@ try {
     }
 
     // Sanitize and validate other product data
-    $productName = filter_input(INPUT_POST, 'product_name', FILTER_SANITIZE_STRING);
-    $productCategory = filter_input(INPUT_POST, 'product_category', FILTER_SANITIZE_STRING);
+    $productName = isset($_POST['product_name']) ? trim($_POST['product_name']) : null;
+    $productCategory = isset($_POST['product_category']) ? trim($_POST['product_category']) : null;
     $buyPrice = filter_input(INPUT_POST, 'buy_price', FILTER_VALIDATE_FLOAT);
-    $productStatus = filter_input(INPUT_POST, 'product_status', FILTER_SANITIZE_STRING);
+    $productStatus = isset($_POST['product_status']) ? trim($_POST['product_status']) : null;
     $stockCount = filter_input(INPUT_POST, 'stock_count', FILTER_VALIDATE_INT);
 
     if (!$productName || !$productCategory || $buyPrice === false || !$productStatus || $stockCount === false) {
