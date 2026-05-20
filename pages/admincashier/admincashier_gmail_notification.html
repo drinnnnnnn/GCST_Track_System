@@ -351,9 +351,19 @@
         <label for="modalMessage">Message</label>
         <textarea id="modalMessage" placeholder="Write your notification message"></textarea>
       </div>
+      <div class="modal-row">
+        <label for="modalAttachments" class="flex items-center gap-2 cursor-pointer text-blue-600 hover:text-blue-800 font-semibold text-sm transition-colors">
+          <i class="fas fa-paperclip"></i> Add Attachments (Images/Files)
+        </label>
+        <input id="modalAttachments" name="attachments[]" type="file" multiple class="hidden" onchange="window.updateAttachmentUI()" />
+        <div id="attachmentPreview" class="flex flex-wrap gap-2 mt-2"></div>
+        <p class="text-[10px] text-gray-400 mt-1 italic">Maximum 5MB per file. Allowed: JPG, PNG, PDF, DOCX, ZIP, CSV.</p>
+      </div>
       <div class="modal-actions">
         <button class="toolbar-button secondary" id="modalCancelBtn">Cancel</button>
-        <button class="toolbar-button primary" id="modalSendBtn">Send Email</button>
+        <button class="toolbar-button primary" id="modalSendBtn">
+          <i class="fas fa-paper-plane"></i> Send Email
+        </button>
       </div>
     </div>
   </div>
@@ -367,6 +377,115 @@
         window.loadGmailData();
         window.attachEmailFilters();
         window.startGmailPolling();
+      }
+
+      // --- New Attachment UI Logic ---
+      window.updateAttachmentUI = function() {
+        const input = document.getElementById('modalAttachments');
+        const container = document.getElementById('attachmentPreview');
+        const allowedExts = ['jpg', 'jpeg', 'png', 'pdf', 'docx', 'zip', 'csv', 'xlsx'];
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        
+        container.innerHTML = '';
+        const validFiles = new DataTransfer();
+        
+        Array.from(input.files).forEach((file) => {
+          const ext = file.name.split('.').pop().toLowerCase();
+          if (!allowedExts.includes(ext)) {
+            alert(`File type not allowed: ${file.name}\nPlease use JPG, PNG, PDF, DOCX, ZIP, or CSV.`);
+            return;
+          }
+          if (file.size > maxSize) {
+            alert(`File too large: ${file.name} (Max 5MB)`);
+            return;
+          }
+          
+          validFiles.items.add(file);
+          
+          const size = (file.size / 1024 / 1024).toFixed(2);
+          const badge = document.createElement('div');
+          badge.className = 'px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-[11px] flex items-center gap-2 shadow-sm animate-in fade-in duration-200';
+          badge.innerHTML = `
+            <i class="${file.type.startsWith('image/') ? 'fas fa-image text-blue-500' : 'fas fa-file-alt text-gray-400'}"></i>
+            <span class="max-w-[120px] truncate font-medium text-gray-700">${file.name}</span>
+            <span class="text-gray-400">${size}MB</span>
+            <button onclick="window.removeAttachment('${file.name}')" class="text-gray-400 hover:text-red-500 transition-colors ml-1">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          `;
+          container.appendChild(badge);
+        });
+        
+        input.files = validFiles.files;
+      };
+
+      window.removeAttachment = function(fileName) {
+        const input = document.getElementById('modalAttachments');
+        const dt = new DataTransfer();
+        Array.from(input.files).forEach(file => {
+          if (file.name !== fileName) dt.items.add(file);
+        });
+        input.files = dt.files;
+        window.updateAttachmentUI();
+      };
+
+      // --- Manual Email Sending Logic ---
+      const modalSendBtn = document.getElementById('modalSendBtn');
+      if (modalSendBtn) {
+        modalSendBtn.addEventListener('click', async () => {
+          const recipient = document.getElementById('modalRecipient').value.trim();
+          const subject = document.getElementById('modalSubject').value.trim();
+          const message = document.getElementById('modalMessage').value.trim();
+          const type = document.getElementById('modalType').value;
+          const fileInput = document.getElementById('modalAttachments');
+
+          if (!recipient || !subject || !message) {
+            alert("Recipient, Subject, and Message are all required.");
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append('recipient', recipient);
+          formData.append('subject', subject);
+          formData.append('message', message);
+          formData.append('type', type);
+          
+          Array.from(fileInput.files).forEach(file => {
+            formData.append('attachments[]', file);
+          });
+
+          modalSendBtn.disabled = true;
+          modalSendBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Sending...';
+
+          try {
+            const response = await fetch('send_manual_email.php', {
+              method: 'POST',
+              body: formData
+            });
+            
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Server Error (${response.status}): ${errorText.substring(0, 100)}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.success) {
+              alert("Email sent successfully!");
+              document.getElementById('emailModal').classList.remove('open');
+              // Refresh log table
+              if (window.loadGmailData) window.loadGmailData();
+            } else {
+              alert("Failed to send email: " + (result.message || 'Unknown error'));
+            }
+          } catch (error) {
+            console.error("Manual send error:", error);
+            alert("Communication Error: " + error.message);
+          } finally {
+            modalSendBtn.disabled = false;
+            modalSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Email';
+          }
+        });
       }
     });
   </script>
