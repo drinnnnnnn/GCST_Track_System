@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -295,6 +295,7 @@
     initializeAdminCashierPage((userData) => {
       loadActiveQueues();
       startQueuePolling();
+      startTimerUpdates();
       // dedicated 1-second clock update for smoother real-time feel
       setInterval(() => {
         const timeEl = document.getElementById('display-current-time');
@@ -304,6 +305,36 @@
 
     let lastQueueState = null;
     let isFetching = false;
+    const EXPIRATION_LIMIT_MS = 2 * 60 * 60 * 1000; // 2 Hours in ms
+
+    function startTimerUpdates() {
+      setInterval(() => {
+        document.querySelectorAll('.expiration-timer[data-created]').forEach(el => {
+          const createdAt = new Date(el.dataset.created).getTime();
+          const status = el.dataset.status;
+          
+          if (status === 'serving') {
+            el.textContent = 'Active session';
+            el.classList.replace('text-red-400', 'text-blue-400');
+            return;
+          }
+
+          const now = new Date().getTime();
+          const diff = (createdAt + EXPIRATION_LIMIT_MS) - now;
+          const isNearExpiry = diff < (10 * 60 * 1000); // 10 minutes remaining
+
+          if (diff <= 0) {
+            el.textContent = 'Expiring...';
+            el.classList.add('text-red-600');
+          } else {
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const secs = Math.floor((diff % (1000 * 60)) / 1000);
+            el.textContent = `Expires in: ${mins}m ${secs}s`;
+            if (isNearExpiry) el.classList.add('text-orange-500');
+          }
+        });
+      }, 1000);
+    }
 
     function loadActiveQueues() {
       if (isFetching) return Promise.resolve();
@@ -336,12 +367,15 @@
 
       container.innerHTML = tickets.map(t => `
         <div class="queue-item ${t.status === 'serving' ? 'border-blue-500 bg-blue-50' : ''}" id="ticket-${t.id}">
-          <div class="expiration-timer text-[10px] text-red-400 font-bold absolute top-1 right-2">
-            ${t.status === 'serving' ? 'Active session' : 'Waiting...'}
+          <div class="expiration-timer text-[10px] text-red-400 font-bold absolute top-1 right-2" 
+               data-created="${t.created_at}" 
+               data-status="${t.status}">
+            Calculating...
           </div>
           <div class="queue-details">
             <div class="flex items-center gap-2 mb-1">
               <span class="status-badge status-${t.status}">${t.status.toUpperCase()}</span>
+              ${t.expiry_alert_sent == 1 ? '<span class="text-orange-500 animate-pulse" title="Expiration Warning Sent"><i class="fas fa-bell"></i></span>' : ''}
               <span class="font-bold text-gray-800">${t.student_name || 'Walk-in'}</span>
               <span class="text-xs text-gray-400 font-mono">[${t.school_id || 'N/A'}]</span>
             </div>

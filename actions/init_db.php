@@ -257,6 +257,7 @@ addColumnIfNotExists($mysqli, 'cashier_transactions', 'payment_status', "ENUM('p
 // Ensure email log columns match the helper logic
 addColumnIfNotExists($mysqli, 'email_notifications', 'notification_type', "VARCHAR(100) DEFAULT NULL AFTER `subject` ");
 addColumnIfNotExists($mysqli, 'email_notifications', 'error_message', "TEXT DEFAULT NULL AFTER `status` ");
+addColumnIfNotExists($mysqli, 'email_notifications', 'phone_number', "VARCHAR(20) DEFAULT NULL AFTER `recipient` "); // NEW: Add phone_number column
 addColumnIfNotExists($mysqli, 'email_notifications', 'email_body', "LONGTEXT DEFAULT NULL AFTER `error_message` ");
 
 // If the queue_number column exists as INT, ensure it is text-capable.

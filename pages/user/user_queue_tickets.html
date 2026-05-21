@@ -11,7 +11,7 @@
   <style>
     .queue-summary-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 18px;
       margin-bottom: 24px;
     }
@@ -264,12 +264,6 @@
       100% { transform: translateX(100%); }
     }
 
-    @media (max-width: 1024px) {
-      .queue-summary-grid {
-        grid-template-columns: repeat(2, minmax(180px, 1fr));
-      }
-    }
-
     @media (max-width: 700px) {
       .queue-summary-grid,
       .action-panel,
@@ -339,8 +333,7 @@
           <select id="ticket-purpose" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); cursor: pointer;">
             <option value="">-- Select Purpose --</option>
             <option value="Payment">Payment / Cashier</option>
-            <option value="Rental">New Rental</option>
-            <option value="Return">Returning Items</option>
+            <option value="Tuition Payment">Tuition Payment</option>
             <option value="Inquiry">General Inquiry</option>
             <option value="Other">Other</option>
           </select>
@@ -370,8 +363,8 @@
           <p class="ticket-meta" id="latest-ticket-wait">Waiting time: -</p>
         </div>
         <div class="ticket-actions" id="latest-ticket-actions">
-          <button class="btn-action btn-save" onclick="saveTicket(currentTicketId)"><i class="fas fa-download"></i> Save Ticket</button>
-          <button class="btn-action btn-print" onclick="printTicket(currentTicketId)"><i class="fas fa-print"></i> Print Ticket</button>
+          <button class="btn-action btn-email" onclick="sendTicketEmail(currentTicketId)"><i class="fas fa-paper-plane"></i> Send Ticket</button>
+          <button class="btn-action btn-danger" onclick="cancelTicket(currentTicketId)"><i class="fas fa-times-circle"></i> Cancel Ticket</button>
         </div>
       </div>
     </section>
@@ -418,13 +411,15 @@
 
     function mapStatus(status) {
       const normalized = String(status || 'waiting').toLowerCase();
-      if (normalized === 'cancelled' || normalized === 'expired') return 'Expired';
+      if (normalized === 'cancelled') return 'Cancelled';
+      if (normalized === 'expired') return 'Expired';
       return normalized.charAt(0).toUpperCase() + normalized.slice(1);
     }
 
     function statusClass(status) {
       const normalized = String(status || 'waiting').toLowerCase();
-      if (normalized === 'cancelled' || normalized === 'expired') return 'expired';
+      if (normalized === 'cancelled') return 'expired'; // Keep red background
+      if (normalized === 'expired') return 'expired';
       if (normalized === 'completed') return 'completed';
       if (normalized === 'serving') return 'serving';
       return 'waiting';
@@ -497,8 +492,10 @@
             </div>
           ` : ''}
           <div class="ticket-actions">
-            <button class="btn-action btn-save" onclick="saveTicket(${ticket.id})"><i class="fas fa-download"></i> Save</button>
             <button class="btn-action btn-print" onclick="printTicket(${ticket.id})"><i class="fas fa-print"></i> Print</button>
+            ${(ticket.status === 'waiting' || ticket.status === 'serving') ? `
+              <button class="btn-action btn-danger" onclick="cancelTicket(${ticket.id})"><i class="fas fa-times-circle"></i> Cancel</button>
+            ` : ''}
           </div>
         </div>
       `).join('');
@@ -544,6 +541,8 @@
       const purposeEl = document.getElementById('latest-ticket-purpose');
       const statusEl = document.getElementById('latest-ticket-status');
       const actionsEl = document.getElementById('latest-ticket-actions');
+      const cancelButton = actionsEl?.querySelector('.btn-danger');
+
       if (!ticket) {
         if (numberEl) numberEl.textContent = '-';
         if (createdEl) createdEl.textContent = 'Generated: -';
@@ -551,7 +550,7 @@
         if (nameEl) nameEl.textContent = '';
         if (purposeEl) purposeEl.textContent = '';
         if (statusEl) statusEl.textContent = 'Waiting';
-        if (actionsEl) actionsEl.style.display = 'none';
+        if (actionsEl) actionsEl.classList.add('hidden');
         return;
       }
       if (numberEl) numberEl.textContent = ticket.queue_number;
@@ -563,11 +562,25 @@
         statusEl.textContent = mapStatus(ticket.status);
         statusEl.className = `ticket-status ${statusClass(ticket.status)}`;
       }
-      if (actionsEl) actionsEl.style.display = 'flex';
+      if (actionsEl) actionsEl.classList.remove('hidden');
+      if (cancelButton) {
+        cancelButton.classList.toggle('hidden', !(ticket.status === 'waiting' || ticket.status === 'serving'));
+      }
     }
 
     async function refreshQueueStatus() {
-      await Promise.all([loadQueueStatus(), loadUserTickets()]);
+      try {
+        // Parallel load status and check for alerts
+        await Promise.all([
+          loadQueueStatus(), 
+          loadUserTickets(),
+          // Trigger the email notification processor
+          fetch('../../actions/process_queue_alerts.php').then(r => r.json())
+        ]);
+        document.getElementById('last-updated-text').textContent = `Last updated: ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+      } catch (e) {
+        console.warn('Queue background processing failed:', e);
+      }
     }
 
     async function generateNewTicket() {
@@ -607,17 +620,35 @@
       }
     }
 
-    function saveTicket(ticketId) {
-      const ticket = allTickets.find(t => t.id === ticketId);
-      if (!ticket) return;
-      const content = `Queue Ticket\n\nTicket Number: ${ticket.queue_number}\nStatus: ${mapStatus(ticket.status)}\nGenerated: ${formatDateTime(ticket.created_at)}\n${ticket.served_at ? `Served: ${formatDateTime(ticket.served_at)}\n` : ''}`;
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `queue-ticket-${ticket.queue_number}.txt`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    async function sendTicketEmail(ticketId) {
+      if (!ticketId) {
+        showConfirmation('No ticket selected.', true);
+        return;
+      }
+
+      const btn = event.currentTarget;
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Notifying...';
+
+      try {
+        const response = await fetchWithError('../../actions/send_ticket_email.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ticket_id: ticketId })
+        });
+
+        if (response.success) {
+          showConfirmation(response.message || 'Ticket sent successfully via Email/SMS!');
+        } else {
+          throw new Error(response.message || 'Failed to send notification.');
+        }
+      } catch (error) {
+        showConfirmation(error.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
     }
 
     function printTicket(ticketId) {
@@ -655,6 +686,39 @@
       if (clock) clock.textContent = formatted;
     }
 
+    async function cancelTicket(ticketId) {
+      if (!ticketId) {
+        showConfirmation('No ticket selected for cancellation.', true);
+        return;
+      }
+
+      if (!confirm('Are you sure you want to cancel this queue ticket? This action cannot be undone.')) {
+        return;
+      }
+
+      try {
+        const response = await fetchWithError('../../actions/cancel_queue_ticket.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ticket_id: ticketId })
+        });
+
+        if (response.success) {
+          showConfirmation(`Ticket ${response.queue_number} has been cancelled.`);
+          await refreshQueueStatus(); 
+        } else {
+          throw new Error(response.message || 'Failed to cancel ticket.');
+        }
+      } catch (error) {
+        console.error('Error cancelling ticket:', error);
+        // Handle non-JSON or server crash errors more gracefully
+        const userMessage = error.message.includes('JSON') 
+          ? 'Server communication error. Please try again.' 
+          : error.message;
+        showConfirmation(userMessage, true);
+      }
+    }
+
     document.querySelectorAll('.filter-button').forEach(btn => {
       btn.addEventListener('click', e => {
         document.querySelectorAll('.filter-button').forEach(item => item.classList.remove('active'));
@@ -684,6 +748,7 @@
       updateLiveClock();
       setInterval(updateLiveClock, 1000);
       await refreshQueueStatus();
+      await loadTuitionBalance();
       setInterval(refreshQueueStatus, 30000);
     });
   </script>

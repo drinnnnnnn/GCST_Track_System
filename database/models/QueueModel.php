@@ -6,7 +6,12 @@ class QueueModel {
 
     public function __construct() {
         $this->conn = Database::getConnection();
+        $this->conn->query("SET time_zone = '+08:00'"); // Synchronize with Asia/Manila
         $this->ensureTableExists();
+    }
+
+    public function getConnection() {
+        return $this->conn;
     }
 
     private function ensureTableExists() {
@@ -21,6 +26,8 @@ class QueueModel {
             `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `served_at` TIMESTAMP NULL DEFAULT NULL,
             `alert_sent` TINYINT(1) DEFAULT 0,
+            `serving_alert_sent` TINYINT(1) DEFAULT 0,
+            `expiry_alert_sent` TINYINT(1) DEFAULT 0,
             PRIMARY KEY (`id`),
             KEY `idx_queue_user` (`user_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
@@ -34,6 +41,18 @@ class QueueModel {
             $res = $this->conn->query("SHOW COLUMNS FROM `$tableName` LIKE 'alert_sent'");
             if ($res && $res->num_rows === 0) {
                 $this->conn->query("ALTER TABLE `$tableName` ADD COLUMN `alert_sent` TINYINT(1) DEFAULT 0 AFTER `served_at` ");
+            }
+
+            // Ensure expiry_alert_sent column exists
+            $res = $this->conn->query("SHOW COLUMNS FROM `$tableName` LIKE 'expiry_alert_sent'");
+            if ($res && $res->num_rows === 0) {
+                $this->conn->query("ALTER TABLE `$tableName` ADD COLUMN `expiry_alert_sent` TINYINT(1) DEFAULT 0 AFTER `alert_sent` ");
+            }
+
+            // Ensure serving_alert_sent column exists for the new notification feature
+            $res = $this->conn->query("SHOW COLUMNS FROM `$tableName` LIKE 'serving_alert_sent'");
+            if ($res && $res->num_rows === 0) {
+                $this->conn->query("ALTER TABLE `$tableName` ADD COLUMN `serving_alert_sent` TINYINT(1) DEFAULT 0 AFTER `alert_sent` ");
             }
 
             error_log("QueueModel: Attempted to ensure table '$tableName' structure is correct.");
@@ -78,7 +97,7 @@ class QueueModel {
     }
 
     public function getByIdWithDetails($id) {
-        $stmt = $this->conn->prepare("SELECT q.*, u.student_id as school_id 
+        $stmt = $this->conn->prepare("SELECT q.*, u.student_id as school_id, u.email, u.phone, u.contact_number, u.first_name, u.last_name 
                                      FROM queue_tickets q 
                                      LEFT JOIN users u ON q.user_id = u.id 
                                      WHERE q.id = ? LIMIT 1");
@@ -124,7 +143,7 @@ class QueueModel {
     }
 
     /**
-     * Automatically cancels tickets that have been waiting or serving for more than 1 minute.
+     * Automatically cancels tickets that have been waiting or serving for more than 2 hours.
      */
     public function expireTickets() {
         // Use SQL intervals to ensure consistency with the database clock
@@ -132,8 +151,8 @@ class QueueModel {
                 SET status = 'cancelled' 
                 WHERE status IN ('waiting', 'serving') 
                 AND (
-                    (status = 'waiting' AND created_at < (NOW() - INTERVAL 1 MINUTE)) OR 
-                    (status = 'serving' AND served_at < (NOW() - INTERVAL 1 MINUTE))
+                    (status = 'waiting' AND created_at < (NOW() - INTERVAL 2 HOUR)) OR 
+                    (status = 'serving' AND served_at < (NOW() - INTERVAL 1 HOUR))
                 )";
         $this->conn->query($sql);
         return $this->conn->affected_rows;
@@ -143,7 +162,7 @@ class QueueModel {
      * Retrieves the next person in line who hasn't been alerted yet.
      */
     public function getNextToNotify() {
-        $sql = "SELECT q.*, u.phone, u.contact_number 
+        $sql = "SELECT q.*, u.email, u.phone, u.contact_number, u.first_name, u.last_name 
                 FROM queue_tickets q 
                 LEFT JOIN users u ON q.user_id = u.id 
                 WHERE q.status = 'waiting' AND q.alert_sent = 0 
@@ -153,10 +172,60 @@ class QueueModel {
     }
 
     /**
+     * Retrieves the person currently being served who hasn't been emailed yet.
+     */
+    public function getServingToNotify() {
+        $sql = "SELECT q.*, u.email, u.phone, u.contact_number, u.first_name, u.last_name 
+                FROM queue_tickets q 
+                LEFT JOIN users u ON q.user_id = u.id 
+                WHERE q.status = 'serving' AND q.serving_alert_sent = 0 
+                ORDER BY q.served_at DESC LIMIT 1";
+        $result = $this->conn->query($sql);
+        return $result->fetch_assoc();
+    }
+
+    /**
      * Marks a ticket as having been notified.
      */
     public function markAlertSent($id) {
         $stmt = $this->conn->prepare("UPDATE queue_tickets SET alert_sent = 1 WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        return $stmt->execute();
+    }
+
+    /**
+     * Marks a ticket as having been notified that they are being served.
+     */
+    public function markServingAlertSent($id) {
+        $stmt = $this->conn->prepare("UPDATE queue_tickets SET serving_alert_sent = 1 WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        return $stmt->execute();
+    }
+
+    /**
+     * Retrieves waiting tickets that are nearing their 2-hour expiration.
+     * Threshold: minutes since creation (e.g., 110 mins for a 10-min warning).
+     */
+    public function getTicketsNearingExpiry($minutesThreshold = 110) {
+        $sql = "SELECT q.*, u.email 
+                FROM queue_tickets q 
+                LEFT JOIN users u ON q.user_id = u.id 
+                WHERE q.status = 'waiting' 
+                AND q.expiry_alert_sent = 0 
+                AND q.created_at < (NOW() - INTERVAL ? MINUTE)";
+        $stmt = $this->conn->prepare($sql);
+        if (!$stmt) return [];
+        
+        $stmt->bind_param("i", $minutesThreshold);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+
+    /**
+     * Marks a ticket as having been notified about upcoming expiration.
+     */
+    public function markExpiryAlertSent($id) {
+        $stmt = $this->conn->prepare("UPDATE queue_tickets SET expiry_alert_sent = 1 WHERE id = ?");
         $stmt->bind_param("i", $id);
         return $stmt->execute();
     }
