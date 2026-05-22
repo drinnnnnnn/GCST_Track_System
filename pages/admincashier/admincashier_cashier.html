@@ -825,11 +825,12 @@
           <!-- Customer Info Section -->
           <div class="checkout-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <label class="checkout-label" for="checkout-student-id" style="margin-bottom: 0;">Student Information</label>
+                <label class="checkout-label" style="margin-bottom: 0;">Customer Information</label>
+                <button id="guest-toggle-btn" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.7rem; border-radius: 8px;" onclick="toggleGuestMode()"><i class="fas fa-user-secret"></i> Use Guest</button>
             </div>
             <div style="display: flex; flex-direction: column; gap: 6px;">
                 <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">ID Reference</span>
-                <input id="checkout-student-id" type="text" class="search-input" placeholder="Waiting for scan..." style="background: #f8fafc; color: #64748b; font-weight: 600; cursor: not-allowed; border: 1px solid #e2e8f0; padding: 10px 16px;" readonly />
+                <input id="checkout-student-id" type="text" class="search-input" placeholder="Enter ID or Scan..." style="background: #fff; color: #1e293b; font-weight: 600; border: 1px solid #e2e8f0; padding: 10px 16px;" oninput="updateTransactionSettings()" />
             </div>
             <div id="student-info-display" style="margin-top: 12px; padding: 12px; border-radius: 16px; background: #fff; border: 2px solid #f1f5f9; display: flex; align-items: center; gap: 14px; transition: all 0.3s ease;">
                 <div id="student-avatar-box" style="width: 44px; height: 44px; border-radius: 50%; background: #f8fafc; display: flex; align-items: center; justify-content: center; color: #94a3b8; border: 1px solid #e2e8f0;">
@@ -839,6 +840,21 @@
                     <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Authenticated Name</span>
                     <div id="student-name-text" style="font-weight: 700; color: #1e293b; font-size: 1rem; line-height: 1.2;">Not Identified</div>
                     <div id="student-status-text" style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; margin-top: 4px;"></div>
+                </div>
+            </div>
+            <!-- Guest Information Fields -->
+            <div id="guest-info-fields" class="hidden" style="margin-top: 12px; padding: 16px; border-radius: 20px; background: #fff; border: 2px solid #f1f5f9; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label class="checkout-label" style="font-size: 0.65rem; margin-bottom: 2px;">Guest Full Name</label>
+                    <input id="guest-name" type="text" class="search-input" placeholder="Enter full name" style="padding: 10px 14px; font-size: 0.9rem; background: #f8fafc;" />
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label class="checkout-label" style="font-size: 0.65rem; margin-bottom: 2px;">School ID (Required)</label>
+                    <input id="guest-school-id" type="text" class="search-input" placeholder="GC-000000" maxlength="9" style="padding: 10px 14px; font-size: 0.9rem; background: #f8fafc; font-family: monospace; font-weight: 700;" />
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label class="checkout-label" style="font-size: 0.65rem; margin-bottom: 2px;">Active Email Address</label>
+                    <input id="guest-email" type="email" class="search-input" placeholder="for digital receipt" style="padding: 10px 14px; font-size: 0.9rem; background: #f8fafc;" />
                 </div>
             </div>
           </div>
@@ -1023,6 +1039,7 @@
       cashReceived: 0,
       paymentStatus: 'paid', // Default to paid
       studentId: '',
+      isGuest: false,
       isQRScanned: false,
       scannedTxnNumber: null
     };
@@ -1215,6 +1232,48 @@
       updateCartSummary();
     }
 
+    function validateEmail(email) {
+      // Enforce valid Gmail address format
+      const re = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+      return re.test(email);
+    }
+
+    function validateSchoolId(id) {
+      return /^GC-\d{6}$/.test(id);
+    }
+
+    function toggleGuestMode() {
+      state.isGuest = !state.isGuest;
+      const btn = document.getElementById('guest-toggle-btn');
+      const input = document.getElementById('checkout-student-id');
+      const studentDisplay = document.getElementById('student-info-display');
+      const guestFields = document.getElementById('guest-info-fields');
+      
+      if (state.isGuest) {
+        state.studentId = '';
+        input.value = 'GUEST-CUSTOMER';
+        input.disabled = true;
+        btn.innerHTML = '<i class="fas fa-user-graduate"></i> Use Student';
+        btn.classList.replace('btn-secondary', 'btn-primary');
+        updateStudentDisplay('GUEST'); 
+        studentDisplay.classList.add('hidden');
+        guestFields.classList.remove('hidden');
+      } else {
+        input.value = '';
+        input.disabled = false;
+        btn.innerHTML = '<i class="fas fa-user-secret"></i> Use Guest';
+        btn.classList.replace('btn-primary', 'btn-secondary');
+        updateStudentDisplay('');
+        studentDisplay.classList.remove('hidden');
+        guestFields.classList.add('hidden');
+        // Clear guest inputs
+        document.getElementById('guest-name').value = '';
+        document.getElementById('guest-school-id').value = '';
+        document.getElementById('guest-email').value = '';
+      }
+      updateTransactionSettings();
+    }
+
     function syncCartProductPrices() {
       if (!products || products.length === 0) {
           updateCartSummary();
@@ -1230,11 +1289,6 @@
       updateCartSummary();
     }
     function addProductToCart(productId) {
-      if (!state.isQRScanned) {
-        alert('Action Restricted: Please scan a valid Order or Renewal QR code before adding items to the cart.');
-        openQRScanner();
-        return;
-      }
       const product = products.find(p => p.product_id == productId);
       if (!product) return;
 
@@ -1341,6 +1395,13 @@
       const statusText = document.getElementById('student-status-text');
       const avatarBox = document.getElementById('student-avatar-box');
 
+      if (id === 'GUEST') {
+        nameText.textContent = 'Guest Customer';
+        statusText.textContent = 'No Account Required';
+        statusText.style.color = '#64748b';
+        return;
+      }
+
       if (!id) {
         nameText.textContent = 'Not Identified';
         statusText.textContent = '';
@@ -1420,9 +1481,34 @@
       }
       updateTransactionSettings();
 
-      if (state.transactionType === 'rent' && !state.studentId) {
-        alert('A valid Student ID is required for rental transactions. Please enter a Student ID before proceeding.');
-        return;
+      if (state.transactionType === 'rent') {
+          if (state.isGuest) {
+            alert('Rental is restricted to registered students only. Please use a valid Student ID or switch to "Buy" mode.');
+            return;
+          }
+          if (!state.studentId) {
+            alert('A valid Student ID is required for rental transactions.');
+            return;
+          }
+      }
+
+      if (state.isGuest) {
+          const gName = document.getElementById('guest-name').value.trim();
+          const gEmail = document.getElementById('guest-email').value.trim();
+          const gSchoolId = document.getElementById('guest-school-id').value.trim();
+          
+          if (!gName) {
+              alert('Guest Name is required for identifying the transaction.');
+              return;
+          }
+          if (!gSchoolId || !validateSchoolId(gSchoolId)) {
+              alert('A valid School ID is required for Guests. Format: GC-###### (e.g., GC-123456).');
+              return;
+          }
+          if (!gEmail || !validateEmail(gEmail)) {
+              alert('A valid Gmail address (@gmail.com) is required for the digital receipt.');
+              return;
+          }
       }
 
       const subtotal = selectedItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
@@ -1441,6 +1527,10 @@
 
       const payload = {
         student_id: state.studentId,
+        is_guest: state.isGuest,
+        guest_name: state.isGuest ? document.getElementById('guest-name').value.trim() : null,
+        guest_school_id: state.isGuest ? document.getElementById('guest-school-id').value.trim() : null,
+        guest_email: state.isGuest ? document.getElementById('guest-email').value.trim() : null,
         transaction_type: state.transactionType,
         is_scanned: state.isQRScanned,
         original_txn_number: state.scannedTxnNumber,
@@ -2087,6 +2177,16 @@
     });
     document.getElementById('checkout-student-id').addEventListener('input', () => {
       updateTransactionSettings(); // This will trigger updateStudentDisplay
+    });
+
+    // Optimized Guest School ID Input Formatting (GC-123456)
+    document.getElementById('guest-school-id').addEventListener('input', function(e) {
+      // Extract only numeric digits
+      let digits = this.value.replace(/\D/g, '');
+      // Limit to exactly 6 digits
+      if (digits.length > 6) digits = digits.substring(0, 6);
+      // Real-time format: Prepend prefix only if there's input
+      this.value = digits.length > 0 ? 'GC-' + digits : '';
     });
 
     // UX enhancement for Cash Received field: Clear zero on focus, format on blur

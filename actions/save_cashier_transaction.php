@@ -43,16 +43,33 @@ try {
     $adminId = $_SESSION['admin_id'] ?? null;
     $cashierName = $_SESSION['name'] ?? 'Admin Cashier';
     $payload = json_decode(file_get_contents('php://input'), true);
+    $isGuest = $payload['is_guest'] ?? false;
+    $guestName = $payload['guest_name'] ?? null;
+    $guestSchoolId = $payload['guest_school_id'] ?? null;
+    $guestEmail = $payload['guest_email'] ?? null;
     
+    // Guest Validation Enforcement
+    if ($isGuest) {
+        if (empty($guestName)) throw new Exception('Guest Name is required.');
+        
+        if (empty($guestSchoolId) || !preg_match('/^GC-\d{6}$/', $guestSchoolId)) {
+            throw new Exception('A valid School ID (GC-######) is required for guest transactions.');
+        }
+        if (empty($guestEmail) || !preg_match('/^[a-zA-Z0-9._%+-]+@gmail\.com$/', $guestEmail)) {
+            throw new Exception('Valid Gmail address (@gmail.com) is required for guest transactions.');
+        }
+    }
+
     // Security Enforcement: Restrict manual admin transactions without QR scan
     $userRole = $_SESSION['role'] ?? '';
     // Only enforce for PAID transactions finalize at the POS. PENDING orders (student self-service)
     // bypass the manual cashier-unlock mechanism as they are handled by the user themselves.
-    if (in_array($userRole, ['admin', 'admincashier', 'superadmin']) && ($payload['payment_status'] ?? 'paid') === 'paid') {
-        if (!isset($payload['is_scanned']) || $payload['is_scanned'] !== true) {
-            throw new Exception('Action Restricted: Transactions initiated by cashiers must be unlocked via a valid QR code scan.');
-        }
-    }
+    // UPDATED: Relaxed to allow walk-ins and guest transactions without QR scanning as requested.
+    // if (in_array($userRole, ['admin', 'admincashier', 'superadmin']) && ($payload['payment_status'] ?? 'paid') === 'paid') {
+    //     if (!isset($payload['is_scanned']) || $payload['is_scanned'] !== true) {
+    //         throw new Exception('Action Restricted: Transactions initiated by cashiers must be unlocked via a valid QR code scan.');
+    //     }
+    // }
     
     // 1.5 Strict Transaction State Enforcement: Prevent reprocessing processed/expired orders
     $originalTxnNumber = $payload['original_txn_number'] ?? null;
@@ -76,14 +93,16 @@ try {
         throw new Exception('No items in cart.');
     }
 
-    $studentId = $payload['student_id'] ?? $_SESSION['student_id'] ?? null;
-    if (!$adminId && !$studentId) {
+    $studentId = ($isGuest) ? $guestSchoolId : ($payload['student_id'] ?? $_SESSION['student_id'] ?? null);
+    
+    if (!$adminId && !$studentId && !$isGuest) {
         throw new Exception('Authentication required.');
     }
 
     $userId = null;
-    $studentFullName = null;
-    if ($studentId) {
+    $studentFullName = $isGuest ? ($guestName ?: 'Guest Customer') : null;
+
+    if ($studentId && !$isGuest) {
         $lookupStmt = $conn->prepare('SELECT id, first_name, last_name FROM users WHERE student_id = ? OR id = ? LIMIT 1');
         $lookupStmt->bind_param('ss', $studentId, $studentId);
         $lookupStmt->execute();
@@ -117,6 +136,8 @@ try {
         `receipt_number` VARCHAR(100) DEFAULT NULL,
         `user_id` INT(11) DEFAULT NULL,
         `student_name` VARCHAR(255) DEFAULT NULL,
+        `guest_school_id` VARCHAR(50) DEFAULT NULL,
+        `guest_email` VARCHAR(255) DEFAULT NULL,
         `cashier_id` INT(11) NOT NULL,
         `transaction_type` ENUM('buy','rent','mixed') NOT NULL,
         `items` TEXT NOT NULL,
@@ -264,6 +285,16 @@ try {
         }
     }
 
+    $gsidCheck = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'guest_school_id'");
+    if (!$gsidCheck || $gsidCheck->num_rows === 0) {
+        $conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `guest_school_id` VARCHAR(50) DEFAULT NULL AFTER `student_name` ");
+    }
+
+    $gEmailCheck = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'guest_email'");
+    if (!$gEmailCheck || $gEmailCheck->num_rows === 0) {
+        $conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `guest_email` VARCHAR(255) DEFAULT NULL AFTER `guest_school_id` ");
+    }
+
     $stockColumn = 'stock_count';
     $stockCheck = $conn->query("SHOW COLUMNS FROM `products` LIKE 'stock_count'");
     if ($stockCheck === false) {
@@ -293,6 +324,10 @@ try {
         $productId = intval($item['product_id'] ?? 0);
         $quantity = intval($item['quantity'] ?? 0);
         $type = strtolower(trim($item['type'] ?? $item['item_type'] ?? 'buy'));
+
+        if ($isGuest && $type === 'rent') {
+            throw new Exception('Rentals are not permitted for Guest checkouts. Please register the student first.');
+        }
 
         if ($type === 'rent' && !$studentId) {
             throw new Exception('Student ID is required for rental items.');
@@ -392,13 +427,16 @@ try {
     // or insert a new transaction if it's a manual cashier-initiated sale.
     $isExpiredFlag = ($paymentStatus === 'paid') ? 1 : 0; // Set is_expired to 1 if paid, 0 otherwise
     $upsertSql = "INSERT INTO cashier_transactions ( 
-        transaction_number, receipt_number, user_id, student_name, cashier_id, 
+        transaction_number, receipt_number, user_id, student_name, guest_school_id, guest_email, cashier_id, 
         transaction_type, items, subtotal, discount_percent, discount_amount,
         total_amount, payment_received, change_amount, payment_status, is_expired 
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE 
         receipt_number = VALUES(receipt_number),
         cashier_id = VALUES(cashier_id),
+        student_name = VALUES(student_name),
+        guest_school_id = VALUES(guest_school_id),
+        guest_email = VALUES(guest_email),
         items = VALUES(items),
         subtotal = VALUES(subtotal),
         discount_percent = VALUES(discount_percent),
@@ -410,8 +448,8 @@ try {
         is_expired = VALUES(is_expired)"; // Ensure is_expired is updated based on payment status
 
     $insertStmt = $conn->prepare($upsertSql);
-    // Corrected type string: 15 parameters, s=string, i=int, d=double/float. Removed spaces.
-    $insertStmt->bind_param('ssisissdddddsii', $transactionNumber, $receiptNumber, $userId, $studentFullName, $cashierId, $transactionType, $itemsJson, $subtotal, $discountPercent, $discountAmount, $totalAmount, $paymentReceived, $changeAmount, $paymentStatus, $isExpiredFlag);
+    // Corrected type string: 17 parameters (s=string, i=int, d=double). Added guest_school_id and guest_email.
+    $insertStmt->bind_param('ssisssissddddddsi', $transactionNumber, $receiptNumber, $userId, $studentFullName, $guestSchoolId, $guestEmail, $cashierId, $transactionType, $itemsJson, $subtotal, $discountPercent, $discountAmount, $totalAmount, $paymentReceived, $changeAmount, $paymentStatus, $isExpiredFlag);
     if (!$insertStmt->execute()) {
         throw new Exception('Could not save transaction: ' . $insertStmt->error);
     }
@@ -430,7 +468,7 @@ try {
     }
     foreach ($cartItems as $item) {
         $transactionItemInsert->bind_param(
-            'iisssidss',
+            'iisssidsd',
             $cashierTransactionId, $item['product_id'], $item['product_name'], $item['type'], $item['quantity'], $item['unit_price'], $item['duration'], $item['duration_unit'], $item['total']
         );
         if (!$transactionItemInsert->execute()) {
@@ -498,7 +536,10 @@ try {
 
     $emailStatus = 'skipped';
     $userEmail = null;
-    if ($userId) {
+    $targetEmail = null;
+    $targetName = null;
+
+    if ($userId && !$isGuest) {
         $emailStmt = $conn->prepare('SELECT email, first_name, last_name FROM users WHERE id = ? LIMIT 1');
         if ($emailStmt) {
             $emailStmt->bind_param('i', $userId);
@@ -506,12 +547,21 @@ try {
             $emailResult = $emailStmt->get_result();
             $userData = $emailResult ? $emailResult->fetch_assoc() : null;
             $emailStmt->close();
+            if ($userData) {
+                $targetEmail = $userData['email'];
+                $targetName = trim(($userData['first_name'] ?? '') . ' ' . ($userData['last_name'] ?? ''));
+            }
+        }
+    } elseif ($isGuest && !empty($guestEmail)) {
+        $targetEmail = $guestEmail;
+        $targetName = $guestName ?: 'Guest Customer';
+    }
 
-            if ($userData && filter_var($userData['email'] ?? '', FILTER_VALIDATE_EMAIL)) {
-                // Generate QR code image and save temporarily
-                $userEmail = $userData['email'];
-                $studentFullName = trim(($userData['first_name'] ?? '') . ' ' . ($userData['last_name'] ?? ''));
-                
+    if ($targetEmail && filter_var($targetEmail, FILTER_VALIDATE_EMAIL)) {
+        $userEmail = $targetEmail;
+        $studentFullName = $targetName; // Use guest name or student name for email template
+
+        if (true) { // Wrapped to maintain structure
                 $attachments = [];
                 $emailBody = "";
                 $subject = "";
@@ -656,7 +706,6 @@ try {
                 }
             }
         }
-    }
 
     // Log the transaction
     logAudit($conn, $adminId ? 'admincashier' : 'student', $adminId ?? $userId, 'save_cashier_transaction', 'Saved transaction ' . $transactionNumber . ' and email status: ' . $emailStatus);
