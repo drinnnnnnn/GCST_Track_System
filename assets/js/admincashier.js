@@ -1,74 +1,66 @@
-﻿let currentAdminId = null;
+﻿/**
+ * GCST Track System - Admin/Cashier Core Logic
+ * Refactored for performance and UI/UX consistency
+ */
+
+let currentAdminId = null;
 let currentTicket = null;
 let notificationPollInterval = null;
+const BASE_PATH = '/GCST_Track_System';
 
 /**
  * Initialize menu and notification listeners
  * Call this in DOMContentLoaded of every page
  */
 function initializeAdminCashierUI() {
-  // Menu toggle
-  const menuIcon = document.getElementById('menu-icon');
-  const dropdownMenu = document.getElementById('dropdown-menu');
-  
-  if (menuIcon) {
-    menuIcon.addEventListener('click', (e) => {
-      e.preventDefault();
-      dropdownMenu?.classList.toggle('show');
+    const setupDropdown = (triggerId, menuId, containerClass) => {
+        const trigger = document.getElementById(triggerId);
+        const menu = document.getElementById(menuId);
+        if (!trigger || !menu) return;
+
+        trigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Close other open dropdowns first
+            document.querySelectorAll('.dropdown-menu.show, .notification-dropdown.show').forEach(m => {
+                if (m !== menu) m.classList.remove('show');
+            });
+            menu.classList.toggle('show');
+        });
+    };
+
+    setupDropdown('menu-icon', 'dropdown-menu', '.dropdown-menu');
+    setupDropdown('notification-bell', 'notification-dropdown', '.notification-dropdown');
+
+    // Global click listener to close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.menu-icon') && !e.target.closest('.dropdown-menu') &&
+            !e.target.closest('.notification-icon') && !e.target.closest('.notification-dropdown')) {
+            document.querySelectorAll('.dropdown-menu.show, .notification-dropdown.show').forEach(m => m.classList.remove('show'));
+        }
     });
-  }
 
-  // Close menu when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.menu-icon') && !e.target.closest('.dropdown-menu')) {
-      dropdownMenu?.classList.remove('show');
-    }
-  });
-
-  // Notification bell toggle
-  const notificationBell = document.getElementById('notification-bell');
-  const notificationDropdown = document.getElementById('notification-dropdown');
-  
-  if (notificationBell) {
-    notificationBell.addEventListener('click', (e) => {
-      e.preventDefault();
-      notificationDropdown?.classList.toggle('show');
-    });
-  }
-
-  // Close notification dropdown when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.notification-icon') && !e.target.closest('.notification-dropdown')) {
-      notificationDropdown?.classList.remove('show');
-    }
-  });
-
-  // Clear notifications button
-  const clearNotifBtn = document.getElementById('clear-notifications');
-  if (clearNotifBtn) {
-    clearNotifBtn.addEventListener('click', clearAllNotifications);
-  }
+    document.getElementById('clear-notifications')?.addEventListener('click', clearAllNotifications);
 }
 
 /**
  * Check authentication and redirect if not logged in
  */
 function checkAuthentication() {
-  return fetch('../../actions/get_user.php')
+    return fetch(`${BASE_PATH}/actions/get_user.php`)
     .then(res => res.json())
     .then(data => {
-      // Strictly enforce admin roles for admincashier pages
       const allowedRoles = ['admin', 'cashier', 'admincashier', 'superadmin'];
       const currentId = data.admin_id;
       if (!currentId || !allowedRoles.includes(data.role)) {
-        window.location.href = "http://localhost/GCST_Track_System/pages/sign_in_admin_cashier.html";
+            window.location.href = `${BASE_PATH}/pages/sign_in_admin_cashier.html`;
         return null;
       }
       currentAdminId = currentId;
       return data;
     })
     .catch(() => {
-      window.location.href = "../../pages/sign_in_admin_cashier.html";
+            window.location.href = `${BASE_PATH}/pages/sign_in_admin_cashier.html`;
       return null;
     });
 }
@@ -76,16 +68,16 @@ function checkAuthentication() {
 /**
  * Update greeting message with user name
  */
-function updateGreeting(adminName) {
+function updateGreeting(name) {
   const greetingElement = document.getElementById('greeting-message');
   if (!greetingElement) return;
 
   const hour = new Date().getHours();
-  const greet = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
+    const timeGreet = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
   
-  // Preserve page-specific prefixes (like "Cashier • ") if they exist
-  const prefix = greetingElement.textContent.includes('•') ? greetingElement.textContent.split('•')[0].trim() + ' • ' : '';
-  greetingElement.textContent = prefix ? `${prefix}${adminName}` : `${greet}, ${adminName}!`;
+    const existingText = greetingElement.textContent;
+    const prefix = existingText.includes('•') ? existingText.split('•')[0].trim() + ' • ' : '';
+    greetingElement.textContent = prefix ? `${prefix}${name}` : `${timeGreet}, ${name}!`;
 }
 
 /**
@@ -107,22 +99,21 @@ function updateDateTime() {
  */
 function loadNotifications() {
   if (!currentAdminId) return;
-  fetch(`../../actions/get_notifications.php?admin_id=${encodeURIComponent(currentAdminId)}`)
+    fetch(`${BASE_PATH}/actions/get_notifications.php?admin_id=${encodeURIComponent(currentAdminId)}`)
     .then(res => res.json())
     .then(data => {
       const notificationsList = document.getElementById('notifications-list');
       const notifBadge = document.getElementById('notif-badge');
       const sidebarBadge = document.getElementById('sidebar-gmail-badge');
       
-      if (!notificationsList) return;
-
+        if (notificationsList) {
       notificationsList.innerHTML = '';
 
       if (data.length === 0) {
         notificationsList.innerHTML = '<div class="empty-state"><p>No notifications</p></div>';
         if (notifBadge) notifBadge.style.display = 'none';
         if (sidebarBadge) sidebarBadge.classList.add('hidden');
-        return;
+                return;
       }
 
       data.forEach(notif => {
@@ -133,20 +124,21 @@ function loadNotifications() {
           <div>
             <div class="notification-message">${notif.message || 'New notification'}</div>
             <div class="notification-time">${notif.time || 'Just now'}</div>
-          </div>
-        `;
+                    </div>`;
         notificationsList.appendChild(item);
       });
+        }
 
       // Show badge with count
-      if (notifBadge && data.length > 0) {
+        const count = data.length;
+        if (notifBadge && count > 0) {
         notifBadge.textContent = data.length;
         notifBadge.style.display = 'flex';
       }
 
       // Update Sidebar Badge
       if (sidebarBadge) {
-        sidebarBadge.textContent = data.length;
+            sidebarBadge.textContent = count;
         sidebarBadge.classList.remove('hidden');
       }
     })
@@ -158,41 +150,42 @@ function loadNotifications() {
  */
 function clearAllNotifications() {
   if (!currentAdminId) return;
-  fetch('../../actions/mark_notifications_read.php', {
+    fetch(`${BASE_PATH}/actions/mark_notifications_read.php`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ admin_id: currentAdminId })
-  })
-    .then(() => {
-      loadNotifications();
     })
+    .then(() => loadNotifications())
     .catch(err => console.error('Error clearing notifications:', err));
 }
 
 /**
  * Start polling notifications every 30 seconds
+ * Optimized with Page Visibility API
  */
 function startNotifPolling() {
-  // Clear any existing interval
-  if (notificationPollInterval) {
-    clearInterval(notificationPollInterval);
-  }
-
-  // Poll every 30 seconds
-  notificationPollInterval = setInterval(() => {
+    if (notificationPollInterval) clearInterval(notificationPollInterval);
+    
+    // Load immediately then start interval
     loadNotifications();
-  }, 30000);
+    notificationPollInterval = setInterval(loadNotifications, 30000);
 }
 
 /**
  * Stop notification polling
  */
 function stopNotifPolling() {
-  if (notificationPollInterval) {
     clearInterval(notificationPollInterval);
     notificationPollInterval = null;
-  }
 }
+
+// Visibility API: Pause polling when tab is inactive to save resources
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopNotifPolling();
+    else if (!window.location.pathname.includes('admincashier_inventorys.html')) {
+        startNotifPolling();
+    }
+});
 
 /**
  * Format currency value
@@ -219,7 +212,7 @@ function showLoading(element) {
  * Show empty state
  */
 function showEmptyState(element, message = 'No data available') {
-  if (element) {
+    if (element) {
     element.innerHTML = `
       <div class="empty-state">
         <i class="fas fa-inbox"></i>
@@ -250,33 +243,26 @@ function showError(element, message = 'An error occurred') {
  * @param {Function} pageCallback - Callback function to initialize page-specific content
  */
 window.initializeAdminCashierPage = function(pageCallback) {
-  const init = async () => {
+    const initSequence = async () => {
     try {
       // 1. Load sidebar first so the user sees the UI immediately
       await autoLoadSidebar();
       
-      // 2. Start authentication check
+      // 2. Authentication
       const userData = await checkAuthentication();
-      if (!userData) return; // checkAuthentication handles the redirect
+            if (!userData) return;
 
       // 3. Initialize UI elements now that sidebar is in the DOM
       initializeAdminCashierUI();
-
-      // Update greeting and time
       updateGreeting(userData.name || 'Admin');
       updateDateTime();
-      setInterval(updateDateTime, 60000); // Update every minute
+            setInterval(updateDateTime, 60000);
 
-      // Load notifications - skipped on inventory page
       if (!window.location.pathname.includes('admincashier_inventorys.html')) {
-        loadNotifications();
         startNotifPolling();
       }
 
-      // Call page-specific callback
-      if (pageCallback && typeof pageCallback === 'function') {
-        pageCallback(userData);
-      }
+            if (typeof pageCallback === 'function') pageCallback(userData);
     } catch (error) {
       console.error('Error initializing page:', error);
     }
@@ -284,14 +270,14 @@ window.initializeAdminCashierPage = function(pageCallback) {
 
   if (document.readyState === 'loading') {
     window.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
+    } else {
+        initSequence();
   }
 
   // Clean up on page unload
   window.addEventListener('beforeunload', () => {
     stopNotifPolling();
-    if (typeof stopSalesPolling === 'function') stopSalesPolling();
+        if (typeof stopSalesPolling === 'function') stopSalesPolling();
     if (typeof stopQueuePolling === 'function') stopQueuePolling();
     if (typeof stopInventoryPolling === 'function') stopInventoryPolling();
   });
@@ -301,13 +287,8 @@ window.initializeAdminCashierPage = function(pageCallback) {
  * Fetch and handle errors
  */
 function fetchWithError(url, options = {}) {
-  return fetch(url, options)
-    .then(res => {
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      return res.json();
-    })
+    return fetch(url, options)
+        .then(res => res.ok ? res.json() : Promise.reject(`HTTP error! status: ${res.status}`))
     .catch(err => {
       console.error('Fetch error:', err);
       throw err;
@@ -334,10 +315,8 @@ window.toggleMinimizeSidebar = function() {
   contentWrapper?.classList.toggle('minimized');
   header?.classList.toggle('minimized');
 
-  // Persist the state in localStorage
   localStorage.setItem('sidebar-minimized', isMinimized ? 'true' : 'false');
 }
-
 async function autoLoadSidebar() {
   const container = document.getElementById('sidebar-container');
   if (!container) return;
@@ -352,8 +331,6 @@ async function autoLoadSidebar() {
     const { getSidebarHTML } = await import('./admincashier_sidebar_content.js');
     if (container && typeof getSidebarHTML === 'function') {
       container.innerHTML = getSidebarHTML();
-
-      // Apply the saved state from localStorage immediately after injection
       const isMinimized = localStorage.getItem('sidebar-minimized') === 'true';
       if (isMinimized) {
         document.getElementById('main-sidebar')?.classList.add('minimized');
@@ -365,18 +342,13 @@ async function autoLoadSidebar() {
       const getFileName = (path) => path.split('/').pop() || 'admincashier_dashb.html';
       const currentFile = getFileName(window.location.pathname);
       
-      const sidebarLinks = container.querySelectorAll('.sidebar-link');
-      sidebarLinks.forEach(link => {
-        // Use link.pathname property to get the resolved path without query strings or hashes
+            container.querySelectorAll('.sidebar-link').forEach(link => {
         const linkFile = getFileName(link.pathname);
-        if (linkFile && linkFile === currentFile && !link.href.startsWith('javascript')) {
-          link.classList.add('active');
-        } else {
-          link.classList.remove('active');
-        }
+                const isActive = linkFile && linkFile === currentFile && !link.href.startsWith('javascript');
+                link.classList.toggle('active', isActive);
       });
     }
   } catch (err) {
-    console.error('Sidebar auto-load failed:', err);
+        console.warn('Sidebar auto-load failed:', err);
   }
 }

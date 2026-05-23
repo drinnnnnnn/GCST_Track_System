@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -11,45 +11,27 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <style>
-    :root {
-      --bg: #f4f7fb;
-      --surface: #ffffff;
-      --surface-soft: #f7f9ff;
-      --text: #1d2939;
-      --muted: #5f6c84;
-      --primary: #4558ff;
-      --success: #10b981;
-      --danger: #ef4444;
-      --border: #dbe3f0;
+    .stat-card {
+      background: white;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .action-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08);
+      border-color: #4f46e5;
     }
-    .action-card {
+    .icon-wrapper {
+      width: 54px;
+      height: 54px;
       display: flex;
       align-items: center;
-      gap: 12px;
-      background: var(--surface);
+      justify-content: center;
       border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-      text-decoration: none;
-      color: var(--text);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .action-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
-    }
-    .action-card i {
-      font-size: 1.5rem;
-      color: var(--primary);
-    }
-    .action-card h3 {
-      margin: 0;
-      font-size: 1rem;
+      flex-shrink: 0;
     }
     .period-filters {
       display: flex;
@@ -59,106 +41,20 @@
     }
     .period-button {
       border-radius: 14px;
-      border: 1px solid transparent;
-      background: var(--surface-soft);
-      color: var(--text);
+      border: 1px solid #e2e8f0;
+      background: white;
+      color: #64748b;
       padding: 12px 18px;
-      cursor: pointer;
-      transition: background 0.2s ease, border-color 0.2s ease;
+      font-weight: 700;
+      transition: all 0.2s ease;
     }
     .period-button.active {
-      background: var(--primary);
+      background: #4f46e5;
       color: #fff;
-      border-color: rgba(69, 88, 255, 0.28);
+      border-color: #4f46e5;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
     }
-    .balance-section {
-      margin-bottom: 24px;
-    }
-    .balance-section h2 {
-      margin: 0 0 16px;
-      font-size: 1.25rem;
-      color: var(--text);
-    }
-    .balance-cards {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 20px;
-    }
-    .balance-card {
-      background: var(--surface);
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
-      min-height: 140px;
-    }
-    .balance-card h3 {
-      margin: 0 0 10px;
-      font-size: 0.95rem;
-      color: var(--muted);
-      font-weight: 600;
-    }
-    .balance-card p {
-      margin: 0;
-      font-size: 1.9rem;
-      font-weight: 700;
-    }
-    .activity-section {
-      margin-bottom: 24px;
-    }
-    .activity-section h2 {
-      margin: 0 0 16px;
-      font-size: 1.25rem;
-      color: var(--text);
-    }
-    .charts-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 20px;
-    }
-    .chart-container {
-      background: var(--surface);
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
-    }
-    .chart-container h3 {
-      margin: 0 0 18px;
-      font-size: 1.05rem;
-    }
-    .chart-wrapper {
-      position: relative;
-      min-height: 300px;
-    }
-    .history-card {
-      background: var(--surface);
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
-    }
-    .history-card h3 {
-      margin-top: 0;
-      margin-bottom: 18px;
-    }
-    .history-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.95rem;
-    }
-    .history-table th,
-    .history-table td {
-      padding: 14px 12px;
-      text-align: left;
-      border-bottom: 1px solid #f1f5fb;
-    }
-    .history-table th {
-      color: var(--muted);
-      font-weight: 600;
-    }
-    .empty-state {
-      padding: 24px;
-      color: var(--muted);
-      text-align: center;
-    }
+
     /* Modal Styles */
     .modal {
       display: none;
@@ -176,18 +72,13 @@
       align-items: flex-start;
     }
     .modal-content {
-      background-color: var(--surface);
+      background-color: white;
       margin: 5% auto;
-      padding: 24px;
+      padding: 32px;
       border-radius: 24px;
       width: 90%;
-      max-width: 500px;
+      max-width: 550px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    }
-    .product-tag-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
     }
     .product-tag {
       background: #eff6ff;
@@ -197,19 +88,16 @@
       font-size: 0.8rem;
       border: 1px solid #dbeafe;
     }
-    .view-details-btn {
-      color: var(--primary);
-      padding: 6px;
-      border-radius: 8px;
-      transition: background 0.2s;
-    }
-    .view-details-btn:hover {
-      background: var(--surface-soft);
-    }
-    @media (max-width: 1100px) {
-      .balance-cards,
-      .charts-grid {
-        grid-template-columns: 1fr;
+    
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+    @media (max-width: 768px) {
+      .stat-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
       }
     }
   </style>
@@ -226,85 +114,109 @@
     <section class="greeting-section">
       <div class="greeting-content">
         <h1>Sales Management</h1>
-        <p>Track and manage your sales performance and analytics.</p>
+        <p>Monitor your revenue, analyze performance, and audit transactions.</p>
       </div>
-      <div class="greeting-icon">👋</div>
+      <div class="greeting-icon">📈</div>
     </section>
 
-    <!-- Period Filters -->
-    <div class="period-filters">
+    <!-- Period Filters and Actions -->
+    <div class="period-filters flex items-center justify-between mb-8 flex-wrap gap-4">
+      <div class="flex gap-2">
       <button class="period-button active" data-period="today">Today</button>
       <button class="period-button" data-period="week">This Week</button>
       <button class="period-button" data-period="month">This Month</button>
       <button class="period-button" data-period="year">This Year</button>
-      <button class="period-button" id="export-csv-btn" style="margin-left: auto; background: var(--success); color: white;"><i class="fas fa-file-csv"></i> Export CSV</button>
+      </div>
+      <button class="period-button !bg-emerald-500 !text-white !border-emerald-500 hover:!bg-emerald-600 transition-colors flex items-center gap-2" id="export-csv-btn">
+        <i class="fas fa-file-csv"></i> Export Report
+      </button>
     </div>
 
     <!-- Summary Section -->
-    <section class="balance-section">
-      <h2>Sales Summary</h2>
-      <div class="balance-cards">
-        <div class="balance-card">
-          <h3>Total Sales</h3>
-          <p class="amount" id="totalSales">₱0.00</p>
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      <div class="stat-card flex items-center gap-6">
+        <div class="icon-wrapper bg-indigo-50 text-indigo-600">
+          <i class="fas fa-wallet fa-xl"></i>
         </div>
-        <div class="balance-card">
-          <h3>Total Transactions</h3>
-          <p class="amount" id="totalTransactions">0</p>
+        <div>
+          <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Sales</h3>
+          <p class="text-2xl font-black text-gray-900" id="totalSales">₱0.00</p>
         </div>
-        <div class="balance-card">
-          <h3>Average Transaction Value</h3>
-          <p class="amount" id="avgTransaction">₱0.00</p>
+      </div>
+      <div class="stat-card flex items-center gap-6">
+        <div class="icon-wrapper bg-blue-50 text-blue-600">
+          <i class="fas fa-receipt fa-xl"></i>
         </div>
-        <div class="balance-card">
-          <h3>Items Sold</h3>
-          <p class="amount" id="itemsSold">0</p>
+        <div>
+          <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Transactions</h3>
+          <p class="text-2xl font-black text-gray-900" id="totalTransactions">0</p>
+        </div>
+      </div>
+      <div class="stat-card flex items-center gap-6">
+        <div class="icon-wrapper bg-emerald-50 text-emerald-600">
+          <i class="fas fa-chart-line fa-xl"></i>
+        </div>
+        <div>
+          <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Avg. Ticket</h3>
+          <p class="text-2xl font-black text-gray-900" id="avgTransaction">₱0.00</p>
+        </div>
+      </div>
+      <div class="stat-card flex items-center gap-6">
+        <div class="icon-wrapper bg-amber-50 text-amber-600">
+          <i class="fas fa-box-open fa-xl"></i>
+        </div>
+        <div>
+          <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Items Sold</h3>
+          <p class="text-2xl font-black text-gray-900" id="itemsSold">0</p>
         </div>
       </div>
     </section>
 
     <!-- Charts Section -->
-    <section class="activity-section">
-      <h2>Analytics</h2>
-      <div class="charts-grid">
-        <div class="chart-container">
-          <h3>Daily Sales Trends</h3>
-          <div class="chart-wrapper">
-            <canvas id="salesTrendChart"></canvas>
-          </div>
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+      <div class="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
+        <h3 class="text-xl font-black text-gray-800 mb-8 flex items-center gap-3">
+          <span class="w-2 h-8 bg-indigo-600 rounded-full"></span> Sales Trend
+        </h3>
+        <div class="h-[350px]">
+          <canvas id="salesTrendChart"></canvas>
         </div>
-        <div class="chart-container">
-          <h3>Top Selling Products</h3>
-          <div class="chart-wrapper">
-            <canvas id="topProductsChart"></canvas>
-          </div>
+      </div>
+      <div class="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
+        <h3 class="text-xl font-black text-gray-800 mb-8 flex items-center gap-3">
+          <span class="w-2 h-8 bg-amber-500 rounded-full"></span> Top Products
+        </h3>
+        <div class="h-[350px]">
+          <canvas id="topProductsChart"></canvas>
         </div>
       </div>
     </section>
 
     <!-- Sales History Section -->
-    <section class="history-card">
-      <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
-        <h3 class="m-0 text-xl font-bold">Sales History</h3>
+    <section class="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
+      <div class="flex justify-between items-center mb-8 flex-wrap gap-4">
+        <h3 class="text-xl font-black text-gray-800 flex items-center gap-3">
+          <span class="w-2 h-8 bg-emerald-500 rounded-full"></span> Transaction History
+        </h3>
         <div class="relative w-full sm:w-72">
           <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          <input type="text" id="historySearch" placeholder="Search transactions..." class="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm bg-gray-50">
+          <input type="text" id="historySearch" placeholder="Search order number..." class="w-full pl-11 pr-4 py-3 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm">
         </div>
       </div>
-      <div style="overflow-x:auto;">
-        <table class="history-table">
-          <thead>
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full text-left">
+          <thead class="border-b border-gray-50">
             <tr>
-              <th>Date</th>
-              <th>Transaction</th>
-              <th>Product</th>
-              <th>Quantity</th>
-              <th>Amount</th>
-              <th style="text-align: center;">Action</th>
+              <th class="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Date</th>
+              <th class="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Order ID</th>
+              <th class="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Products</th>
+              <th class="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Quantity</th>
+              <th class="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Total</th>
+              <th class="pb-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Action</th>
             </tr>
           </thead>
           <tbody id="historyBody">
-            <tr><td colspan="6" class="empty-state">Loading sales history...</td></tr>
+            <tr><td colspan="6" class="py-20 text-center text-gray-400">Loading history records...</td></tr>
           </tbody>
         </table>
       </div>
@@ -312,14 +224,14 @@
 
     <!-- Receipt Modal -->
     <div id="receiptModal" class="modal">
-      <div class="modal-content">
-        <div class="flex justify-between items-center mb-6">
-          <h3 class="text-xl font-bold text-gray-800">Transaction Details</h3>
-          <button onclick="closeReceiptModal()" class="text-gray-400 hover:text-gray-600">
-            <i class="fas fa-times fa-lg"></i>
+      <div class="modal-content !p-0 overflow-hidden">
+        <div class="p-8 border-b border-gray-100 flex justify-between items-center">
+          <h3 class="text-xl font-black text-gray-800">Order Details</h3>
+          <button onclick="closeReceiptModal()" class="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full text-gray-400 hover:text-rose-500 transition-colors">
+            <i class="fas fa-times"></i>
           </button>
         </div>
-        <div id="receiptContent" class="space-y-4">
+        <div id="receiptContent" class="p-8 space-y-6">
           <!-- Details will be injected here -->
         </div>
       </div>
@@ -328,7 +240,7 @@
   </main>
 
   <script src="../../assets/js/admincashier.js"></script>
-  <script>
+  <script>    
     // =====================================================
     // SALES PAGE LOGIC
     // =====================================================
@@ -373,19 +285,19 @@
         document.getElementById('avgTransaction').textContent = formatCurrency(avgValue);
         document.getElementById('itemsSold').textContent = itemsSold;
 
+        // Reusable Chart Update Logic
         if (!salesTrendChartInstance) {
-          salesTrendChartInstance = createChart('salesTrendChart', 'line', data.sales_labels || [], data.sales_data || [], 'Daily Sales (₱)');
+          salesTrendChartInstance = createChart('salesTrendChart', 'line', data.sales_labels || [], data.sales_data || [], 'Sales (₱)', '#4f46e5');
         } else {
-          updateChart(salesTrendChartInstance, data.sales_labels || [], data.sales_data || [], 'Daily Sales (₱)', 'line', 'rgba(69, 88, 255, 0.16)', '#4558ff');
+          updateChart(salesTrendChartInstance, data.sales_labels || [], data.sales_data || [], 'Sales (₱)', '#4f46e5');
         }
 
         const productLabels = data.top_products?.map(item => item.name) || [];
         const productQuantities = data.top_products?.map(item => item.quantity) || [];
-
         if (!topProductsChartInstance) {
-          topProductsChartInstance = createChart('topProductsChart', 'bar', productLabels, productQuantities, 'Units Sold');
+          topProductsChartInstance = createChart('topProductsChart', 'bar', productLabels, productQuantities, 'Units Sold', '#f59e0b');
         } else {
-          updateChart(topProductsChartInstance, productLabels, productQuantities, 'Units Sold', 'bar', 'rgba(69, 88, 255, 0.16)', '#4558ff');
+          updateChart(topProductsChartInstance, productLabels, productQuantities, 'Units Sold', '#f59e0b');
         }
 
         lastFetchedSalesHistory = Array.isArray(data.history) ? data.history : [];
@@ -404,23 +316,22 @@
       if (history.length) {
         history.forEach(entry => {
           const items = entry.item ? entry.item.split(', ') : [];
-          const itemsHtml = items.map(i => `<span class="product-tag">${i}</span>`).join('');
-          const displayId = entry.transaction_number || entry.transaction_id || entry.id || '—';
-          const internalId = entry.transaction_id || entry.transaction_number || entry.id;
+          const itemsHtml = items.map(i => `<span class="px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold border border-indigo-100">${i}</span>`).join('');
+          const displayId = entry.transaction_number || entry.id || '—';
           
           const row = document.createElement('tr');
+          row.className = 'border-b border-gray-50 hover:bg-gray-50/50 transition-colors group';
           row.innerHTML = `
-            <td>${formatDate(entry.date)}</td>
-            <td>${displayId}</td>
-            <td><div class="product-tag-list">${itemsHtml}</div></td>
-            <td>${entry.quantity}</td>
-            <td>${formatCurrency(entry.amount)}</td>
-            <td style="text-align: center;">
-              <button onclick="window.viewReceiptDetails('${internalId}')" class="view-details-btn" title="View Details">
+            <td class="py-5 text-sm text-gray-500">${formatDate(entry.date)}</td>
+            <td class="py-5 font-bold text-gray-800 text-sm">#${displayId}</td>
+            <td class="py-5"><div class="flex flex-wrap gap-1.5">${itemsHtml}</div></td>
+            <td class="py-5 text-sm text-gray-600 font-medium">${entry.quantity}</td>
+            <td class="py-5 font-black text-indigo-600">${formatCurrency(entry.amount)}</td>
+            <td class="py-5 text-center">
+              <button onclick="window.viewReceiptDetails('${displayId}')" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-300 hover:text-indigo-600 hover:bg-indigo-50 transition-all">
                 <i class="fas fa-eye"></i>
               </button>
-            </td>
-          `;
+            </td>`;
           historyBody.appendChild(row);
         });
       } else {
@@ -428,7 +339,7 @@
       }
     }
 
-    function createChart(elementId, type, labels, data, label, backgroundColor, borderColor) {
+    function createChart(elementId, type, labels, data, label, color) {
       const ctx = document.getElementById(elementId).getContext('2d');
       return new Chart(ctx, {
         type,
@@ -437,8 +348,8 @@
           datasets: [{
             label,
             data,
-            borderColor: borderColor || '#4558ff',
-            backgroundColor: backgroundColor || 'rgba(69, 88, 255, 0.16)',
+            borderColor: color,
+            backgroundColor: type === 'line' ? `${color}15` : color,
             fill: type === 'line',
             tension: 0.4,
             borderWidth: 2,
@@ -448,32 +359,25 @@
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: true } },
+          maintainAspectRatio: false,          
+          plugins: { legend: { display: false } },
           scales: {
             x: { grid: { display: false } },
-            y: { grid: { color: '#eef2f7' }, ticks: { beginAtZero: true } }
+            y: { border: { dash: [4, 4] }, grid: { color: '#f1f5f9' }, ticks: { beginAtZero: true } }
           }
         }
       });
     }
 
-    function updateChart(chartRef, labels, data, label, type, backgroundColor, borderColor) {
+    function updateChart(chartRef, labels, data, label, color) {
       if (!chartRef) return;
-      chartRef.data = {
-        labels,
-        datasets: [{
-          label,
-          data,
-          borderColor: borderColor || '#4558ff',
-          backgroundColor: backgroundColor || 'rgba(69, 88, 255, 0.16)',
-          fill: type === 'line',
-          tension: 0.4,
-          borderWidth: 2,
-          borderRadius: 12,
-          barThickness: 24
-        }]
-      };
+      chartRef.data.labels = labels;
+      chartRef.data.datasets[0].data = data;
+      chartRef.data.datasets[0].label = label;
+      chartRef.data.datasets[0].borderColor = color;
+      if (chartRef.config.type === 'line') {
+          chartRef.data.datasets[0].backgroundColor = `${color}15`;
+      }
       chartRef.update();
     }
 
@@ -488,16 +392,32 @@
         const response = await fetch(`../../actions/get_transaction_details.php?id=${encodeURIComponent(transactionId)}`);
         const data = await response.json();
         if (data.success) {
-          const t = data.transaction;
-          const itemsHtml = (t.items || []).map(item => `
+          const t = data.transaction;          
+          // Handle robust parsing of items
+          let items = [];
+          try {
+            items = typeof t.items === 'string' ? JSON.parse(t.items) : (t.items || []);
+          } catch (e) { console.error("Item parse failed", e); }
+
+          const itemsHtml = items.map(item => `
             <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
               <div class="flex-1 pr-2">
                 <p class="text-gray-800 font-medium">${item.product_name}</p>
                 <p class="text-gray-500 text-xs">${item.quantity} x ${formatCurrency(item.unit_price)}</p>
               </div>
-              <span class="font-semibold text-gray-700">${formatCurrency(item.total_item_amount)}</span>
+              <span class="font-semibold text-gray-700">${formatCurrency(item.total_item_amount || (item.unit_price * item.quantity))}</span>
             </div>`).join('');
-          content.innerHTML = `<div class="space-y-6"><div class="bg-gray-50 p-4 rounded-xl text-sm"><p>Ref: ${t.transaction_number}</p><p>Date: ${new Date(t.created_at).toLocaleString()}</p></div><div>${itemsHtml}</div><div class="bg-gray-50 p-4 rounded-xl text-sm font-bold"><p>Total: ${formatCurrency(t.total_amount)}</p></div></div>`;
+          
+          content.innerHTML = `
+            <div class="space-y-6">
+                <div class="bg-gray-50 p-4 rounded-2xl text-xs flex flex-col gap-1">
+                    <p class="font-bold text-indigo-600 uppercase tracking-widest">Receipt Reference</p>
+                    <p class="text-gray-800 font-mono text-base">${t.transaction_number}</p>
+                    <p class="text-gray-400 mt-1"><i class="far fa-calendar-alt mr-1"></i> ${new Date(t.created_at).toLocaleString()}</p>
+                </div>
+                <div class="max-h-[300px] overflow-y-auto custom-scrollbar">${itemsHtml}</div>
+                <div class="bg-indigo-600 p-6 rounded-2xl text-white flex justify-between items-center shadow-lg shadow-indigo-200"><span class="font-bold">Total Amount</span><strong class="text-2xl">${formatCurrency(t.total_amount)}</strong></div>
+            </div>`;
         }
       } catch (err) { console.error(err); }
     }

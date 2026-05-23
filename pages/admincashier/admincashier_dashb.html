@@ -3,90 +3,149 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  
-  <title>GCST Admin Cashier - Dashboard</title>
+  <title>GCST Admin Cashier - Analytics Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <link rel="stylesheet" href="../../assets/css/admincashier.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    .stat-card {
+      background: white;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08);
+      border-color: #4f46e5;
+    }
+    .chart-container-alt {
+      background: white;
+      border-radius: 28px;
+      padding: 28px;
+      border: 1px solid #f1f5f9;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01);
+    }
+    .icon-wrapper {
+      width: 54px;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      flex-shrink: 0;
+    }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+  </style>
 </head>
 
 <body>
   <!-- Sidebar Component -->
   <div id="sidebar-container"></div>
   <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  
   <div class="content-wrapper">
-
-<main>
-    <!-- Greeting Section -->
-    <section class="greeting-section">
-      <div class="greeting-content">
-        <h1 id="greeting-message">Welcome back!</h1>
-        <p id="current-date-time">Loading...</p>
-      </div>
-      <div class="greeting-icon">📚</div>
-    </section>
-
-    <!-- Summary Section -->
-    <section class="balance-section">
-      <h2>Dashboard Summary</h2>
-      <div class="balance-cards">
-        <div class="balance-card">
-          <h3>Items in Inventory</h3>
-          <p class="amount" id="totalInventory">0</p>
-        </div> 
-        <div class="balance-card">
-          <h3>Pending Queue</h3>
-          <p class="amount" id="pendingQueue">0</p>
+    <main class="p-4 md:p-8 max-w-[1600px] mx-auto">
+      <!-- Top Header / Greeting -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+        <div>
+          <h1 id="greeting-message" class="text-3xl font-black text-gray-900 tracking-tight">Dashboard Overview</h1>
+          <p id="current-date-time" class="text-gray-500 font-medium mt-1">Fetching current time...</p>
         </div>
-        <div class="balance-card">
-          <h3>Total Sales (Today)</h3>
-          <p class="amount">  <span id="totalSalesToday"></span></p>
+        <div class="flex items-center gap-3">
+          <button onclick="refreshAllDashboardData()" class="px-5 py-3 bg-white border border-gray-200 rounded-2xl text-gray-700 font-bold hover:bg-gray-50 transition-all shadow-sm flex items-center gap-2">
+            <i class="fas fa-sync-alt text-blue-600"></i> Refresh Stats
+          </button>
         </div>
       </div>
-    </section>
 
-    <!-- Charts Section -->
-    <section class="activity-section">
-      <h2>Analytics</h2>
-      <div class="charts-grid">
-        <div class="chart-container">
-          <h3>Sales Overview</h3>
-          <div class="chart-wrapper">
+      <!-- Stat Summary Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div class="stat-card flex items-center gap-6">
+          <div class="icon-wrapper bg-indigo-50 text-indigo-600">
+            <i class="fas fa-boxes-stacked fa-xl"></i>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Inventory</h3>
+            <p class="text-3xl font-black text-gray-900" id="totalInventory">0</p>
+          </div>
+        </div>
+        <div class="stat-card flex items-center gap-6">
+          <div class="icon-wrapper bg-amber-50 text-amber-600">
+            <i class="fas fa-user-clock fa-xl"></i>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Queue Active</h3>
+            <p class="text-3xl font-black text-gray-900" id="pendingQueue">0</p>
+          </div>
+        </div>
+        <div class="stat-card flex items-center gap-6">
+          <div class="icon-wrapper bg-emerald-50 text-emerald-600">
+            <i class="fas fa-wallet fa-xl"></i>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Today's Sales</h3>
+            <p class="text-3xl font-black text-gray-900" id="totalSalesToday">₱0.00</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics Sections -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Main Sales Performance -->
+        <div class="chart-container-alt lg:col-span-8">
+          <h3 class="text-xl font-black text-gray-800 mb-8 flex items-center gap-3">
+            <span class="w-2 h-8 bg-blue-600 rounded-full"></span> Sales Performance
+          </h3>
+          <div class="h-[400px]">
             <canvas id="salesChart"></canvas>
           </div>
         </div>
-        <div class="chart-container">
-          <h3>Inventory Distribution</h3>
-          <div class="chart-wrapper">
+
+        <!-- Category Breakdown -->
+        <div class="chart-container-alt lg:col-span-4">
+          <h3 class="text-xl font-black text-gray-800 mb-8 flex items-center gap-3">
+            <span class="w-2 h-8 bg-purple-600 rounded-full"></span> Inventory Mix
+          </h3>
+          <div class="h-[400px]">
             <canvas id="inventoryChart"></canvas>
           </div>
         </div>
-        <div class="chart-container">
-          <h3>Top Selling Products (Chart)</h3>
-          <div class="chart-wrapper">
+
+        <!-- Ranking Chart -->
+        <div class="chart-container-alt lg:col-span-6">
+          <h3 class="text-xl font-black text-gray-800 mb-8 flex items-center gap-3">
+            <span class="w-2 h-8 bg-amber-500 rounded-full"></span> Top Products Analytics
+          </h3>
+          <div class="h-[400px]">
             <canvas id="topProductsChart"></canvas>
           </div>
         </div>
-        <div class="chart-container">
-          <div class="flex justify-between items-center mb-6">
-            <h3 class="!mb-0 font-bold text-gray-800">Top Selling Products</h3>
-            <span class="px-2.5 py-1 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider border border-blue-100">Monthly</span>
+
+        <!-- Ranking List -->
+        <div class="chart-container-alt lg:col-span-6 flex flex-col">
+          <div class="flex justify-between items-center mb-8">
+            <h3 class="text-xl font-black text-gray-800 flex items-center gap-3">
+              <span class="w-2 h-8 bg-emerald-500 rounded-full"></span> Top Selling List
+            </h3>
+            <span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest border border-emerald-100">Monthly</span>
           </div>
-          <div class="top-selling-list-wrapper" style="max-height: 320px; overflow-y: auto;">
-            <div id="topSellingContainer" class="space-y-4 pr-3">
-              <div class="flex flex-col items-center justify-center py-12 text-gray-400">
-                <i class="fas fa-circle-notch fa-spin text-2xl mb-3"></i>
-                <p class="text-sm">Fetching sales data...</p>
-              </div>
+          <div id="topSellingContainer" class="space-y-6 overflow-y-auto pr-3 custom-scrollbar flex-1 max-h-[400px]">
+            <div class="flex flex-col items-center justify-center py-20 text-gray-400">
+              <i class="fas fa-circle-notch fa-spin text-3xl mb-4"></i>
+              <p class="text-sm font-bold tracking-tight">Updating analytics data...</p>
             </div>
           </div>
         </div>
       </div>
-    </section>
-  </main>
-
+    </main>
   </div> <!-- End .content-wrapper -->
 
   <!-- Scripts -->
@@ -116,17 +175,17 @@
           payload.top_products.forEach((item, index) => {
             const percentage = (item.quantity / maxQty) * 100;
             const itemDiv = document.createElement('div');
-            itemDiv.className = 'flex flex-col gap-1.5 transition-all duration-300 hover:translate-x-1';
+            itemDiv.className = 'flex flex-col gap-2 p-3 rounded-2xl hover:bg-gray-50 transition-all duration-300 group';
             itemDiv.innerHTML = `
               <div class="flex justify-between items-center text-sm">
                 <div class="flex items-center gap-3">
-                  <span class="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-[10px] font-bold">${index + 1}</span>
-                  <span class="font-semibold text-gray-700 truncate max-w-[140px] md:max-w-[200px]" title="${item.name}">${item.name}</span>
+                  <span class="flex items-center justify-center w-8 h-8 rounded-xl bg-gray-100 text-gray-500 text-[11px] font-black group-hover:bg-blue-600 group-hover:text-white transition-colors">${index + 1}</span>
+                  <span class="font-bold text-gray-700 truncate max-w-[180px] md:max-w-[300px]" title="${item.name}">${item.name}</span>
                 </div>
-                <span class="font-bold text-blue-600 text-xs">${item.quantity} <span class="text-[9px] text-gray-400 font-normal uppercase ml-0.5">Units</span></span>
+                <span class="font-black text-blue-600 text-sm">${item.quantity} <span class="text-[9px] text-gray-400 font-bold uppercase ml-0.5">Units</span></span>
               </div>
-              <div class="w-full bg-gray-50 rounded-full h-1.5 overflow-hidden border border-gray-100">
-                <div class="bg-gradient-to-r from-blue-400 to-blue-600 h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%" data-target-width="${percentage}%"></div>
+              <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%" data-target-width="${percentage}%"></div>
               </div>
             `;
             container.appendChild(itemDiv);
@@ -139,7 +198,7 @@
         } else {
           container.innerHTML = `
             <div class="flex flex-col items-center justify-center py-12 text-center opacity-60">
-              <div class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+              <div class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
                 <i class="fas fa-box-open text-gray-300"></i>
               </div>
               <p class="text-sm font-medium text-gray-500">No sales this month</p>
@@ -187,9 +246,13 @@
             type: 'line',
             data: {
               labels: data.sales_labels || [],
-              datasets: [{ label: 'Daily Sales (₱)', data: data.sales_data || [], borderColor: '#667eea', backgroundColor: 'rgba(102, 126, 234, 0.1)', tension: 0.4, fill: true }]
+              datasets: [{ label: 'Daily Sales (₱)', data: data.sales_data || [], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', tension: 0.4, fill: true, borderWidth: 3, pointRadius: 4, pointHoverRadius: 6 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true } } }
+            options: { 
+              responsive: true, maintainAspectRatio: false, 
+              plugins: { legend: { display: false } },
+              scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
+            }
           });
         } else if (dashSalesChartInstance) {
           dashSalesChartInstance.data.labels = data.sales_labels || [];
@@ -204,9 +267,9 @@
             type: 'doughnut',
             data: {
               labels: data.inventory_labels || [],
-              datasets: [{ data: data.inventory_data || [], backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe'] }]
+              datasets: [{ data: data.inventory_data || [], backgroundColor: ['#4f46e5', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444'], borderWeight: 0, hoverOffset: 10 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true } } }
+            options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, font: { family: 'Outfit', weight: 'bold' } } } } }
           });
         } else if (dashInventoryChartInstance) {
           dashInventoryChartInstance.data.labels = data.inventory_labels || [];
@@ -221,9 +284,13 @@
             type: 'bar',
             data: {
               labels: data.products_labels || [],
-              datasets: [{ label: 'Units Sold', data: data.products_data || [], backgroundColor: '#667eea' }]
+              datasets: [{ label: 'Units Sold', data: data.products_data || [], backgroundColor: '#4f46e5', borderRadius: 8, barThickness: 24 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: true } } }
+            options: { 
+              responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+              plugins: { legend: { display: false } },
+              scales: { x: { beginAtZero: true, grid: { color: '#f1f5f9' } }, y: { grid: { display: false } } }
+            }
           });
         } else if (dashTopProductsChartInstance) {
           dashTopProductsChartInstance.data.labels = data.products_labels || [];
