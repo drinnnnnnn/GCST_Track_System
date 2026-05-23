@@ -7,198 +7,198 @@
   <title>GCST User - Browse Products</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <link rel="stylesheet" href="../../assets/css/user.css">
+  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.7);
+    }
+
     .product-card {
-      background: var(--surface);
-      border-radius: var(--radius-lg);
-      padding: 18px;
-      border: 1px solid var(--border-soft);
-      box-shadow: var(--shadow);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: #ffffff;
+      border-radius: 2rem;
+      padding: 24px;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       display: flex;
       flex-direction: column;
-      overflow: hidden;
     }
     
     .product-card:hover {
       transform: translateY(-8px);
-      box-shadow: var(--shadow-lg);
-      border-color: var(--primary-soft);
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15);
+      border-color: var(--primary);
     }
     
     .product-image {
       width: 100%;
       height: 200px;
-      border-radius: var(--radius);
+      border-radius: 1.5rem;
       object-fit: cover;
-      margin-bottom: 14px;
-      transition: transform 0.5s ease;
-    }
-    
-    .product-card:hover .product-image {
-      transform: scale(1.05);
+      margin-bottom: 18px;
+      background: #f8fafc;
     }
     
     .product-info {
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
+      margin-bottom: 16px;
     }
     
     .product-name {
-      margin: 0;
-      font-size: 1.05rem;
-      font-weight: 600;
+      font-size: 1.15rem;
+      font-weight: 800;
       color: var(--text);
+      line-height: 1.3;
     }
     
     .product-category {
       display: inline-block;
-      padding: 4px 10px;
+      padding: 4px 14px;
       border-radius: 999px;
-      background: var(--primary-soft);
-      color: var(--primary);
+      background: rgba(37, 99, 235, 0.08);
+      color: #1d4ed8;
       font-size: 0.8rem;
       font-weight: 600;
       width: fit-content;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
+    .product-description {
+      font-size: 0.9rem;
+      color: #64748b;
+      line-height: 1.6;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 2.8rem;
+    }
+
     .product-price {
       display: flex;
-      gap: 16px;
-      font-weight: 600;
-      color: var(--text);
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 8px;
     }
     
     .price-label {
-      color: var(--muted);
-      font-size: 0.9rem;
-      font-weight: 500;
+      color: #94a3b8;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-right: 4px;
+    }
+
+    .price-value {
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: #0f172a;
     }
     
     .product-stock {
-      font-size: 0.9rem;
-      color: var(--muted);
-    }
-    
-    .stock-available {
-      color: var(--success);
-      font-weight: 600;
-    }
-    
-    .stock-low {
-      color: var(--warning);
-      font-weight: 600;
-    }
-    
-    .stock-unavailable {
-      color: var(--danger);
-      font-weight: 600;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-top: 4px;
     }
     
     .product-actions {
       display: flex;
       gap: 10px;
       margin-top: auto;
-      padding-top: 12px;
+      padding-top: 20px;
     }
     
     .btn-action {
       flex: 1;
-      padding: 10px;
+      padding: 12px;
       border: none;
-      border-radius: var(--radius);
+      border-radius: 1rem;
       cursor: pointer;
       font-size: 0.9rem;
-      font-weight: 600;
-      transition: all 0.2s ease;
+      font-weight: 700;
+      transition: all 0.3s ease;
       text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
     
-    .btn-buy {
-      background: var(--success);
-      color: white;
-    }
-    
-    .btn-buy:hover {
-      background: #059669;
-      transform: translateY(-1px);
-    }
-    
-    .btn-rent {
-      background: var(--primary);
-      color: white;
-    }
-    
-    .btn-rent:hover {
-      background: var(--primary-dark);
-      transform: translateY(-1px);
-    }
+    .btn-buy { background: #059669; color: white; }
+    .btn-buy:hover:not(:disabled) { background: #047857; transform: scale(1.02); }
+    .btn-rent { background: #2563eb; color: white; }
+    .btn-rent:hover:not(:disabled) { background: #1d4ed8; transform: scale(1.02); }
+    .btn-action:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
     
     .products-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px;
+    }
+    
+    .control-panel {
+      background: white;
+      border-radius: 2.5rem;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+      border: 1px solid #f1f5f9;
+      display: flex;
+      flex-direction: column;
       gap: 20px;
     }
     
-    .search-bar-wrapper {
-      background: var(--surface);
-      border-radius: var(--radius-lg);
-      padding: 20px;
-      margin-bottom: 24px;
-      box-shadow: var(--shadow-lg);
-    }
-    
-    .search-bar-wrapper .search-bar {
+    .search-bar {
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
       align-items: center;
     }
     
-    .search-bar-wrapper input {
+    .search-bar input {
       flex: 1;
-      min-width: 200px;
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      padding: 14px 20px;
+      border: 2px solid #f1f5f9;
+      border-radius: 1.25rem;
       font-size: 0.95rem;
-      background: var(--surface-soft);
-      color: var(--text);
-    }
-    
-    .search-bar-wrapper button {
-      padding: 12px 24px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: var(--radius);
-      cursor: pointer;
+      background: #f8fafc;
+      color: #0f172a;
       font-weight: 600;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
+    }
+
+    .search-bar input:focus {
+      outline: none;
+      border-color: #2563eb;
+      background: white;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
     }
     
-    .search-bar-wrapper button:hover {
-      background: var(--primary-dark);
-      transform: translateY(-1px);
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
     .availability-toggle {
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      font-weight: 700;
-      color: var(--muted);
+      font-weight: 800;
+      color: #64748b;
       font-size: 0.85rem;
       cursor: pointer;
-      padding: 8px 16px;
-      background: var(--surface-soft);
-      border: 1px solid var(--border);
+      padding: 12px 20px;
+      background: #f8fafc;
+      border: 2px solid #f1f5f9;
       border-radius: 999px;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
       user-select: none;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -215,19 +215,18 @@
     }
 
     .toggle-switch-ui {
-      width: 34px;
-      height: 18px;
+      width: 38px;
+      height: 20px;
       background: #cbd5e1;
-      border-radius: 10px;
+      border-radius: 12px;
       position: relative;
-      transition: all 0.3s ease;
     }
 
     .toggle-switch-ui::after {
       content: '';
       position: absolute;
-      width: 12px;
-      height: 12px;
+      width: 14px;
+      height: 14px;
       background: white;
       border-radius: 50%;
       top: 3px;
@@ -236,83 +235,66 @@
     }
 
     .availability-toggle input:checked + .toggle-switch-ui {
-      background: var(--primary);
+      background: #2563eb;
     }
 
     .availability-toggle input:checked + .toggle-switch-ui::after {
-      left: 19px;
+      left: 21px;
     }
 
     .availability-toggle input:checked ~ span {
       color: var(--primary);
     }
     
-    .filter-section {
-      background: var(--surface);
-      border-radius: var(--radius-lg);
-      padding: 20px;
-      margin-bottom: 24px;
-      box-shadow: var(--shadow-lg);
-    }
-    
-    .filter-section h3 {
-      margin: 0 0 14px;
-      font-size: 1rem;
-      color: var(--text);
-    }
-    
     .filter-buttons {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
+      display: flex; gap: 12px; flex-wrap: wrap;
     }
     
     .filter-btn {
-      padding: 10px 16px;
-      border: 2px solid var(--border);
-      background: var(--surface-soft);
-      color: var(--text);
-      border-radius: var(--radius);
+      padding: 12px 24px;
+      border: 2px solid #f1f5f9;
+      background: white;
+      color: #64748b;
+      border-radius: 999px;
       cursor: pointer;
-      transition: all 0.2s ease;
-      font-weight: 600;
+      transition: all 0.3s ease;
+      font-weight: 700;
       font-size: 0.9rem;
     }
     
-    .filter-btn:hover {
-      border-color: var(--primary);
-      color: var(--primary);
-    }
+    .filter-btn:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
     
     .filter-btn.active {
-      background: var(--primary);
+      background: #2563eb;
       color: white;
-      border-color: var(--primary);
-    }
-
-    .browse-layout {
-      display: grid;
-      grid-template-columns: 2.2fr 1fr;
-      gap: 24px;
-      align-items: start;
+      border-color: #2563eb;
+      box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
     }
 
     .cart-panel {
-      background: var(--surface);
-      border-radius: var(--radius-lg);
-      padding: 24px;
-      box-shadow: var(--shadow-lg);
-      position: sticky;
-      top: 20px;
-      min-height: 380px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
+      background: #ffffff;
+      border-radius: 2.5rem;
+      padding: 32px;
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.1);
+      border: 1px solid #f1f5f9;
+      min-height: 500px;
+      display: flex; flex-direction: column; gap: 24px;
+    }
+
+    @media (min-width: 1025px) {
+      .cart-panel { position: sticky; top: 24px; }
+    }
+
+    .cart-empty-state {
+      background: #f8fafc;
+      border: 2px dashed #e2e8f0;
+      border-radius: 1.5rem;
+      padding: 40px 24px;
+      text-align: center;
     }
 
     .cart-header {
-      display: flex;
-      justify-content: space-between;
+      display: flex; justify-content: space-between;
       align-items: flex-start;
       gap: 16px;
     }
@@ -320,16 +302,14 @@
     .cart-header h2 {
       margin: 0;
       font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
     }
 
-    .cart-subtitle {
-      margin: 8px 0 0;
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
+    .cart-subtitle { margin: 4px 0 0; color: #64748b; font-size: 0.85rem; font-weight: 500; }
 
     .cart-badge {
-      background: var(--primary);
+      background: #2563eb;
       color: white;
       border-radius: 999px;
       padding: 10px 14px;
@@ -342,7 +322,7 @@
     .cart-items {
       display: grid;
       gap: 12px;
-      max-height: 340px;
+      max-height: 400px;
       overflow-y: auto;
     }
 
@@ -352,7 +332,7 @@
       gap: 10px;
       padding: 0 4px 8px;
       border-bottom: 1px solid var(--border-soft);
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 600;
       color: var(--text);
     }
@@ -360,10 +340,11 @@
     .cart-item {
       display: grid;
       grid-template-columns: auto 1fr auto;
-      gap: 12px;
-      background: var(--surface-soft);
-      border-radius: var(--radius);
-      padding: 14px;
+      gap: 16px;
+      background: #f8fafc;
+      border: 1px solid #f1f5f9;
+      border-radius: 1.25rem;
+      padding: 16px;
       align-items: center;
     }
 
@@ -371,8 +352,7 @@
     .select-all-wrapper input[type="checkbox"] {
       width: 18px;
       height: 18px;
-      cursor: pointer;
-      accent-color: var(--primary);
+      cursor: pointer; accent-color: #2563eb;
     }
 
     .cart-item-meta {
@@ -383,20 +363,17 @@
 
     .cart-item-controls {
       display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+      align-items: center; gap: 8px;
     }
 
     .cart-item-controls button {
-      width: 32px;
-      height: 32px;
-      border: 1px solid var(--border);
+      width: 28px;
+      height: 28px;
+      border: 1px solid #e2e8f0;
       background: white;
-      color: var(--text);
+      color: #0f172a;
       border-radius: 8px;
-      cursor: pointer;
-      font-size: 1rem;
+      cursor: pointer; font-size: 0.9rem;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -404,11 +381,10 @@
 
     .btn-delete-selected {
       margin-left: auto;
-      background: none;
-      border: none;
+      background: none; border: none;
       color: #ef4444;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -431,25 +407,25 @@
     .btn-remove {
       border-color: transparent;
       background: var(--danger);
-      color: white;
-      width: auto;
-      padding: 0 10px;
-      min-width: 32px;
+      color: white; width: auto;
+      padding: 0 8px; min-width: 28px;
     }
 
     .cart-summary {
-      border-top: 1px solid var(--border);
-      padding-top: 18px;
-      display: grid;
-      gap: 12px;
+      border-top: 2px solid #f1f5f9;
+      padding-top: 20px;
+      display: grid; gap: 8px;
     }
 
     .summary-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-weight: 600;
+      font-weight: 700;
+      color: #0f172a;
     }
+
+    .summary-row span { color: #64748b; font-weight: 600; font-size: 0.9rem; }
 
     .checkout-button {
       width: 100%;
@@ -457,83 +433,38 @@
     }
 
     .checkout-result {
-      border-top: 1px solid var(--border);
-      padding-top: 18px;
-      display: grid;
-      gap: 14px;
+      border-top: 2px solid #f1f5f9;
+      padding-top: 28px;
+      display: grid; gap: 20px;
       text-align: center;
+      margin-top: 16px;
     }
 
     .qr-box {
       position: relative;
-      margin: 0 auto;
-      padding: 20px;
+      margin: 0 auto; padding: 24px;
       background: #f8fafc;
-      border: 3px dashed var(--primary-soft);
-      border-radius: 24px;
+      border: 3px dashed #cbd5e1;
+      border-radius: 2.5rem;
       display: inline-block;
     }
 
-    .qr-scan-animation {
-      position: absolute;
-      inset: 20px;
-      border: 2px solid transparent;
-      pointer-events: none;
-    }
-
-    .qr-scan-animation::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--primary);
-      box-shadow: 0 0 15px var(--primary);
-      animation: qr-scan-line 2s linear infinite;
-    }
-
-    @keyframes qr-scan-line {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(220px); }
-    }
-
     .checkout-result img {
-      width: 100%;
-      max-width: 220px;
-      margin: 0 auto;
-      border-radius: 16px;
-      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+      width: 100%; max-width: 200px; margin: 0 auto;
+      border-radius: 1.5rem;
+      box-shadow: 0 15px 35px rgba(15, 23, 42, 0.1);
     }
 
-    .order-reference {
-      display: block;
-      font-size: 0.94rem;
-      color: var(--muted);
-      word-break: break-all;
-    }
+    .order-reference { display: block; font-size: 1rem; color: #2563eb; font-weight: 800; }
 
-    .hidden {
-      display: none !important;
-    }
-
-    @media (max-width: 990px) {
-      .browse-layout {
-        grid-template-columns: 1fr;
-      }
-
-      .cart-panel {
-        position: static;
-        top: auto;
-      }
-    }
+    .hidden { display: none !important; }
 
     @media (max-width: 768px) {
       .products-grid {
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       }
       
-      .search-bar-wrapper .search-bar {
+      .search-bar {
         flex-direction: column;
       }
       
@@ -560,42 +491,39 @@
       <div class="greeting-icon">🛍️</div>
     </section>
 
-    <!-- Search Bar -->
-    <div class="search-bar-wrapper">
-      <div class="search-bar">
+    <!-- Controls: Search & Filters Combined -->
+    <div class="control-panel">
+      <div class="flex flex-col md:flex-row gap-4 items-stretch">
         <input type="text" id="search-input" placeholder="Search for products..." autocomplete="off" />
-        <button onclick="performSearch()"><i class="fas fa-search"></i> Search</button>
+        <button onclick="performSearch()" class="px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-lg flex items-center justify-center gap-2">
+          <i class="fas fa-search"></i> Search
+        </button>
         <label class="availability-toggle">
           <input type="checkbox" id="stock-toggle" />
           <div class="toggle-switch-ui"></div>
-          <span>In-stock only</span>
+          <span class="tracking-widest">In-stock only</span>
         </label>
       </div>
-    </div>
 
-    <!-- Filters -->
-    <div class="filter-section">
-      <h3>Filter by Category</h3>
-      <div class="filter-buttons">
-        <button class="filter-btn active" data-category="all" onclick="filterByCategory('all', this)">All</button>
-        <button class="filter-btn" data-category="supplies" onclick="filterByCategory('supplies', this)">Supplies</button>
-        <button class="filter-btn" data-category="uniforms" onclick="filterByCategory('uniforms', this)">Uniforms</button>
-        <button class="filter-btn" data-category="accessories" onclick="filterByCategory('accessories', this)">Accessories</button>
+      <div class="filter-group">
+        <div class="flex items-center space-x-3 mb-2">
+          <div class="h-1 w-6 bg-blue-600 rounded-full"></div>
+          <h3 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Quick Filters</h3>
+        </div>
+        <div class="filter-buttons">
+          <button class="filter-btn active" data-category="all" onclick="filterByCategory('all', this)">All Categories</button>
+          <button class="filter-btn" data-category="uniforms" onclick="filterByCategory('uniforms', this)">Uniform Fabrics</button>
+          <button class="filter-btn" data-category="accessories" onclick="filterByCategory('accessories', this)">Accessories</button>
+        </div>
       </div>
     </div>
 
-    <!-- Products + Cart -->
-    <div class="browse-layout">
-      <section class="activity-section">
-        <div class="section-heading">
-          <h2>Products</h2>
-          <p>Tap Buy or Rent to add products to your cart and prepare a checkout QR code.</p>
-        </div>
-
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-10">
+      <section class="space-y-6">
         <div class="products-grid" id="products-container">
-          <div class="loading">
-            <div class="spinner"></div>
-            <span>Loading products...</span>
+          <div class="col-span-full py-20 flex flex-col items-center justify-center text-slate-400">
+            <div class="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+            <span class="font-bold uppercase tracking-widest text-[10px]">Loading Catalog...</span>
           </div>
         </div>
       </section>
@@ -604,7 +532,7 @@
         <div class="cart-header">
           <div>
             <h2>Shopping Cart</h2>
-            <p class="cart-subtitle">Review items, update quantities, and checkout securely.</p>
+            <p class="cart-subtitle">Review and checkout securely.</p>
           </div>
           <span id="cart-count" class="cart-badge">0</span>
         </div>
@@ -631,13 +559,25 @@
           </div>
           <div class="summary-row">
             <span>Subtotal</span>
-            <strong id="cart-subtotal">₱0.00</strong>
+            <strong id="cart-subtotal" class="text-xl text-blue-600">₱0.00</strong>
           </div>
         </div>
 
-        <button id="checkout-button" class="btn-action btn-buy checkout-button" type="button">Checkout</button>
-    </div>
+        <button id="checkout-button" class="w-full py-4 px-6 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl font-extrabold text-base tracking-wide shadow-xl shadow-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3 group" type="button">
+          <i class="fas fa-lock text-sm opacity-70 group-hover:opacity-100 transition-opacity"></i>
+          <span>Proceed to Checkout</span>
+        </button>
 
+        <div id="checkout-result" class="checkout-result hidden">
+          <div class="qr-box">
+            <div class="qr-scan-animation"></div>
+            <img id="checkout-qr" src="" alt="Checkout QR">
+          </div>
+          <p>Order Reference: <strong id="order-reference" class="order-reference"></strong></p>
+          <p class="text-sm text-slate-500">Please present this QR code to the cashier to finalize your payment.</p>
+        </div>
+      </aside>
+    </div>
   </main>
 
   <script src="../../assets/js/user.js"></script>
@@ -703,13 +643,15 @@
             <div class="product-info">
               <h3 class="product-name">${product.product_name}</h3>
               <span class="product-category">${product.product_category || 'Uncategorized'}</span>
-              <p class="product-description">${product.product_description || 'No description available.'}</p>
-              <div class="product-price">
-                ${product.buy_price > 0 && category !== 'books' ? `<div><span class="price-label">Buy:</span> ₱${parseFloat(product.buy_price).toFixed(2)}</div>` : ''}
-                ${product.rent_price > 0 ? `<div><span class="price-label">Rent:</span> ₱${parseFloat(product.rent_price).toFixed(2)}</div>` : ''}
+              <p class="product-description italic">${product.product_description || 'No description available.'}</p>
+              <div class="space-y-1">
+                ${product.buy_price > 0 && category !== 'books' ? `<div class="flex items-center"><span class="price-label">Buy</span> <span class="price-value">₱${parseFloat(product.buy_price).toFixed(2)}</span></div>` : ''}
+                ${product.rent_price > 0 ? `<div class="flex items-center"><span class="price-label">Rent</span> <span class="price-value">₱${parseFloat(product.rent_price).toFixed(2)}</span></div>` : ''}
               </div>
-              <div class="product-stock">
-                ${productStatus !== 'available' ? `<span class="stock-unavailable">${productStatus.replace(/_/g, ' ')}</span>` : `Available: <span class="${stockClass}">${inStock ? `${stockValue} pcs` : 'Out of stock'}</span>`}
+              <div class="pt-2">
+                ${productStatus !== 'available' 
+                  ? `<span class="text-[10px] font-black uppercase text-red-500 tracking-wider">${productStatus.replace(/_/g, ' ')}</span>` 
+                  : `<span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Inventory: </span><span class="${stockClass} text-xs">${inStock ? `${stockValue} pcs` : 'Out of stock'}</span>`}
               </div>
             </div>
             <div class="product-actions">
@@ -862,23 +804,25 @@
           <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="toggleSelectItem(${item.product_id}, '${item.type}', this.checked)">
           <div>
             <strong>${item.product_name}</strong>
-            <div class="cart-item-meta">${item.type.toUpperCase()} • ₱${item.unitPrice.toFixed(2)} ${item.type === 'rent' ? `× ${item.duration} ${item.durationUnit}` : ''}</div>
+            <div class="text-[10px] font-black uppercase tracking-widest text-blue-600 mt-1">${item.type} • ₱${item.unitPrice.toFixed(2)}</div>
             ${item.type === 'rent' ? `
-              <div class="rental-duration-selector" style="margin-top: 6px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
-                <span>Borrow for:</span>
-                <input type="number" min="1" value="${item.duration || 1}" style="width: 45px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px;" onchange="updateRentalDuration(${item.product_id}, this.value)">
-                <select style="padding: 2px; border: 1px solid var(--border); border-radius: 4px;" onchange="updateRentalUnit(${item.product_id}, this.value)">
+              <div class="flex items-center gap-2 mt-2">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Duration:</span>
+                <input type="number" min="1" value="${item.duration || 1}" class="w-12 text-center text-xs font-bold py-1 bg-white border border-slate-200 rounded-lg" onchange="updateRentalDuration(${item.product_id}, this.value)">
+                <select class="text-[10px] font-bold py-1 px-1 bg-white border border-slate-200 rounded-lg outline-none" onchange="updateRentalUnit(${item.product_id}, this.value)">
                   <option value="days" ${item.durationUnit === 'days' ? 'selected' : ''}>Days</option>
                   <option value="hours" ${item.durationUnit === 'hours' ? 'selected' : ''}>Hours</option>
                 </select>
               </div>
             ` : ''}
           </div>
-          <div class="cart-item-controls">
-            <button type="button" onclick="changeCartQuantity(${item.product_id}, '${item.type}', -1)">−</button>
-            <span>${item.quantity}</span>
-            <button type="button" onclick="changeCartQuantity(${item.product_id}, '${item.type}', 1)">+</button>
-            <button type="button" class="btn-remove" onclick="removeCartItem(${item.product_id}, '${item.type}')"><i class="fas fa-trash"></i></button>
+          <div class="flex flex-col items-end gap-2">
+            <div class="flex items-center gap-2">
+              <button type="button" class="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-md text-xs hover:bg-slate-50" onclick="changeCartQuantity(${item.product_id}, '${item.type}', -1)">−</button>
+              <span class="text-sm font-black w-4 text-center">${item.quantity}</span>
+              <button type="button" class="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-md text-xs hover:bg-slate-50" onclick="changeCartQuantity(${item.product_id}, '${item.type}', 1)">+</button>
+            </div>
+            <button type="button" class="text-red-400 hover:text-red-600 transition-colors" onclick="removeCartItem(${item.product_id}, '${item.type}')"><i class="fas fa-trash-alt text-xs"></i></button>
           </div>
         </div>
       `).join('');
@@ -986,7 +930,7 @@
       };
 
       const checkoutButton = document.getElementById('checkout-button');
-      checkoutButton.textContent = 'Processing...';
+      checkoutButton.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing...';
       checkoutButton.disabled = true;
 
       try {
@@ -1034,7 +978,7 @@
         } else { errorMsg += error.message; }
         alert(errorMsg);
       } finally {
-        checkoutButton.textContent = 'Checkout';
+        checkoutButton.innerHTML = '<i class="fas fa-lock text-sm opacity-70"></i> Proceed to Checkout';
         checkoutButton.disabled = cart.length === 0;
       }
     }

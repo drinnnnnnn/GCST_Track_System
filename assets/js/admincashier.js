@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿let currentAdminId = null;
+﻿﻿﻿﻿﻿﻿﻿﻿let currentAdminId = null;
 let currentTicket = null;
 let emailLogs = [];
 let gmailPollInterval = null; // New: For Gmail logs polling
@@ -317,6 +317,7 @@ window.initializeAdminCashierPage = function(pageCallback) {
   window.addEventListener('beforeunload', () => {
     stopNotifPolling();
     stopGmailPolling(); // Stop Gmail polling on unload
+    stopSalesPolling(); // Stop Sales polling on unload
     if (typeof stopQueuePolling === 'function') stopQueuePolling();
     if (typeof stopInventoryPolling === 'function') stopInventoryPolling();
   });
@@ -696,34 +697,8 @@ async function autoLoadSidebar() {
  * Initialization helper:
  * Only auto-loads the sidebar if initializeAdminCashierPage hasn't been called.
  */
-document.addEventListener('DOMContentLoaded', () => {
-  // Centralized backend connection check
-  fetch('../../actions/get_user.php')
-    .then(res => res.json())
-    .then(data => {
-      if (data.admin_id) {
-        currentAdminId = data.admin_id;
-        updateGreeting(data.name || data.username || 'Admin');
-        
-        if (!window.location.pathname.includes('admincashier_inventorys.html')) {
-          loadNotifications();
-          startNotifPolling();
-        }
-        
-        // Auto-init Gmail features if the container exists
-        if (document.getElementById('emailLogsBody')) { 
-          loadGmailData(); 
-          attachEmailFilters(); 
-          window.startGmailPolling();
-        }
-      }
-    });
-
-  const container = document.getElementById('sidebar-container');
-  if (container && container.innerHTML.trim() === "") {
-    autoLoadSidebar();
-  }
-});
+// Removed the redundant DOMContentLoaded listener here to let initializeAdminCashierPage 
+// handle the flow exclusively, preventing double fetch requests on every page load.
 
 // =====================================================
 // SALES PAGE FUNCTIONS (Moved from admincashier_sale.html)
@@ -746,12 +721,16 @@ function setActivePeriodButton(period) {
 }
 
 async function loadSalesData(period) {
+  const historyBody = document.getElementById('historyBody');
+  if (historyBody && historyBody.innerHTML === '') {
+    historyBody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading data...</td></tr>';
+  }
+
   try {
-    const response = await fetch(`../../actions/get_admincashier_sales.php?period=${encodeURIComponent(period)}&limit=100`);
-    const data = await response.json();
+    const data = await fetchWithError(`../../actions/get_admincashier_sales.php?period=${encodeURIComponent(period)}&limit=100`);
 
     if (!data.success) {
-        console.error('Backend error:', data.message);
+        showError(historyBody, data.message || 'Failed to fetch sales data');
         return;
     }
 
@@ -771,10 +750,13 @@ async function loadSalesData(period) {
       updateChart(salesTrendChartInstance, data.sales_labels || [], data.sales_data || [], 'Daily Sales (₱)', 'line', 'rgba(69, 88, 255, 0.16)', '#4558ff');
     }
 
+    const productLabels = data.top_products?.map(item => item.name) || [];
+    const productQuantities = data.top_products?.map(item => item.quantity) || [];
+
     if (!topProductsChartInstance) {
-      topProductsChartInstance = createChart('topProductsChart', 'bar', data.top_products?.map(item => item.name) || [], data.top_products?.map(item => item.quantity) || [], 'Units Sold');
+      topProductsChartInstance = createChart('topProductsChart', 'bar', productLabels, productQuantities, 'Units Sold');
     } else {
-      updateChart(topProductsChartInstance, data.top_products?.map(item => item.name) || [], data.top_products?.map(item => item.quantity) || [], 'Units Sold', 'bar', 'rgba(69, 88, 255, 0.16)', '#4558ff');
+      updateChart(topProductsChartInstance, productLabels, productQuantities, 'Units Sold', 'bar', 'rgba(69, 88, 255, 0.16)', '#4558ff');
     }
 
     lastFetchedSalesHistory = Array.isArray(data.history) ? data.history : [];
@@ -782,7 +764,7 @@ async function loadSalesData(period) {
 
   } catch (error) {
     console.error('Unable to load sales data:', error);
-    document.getElementById('historyBody').innerHTML = '<tr><td colspan="6" class="empty-state">Unable to load sales history.</td></tr>';
+    if (historyBody) historyBody.innerHTML = '<tr><td colspan="6" class="empty-state">Unable to load sales history.</td></tr>';
   }
 }
 
@@ -891,7 +873,7 @@ window.viewReceiptDetails = async function(transactionId) {
       const t = data.transaction; // Assuming the backend returns a 'transaction' object
 
       // Format items for display
-      const itemsHtml = t.items.map(item => `
+      const itemsHtml = (t.items || []).map(item => `
         <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
           <div class="flex-1 pr-2">
             <p class="text-gray-800 font-medium">${item.product_name}</p>
@@ -1046,11 +1028,6 @@ window.initAdminCashierSalesPage = function(userData) {
       renderSalesHistory(filtered);
     });
   }
-
-  // Clean up sales polling on page unload
-  window.addEventListener('beforeunload', () => {
-    stopSalesPolling();
-  });
 };
 
 // =====================================================

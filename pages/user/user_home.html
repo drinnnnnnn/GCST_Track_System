@@ -16,6 +16,9 @@
       --slate-900: #0f172a;
       --slate-600: #475569;
       --slate-400: #94a3b8;
+      --indigo-600: #4f46e5;
+      --emerald-600: #059669;
+      --amber-600: #d97706;
       --glass: rgba(255, 255, 255, 0.7);
     }
 
@@ -40,26 +43,25 @@
     .card-hover { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .card-hover:hover { transform: translateY(-10px); box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.2); }
 
+    .section-title {
+      font-size: 1.875rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+    }
+
     .welcome-banner {
-      /* Keep your original background settings */
       background-image: url('../../assets/images/bg/Granby.jpg');
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-      
-      /* Enhanced Styling */
       color: white;
-      padding: 80px 40px; /* Slightly more vertical breathing room */
-      border-radius: 2rem;
-      text-align: center;
+      padding: 100px 60px;
+      border-radius: 3rem;
+      text-align: left;
       margin-bottom: 32px;
       position: relative;
       overflow: hidden;
-      
-      /* Softer, more modern shadow */
-      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
-      
-      /* Smooth entrance animation */
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
       animation: fadeInDown 0.8s ease-out;
     }
 
@@ -69,35 +71,18 @@
       position: absolute;
       inset: 0;
       background: linear-gradient(
-        135deg, 
+        to right, 
         rgba(0, 0, 0, 0.7) 0%, 
-        rgba(0, 0, 0, 0.3) 100%
+        rgba(37, 99, 235, 0.3) 100%
       );
       z-index: 1;
     }
 
-    /* Glassmorphism accent to make the banner feel "high-end" */
-    .welcome-banner::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -50%;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.05);
-      transform: skewX(-25deg);
-      z-index: 2;
-      pointer-events: none;
-    }
-
-    /* Ensures text stays above the overlays */
     .welcome-banner > * {
       position: relative;
       z-index: 3;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
 
-    /* Entrance Animation Keyframes */
     @keyframes fadeInDown {
       from {
         opacity: 0;
@@ -112,7 +97,7 @@
     /* Quick Link Card Refinement */
     .quick-link-card {
       background: white;
-      border-radius: 1.5rem;
+      border-radius: 2rem;
       padding: 24px;
       text-align: center;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -121,6 +106,7 @@
       border: 1px solid #f1f5f9;
       display: flex;
       flex-direction: column;
+      height: 100%;
       align-items: center;
     }
 
@@ -131,10 +117,10 @@
     }
 
     .quick-link-icon {
-      font-size: 2rem;
-      width: 60px;
-      height: 60px;
-      background: var(--primary-soft);
+      font-size: 1.5rem;
+      width: 56px;
+      height: 56px;
+      background: #f8fafc;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -151,15 +137,15 @@
     .features-section {
       background: white;
       border-radius: 2rem;
-      padding: 40px;
+      padding: 3rem;
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04);
       border: 1px solid #f1f5f9;
     }
 
     .feature-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
+      width: 54px;
+      height: 54px;
+      border-radius: 1rem;
       background: var(--primary-soft);
       display: flex;
       align-items: center;
@@ -174,13 +160,56 @@
       color: white;
     }
 
+    /* Help Guide Styles */
+    .help-guide-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border-radius: 2.5rem;
+      padding: 3rem 2rem;
+      border: 1px solid #e2e8f0;
+    }
+
+    .step-box {
+      background: white;
+      padding: 2rem;
+      border-radius: 1.5rem;
+      border: 1px solid #f1f5f9;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .step-box:hover {
+      border-color: var(--primary);
+      box-shadow: 0 10px 30px -10px rgba(37, 99, 235, 0.15);
+    }
+
+    .step-number {
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.8rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .help-hint {
+      color: var(--primary);
+      font-weight: 600;
+      border-bottom: 1px dashed var(--primary);
+      cursor: help;
+    }
+
     .products-panel {
       background: white;
-      border-radius: 2rem;
+      border-radius: 2.5rem;
       padding: 32px;
       box-shadow: 0 20px 35px rgba(15, 23, 42, 0.05);
       border: 1px solid #e2e8f0;
-      overflow: hidden;
+      margin-top: 3rem;
     }
 
     .products-panel h2 {
@@ -607,14 +636,14 @@
 
   <main class="max-w-7xl mx-auto px-6 py-8">
     
-    <!-- Welcome Banner -->
+    <!-- Refined Welcome Banner -->
     <div class="welcome-banner">
-      <span class="px-4 py-1 bg-blue-500/20 text-blue-300 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] mb-4 inline-block">Student Access Only</span>
+      <span class="px-4 py-1.5 bg-blue-500/30 text-blue-100 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] mb-6 inline-block backdrop-blur-md border border-white/10">Authorized Student Portal</span>
       <h1 class="text-4xl md:text-5xl font-black mb-3">Welcome to GCST Tracking</h1>
-      <p class="text-slate-400 text-lg font-light">Your Tracking Portal.</p>
+      <p class="text-slate-200 text-lg font-light max-w-2xl leading-relaxed">Access your academic resources, manage transactions, and streamline your campus experience in one secure location.</p>
     </div>
 
-    <!-- Quick Links -->
+    <!-- Actionable Services -->
     <section class="mb-12">
       <div class="flex items-center space-x-3 mb-8">
         <div class="h-1 w-8 bg-blue-600 rounded-full"></div>
@@ -622,98 +651,57 @@
       </div>
       
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <a href="#" class="quick-link-card">
-          <div class="quick-link-icon text-blue-600">📊</div>
+        <a href="InUser_home.html" class="quick-link-card">
+          <div class="quick-link-icon text-blue-600"><i class="fas fa-chart-pie"></i></div>
           <h3 class="text-lg font-bold text-slate-800">Dashboard</h3>
           <p class="text-sm text-slate-500 mt-2">Personalized rental summaries and real-time statistics.</p>
         </a>
-        <a href="#" class="quick-link-card">
-          <div class="quick-link-icon text-emerald-600">🛍️</div>
+        <a href="user_browse_products.html" class="quick-link-card">
+          <div class="quick-link-icon text-emerald-600"><i class="fas fa-shopping-bag"></i></div>
           <h3 class="text-lg font-bold text-slate-800">Browse Products</h3>
           <p class="text-sm text-slate-500 mt-2">Shop for school supplies and uniforms.</p>
         </a>
-        <a href="#" class="quick-link-card">
-          <div class="quick-link-icon text-amber-600">🎟️</div>
+        <a href="user_queue_tickets.html" class="quick-link-card">
+          <div class="quick-link-icon text-amber-600"><i class="fas fa-ticket-alt"></i></div>
           <h3 class="text-lg font-bold text-slate-800">Queue Tickets</h3>
           <p class="text-sm text-slate-500 mt-2">Skip the line with digital queue management.</p>
-        </a>
-        <a href="#" class="quick-link-card">
-          <div class="quick-link-icon text-slate-600">👤</div>
-          <h3 class="text-lg font-bold text-slate-800">My Profile</h3>
-          <p class="text-sm text-slate-500 mt-2">Securely update your personal information.</p>
         </a>
       </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="features-section mb-12">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+    <!-- New: User Manual & Help Guide Section -->
+    <section class="help-guide-card mb-12">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
         <div>
-          <h2 class="text-3xl font-black text-slate-900">Platform Features</h2>
-          <p class="text-slate-500">Everything you need for a streamlined student experience.</p>
+          <h2 class="text-3xl font-black text-slate-900">How to use GCST Track</h2>
+          <p class="text-slate-500 mt-2">New to the portal? Follow these simple steps to get started.</p>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-        <!-- Feature 1 -->
-        <div class="feature-item flex space-x-5">
-          <div class="feature-icon shrink-0 shadow-lg shadow-blue-100">
-            <i class="fas fa-book-open"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-slate-800 mb-1">Book Rentals</h3>
-            <p class="text-sm text-slate-500 leading-relaxed">Rent reference materials for your courses with a few clicks.</p>
-          </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Step 1 -->
+        <div class="step-box">
+          <div class="step-number">1</div>
+          <h4 class="font-bold text-slate-800 mb-2">Check Dashboard</h4>
+          <p class="text-sm text-slate-500 leading-relaxed">Visit your <span class="help-hint" title="Summarizes your active rentals, pending orders, and queue position.">Home Dashboard</span> to see real-time updates on your account status.</p>
         </div>
-        <!-- Feature 2 -->
-        <div class="feature-item flex space-x-5">
-          <div class="feature-icon shrink-0 shadow-lg shadow-blue-100">
-            <i class="fas fa-shopping-cart"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-slate-800 mb-1">Online Shop</h3>
-            <p class="text-sm text-slate-500 leading-relaxed">Official uniforms and supplies available for direct purchase.</p>
-          </div>
+        <!-- Step 2 -->
+        <div class="step-box">
+          <div class="step-number" style="background: var(--emerald-600);">2</div>
+          <h4 class="font-bold text-slate-800 mb-2">Browse Products</h4>
+          <p class="text-sm text-slate-500 leading-relaxed">Go to <strong>Browse Products</strong> to purchase fabric uniform and accessories. Add items to your cart and proceed to checkout.</p>
         </div>
-        <!-- Feature 3 -->
-        <div class="feature-item flex space-x-5">
-          <div class="feature-icon shrink-0 shadow-lg shadow-blue-100">
-            <i class="fas fa-ticket-alt"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-slate-800 mb-1">Queue System</h3>
-            <p class="text-sm text-slate-500 leading-relaxed">Digital ticketing to save time during administrative visits.</p>
-          </div>
+        <!-- Step 3 -->
+        <div class="step-box">
+          <div class="step-number" style="background: var(--amber-600);">3</div>
+          <h4 class="font-bold text-slate-800 mb-2">Show QR Ticket</h4>
+          <p class="text-sm text-slate-500 leading-relaxed">Upon checkout, the system generates a <span class="help-hint" title="This QR code links to your order. The cashier will scan it to verify your items.">QR Code</span>. Present this to the cashier to complete your payment.</p>
         </div>
-        <!-- Feature 4 -->
-        <div class="feature-item flex space-x-5">
-          <div class="feature-icon shrink-0 shadow-lg shadow-blue-100">
-            <i class="fas fa-credit-card"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-slate-800 mb-1">Fee Management</h3>
-            <p class="text-sm text-slate-500 leading-relaxed">Real-time tracking of balances and payment histories.</p>
-          </div>
-        </div>
-        <!-- Feature 5 -->
-        <div class="feature-item flex space-x-5">
-          <div class="feature-icon shrink-0 shadow-lg shadow-blue-100">
-            <i class="fas fa-bell"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-slate-800 mb-1">Smart Alerts</h3>
-            <p class="text-sm text-slate-500 leading-relaxed">Notifications for due dates and institutional announcements.</p>
-          </div>
-        </div>
-        <!-- Feature 6 -->
-        <div class="feature-item flex space-x-5">
-          <div class="feature-icon shrink-0 shadow-lg shadow-blue-100">
-            <i class="fas fa-user-check"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-slate-800 mb-1">Full Control</h3>
-            <p class="text-sm text-slate-500 leading-relaxed">End-to-end management of your student profile and preferences.</p>
-          </div>
+        <!-- Step 4 -->
+        <div class="step-box">
+          <div class="step-number" style="background: #6366f1;">4</div>
+          <h4 class="font-bold text-slate-800 mb-2">Join the Queue</h4>
+          <p class="text-sm text-slate-500 leading-relaxed">Need to see the Registrar or Cashier? Simply generate a <strong>Queue Ticket</strong> at the kiosk and receive real-time notifications when it’s your turn.</p>
         </div>
       </div>
     </section>
@@ -984,7 +972,7 @@
         'support-modal': {
           title: 'Contact Support',
           subtitle: 'Technical Help Desk',
-          text: 'Having trouble? Contact the MIS support team at the Administration building or email support@granby.edu.ph for assistance with your student account or portal access.'
+          text: 'Having trouble? Contact the MIS support team at the Administration building or email gcst001234@gmail.com for assistance with your student account or portal access.'
         }
       };
 

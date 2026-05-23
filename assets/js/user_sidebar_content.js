@@ -1,42 +1,4 @@
 export function getSidebarHTML() {
-    // Define functions once
-    if (!window.initSidebarGestures) {
-        window.initSidebarGestures = function() {
-            const sidebar = document.getElementById('main-sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            if (!sidebar || !overlay) return;
-
-            let touchStartX = 0;
-            let touchEndX = 0;
-
-            const handleGesture = () => {
-                const swipeDistance = touchEndX - touchStartX;
-                // Swipe left to close (threshold increased for better feel)
-                if (sidebar.classList.contains('active') && swipeDistance < -60) {
-                    if (typeof window.toggleSidebar === 'function') {
-                        window.toggleSidebar();
-                    }
-                }
-            };
-
-            const addTouchEvents = (el) => {
-                el.addEventListener('touchstart', e => {
-                    touchStartX = e.changedTouches[0].screenX;
-                }, { passive: true });
-
-                el.addEventListener('touchend', e => {
-                    touchEndX = e.changedTouches[0].screenX;
-                    handleGesture();
-                }, { passive: true });
-            };
-
-            addTouchEvents(sidebar);
-            addTouchEvents(overlay);
-        };
-        // Initialize after DOM injection
-        setTimeout(window.initSidebarGestures, 200);
-    }
-
     if (!window.logoutUser) {
         window.logoutUser = function() {
             const modal = document.getElementById('sidebar-logout-modal');
@@ -72,12 +34,14 @@ export function getSidebarHTML() {
     if (!document.getElementById('sidebar-logout-modal')) {
         const modalHTML = `
         <div id="sidebar-logout-modal" class="logout-modal-overlay" style="display:none;">
-            <div class="logout-modal-card">
-                <div class="logout-modal-icon"><i class="fas fa-door-open"></i></div>
-                <h2 class="logout-modal-title">Confirm Logout</h2>
-                <p class="logout-modal-text">Are you sure you want to end your session? Make sure all your work has been saved.</p>
+            <div class="logout-modal-card" role="dialog" aria-modal="true">
+                <div class="logout-modal-icon">
+                    <i class="fas fa-door-open"></i>
+                </div>
+                <h2 class="logout-modal-title">End Session?</h2>
+                <p class="logout-modal-text">You are about to log out of your student portal. Please ensure all your current activities are completed.</p>
                 <div class="logout-modal-actions">
-                    <button onclick="closeLogoutModal()" class="btn-modal btn-modal-cancel">Stay</button>
+                    <button onclick="closeLogoutModal()" class="btn-modal btn-modal-cancel">Cancel</button>
                     <button onclick="performLogout()" class="btn-modal btn-modal-confirm">Log Out</button>
                 </div>
             </div>
@@ -87,218 +51,326 @@ export function getSidebarHTML() {
 
     return `
 <style>
-    .sidebar {
-        display: flex;
-        flex-direction: column;
-        padding: 2rem 1.25rem;
-        border-right: 1px solid var(--border-soft);
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(20px) saturate(180%);
-        transition: var(--transition, 0.35s cubic-bezier(0.4, 0, 0.2, 1));
-        box-sizing: border-box;
-        position: fixed; top: 0; left: 0; bottom: 0;
-        z-index: 1001;
-        width: 280px;
+    :root {
+        --nav-height-base: 72px;
+        --primary-blue: #2563eb;
+        --bg-glass: rgba(255, 255, 255, 0.8);
+        --nav-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --nav-transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    @media (min-width: 1025px) {
-        .sidebar.minimized { width: var(--sidebar-minimized, 85px); padding: 2rem 0.75rem; }
+    .content-wrapper { 
+        margin-left: 0 !important; 
+        padding-top: calc(var(--nav-height-base) + 2.5rem) !important;
+        transition: none !important;
+    }
+    
+    header:not(.user-top-navbar) { display: none !important; }
+    #sidebar-overlay { display: none !important; }
+
+    .user-top-navbar {
+        position: fixed;
+        top: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 2.5rem);
+        max-width: 1400px;
+        min-height: var(--nav-height-base);
+        height: auto;
+        background: var(--bg-glass);
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 1.5rem;
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        box-shadow: var(--nav-shadow);
+        transition: var(--nav-transition);
+    }
+
+    .user-top-navbar:hover {
+        background: rgba(255, 255, 255, 0.95);
+        border-color: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15);
+    }
+
+    .nav-inner {
+        width: 100%;
+        max-width: 1400px;
+        padding: 0.5rem 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        transition: var(--nav-transition);
+    }
+
+    .nav-brand {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+        gap: 0.85rem;
+        text-decoration: none;
+        transition: opacity 0.2s ease;
+    }
+
+    .nav-brand:active { opacity: 0.8; }
+
+    .nav-brand img { 
+        width: 44px; 
+        height: 44px; 
+        object-fit: contain;
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    }
+
+    .brand-text {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        line-height: 1.1;
+    }
+    
+    .brand-text h1 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #0f172a;
+        margin: 0;
+        letter-spacing: -0.015em;
+    }
+
+    .nav-brand:hover img {
+        transform: scale(1.1) rotate(-6deg);
+    }
+
+    .brand-text span {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--primary-blue);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-top: 1px;
+    }
+
+    .nav-center {
+        display: flex;
+        justify-content: center;
+        flex: 1;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.5rem 1rem;
+        border-radius: 0.85rem;
+        color: #64748b;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-decoration: none;
+        transition: all 0.25s ease;
+        white-space: nowrap;
+    }
+
+    .nav-item i { width: 1.2rem; text-align: center; }
+    .nav-item i { font-size: 1.1rem; transition: transform 0.2s; }
+    .nav-item:hover { background: #f1f5f9; color: var(--primary-blue); }
+    .nav-item:hover i { transform: translateY(-2px); }
+    
+    .nav-item.active {
+        background: var(--primary-blue);
+        color: white;
+        box-shadow: 0 8px 12px -3px rgba(37, 99, 235, 0.2);
+    }
+
+    .nav-right {
+        display: flex;
+        justify-content: flex-end;
+        flex: 0 0 auto;
+        gap: 0.5rem;
+    }
+
+    .nav-logout {
+        color: #ef4444;
+        font-weight: 700;
+    }
+
+    .nav-logout:hover {
+        background: #fef2f2 !important;
+        color: #dc2626 !important;
     }
 
     .logout-modal-overlay {
-        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5);
-        backdrop-filter: blur(12px); z-index: 10000; display: none; align-items: center; justify-content: center;
-        opacity: 0; transition: var(--transition); font-family: 'Poppins', sans-serif;
+        position: fixed; 
+        inset: 0; 
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(8px); z-index: 10000; display: none; align-items: center; justify-content: center;
+        opacity: 0; 
+        transition: opacity 0.3s ease;
+        padding: 20px;
     }
+
     .logout-modal-overlay.active { display: flex; opacity: 1; }
+
     .logout-modal-card {
-        background: white; width: 90%; max-width: 420px; padding: 3rem 2.5rem;
-        border-radius: 2.5rem; text-align: center; box-shadow: var(--shadow-lg);
-        transform: scale(0.9); transition: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        background: #ffffff; 
+        width: 100%; 
+        max-width: 400px; 
+        padding: 2.5rem 2rem;
+        border-radius: 1.5rem; 
+        text-align: center; 
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        transform: translateY(20px) scale(0.95); 
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .logout-modal-overlay.active .logout-modal-card { transform: scale(1); }
+
+    .logout-modal-overlay.active .logout-modal-card { 
+        transform: translateY(0) scale(1); 
+    }
+
     .logout-modal-icon {
-        width: 80px; height: 80px; background: #fef2f2; color: var(--danger);
-        border-radius: 1.5rem; display: flex; align-items: center; justify-content: center;
-        margin: 0 auto 1.5rem; font-size: 2rem; transform: rotate(-5deg);
-    }
-    .logout-modal-title { margin: 0 0 0.5rem; color: var(--text); font-size: 1.75rem; font-weight: 800; }
-    .logout-modal-text { color: var(--muted); font-size: 1rem; margin-bottom: 2.5rem; line-height: 1.6; }
-    .logout-modal-actions { display: flex; gap: 1rem; }
-    .btn-modal { flex: 1; padding: 1rem; border-radius: 1.25rem; font-weight: 700; cursor: pointer; border: none; transition: all 0.3s; }
-    .btn-modal-cancel { background: var(--surface-soft); color: var(--text); }
-    .btn-modal-confirm { background: var(--primary); color: white; box-shadow: 0 10px 15px -3px rgba(102, 126, 234, 0.3); }
-    .btn-modal-confirm:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(102, 126, 234, 0.5); }
-
-    #sidebar-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.4);
-        backdrop-filter: blur(4px);
-        z-index: 1000;
-        display: none;
-    }
-    #sidebar-overlay.active { display: block; }
-
-    @media (max-width: 1024px) {
-        .sidebar { 
-            transform: translateX(-110%); 
-            border-radius: 0 2rem 2rem 0;
-            width: 300px;
-            max-width: 80vw;
-            box-shadow: 10px 0 30px rgba(15, 23, 42, 0.15);
-        }
-        .sidebar.active { transform: translateX(0); }
-        .sidebar-minimize-btn { display: none; }
-        .sidebar-mobile-close { display: flex !important; }
-        .sidebar-brand { margin-bottom: 2rem; }
-
-        /* Enhanced Touch Targets */
-        .sidebar-link {
-            padding: 1.1rem 1.5rem;
-            margin-bottom: 0.8rem;
-            font-size: 1rem;
-        }
-        .sidebar-footer { padding-bottom: 2rem; }
-        .nav-section-label { margin-top: 2rem; font-size: 0.75rem; }
-
-        .sidebar-mobile-close {
-            display: flex;
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: var(--surface-soft);
-            border: 1px solid var(--border); width: 40px; height: 40px; border-radius: 12px;
-            align-items: center; justify-content: center;
-            color: var(--muted); cursor: pointer;
-            z-index: 1002;
-        }
-    }
-
-    .sidebar-brand {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 3rem;
-        padding: 0 0.5rem;
-        position: relative;
-    }
-
-    .sidebar-mobile-close {
-        display: none;
-    }
-
-    .sidebar-brand img {
-        width: 42px;
-        height: 42px;
-        transition: transform 0.3s ease;
-    }
-
-    .sidebar-minimize-btn {
-        position: absolute;
-        top: 50%;
-        right: -25px;
-        transform: translate(50%, -50%);
-        background: var(--primary);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 28px;
-        height: 28px;
+        width: 64px;
+        height: 64px;
+        background: #fff1f2;
+        color: #e11d48;
+        font-size: 1.75rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transition: all 0.3s ease;
-        z-index: 1001;
-    }
-
-    @media (max-width: 1024px) {
-        .sidebar-minimize-btn { display: none; }
-    }
-
-    .sidebar.minimized .sidebar-minimize-btn { right: 0; transform: translate(50%, -50%) rotate(180deg); }
-    .sidebar.minimized .sidebar-brand img { transform: scale(1.1); }
-    .sidebar.minimized .sidebar-brand h1, 
-    .sidebar.minimized .sidebar-brand span, 
-    .sidebar.minimized .nav-section-label, 
-    .sidebar.minimized .sidebar-link span {
-        display: none;
-    }
-
-    .nav-section-label {
-        font-size: 0.7rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.15em;
-        color: var(--muted);
-        margin: 1.5rem 0 0.75rem 1rem;
-        opacity: 0.7;
-    }
-
-    .sidebar-link {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 0.9rem 1.25rem;
         border-radius: 1.25rem;
-        color: var(--muted);
-        font-weight: 600;
+        margin: 0 auto 1.5rem;
+        transition: transform 0.3s ease;
+    }
+
+    .logout-modal-card:hover .logout-modal-icon {
+        transform: scale(1.1) rotate(-5deg);
+    }
+
+    .logout-modal-title {
+        color: #0f172a;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+
+    .logout-modal-text {
+        color: #64748b;
         font-size: 0.95rem;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        margin-bottom: 0.5rem;
-        position: relative;
+        line-height: 1.6;
+        margin-bottom: 2rem;
     }
 
-    .sidebar-link i { font-size: 1.2rem; width: 24px; text-align: center; transition: transform 0.3s ease; }
-    .sidebar-link:hover { background: var(--surface-soft); color: var(--primary); transform: translateX(5px); }
-    .sidebar-link:hover i { transform: scale(1.1); }
-    .sidebar.minimized .sidebar-link:hover { transform: none; }
-    .sidebar-link.active {
-        background: var(--primary) !important; 
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
-        color: white;
-        box-shadow: 0 8px 16px -4px rgba(102, 126, 234, 0.4); 
+    .logout-modal-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
     }
-    .sidebar-link.active i { color: white; }
 
-    .sidebar-footer { margin-top: auto; padding-top: 1.5rem; border-top: 1px solid var(--border-soft); }
-    .btn-logout { background: transparent; color: var(--danger); }
-    .btn-logout:hover { background: var(--danger); color: white; box-shadow: 0 8px 16px -4px rgba(239, 68, 68, 0.4); }
+    .btn-modal {
+        padding: 0.85rem;
+        border-radius: 0.85rem;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn-modal-cancel {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .btn-modal-cancel:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+    }
+
+    .btn-modal-confirm {
+        background: #e11d48;
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(225, 29, 72, 0.2);
+    }
+
+    .btn-modal-confirm:hover {
+        background: #be123c;
+        box-shadow: 0 6px 20px rgba(225, 29, 72, 0.3);
+        transform: translateY(-1px);
+    }
+
+    /* Responsive Optimization */
+    @media (max-width: 1024px) {
+        .nav-inner { padding: 0.5rem 1rem; }
+        .nav-item { padding: 0.5rem 0.85rem; font-size: 0.85rem; }
+        .nav-item i { font-size: 1rem; }
+    }
+
+    @media (max-width: 820px) {
+        .nav-brand .brand-text span { display: none; }
+        .nav-center { order: 3; width: 100%; margin-top: 0.5rem; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 0.5rem; }
+        .user-top-navbar { border-radius: 1.25rem; }
+        .content-wrapper { padding-top: 140px !important; }
+    }
+
+    @media (max-width: 600px) {
+        .nav-inner { padding: 0.5rem 0.75rem; }
+        .nav-brand { gap: 0.6rem; }
+        .nav-brand img { width: 36px; height: 36px; }
+        .brand-text h1 { font-size: 1rem; }
+        .brand-text span { display: none; }
+
+        .nav-item { flex-direction: column; gap: 0.25rem; padding: 0.5rem; font-size: 0.75rem; min-width: 64px; }
+        .nav-item i { font-size: 1.1rem; }
+        .nav-center { justify-content: space-evenly; gap: 0; }
+        .nav-right .nav-item span { display: none; }
+        .nav-right .nav-item { min-width: auto; padding: 0.75rem; border-radius: 50%; aspect-ratio: 1/1; }
+        .content-wrapper { padding-top: 150px !important; }
+    }
+
+    @media (max-width: 400px) {
+        .user-top-navbar { width: calc(100% - 1rem); top: 0.5rem; }
+        .nav-item span { font-size: 0.65rem; }
+        .nav-brand img { width: 32px; height: 32px; }
+        .nav-brand { gap: 0.5rem; }
+        .brand-text h1 { font-size: 0.9rem; }
+        .nav-center { margin-top: 0.4rem; padding-top: 0.4rem; }
+        .content-wrapper { padding-top: 140px !important; }
+    }
 </style>
 
-<aside id="main-sidebar" class="sidebar">
-    <div class="sidebar-brand">
-        <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Logo" class="w-10 h-10">
-        <div>
-            <h1 class="text-sm font-extrabold text-slate-800 leading-none">GCST TRACK</h1>
-            <span class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Student Portal</span>
-        </div>
-        <button onclick="toggleMinimizeSidebar()" id="sidebar-minimize-btn" class="sidebar-minimize-btn" title="Toggle Sidebar">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        <button onclick="toggleSidebar()" class="sidebar-mobile-close">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
-
-    <p class="nav-section-label">Main Navigation</p>
-    <nav class="flex-1">
-        <a href="InUser_home.html" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
-        <a href="user_browse_products.html" class="sidebar-link"><i class="fas fa-shopping-bag"></i> <span>Browse Products</span></a>
-        <a href="user_queue_tickets.html" class="sidebar-link"><i class="fas fa-ticket-alt"></i> <span>Queue Tickets</span></a>
-        
-        <p class="nav-section-label">Account</p>
-        <a href="user_profile.html" class="sidebar-link"><i class="fas fa-user-circle"></i> <span>Profile</span></a>
-    </nav>
-
-    <div class="sidebar-footer">
-        <a href="javascript:void(0)" onclick="logoutUser()" id="sidebar-logout" class="sidebar-link btn-logout">
-            <i class="fas fa-sign-out-alt"></i> <span>Log Out</span>
+<nav class="user-top-navbar">
+    <div class="nav-inner">
+        <a href="InUser_home.html" class="nav-brand">
+            <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Logo">
+            <div class="brand-text">
+                <h1>GCST TRACK</h1>
+                <span>Student Portal</span>
+            </div>
         </a>
+
+        <div class="nav-center">
+            <a href="InUser_home.html" class="nav-item">
+                <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+            </a>
+            <a href="user_browse_products.html" class="nav-item">
+                <i class="fas fa-shopping-bag"></i> <span>Browse Products</span>
+            </a>
+            <a href="user_queue_tickets.html" class="nav-item">
+                <i class="fas fa-ticket-alt"></i> <span>Queue Tickets</span>
+            </a>
+        </div>
+
+        <div class="nav-right">
+            <a href="user_profile.html" class="nav-item">
+                <i class="fas fa-user-circle"></i> <span>Profile</span>
+            </a>
+            <a href="javascript:void(0)" onclick="logoutUser()" class="nav-item nav-logout">
+                <i class="fas fa-sign-out-alt"></i> <span>Log Out</span>
+            </a>
+        </div>
     </div>
-</aside>
+</nav>
 `;
 }

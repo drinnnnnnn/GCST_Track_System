@@ -114,6 +114,23 @@ class QueueModel {
     }
 
     /**
+     * Checks if a user has generated a ticket within the last X seconds.
+     * Used for backend rate-limiting/cooldown enforcement.
+     */
+    public function isUserOnCooldown($userId, $seconds = 120) {
+        if (!$userId) return false;
+        $stmt = $this->conn->prepare("
+            SELECT id FROM queue_tickets 
+            WHERE user_id = ? 
+            AND created_at > (NOW() - INTERVAL ? SECOND) 
+            LIMIT 1
+        ");
+        $stmt->bind_param("ii", $userId, $seconds);
+        $stmt->execute();
+        return $stmt->get_result()->num_rows > 0;
+    }
+
+    /**
      * Fetches counts for today's queue tickets.
      */
     public function getQueueCounts() {

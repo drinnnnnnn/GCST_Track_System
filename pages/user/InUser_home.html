@@ -7,6 +7,7 @@
   <title>GCST User - Home Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <link rel="stylesheet" href="../../assets/css/user.css">
+  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
@@ -171,45 +172,118 @@
     }
 
     .table-container {
-      background: var(--surface);
-      border-radius: var(--radius-lg);
-      padding: 20px;
-      box-shadow: var(--shadow-sm);
+      background: #f8fafc;
+      border-radius: 1.5rem;
+      padding: 1.25rem;
+      border: 1px solid #f1f5f9;
       overflow: auto;
-      max-height: 450px;
-      margin-top: 15px;
+      max-height: 500px;
+      margin-top: 0;
       scrollbar-width: thin;
     }
-    .table-container::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+    .table-container::-webkit-scrollbar { width: 6px; height: 6px; }
+    .table-container::-webkit-scrollbar-track { background: transparent; }
+    .table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+    /* Refined Activity Section Styling */
+    .activity-section {
+      background: white;
+      border-radius: 2.5rem;
+      padding: 2.5rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+      border: 1px solid #f1f5f9;
+      margin-top: 2rem;
     }
-    .table-container::-webkit-scrollbar-track {
-      background: #f1f5f9;
+
+    .activity-section h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-    .table-container::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 10px;
+    
+    .activity-section h2::before {
+      content: '';
+      width: 4px;
+      height: 24px;
+      background: var(--primary);
+      border-radius: 4px;
     }
 
     .pending-orders-table {
       width: 100%;
-      border-collapse: collapse;
+      border-spacing: 0 10px;
+      border-collapse: separate;
       text-align: left;
     }
 
-    .pending-orders-table th, .pending-orders-table td {
-      padding: 12px 15px;
-      border-bottom: 1px solid var(--border-soft);
-      font-size: 0.9rem;
+    .pending-orders-table th {
+      padding: 0 20px 10px;
+      color: #94a3b8;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border: none;
     }
 
-    .pending-orders-table th {
-      color: var(--muted);
-      font-weight: 600;
-      text-transform: uppercase;
+    .pending-orders-table tr td {
+      background: white;
+      padding: 1.25rem 1.5rem;
+      border: none;
+      transition: all 0.3s ease;
+    }
+
+    .pending-orders-table tr td:first-child {
+      border-radius: 1.25rem 0 0 1.25rem;
+    }
+
+    .pending-orders-table tr td:last-child {
+      border-radius: 0 1.25rem 1.25rem 0;
+    }
+
+    .pending-orders-table tbody tr:hover td {
+      background: #f1f5f9;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 16px;
+      border-radius: 99px;
       font-size: 0.75rem;
-      letter-spacing: 0.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .status-pill.pending { background: #eff6ff; color: #2563eb; }
+    .status-pill.expired { background: #fff1f2; color: #e11d48; }
+
+    .activity-pagination-btn {
+      padding: 8px 16px;
+      border-radius: 12px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      color: #64748b;
+      font-weight: 700;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .activity-pagination-btn:hover { border-color: var(--primary); color: var(--primary); background: #f8fafc; }
+
+    .activity-pagination-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
     }
 
     @media (max-width: 768px) {
@@ -441,13 +515,13 @@
           
           const isExpired = order.is_expired == 1;
           const statusHtml = isExpired 
-            ? '<span class="status-badge overdue">Expired</span>' 
-            : '<span class="status-badge active">Pending</span>';
+            ? '<span class="status-pill expired">Expired</span>' 
+            : '<span class="status-pill pending">Pending</span>';
 
           return `
             <tr>
-              <td style="font-weight: 600;">${date}</td>
-              <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${productList}">
+              <td style="font-weight: 700; color: #1e293b;">${date}</td>
+              <td style="color: #64748b; font-weight: 500; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${productList}">
                 ${productList}
               </td>
               <td>${statusHtml}</td>
@@ -470,8 +544,7 @@
 
       for (let i = 1; i <= totalPages; i++) {
         const btn = document.createElement('button');
-        btn.className = i === parseInt(currentPage) ? 'period-button active' : 'period-button';
-        btn.style.padding = '6px 12px';
+        btn.className = i === parseInt(currentPage) ? 'activity-pagination-btn active' : 'activity-pagination-btn';
         btn.textContent = i;
         btn.onclick = () => loadPendingOrders(i);
         container.appendChild(btn);
