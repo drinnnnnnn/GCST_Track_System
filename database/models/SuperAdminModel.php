@@ -9,6 +9,36 @@ class SuperAdminModel {
     public function __construct() {
         // Use the centralized Database class instead of global variables
         $this->conn = Database::getConnection();
+        $this->ensureTableExists();
+    }
+
+    /**
+     * Automatically creates the superadmins table if it doesn't exist.
+     * Ensures all fields for the 4-digit PIN and security lockout are properly initialized.
+     */
+    private function ensureTableExists() {
+        $sql = "CREATE TABLE IF NOT EXISTS `superadmins` (
+            `id` INT(11) NOT NULL AUTO_INCREMENT,
+            `first_name` VARCHAR(100) NOT NULL,
+            `last_name` VARCHAR(100) NOT NULL,
+            `username` VARCHAR(50) NOT NULL,
+            `email` VARCHAR(100) NOT NULL,
+            `password_hash` VARCHAR(255) NOT NULL,
+            `security_pin_hash` VARCHAR(255) NOT NULL,
+            `status` ENUM('active', 'inactive', 'suspended') NOT NULL DEFAULT 'active',
+            `failed_login_attempts` INT(11) DEFAULT 0,
+            `lockout_until` DATETIME DEFAULT NULL,
+            `last_login_at` DATETIME DEFAULT NULL,
+            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uniq_username` (`username`),
+            UNIQUE KEY `uniq_email` (`email`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
+        if (!$this->conn->query($sql)) {
+            error_log("SuperAdminModel: Schema initialization failed: " . $this->conn->error);
+        }
     }
 
     /**

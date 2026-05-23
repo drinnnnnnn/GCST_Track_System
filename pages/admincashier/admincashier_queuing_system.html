@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -175,6 +175,110 @@
     transform: none;
     box-shadow: none;
   }
+
+  /* Kiosk Mode Styles */
+  .kiosk-overlay {
+    position: fixed;
+    inset: 0;
+    background: #0f172a; /* Darker, higher contrast background */
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    padding: 4vh 5vw;
+    font-family: 'Outfit', sans-serif;
+    animation: fadeIn 0.4s ease;
+    color: white;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .kiosk-overlay.active { display: flex; }
+  
+  .kiosk-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5vh;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 2vh;
+  }
+
+  .kiosk-main {
+    display: grid;
+    grid-template-columns: 1.8fr 1fr;
+    gap: 4vw;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .kiosk-serving-panel {
+    background: rgba(30, 41, 59, 0.5);
+    backdrop-filter: blur(10px);
+    border-radius: 40px;
+    box-shadow: 0 0 80px rgba(79, 70, 229, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 4px solid #6366f1;
+    padding: 5vh;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .kiosk-label-serving {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #818cf8;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    margin-bottom: 2vh;
+  }
+
+  .kiosk-number-serving {
+    font-size: 22vw; /* Use vw for massive scaling */
+    font-weight: 900;
+    color: #ffffff;
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(99, 102, 241, 0.4);
+  }
+
+  .kiosk-name-serving {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: #94a3b8;
+    margin-top: 2vh;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .kiosk-next-panel { display: flex; flex-direction: column; gap: 2vh; }
+
+  .kiosk-next-item {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 3vh 3vw;
+    border-radius: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    animation: slideIn 0.3s ease forwards;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+  .kiosk-next-number { font-size: 3.5rem; font-weight: 900; color: #818cf8; }
+  .kiosk-next-name { font-size: 2rem; font-weight: 700; color: #cbd5e1; }
+
+  .exit-kiosk {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    opacity: 0.1;
+    transition: opacity 0.3s;
+    z-index: 10000;
+    color: white !important;
+  }
+  .exit-kiosk:hover { opacity: 1; background: rgba(255,255,255,0.1); }
 </style>
 </head>
 
@@ -220,8 +324,13 @@
           <h2 class="text-2xl font-extrabold text-gray-800 tracking-tight">Manual Ticket Issuance</h2>
           <p class="text-sm text-gray-500 mt-1">Generate new queue numbers for walk-in transactions and inquiries.</p>
         </div>
-        <div class="p-3 bg-indigo-50 rounded-xl text-indigo-600">
-          <i class="fas fa-user-plus fa-lg"></i>
+        <div class="flex items-center gap-3">
+          <button onclick="toggleKioskMode(true)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-bold text-gray-600 transition-all flex items-center gap-2">
+            <i class="fas fa-desktop"></i> Kiosk Mode
+          </button>
+          <div class="p-3 bg-indigo-50 rounded-xl text-indigo-600">
+            <i class="fas fa-user-plus fa-lg"></i>
+          </div>
         </div>
       </div>
       
@@ -286,6 +395,34 @@
         <!-- Queue items will be loaded here -->
       </div>
     </section>
+
+    <!-- Kiosk Display Overlay -->
+    <div id="kiosk-overlay" class="kiosk-overlay">
+      <div class="kiosk-header">
+        <div>
+          <h1 class="text-4xl font-black text-white">QUEUE STATUS</h1>
+          <p class="text-indigo-400 font-medium tracking-wide">Granby College of Science and Technology</p>
+        </div>
+        <div class="text-right">
+          <div id="kiosk-clock" class="text-5xl font-bold text-white">--:--:--</div>
+          <p id="kiosk-date" class="text-gray-400 font-bold uppercase tracking-widest mt-1">---</p>
+        </div>
+      </div>
+      <div class="kiosk-main">
+        <div class="kiosk-serving-panel">
+          <div class="kiosk-label-serving">Now Serving</div>
+          <div id="kiosk-now-serving-number" class="kiosk-number-serving">---</div>
+          <div id="kiosk-now-serving-name" class="kiosk-name-serving">Please wait...</div>
+        </div>
+        <div class="flex flex-col">
+          <div class="text-xs font-black text-indigo-400 uppercase tracking-widest mb-6 ml-4">Upcoming Next</div>
+          <div id="kiosk-next-list" class="kiosk-next-panel"></div>
+        </div>
+      </div>
+      <button onclick="toggleKioskMode(false)" class="exit-kiosk btn btn-secondary !rounded-full p-4" title="Exit Kiosk Mode">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
   </main>
 
   <!-- Scripts -->
@@ -300,10 +437,19 @@
       setInterval(() => {
         const timeEl = document.getElementById('display-current-time');
         if (timeEl) timeEl.textContent = new Date().toLocaleTimeString();
+
+        // Update kiosk clock if active
+        const kioskOverlay = document.getElementById('kiosk-overlay');
+        if (kioskOverlay && kioskOverlay.classList.contains('active')) {
+          const now = new Date();
+          document.getElementById('kiosk-clock').textContent = now.toLocaleTimeString();
+          document.getElementById('kiosk-date').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        }
       }, 1000);
     });
 
     let lastQueueState = null;
+    let lastAnnouncedTicket = null; // Variable to store the last announced ticket for TTS
     let isFetching = false;
     const EXPIRATION_LIMIT_MS = 2 * 60 * 60 * 1000; // 2 Hours in ms
 
@@ -352,6 +498,10 @@
             }
             
             updateDisplayPanel(data.status);
+
+            if (document.getElementById('kiosk-overlay').classList.contains('active')) {
+              updateKioskDisplay();
+            }
             if (data.expired_count > 0) console.warn(`${data.expired_count} ticket(s) expired.`);
           }
         })
@@ -496,6 +646,50 @@
         }
         startQueuePolling();
       }, 5000);
+    }
+
+    // Kiosk Mode Logic
+    function toggleKioskMode(activate) {
+      const overlay = document.getElementById('kiosk-overlay');
+      if (activate) {
+        overlay.classList.add('active');
+        document.documentElement.requestFullscreen().catch(() => {
+          console.warn("Full-screen mode blocked by browser policy.");
+        });
+        updateKioskDisplay();
+      } else {
+        overlay.classList.remove('active');
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    function updateKioskDisplay() {
+      if (!lastQueueState) return;
+      const tickets = JSON.parse(lastQueueState);
+      
+      const serving = tickets.find(t => t.status === 'serving');
+      const waiting = tickets.filter(t => t.status === 'waiting');
+
+      const numEl = document.getElementById('kiosk-now-serving-number');
+      const nameEl = document.getElementById('kiosk-now-serving-name');
+      const listEl = document.getElementById('kiosk-next-list');
+
+      if (serving) {
+        numEl.textContent = '#' + serving.queue_number;
+        nameEl.textContent = serving.student_name || 'Walk-in';
+      } else {
+        numEl.textContent = '---';
+        nameEl.textContent = 'Awaiting Next Customer';
+      }
+
+      listEl.innerHTML = waiting.slice(0, 4).map(t => `
+        <div class="kiosk-next-item">
+          <div class="kiosk-next-number">#${t.queue_number}</div>
+          <div class="kiosk-next-name">${t.student_name || 'Walk-in'}</div>
+        </div>
+      `).join('') || '<div class="p-12 text-center text-gray-500 italic text-2xl">No upcoming tickets</div>';
     }
 
     // Placeholder functions for printing/saving

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -732,10 +732,6 @@
         <div id="view-txn-content" class="receipt-panel">
           <!-- Content populated via JS -->
         </div>
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
-          <button class="btn btn-primary" onclick="printViewTxnReceipt()" style="flex: 1;"><i class="fas fa-print"></i> Print Receipt</button>
-          <button class="btn btn-secondary" onclick="closeViewTxnModal()" style="flex: 1;">Close</button>
-        </div>
       </div>
     </div>
 
@@ -892,8 +888,8 @@
             </div>
           </div>
 
-          <div style="background: #ecfdf5; border: 2px solid #bbf7d0; padding: 20px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-weight: 700; color: #065f46; font-size: 0.95rem;">CHANGE DUE</span>
+          <div id="change-due-container" style="background: #ecfdf5; border: 2px solid #bbf7d0; padding: 20px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;">
+            <span id="change-label" style="font-weight: 700; color: #065f46; font-size: 0.95rem;">CHANGE DUE</span>
             <strong id="change-amount" style="font-size: 1.6rem; color: #15803d; letter-spacing: -0.02em;">₱0.00</strong>
           </div>
 
@@ -924,11 +920,6 @@
               <div class="receipt-line" style="font-size: 1.1rem; color: #4f46e5;"><span>Total</span><strong id="receipt-total"></strong></div>
               <div class="receipt-line"><span>Paid</span><strong id="receipt-paid"></strong></div>
               <div class="receipt-line"><span>Change</span><strong id="receipt-change"></strong></div>
-          </div>
-
-          <div class="receipt-actions" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
-            <button class="btn btn-primary" onclick="printReceipt()" style="flex: 1;"><i class="fas fa-print"></i> Print Slip</button>
-            <button class="btn btn-secondary" onclick="closeCheckoutModal()" style="flex: 1;">Close</button>
           </div>
         </div>
       </div>
@@ -1429,8 +1420,10 @@
     }
 
     function updateTransactionSettings() {
-      state.discountPercent = Math.min(100, Math.max(0, parseFloat(document.getElementById('discount-percent').value) || 0));
-      state.cashReceived = Math.max(0, parseFloat(document.getElementById('cash-received').value) || 0);
+      const discVal = document.getElementById('discount-percent').value;
+      const cashVal = document.getElementById('cash-received').value;
+      state.discountPercent = Math.min(100, Math.max(0, parseFloat(discVal) || 0));
+      state.cashReceived = Math.max(0, parseFloat(cashVal) || 0);
       state.studentId = document.getElementById('checkout-student-id').value.trim();
       // Also update from the autocomplete field if it's visible/used
       updateStudentDisplay(state.studentId);
@@ -2179,14 +2172,41 @@
       updateTransactionSettings(); // This will trigger updateStudentDisplay
     });
 
-    // Optimized Guest School ID Input Formatting (GC-123456)
+    // Enhanced Guest School ID Input Formatting (GC-######)
     document.getElementById('guest-school-id').addEventListener('input', function(e) {
-      // Extract only numeric digits
-      let digits = this.value.replace(/\D/g, '');
-      // Limit to exactly 6 digits
+      // Extract numeric digits only
+      let digits = this.value.replace(/[^0-9]/g, '');
+      // Limit to 6 digits
       if (digits.length > 6) digits = digits.substring(0, 6);
-      // Real-time format: Prepend prefix only if there's input
+      
+      // Auto-format with prefix
       this.value = digits.length > 0 ? 'GC-' + digits : '';
+
+      // Real-time validation feedback
+      if (digits.length === 6) {
+        this.style.borderColor = '#10b981'; // Valid (Green)
+        this.style.backgroundColor = '#f0fdf4';
+      } else if (digits.length > 0) {
+        this.style.borderColor = '#ef4444'; // Invalid/Incomplete (Red)
+        this.style.backgroundColor = '#fef2f2';
+      } else {
+        this.style.borderColor = '#d1d5db'; // Reset
+        this.style.backgroundColor = '#f8fafc';
+      }
+    });
+
+    // Guest Email Real-time Validation Feedback
+    document.getElementById('guest-email').addEventListener('input', function() {
+      const email = this.value.trim();
+      const isValid = validateEmail(email);
+      
+      if (email === '') {
+        this.style.borderColor = '#d1d5db';
+        this.style.backgroundColor = '#f8fafc';
+      } else {
+        this.style.borderColor = isValid ? '#10b981' : '#ef4444';
+        this.style.backgroundColor = isValid ? '#f0fdf4' : '#fef2f2';
+      }
     });
 
     // UX enhancement for Cash Received field: Clear zero on focus, format on blur

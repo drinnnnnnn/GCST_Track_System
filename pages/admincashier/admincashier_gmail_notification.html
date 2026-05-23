@@ -344,11 +344,6 @@
         </div>
       </div>
       <div class="modal-row">
-        <label for="modalPhoneNumber">Recipient Phone Number (Optional)</label>
-        <input id="modalPhoneNumber" type="tel" placeholder="+63 9XX XXX XXXX" pattern="^\+639\d{9}$" title="Philippine mobile number (e.g., +639171234567)" />
-        <p class="text-[10px] text-gray-400 mt-1 italic">For SMS notifications or additional contact.</p>
-      </div>
-      <div class="modal-row">
         <label for="modalSubject">Subject</label>
         <input id="modalSubject" type="text" placeholder="Enter email subject" />
       </div>
@@ -439,15 +434,13 @@
       if (modalSendBtn) {
         modalSendBtn.addEventListener('click', async () => {
           const recipient = document.getElementById('modalRecipient').value.trim(); // Existing
-          const phoneNumber = document.getElementById('modalPhoneNumber').value.trim(); // NEW: Get phone number
           const subject = document.getElementById('modalSubject').value.trim(); // Existing
           const message = document.getElementById('modalMessage').value.trim(); // Existing
           const type = document.getElementById('modalType').value; // Existing
           const fileInput = document.getElementById('modalAttachments'); // Existing
 
-          // NEW: Validate that at least one of recipient email or phone number is provided
-          if (!recipient && !phoneNumber) {
-            alert("Either Recipient Email or Recipient Phone Number is required.");
+          if (!recipient) {
+            alert("Recipient Email is required.");
             return;
           }
 
@@ -461,13 +454,6 @@
           formData.append('subject', subject);
           formData.append('message', message);
           formData.append('type', type);
-          formData.append('phone_number', phoneNumber); // NEW: Append phone number to form data
-
-          // NEW: Basic client-side validation for Philippine phone number format if provided
-          if (phoneNumber && !/^\+639\d{9}$/.test(phoneNumber.replace(/\s/g, ''))) {
-            alert("Please enter a valid Philippine mobile number starting with +639 (e.g., +639171234567). Spaces will be removed automatically.");
-            return;
-          }
           
           Array.from(fileInput.files).forEach(file => {
             formData.append('attachments[]', file);

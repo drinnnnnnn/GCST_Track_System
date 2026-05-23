@@ -2,12 +2,12 @@
 require_once __DIR__ . '/../database/models/SuperAdminModel.php';
 require_once __DIR__ . '/../database/connection.php';
 
-$username = 'superadmin';
-$email = 'aldrinbautista0425@gmail.com';
-$password = 'Admin123!'; 
+$username = 'aldrin0416';
+$email = 'aldrin.aprao@gmail.com';
+$password = 'Aldrin0416'; 
 $pin = '0425';
 $first_name = 'Aldrin';
-$last_name = 'Bautista';
+$last_name = 'Aprao';
 
 $conn = Database::getConnection();
 if ($conn->connect_error) {

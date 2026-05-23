@@ -51,12 +51,12 @@ try {
     // Guest Validation Enforcement
     if ($isGuest) {
         if (empty($guestName)) throw new Exception('Guest Name is required.');
-        
+
         if (empty($guestSchoolId) || !preg_match('/^GC-\d{6}$/', $guestSchoolId)) {
-            throw new Exception('A valid School ID (GC-######) is required for guest transactions.');
+            throw new Exception('A valid 6-digit School ID (Format: GC-######) is required for guest transactions.');
         }
         if (empty($guestEmail) || !preg_match('/^[a-zA-Z0-9._%+-]+@gmail\.com$/', $guestEmail)) {
-            throw new Exception('Valid Gmail address (@gmail.com) is required for guest transactions.');
+            throw new Exception('A valid Gmail address (@gmail.com) is required for guest transactions.');
         }
     }
 
