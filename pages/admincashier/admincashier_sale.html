@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -329,6 +329,227 @@
 
   <script src="../../assets/js/admincashier.js"></script>
   <script>
+    // =====================================================
+    // SALES PAGE LOGIC
+    // =====================================================
+    let currentSalesPeriod = 'today';
+    let salesTrendChartInstance = null;
+    let topProductsChartInstance = null;
+    let salesPollInterval = null;
+    let lastFetchedSalesHistory = [];
+
+    function formatDate(value) {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? '-' : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function setActivePeriodButton(period) {
+      document.querySelectorAll('.period-button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.period === period);
+      });
+    }
+
+    async function loadSalesData(period) {
+      const historyBody = document.getElementById('historyBody');
+      if (historyBody && historyBody.innerHTML === '') {
+        historyBody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading data...</td></tr>';
+      }
+
+      try {
+        const data = await fetchWithError(`../../actions/get_admincashier_sales.php?period=${encodeURIComponent(period)}&limit=100`);
+
+        if (!data.success) {
+            showError(historyBody, data.message || 'Failed to fetch sales data');
+            return;
+        }
+
+        const totalSales = Number(data.total_sales ?? data.total_sales_today ?? 0);
+        const totalTransactions = Number(data.total_transactions ?? 0);
+        const avgValue = Number(data.average_transaction_value ?? (totalTransactions > 0 ? (totalSales / totalTransactions) : 0));
+        const itemsSold = Number(data.total_items_sold ?? data.books_sold ?? 0);
+
+        document.getElementById('totalSales').textContent = formatCurrency(totalSales);
+        document.getElementById('totalTransactions').textContent = totalTransactions;
+        document.getElementById('avgTransaction').textContent = formatCurrency(avgValue);
+        document.getElementById('itemsSold').textContent = itemsSold;
+
+        if (!salesTrendChartInstance) {
+          salesTrendChartInstance = createChart('salesTrendChart', 'line', data.sales_labels || [], data.sales_data || [], 'Daily Sales (₱)');
+        } else {
+          updateChart(salesTrendChartInstance, data.sales_labels || [], data.sales_data || [], 'Daily Sales (₱)', 'line', 'rgba(69, 88, 255, 0.16)', '#4558ff');
+        }
+
+        const productLabels = data.top_products?.map(item => item.name) || [];
+        const productQuantities = data.top_products?.map(item => item.quantity) || [];
+
+        if (!topProductsChartInstance) {
+          topProductsChartInstance = createChart('topProductsChart', 'bar', productLabels, productQuantities, 'Units Sold');
+        } else {
+          updateChart(topProductsChartInstance, productLabels, productQuantities, 'Units Sold', 'bar', 'rgba(69, 88, 255, 0.16)', '#4558ff');
+        }
+
+        lastFetchedSalesHistory = Array.isArray(data.history) ? data.history : [];
+        renderSalesHistory(lastFetchedSalesHistory);
+
+      } catch (error) {
+        console.error('Unable to load sales data:', error);
+        if (historyBody) historyBody.innerHTML = '<tr><td colspan="6" class="empty-state">Unable to load sales history.</td></tr>';
+      }
+    }
+
+    function renderSalesHistory(history) {
+      const historyBody = document.getElementById('historyBody');
+      if (!historyBody) return;
+      historyBody.innerHTML = '';
+      if (history.length) {
+        history.forEach(entry => {
+          const items = entry.item ? entry.item.split(', ') : [];
+          const itemsHtml = items.map(i => `<span class="product-tag">${i}</span>`).join('');
+          const displayId = entry.transaction_number || entry.transaction_id || entry.id || '—';
+          const internalId = entry.transaction_id || entry.transaction_number || entry.id;
+          
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${formatDate(entry.date)}</td>
+            <td>${displayId}</td>
+            <td><div class="product-tag-list">${itemsHtml}</div></td>
+            <td>${entry.quantity}</td>
+            <td>${formatCurrency(entry.amount)}</td>
+            <td style="text-align: center;">
+              <button onclick="window.viewReceiptDetails('${internalId}')" class="view-details-btn" title="View Details">
+                <i class="fas fa-eye"></i>
+              </button>
+            </td>
+          `;
+          historyBody.appendChild(row);
+        });
+      } else {
+        historyBody.innerHTML = '<tr><td colspan="6" class="empty-state">No sales history found.</td></tr>';
+      }
+    }
+
+    function createChart(elementId, type, labels, data, label, backgroundColor, borderColor) {
+      const ctx = document.getElementById(elementId).getContext('2d');
+      return new Chart(ctx, {
+        type,
+        data: {
+          labels,
+          datasets: [{
+            label,
+            data,
+            borderColor: borderColor || '#4558ff',
+            backgroundColor: backgroundColor || 'rgba(69, 88, 255, 0.16)',
+            fill: type === 'line',
+            tension: 0.4,
+            borderWidth: 2,
+            borderRadius: 12,
+            barThickness: 24
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: true } },
+          scales: {
+            x: { grid: { display: false } },
+            y: { grid: { color: '#eef2f7' }, ticks: { beginAtZero: true } }
+          }
+        }
+      });
+    }
+
+    function updateChart(chartRef, labels, data, label, type, backgroundColor, borderColor) {
+      if (!chartRef) return;
+      chartRef.data = {
+        labels,
+        datasets: [{
+          label,
+          data,
+          borderColor: borderColor || '#4558ff',
+          backgroundColor: backgroundColor || 'rgba(69, 88, 255, 0.16)',
+          fill: type === 'line',
+          tension: 0.4,
+          borderWidth: 2,
+          borderRadius: 12,
+          barThickness: 24
+        }]
+      };
+      chartRef.update();
+    }
+
+    window.viewReceiptDetails = async function(transactionId) {
+      const modal = document.getElementById('receiptModal');
+      const content = document.getElementById('receiptContent');
+      if (!modal || !content) return;
+      modal.classList.add('active');
+      content.innerHTML = `<div class="flex flex-col items-center py-12 text-gray-400"><i class="fas fa-circle-notch fa-spin text-2xl mb-3"></i><p>Fetching details...</p></div>`;
+
+      try {
+        const response = await fetch(`../../actions/get_transaction_details.php?id=${encodeURIComponent(transactionId)}`);
+        const data = await response.json();
+        if (data.success) {
+          const t = data.transaction;
+          const itemsHtml = (t.items || []).map(item => `
+            <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+              <div class="flex-1 pr-2">
+                <p class="text-gray-800 font-medium">${item.product_name}</p>
+                <p class="text-gray-500 text-xs">${item.quantity} x ${formatCurrency(item.unit_price)}</p>
+              </div>
+              <span class="font-semibold text-gray-700">${formatCurrency(item.total_item_amount)}</span>
+            </div>`).join('');
+          content.innerHTML = `<div class="space-y-6"><div class="bg-gray-50 p-4 rounded-xl text-sm"><p>Ref: ${t.transaction_number}</p><p>Date: ${new Date(t.created_at).toLocaleString()}</p></div><div>${itemsHtml}</div><div class="bg-gray-50 p-4 rounded-xl text-sm font-bold"><p>Total: ${formatCurrency(t.total_amount)}</p></div></div>`;
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    window.closeReceiptModal = () => document.getElementById('receiptModal')?.classList.remove('active');
+
+    function startSalesPolling() {
+      if (salesPollInterval) clearInterval(salesPollInterval);
+      salesPollInterval = setInterval(() => loadSalesData(currentSalesPeriod), 10000);
+    }
+
+    window.stopSalesPolling = () => { if (salesPollInterval) clearInterval(salesPollInterval); salesPollInterval = null; };
+
+    window.exportSalesToCSV = function() {
+      if (!lastFetchedSalesHistory.length) return alert('No data available.');
+      const headers = ['Date', 'Transaction ID', 'Product(s)', 'Quantity', 'Amount'];
+      const rows = lastFetchedSalesHistory.map(item => [`"${formatDate(item.date)}"`, `"${item.transaction_id || ''}"`, `"${item.item.replace(/"/g, '""')}"`, item.quantity, item.amount]);
+      const csv = headers.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `sales_report_${currentSalesPeriod}.csv`;
+      link.click();
+    }
+
+    window.initAdminCashierSalesPage = function(userData) {
+      currentSalesPeriod = 'today';
+      setActivePeriodButton(currentSalesPeriod);
+      loadSalesData(currentSalesPeriod);
+      startSalesPolling();
+
+      document.querySelectorAll('.period-button[data-period]').forEach(button => {
+        button.addEventListener('click', () => {
+          currentSalesPeriod = button.dataset.period;
+          setActivePeriodButton(currentSalesPeriod);
+          loadSalesData(currentSalesPeriod); 
+          startSalesPolling();
+        });
+      });
+
+      document.getElementById('export-csv-btn').addEventListener('click', window.exportSalesToCSV);
+      document.getElementById('historySearch')?.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        const filtered = lastFetchedSalesHistory.filter(entry => {
+          const text = `${entry.transaction_id || ''} ${entry.transaction_number || ''} ${entry.item || ''} ${entry.date || ''}`.toLowerCase();
+          return text.includes(query);
+        });
+        renderSalesHistory(filtered);
+      });
+    };
+
     initializeAdminCashierPage(window.initAdminCashierSalesPage);
   </script>
 </body>

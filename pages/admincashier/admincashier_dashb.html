@@ -92,33 +92,165 @@
   <!-- Scripts -->
   <script src="../../assets/js/admincashier.js"></script>
   <script>
-    // Initialize the dashboard page using the central JS helper
-    initializeAdminCashierPage(window.initAdminCashierDashboardPage);
+    let dashSalesChartInstance = null;
+    let dashInventoryChartInstance = null;
+    let dashTopProductsChartInstance = null;
 
     /**
-     * Fetches real-time dashboard statistics and updates the UI elements.
-     * This ensures the Total Sales Report and other summary metrics stay current.
+     * Fetches top selling products and renders them as progress bars.
      */
-    async function updateDashboardMetrics() {
+    async function fetchTopSellingTable() {
+      const container = document.getElementById('topSellingContainer');
+      if (!container) return;
+
       try {
-        const response = await fetch('../../actions/get_dashboard_stats.php');
-        const result = await response.json();
+        const response = await fetch('../../actions/get_admincashier_sales.php?period=month');
+        const data = await response.json();
         
-        if (result.success) {
-          const { total_sales_today, total_inventory, pending_queue } = result.metrics;
-          
-          document.getElementById('totalSalesToday').textContent = total_sales_today.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          document.getElementById('totalInventory').textContent = total_inventory;
-          document.getElementById('pendingQueue').textContent = pending_queue;
+        container.innerHTML = '';
+        const payload = data.data || data;
+
+        if (payload.top_products && payload.top_products.length > 0) {
+          const maxQty = Math.max(...payload.top_products.map(p => p.quantity));
+
+          payload.top_products.forEach((item, index) => {
+            const percentage = (item.quantity / maxQty) * 100;
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'flex flex-col gap-1.5 transition-all duration-300 hover:translate-x-1';
+            itemDiv.innerHTML = `
+              <div class="flex justify-between items-center text-sm">
+                <div class="flex items-center gap-3">
+                  <span class="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-[10px] font-bold">${index + 1}</span>
+                  <span class="font-semibold text-gray-700 truncate max-w-[140px] md:max-w-[200px]" title="${item.name}">${item.name}</span>
+                </div>
+                <span class="font-bold text-blue-600 text-xs">${item.quantity} <span class="text-[9px] text-gray-400 font-normal uppercase ml-0.5">Units</span></span>
+              </div>
+              <div class="w-full bg-gray-50 rounded-full h-1.5 overflow-hidden border border-gray-100">
+                <div class="bg-gradient-to-r from-blue-400 to-blue-600 h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%" data-target-width="${percentage}%"></div>
+              </div>
+            `;
+            container.appendChild(itemDiv);
+            
+            requestAnimationFrame(() => {
+              const bar = itemDiv.querySelector('[data-target-width]');
+              if (bar) bar.style.width = bar.getAttribute('data-target-width');
+            });
+          });
+        } else {
+          container.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-12 text-center opacity-60">
+              <div class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                <i class="fas fa-box-open text-gray-300"></i>
+              </div>
+              <p class="text-sm font-medium text-gray-500">No sales this month</p>
+              <p class="text-[10px] text-gray-400 px-6 mt-1">Monthly data will appear here as transactions are completed.</p>
+            </div>`;
         }
       } catch (error) {
-        console.error('Error updating dashboard metrics:', error);
+        console.error('Error fetching top products table:', error);
+        container.innerHTML = '<div class="text-xs text-rose-500 text-center py-8">Error loading monthly sales data</div>';
       }
     }
 
-    // Perform initial fetch and set interval for real-time updates (every 30 seconds)
-    updateDashboardMetrics();
-    setInterval(updateDashboardMetrics, 30000);
+    /**
+     * Fetches real-time dashboard summary statistics.
+     */
+    async function fetchSummaryMetrics() {
+      try {
+        const dashboardData = await fetchWithError('../../actions/get_admincashier_dashboard.php');
+        const metrics = dashboardData.data || dashboardData;
+
+        const totalSales = Number(metrics.total_sales_today ?? metrics.total_sales ?? 0);
+        const totalInv = metrics.total_inventory ?? metrics.inventory_count ?? metrics.total_items ?? 0;
+        const pendingQ = metrics.pending_queue ?? metrics.queue_count ?? metrics.active_queue ?? 0;
+
+        if (document.getElementById('totalSalesToday')) document.getElementById('totalSalesToday').textContent = formatCurrency(totalSales);
+        if (document.getElementById('totalInventory')) document.getElementById('totalInventory').textContent = totalInv;
+        if (document.getElementById('pendingQueue')) document.getElementById('pendingQueue').textContent = pendingQ;
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
+    }
+
+    /**
+     * Fetches and initializes analytics charts using Chart.js.
+     */
+    async function fetchAnalyticsCharts() {
+      try {
+        const chartData = await fetchWithError('../../actions/get_admincashier_charts.php');
+        const data = chartData.data || chartData;
+        
+        // Update or Create Sales Trend Chart
+        const salesCtx = document.getElementById('salesChart')?.getContext('2d');
+        if (salesCtx && !dashSalesChartInstance) {
+          dashSalesChartInstance = new Chart(salesCtx, {
+            type: 'line',
+            data: {
+              labels: data.sales_labels || [],
+              datasets: [{ label: 'Daily Sales (₱)', data: data.sales_data || [], borderColor: '#667eea', backgroundColor: 'rgba(102, 126, 234, 0.1)', tension: 0.4, fill: true }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true } } }
+          });
+        } else if (dashSalesChartInstance) {
+          dashSalesChartInstance.data.labels = data.sales_labels || [];
+          dashSalesChartInstance.data.datasets[0].data = data.sales_data || [];
+          dashSalesChartInstance.update();
+        }
+
+        // Update or Create Inventory Distribution Chart
+        const inventoryCtx = document.getElementById('inventoryChart')?.getContext('2d');
+        if (inventoryCtx && !dashInventoryChartInstance) {
+          dashInventoryChartInstance = new Chart(inventoryCtx, {
+            type: 'doughnut',
+            data: {
+              labels: data.inventory_labels || [],
+              datasets: [{ data: data.inventory_data || [], backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe'] }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true } } }
+          });
+        } else if (dashInventoryChartInstance) {
+          dashInventoryChartInstance.data.labels = data.inventory_labels || [];
+          dashInventoryChartInstance.data.datasets[0].data = data.inventory_data || [];
+          dashInventoryChartInstance.update();
+        }
+
+        // Update or Create Top Products Chart
+        const productsCtx = document.getElementById('topProductsChart')?.getContext('2d');
+        if (productsCtx && !dashTopProductsChartInstance) {
+          dashTopProductsChartInstance = new Chart(productsCtx, {
+            type: 'bar',
+            data: {
+              labels: data.products_labels || [],
+              datasets: [{ label: 'Units Sold', data: data.products_data || [], backgroundColor: '#667eea' }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: true } } }
+          });
+        } else if (dashTopProductsChartInstance) {
+          dashTopProductsChartInstance.data.labels = data.products_labels || [];
+          dashTopProductsChartInstance.data.datasets[0].data = data.products_data || [];
+          dashTopProductsChartInstance.update();
+        }
+      } catch (error) { console.error('Error fetching chart data:', error); }
+    }
+
+    async function refreshAllDashboardData() {
+      await fetchSummaryMetrics();
+      await fetchAnalyticsCharts();
+      await fetchTopSellingTable();
+    }
+
+    /**
+     * Main initialization function for the Dashboard.
+     */
+    function initAdminCashierDashboardPage(userData) {
+      refreshAllDashboardData();
+      const dashInterval = setInterval(refreshAllDashboardData, 20000); // 20s auto-refresh
+
+      window.addEventListener('beforeunload', () => clearInterval(dashInterval));
+    }
+
+    // Initialize the dashboard page using the central JS helper
+    initializeAdminCashierPage(initAdminCashierDashboardPage);
   </script>
 </body>
 </html>

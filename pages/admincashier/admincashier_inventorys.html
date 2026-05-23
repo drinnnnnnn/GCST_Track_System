@@ -954,6 +954,256 @@
 
   <script src="../../assets/js/admincashier.js"></script>
   <script>
+    let inventoryProducts = [];
+    let filteredInventoryProducts = [];
+    let selectedInventoryProduct = null;
+    const inventoryFilterState = {
+      query: '',
+      category: 'All'
+    };
+
+    const INVENTORY_API = '../../actions/get_admincashier_products.php';
+    const INVENTORY_UPDATE_API = '../../actions/admincashier_update_inventory.php';
+    const PRODUCT_CREATE_API = '../../actions/admincashier_create_product.php';
+    const PRODUCT_DELETE_API = '../../actions/admincashier_delete_product.php';
+
+    function getInventoryStockStatus(stock) {
+      if (stock <= 0) return 'Out of Stock';
+      if (stock < 10) return 'Low Stock';
+      return 'In Stock';
+    }
+
+    function getInventoryStatusClass(stock) {
+      if (stock <= 0) return 'status-out';
+      if (stock < 10) return 'status-lowstock';
+      return 'status-instock';
+    }
+
+    function resolveInventoryImagePath(path) {
+      const IMAGE_FALLBACK = `${window.location.origin}/GCST_Track_System/assets/images/icons/granbylogo.png`;
+      if (!path) return IMAGE_FALLBACK;
+      if (path.startsWith('http://') || path.startsWith('https://')) return path;
+      const cleanPath = path.replace(/^\/+/, '');
+      return `${window.location.origin}/GCST_Track_System/${cleanPath}`;
+    }
+
+    function renderInventoryViews() {
+      const cardContainer = document.getElementById('products-cards');
+      if (!cardContainer) return;
+      cardContainer.innerHTML = '';
+      if (filteredInventoryProducts.length === 0) {
+        cardContainer.innerHTML = '<div class="empty-state">No products match the current search or filters.</div>';
+        return;
+      }
+      filteredInventoryProducts.forEach(product => {
+        const isSelected = selectedInventoryProduct && Number(selectedInventoryProduct.product_id) === Number(product.product_id);
+        const card = document.createElement('article');
+        card.className = `inventory-card ${isSelected ? 'selected' : ''}`;
+        const stock = Number(product.stock_count) || 0;
+        card.innerHTML = `
+          <div class="card-image-wrapper">
+            <div class="category-badge-overlay">${product.product_category || 'Other'}</div>
+            <img src="${resolveInventoryImagePath(product.product_image)}" alt="${product.product_name}" loading="lazy" />
+          </div>
+          <div class="inventory-card-body">
+            <div class="flex-1">
+              <h3 class="inventory-card-title">${product.product_name || 'Untitled'}</h3>
+              <p class="card-description">${(product.product_description || '').trim() || 'No description provided.'}</p>
+            </div>
+            <div class="inventory-card-meta">
+              <span class="card-price font-bold text-primary">${formatCurrency(product.buy_price)}</span>
+              <span class="card-stock-info font-medium text-muted">${stock} in stock</span>
+            </div>
+            <div class="mt-1">
+              <span class="status-pill !py-1 !px-3 !text-[0.7rem] ${getInventoryStatusClass(stock)}">${product.product_status === 'unavailable' ? 'Unavailable' : getInventoryStockStatus(stock)}</span>
+            </div>
+            <div class="inventory-card-footer">
+              <button class="btn btn-primary !rounded-xl" type="button" onclick="window.selectInventoryProduct(${product.product_id})"><i class="fas fa-cog mr-1"></i> Manage</button>
+              <button class="btn btn-danger !bg-rose-50 !text-rose-600 !border-rose-100 !rounded-xl" type="button" onclick="window.deleteInventoryProduct(${product.product_id})"><i class="fas fa-trash-alt"></i></button>
+            </div>
+          </div>`;
+        cardContainer.appendChild(card);
+      });
+    }
+
+    function updateInventorySummary() {
+      const total = filteredInventoryProducts.length;
+      const lowStock = filteredInventoryProducts.filter(p => Number(p.stock_count || 0) < 10).length;
+      const available = filteredInventoryProducts.filter(p => Number(p.stock_count || 0) > 0).length;
+      const value = filteredInventoryProducts.reduce((sum, p) => sum + ((Number(p.buy_price) || 0) * (Number(p.stock_count) || 0)), 0);
+      if (document.getElementById('summary-total')) document.getElementById('summary-total').textContent = total;
+      if (document.getElementById('summary-low')) document.getElementById('summary-low').textContent = lowStock;
+      if (document.getElementById('summary-available')) document.getElementById('summary-available').textContent = available;
+      if (document.getElementById('summary-value')) document.getElementById('summary-value').textContent = formatCurrency(value);
+    }
+
+    function applyInventoryFilters() {
+      const query = inventoryFilterState.query.trim().toLowerCase();
+      const cat = inventoryFilterState.category;
+      filteredInventoryProducts = inventoryProducts.filter(p => {
+        const matchesCat = cat === 'All' || (p.product_category || 'Other') === cat;
+        const text = `${p.product_name || ''} ${p.product_category || ''}`.toLowerCase();
+        return matchesCat && (!query || text.includes(query));
+      });
+      renderInventoryViews();
+      updateInventorySummary();
+    }
+
+    function buildInventoryCategoryFilters() {
+      const container = document.getElementById('category-filters');
+      if (!container) return;
+      const base = ['All', 'Uniform', 'Accessories'];
+      const extra = Array.from(new Set(inventoryProducts.map(p => p.product_category || 'Other'))).filter(c => c && !base.includes(c));
+      container.innerHTML = '';
+      [...base, ...extra].forEach(category => {
+        const pill = document.createElement('button');
+        pill.className = 'filter-pill' + (inventoryFilterState.category === category ? ' active' : '');
+        pill.textContent = category;
+        pill.onclick = () => { inventoryFilterState.category = category; buildInventoryCategoryFilters(); applyInventoryFilters(); };
+        container.appendChild(pill);
+      });
+    }
+
+    function updateInventoryDetailPanel() {
+      const detailSection = document.getElementById('product-details');
+      const emptySection = document.getElementById('detail-empty');
+      if (!selectedInventoryProduct) { detailSection?.classList.add('hidden'); emptySection?.classList.remove('hidden'); return; }
+      detailSection?.classList.remove('hidden'); emptySection?.classList.add('hidden');
+      const fileInput = document.getElementById('detail-product-image');
+      if (fileInput) fileInput.value = '';
+      const { product_name, product_category, product_image, product_status, buy_price, stock_count } = selectedInventoryProduct;
+      const stock = Number(stock_count) || 0;
+      document.getElementById('detail-image').src = resolveInventoryImagePath(product_image);
+      document.getElementById('detail-name').textContent = product_name || 'Unnamed Product';
+      document.getElementById('detail-category').textContent = product_category || 'Other';
+      document.getElementById('detail-stock').textContent = `${stock} item${stock === 1 ? '' : 's'}`;
+      document.getElementById('detail-stock').className = `status-pill ${getInventoryStatusClass(stock)}`;
+      document.getElementById('detail-name-input').value = product_name || '';
+      document.getElementById('detail-category-input').value = product_category || 'Other';
+      document.getElementById('detail-buy-input').value = Number(buy_price || 0).toFixed(2);
+      document.getElementById('detail-status-input').value = product_status || 'available';
+      document.getElementById('detail-stock-input').value = stock;
+    }
+
+    function syncInventoryDetailHeader() {
+      const name = document.getElementById('detail-name-input')?.value;
+      const cat = document.getElementById('detail-category-input')?.value;
+      const stock = parseInt(document.getElementById('detail-stock-input')?.value) || 0;
+      const hName = document.getElementById('detail-name');
+      const hCat = document.getElementById('detail-category');
+      const hStock = document.getElementById('detail-stock');
+      if (hName) hName.textContent = name || 'Unnamed Product';
+      if (hCat) hCat.textContent = cat || 'Other';
+      if (hStock) { hStock.textContent = `${stock} item${stock === 1 ? '' : 's'}`; hStock.className = `status-pill ${getInventoryStatusClass(stock)}`; }
+    }
+
+    window.selectInventoryProduct = function(productId) {
+      selectedInventoryProduct = inventoryProducts.find(p => Number(p.product_id) === Number(productId)) || null;
+      updateInventoryDetailPanel();
+      renderInventoryViews();
+      if (window.innerWidth < 1200 && selectedInventoryProduct) document.querySelector('.inventory-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    window.deleteInventoryProduct = async function(productId) {
+      if (!productId || !confirm('Are you sure you want to delete this product?')) return;
+      try {
+        const response = await fetch(PRODUCT_DELETE_API, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ product_id: productId }) });
+        const data = await response.json();
+        if (data && data.success) {
+          inventoryProducts = inventoryProducts.filter(p => Number(p.product_id) !== Number(productId));
+          if (selectedInventoryProduct && Number(selectedInventoryProduct.product_id) === Number(productId)) selectedInventoryProduct = null;
+          applyInventoryFilters(); updateInventoryDetailPanel();
+        }
+      } catch (err) { console.error(err); }
+    };
+
+    window.startInventoryPolling = function() {
+      if (window.inventoryPollInterval) clearInterval(window.inventoryPollInterval);
+      window.inventoryPollInterval = setInterval(window.fetchInventorySilent, 20000);
+    };
+
+    window.stopInventoryPolling = () => { if (window.inventoryPollInterval) { clearInterval(window.inventoryPollInterval); window.inventoryPollInterval = null; } };
+
+    window.fetchInventorySilent = async function() {
+      try {
+        const data = await fetchWithError(INVENTORY_API);
+        inventoryProducts = Array.isArray(data) ? data : [];
+        if (selectedInventoryProduct) {
+          const updated = inventoryProducts.find(p => Number(p.product_id) === Number(selectedInventoryProduct.product_id));
+          if (updated) selectedInventoryProduct = updated;
+        }
+        applyInventoryFilters();
+      } catch (e) { console.error(e); }
+    };
+
+    async function refreshInventoryData() {
+      const btn = document.getElementById('refresh-button');
+      const icon = btn?.querySelector('i');
+      if (btn) btn.disabled = true; if (icon) icon.classList.add('fa-spin');
+      try {
+        const data = await fetchWithError(INVENTORY_API);
+        inventoryProducts = Array.isArray(data) ? data : [];
+        inventoryFilterState.query = document.getElementById('inventory-search')?.value.trim() || '';
+        buildInventoryCategoryFilters(); applyInventoryFilters();
+      } catch (e) { console.error(e); } finally { if (btn) btn.disabled = false; if (icon) icon.classList.remove('fa-spin'); }
+    }
+
+    window.initAdminCashierInventoryPage = function() {
+      refreshInventoryData();
+      startInventoryPolling();
+      document.getElementById('inventory-search')?.addEventListener('input', (e) => { inventoryFilterState.query = e.target.value; applyInventoryFilters(); });
+      document.getElementById('refresh-button')?.addEventListener('click', refreshInventoryData);
+      const togglePanel = (show) => {
+        const p = document.getElementById('add-product-panel'); if (!p) return;
+        p.classList.toggle('hidden', !show); if (show) p.scrollIntoView({ behavior: 'smooth' }); else document.getElementById('add-product-form')?.reset();
+      };
+      document.getElementById('btn-open-add-product')?.addEventListener('click', () => togglePanel(true));
+      document.getElementById('btn-close-add-product')?.addEventListener('click', () => togglePanel(false));
+      document.getElementById('new-product-image')?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0]; if (file) document.getElementById('new-product-image-preview').innerHTML = `<img src="${URL.createObjectURL(file)}" style="height:100%;width:100%;object-fit:cover;" />`;
+      });
+      document.getElementById('detail-product-image')?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0]; if (file) document.getElementById('detail-image').src = URL.createObjectURL(file);
+      });
+      document.getElementById('add-product-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target; const btn = form.querySelector('button[type="submit"]');
+        btn.disabled = true; const oldText = btn.innerHTML; btn.innerHTML = 'Saving...';
+        try {
+          const response = await fetch(PRODUCT_CREATE_API, { method: 'POST', body: new FormData(form), headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+          const data = await response.json();
+          if (data && data.success) { inventoryProducts.unshift(data.product); applyInventoryFilters(); togglePanel(false); }
+        } catch (err) { console.error(err); } finally { btn.disabled = false; btn.innerHTML = oldText; }
+      });
+      ['detail-name-input', 'detail-category-input', 'detail-stock-input'].forEach(id => {
+        const el = document.getElementById(id); if (el) { el.addEventListener('input', syncInventoryDetailHeader); el.addEventListener('change', syncInventoryDetailHeader); }
+      });
+      document.getElementById('btn-save-product')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget; if (!selectedInventoryProduct || btn.disabled) return;
+        btn.disabled = true; const oldText = btn.innerHTML; btn.innerHTML = 'Saving...';
+        const fd = new FormData();
+        fd.append('product_id', selectedInventoryProduct.product_id);
+        fd.append('product_name', document.getElementById('detail-name-input').value.trim());
+        fd.append('product_category', document.getElementById('detail-category-input').value);
+        fd.append('buy_price', document.getElementById('detail-buy-input').value);
+        fd.append('product_status', document.getElementById('detail-status-input').value);
+        fd.append('stock_count', document.getElementById('detail-stock-input').value);
+        const img = document.getElementById('detail-product-image')?.files[0]; if (img) fd.append('product_image', img);
+        try {
+          const response = await fetch(INVENTORY_UPDATE_API, { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+          const data = await response.json();
+          if (data && data.success) {
+            selectedInventoryProduct = data.product;
+            const idx = inventoryProducts.findIndex(p => Number(p.product_id) === Number(selectedInventoryProduct.product_id));
+            if (idx !== -1) inventoryProducts[idx] = selectedInventoryProduct;
+            applyInventoryFilters(); updateInventoryDetailPanel();
+          }
+        } catch (err) { console.error(err); } finally { btn.disabled = false; btn.innerHTML = oldText; }
+      });
+      document.getElementById('btn-clear-selection')?.addEventListener('click', () => { selectedInventoryProduct = null; updateInventoryDetailPanel(); });
+      document.getElementById('btn-close-details')?.addEventListener('click', () => { selectedInventoryProduct = null; updateInventoryDetailPanel(); renderInventoryViews(); });
+    };
+
     // Initialize the inventory page using the central JS helper
     initializeAdminCashierPage(window.initAdminCashierInventoryPage);
   </script>

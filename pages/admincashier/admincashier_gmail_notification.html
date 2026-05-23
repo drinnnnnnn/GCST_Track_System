@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -370,14 +370,133 @@
 
   <script src="../../assets/js/admincashier.js"></script>
   <script>
+    // --- Gmail Notification Logic (Local) ---
+    const GMAIL_API_URL = '../../actions/get_admincashier_gmail_notifications.php';
+    let emailLogs = [];
+    let gmailPollInterval = null;
+
+    window.loadGmailData = function() {
+      const params = new URLSearchParams();
+      const filters = { 
+        status: 'statusFilter', 
+        email_type: 'typeFilter', 
+        from_date: 'fromDate', 
+        to_date: 'toDate', 
+        search: 'searchInput' 
+      };
+      
+      for (const [param, id] of Object.entries(filters)) {
+        const val = document.getElementById(id)?.value?.trim();
+        if (val) params.set(param, val);
+      }
+
+      fetch(`${GMAIL_API_URL}?${params.toString()}`)
+        .then(res => res.json())
+        .then(data => {
+          const payload = data.data || data;
+          ['sentToday', 'failedEmails', 'pendingEmails', 'totalEmailsSent'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = payload[id.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`)] ?? 0;
+          });
+          emailLogs = Array.isArray(payload.email_logs) ? payload.email_logs : [];
+          window.renderEmailLogs(emailLogs);
+          window.populateEmailTypes(payload.email_types || []);
+        })
+        .catch(err => {
+          console.error('Gmail data error:', err);
+          const body = document.getElementById('emailLogsBody');
+          if (body) body.innerHTML = '<tr><td colspan="7" class="empty-state">Unable to load logs.</td></tr>';
+        });
+    };
+
+    window.renderEmailLogs = function(logs) {
+      const body = document.getElementById('emailLogsBody');
+      if (!body) return;
+      
+      if (logs.length === 0) {
+        body.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fas fa-inbox"></i><p>No transmission records found.</p></td></tr>';
+        return;
+      }
+
+      body.innerHTML = '';
+      logs.forEach(log => {
+        const row = document.createElement('tr');
+        const statusClass = log.status === 'sent' ? 'status-sent' : log.status === 'failed' ? 'status-failed' : 'status-pending';
+        row.innerHTML = `
+          <td>#${log.id}</td>
+          <td>${escapeHtml(log.recipient)}</td>
+          <td title="${escapeHtml(log.subject)}">${escapeHtml(log.subject || '(No Subject)')}</td>
+          <td>${escapeHtml(log.notification_type)}</td>
+          <td><span class="status-badge ${statusClass}">${escapeHtml(log.status)}</span></td>
+          <td>${new Date(log.created_at).toLocaleString()}</td>
+          <td class="text-right">
+            <div class="action-buttons">
+              <button class="btn-icon view" onclick="window.openEmailModal('view', ${log.id})"><i class="fas fa-eye"></i></button>
+              <button class="btn-icon retry" onclick="window.handleEmailRowAction('retry', ${log.id})"><i class="fas fa-redo"></i></button>
+              <button class="btn-icon delete" onclick="window.handleEmailRowAction('delete', ${log.id})"><i class="fas fa-trash"></i></button>
+            </div>
+          </td>`;
+        body.appendChild(row);
+      });
+    };
+
+    window.populateEmailTypes = function(types) {
+      const filter = document.getElementById('typeFilter');
+      if (!filter) return;
+      const existing = Array.from(filter.options).map(opt => opt.value);
+      types.filter(t => t && !existing.includes(t)).forEach(type => {
+        const opt = document.createElement('option');
+        opt.value = opt.textContent = type;
+        filter.appendChild(opt);
+      });
+    };
+
+    window.openEmailModal = function(mode, logIdOrObj) {
+      const modal = document.getElementById('emailModal');
+      if (!modal) return;
+      const log = typeof logIdOrObj === 'object' ? logIdOrObj : emailLogs.find(e => e.id === logIdOrObj);
+      modal.classList.add('open');
+      document.getElementById('modalTitle').textContent = mode === 'send' ? 'Send Email Notification' : 'Email Details';
+      document.getElementById('modalSendBtn').style.display = mode === 'send' ? 'inline-flex' : 'none';
+      document.getElementById('modalRecipient').value = log?.recipient || '';
+      document.getElementById('modalSubject').value = log?.subject || '';
+      document.getElementById('modalMessage').value = log?.message || '';
+      document.getElementById('modalType').value = log?.notification_type || 'System Alert';
+    };
+
+    window.handleEmailRowAction = function(action, id) {
+      if (action === 'retry') {
+        fetch(GMAIL_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'retry_email', id }) })
+          .then(res => res.json()).then(res => res.success ? window.loadGmailData() : alert(res.error));
+      } else if (action === 'delete' && confirm('Delete this log?')) {
+        fetch(GMAIL_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete_log', id }) })
+          .then(res => res.json()).then(res => res.success ? window.loadGmailData() : alert(res.error));
+      }
+    };
+
+    window.startGmailPolling = function() {
+      if (gmailPollInterval) clearInterval(gmailPollInterval);
+      gmailPollInterval = setInterval(window.loadGmailData, 30000);
+    };
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&"'<>]/g, tag => ({ '&': '&amp;', '"': '&quot;', "'": '&#39;', '<': '&lt;', '>': '&gt;' })[tag]);
+    }
+
     // Use the central initializer from admincashier.js
     initializeAdminCashierPage((userData) => {
       // Page-specific data loading for Gmail notifications
-      if (typeof window.loadGmailData === 'function') {
-        window.loadGmailData();
-        window.attachEmailFilters();
-        window.startGmailPolling();
-      }
+      window.loadGmailData();
+      window.startGmailPolling();
+
+      // Attach Filter Listeners
+      ['searchInput', 'statusFilter', 'typeFilter', 'fromDate', 'toDate'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', window.loadGmailData);
+      });
+      document.getElementById('refreshLogsBtn')?.addEventListener('click', window.loadGmailData);
+      document.getElementById('sendEmailBtn')?.addEventListener('click', () => window.openEmailModal('send'));
+      document.getElementById('modalCloseBtn')?.addEventListener('click', () => document.getElementById('emailModal').classList.remove('open'));
+      document.getElementById('modalCancelBtn')?.addEventListener('click', () => document.getElementById('emailModal').classList.remove('open'));
 
       // --- New Attachment UI Logic ---
       window.updateAttachmentUI = function() {

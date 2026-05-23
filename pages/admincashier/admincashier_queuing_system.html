@@ -430,7 +430,8 @@
   <script>
     // Use the central initializer from admincashier.js
     initializeAdminCashierPage((userData) => {
-      loadActiveQueues();
+      // Load initial state
+      refreshQueueData();
       startQueuePolling();
       startTimerUpdates();
       // dedicated 1-second clock update for smoother real-time feel
@@ -450,10 +451,16 @@
 
     let lastQueueState = null;
     let lastAnnouncedTicket = null; // Variable to store the last announced ticket for TTS
+    let currentTicketData = null; // To track the last generated ticket for print/save
     let isFetching = false;
     const EXPIRATION_LIMIT_MS = 2 * 60 * 60 * 1000; // 2 Hours in ms
 
-    function startTimerUpdates() {
+    // Wrapper to keep logic clean
+    async function refreshQueueData() {
+      await loadActiveQueues();
+    }
+
+    window.startTimerUpdates = function() {
       setInterval(() => {
         document.querySelectorAll('.expiration-timer[data-created]').forEach(el => {
           const createdAt = new Date(el.dataset.created).getTime();
@@ -482,7 +489,7 @@
       }, 1000);
     }
 
-    function loadActiveQueues() {
+    window.loadActiveQueues = function() {
       if (isFetching) return Promise.resolve();
       isFetching = true;
 
@@ -508,7 +515,8 @@
         .catch(err => console.error("Queue fetch failed:", err))
         .finally(() => { isFetching = false; });
     }
-    function renderQueueList(tickets) {
+
+    window.renderQueueList = function(tickets) {
       const container = document.getElementById('queue-list');
       if (tickets.length === 0) {
         container.innerHTML = '<p class="text-gray-500 italic">No active queues at the moment.</p>';
@@ -546,7 +554,7 @@
       `).join('');
     }
 
-    function updateStatus(id, status) {
+    window.updateStatus = function(id, status) {
       if (status === 'cancelled' && !confirm('Remove this ticket from the active queue?')) {
         return;
       }
@@ -571,7 +579,7 @@
       });
     }
 
-    async function generateQueue() {
+    window.generateQueue = async function() {
       const btn = document.getElementById('btn-generate-ticket');
       const schoolIdInput = document.getElementById('input-school-id');
       const schoolId = schoolIdInput ? schoolIdInput.value.trim() : '';
@@ -602,6 +610,7 @@
         const data = await response.json();
 
         if (data.success) {
+          currentTicketData = data.ticket;
           // Reset form on success
           document.getElementById('manual-queue-form').reset();
           showTicketPreview(data.ticket);
@@ -619,7 +628,7 @@
       }
     }
 
-    function showTicketPreview(ticket) {
+    window.showTicketPreview = function(ticket) {
       const panel = document.getElementById('ticket-preview-panel');
       document.getElementById('preview-student-info').textContent = (ticket.student_name || 'Walk-in') + ' [' + (ticket.school_id || 'No ID') + ']';
       document.getElementById('preview-queue-number').textContent = ticket.queue_number;
@@ -627,7 +636,7 @@
       panel.style.display = 'block';
     }
 
-    function updateDisplayPanel(status) {
+    window.updateDisplayPanel = function(status) {
       // Update Dashboard elements
       const servingEl = document.getElementById('display-now-serving');
       const nextEl = document.getElementById('display-next-queue');
@@ -636,20 +645,20 @@
       if (nextEl) nextEl.textContent = status.nextQueue;
     }
 
-    function startQueuePolling() {
+    window.startQueuePolling = function() {
       // Use recursive timeout to prevent request stacking and check for tab visibility
       setTimeout(async () => {
         if (!document.hidden) {
           await loadActiveQueues();
         } else {
-          console.log("Polling paused: Tab is hidden");
+          // Polling paused: Tab is hidden
         }
         startQueuePolling();
       }, 5000);
     }
 
     // Kiosk Mode Logic
-    function toggleKioskMode(activate) {
+    window.toggleKioskMode = function(activate) {
       const overlay = document.getElementById('kiosk-overlay');
       if (activate) {
         overlay.classList.add('active');
@@ -665,7 +674,7 @@
       }
     }
 
-    function updateKioskDisplay() {
+    window.updateKioskDisplay = function() {
       if (!lastQueueState) return;
       const tickets = JSON.parse(lastQueueState);
       
@@ -692,14 +701,22 @@
       `).join('') || '<div class="p-12 text-center text-gray-500 italic text-2xl">No upcoming tickets</div>';
     }
 
-    // Placeholder functions for printing/saving
-    function printTicket() {
-      window.print();
+    window.printTicket = function() {
+      if (!currentTicketData?.queue_number) return;
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`<html><head><title>Print Ticket</title></head><body><div style="text-align:center;border:2px dashed #000;padding:20px;font-family:sans-serif;"><h1>GCST QUEUE</h1><h2 style="font-size:3rem;">${currentTicketData.queue_number}</h2><p>Student: ${currentTicketData.student_name || 'Walk-in'}</p><p>${new Date(currentTicketData.created_at).toLocaleString()}</p></div></body></html>`);
+      printWindow.document.close();
+      printWindow.print();
     }
 
-    function saveTicket() {
-      const ticketNum = document.getElementById('preview-queue-number').textContent;
-      alert('Ticket ' + ticketNum + ' details saved to your downloads.');
+    window.saveTicket = function() {
+      if (!currentTicketData?.queue_number) return;
+      const ticketContent = `GCST QUEUE TICKET\nNumber: ${currentTicketData.queue_number}\nStudent: ${currentTicketData.student_name || 'Walk-in'}\nGenerated: ${new Date(currentTicketData.created_at).toLocaleString()}`;
+      const blob = new Blob([ticketContent], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `ticket-${currentTicketData.queue_number}.txt`;
+      link.click();
     }
   </script>
 </body>

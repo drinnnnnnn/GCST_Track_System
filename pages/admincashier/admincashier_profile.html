@@ -454,6 +454,108 @@
   <!-- Scripts -->
   <script src="../../assets/js/admincashier.js"></script>
   <script>
+    window.switchTab = function(tab) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      const activeBtn = document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`);
+      if (activeBtn) activeBtn.classList.add('active');
+    };
+
+    window.saveChanges = async function(event) {
+      event.preventDefault();
+      if (!confirm('Are you sure you want to save new information?')) return;
+
+      const payload = {
+        full_name: document.getElementById('full-name').value.trim(),
+        email: document.getElementById('email').value.trim()
+      };
+
+      try {
+        const result = await fetchWithError('../../actions/update_admincashier_profile.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (result.success) {
+          alert('Profile updated successfully.');
+          const profileName = document.getElementById('profile-name');
+          if (profileName) profileName.textContent = payload.full_name;
+        } else {
+          throw new Error(result.message || 'Unable to update profile.');
+        }
+      } catch (error) {
+        alert(error.message || 'Unable to update profile.');
+      }
+    };
+
+    window.saveNotifications = async function() {
+      if (!confirm('Are you sure you want to save notification preferences?')) return;
+
+      const payload = {
+        email_notifications: document.getElementById('email-notif').checked,
+        rental_reminders: document.getElementById('rental-notif').checked,
+        payment_reminders: document.getElementById('payment-notif').checked,
+        queue_notifications: document.getElementById('queue-notif').checked,
+        system_updates: document.getElementById('system-notif').checked,
+      };
+
+      try {
+        const result = await fetchWithError('../../actions/save_admincashier_notification_preferences.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (result.success) {
+          alert('Notification preferences saved successfully.');
+        } else {
+          throw new Error(result.message || 'Unable to save notification preferences.');
+        }
+      } catch (error) {
+        alert(error.message || 'Unable to save notification preferences.');
+      }
+    };
+
+    window.initAdminCashierProfilePage = async function(userData) {
+      try {
+        const response = await fetchWithError('../../actions/get_admincashier_profile_data.php');
+        const admin = response.admin || {};
+
+        // Update UI components
+        const profileName = document.getElementById('profile-name');
+        if (profileName) profileName.textContent = admin.full_name || admin.username || 'Admin Cashier';
+        
+        const idLabel = document.getElementById('profile-admin-id');
+        if (idLabel) idLabel.textContent = 'Admin ID: ' + (admin.admin_id || '---');
+        
+        // Populate form fields
+        if (document.getElementById('full-name')) document.getElementById('full-name').value = admin.full_name || '';
+        if (document.getElementById('email')) document.getElementById('email').value = admin.email || '';
+        if (document.getElementById('admin-id')) document.getElementById('admin-id').value = admin.admin_id || '';
+        
+        // Populate account info
+        if (document.getElementById('account-created')) {
+          document.getElementById('account-created').textContent = admin.created_at ? new Date(admin.created_at).toLocaleDateString() : 'N/A';
+        }
+        if (document.getElementById('last-login')) {
+          document.getElementById('last-login').textContent = admin.last_login ? new Date(admin.last_login).toLocaleDateString() : 'N/A';
+        }
+
+        // Populate notification preferences
+        const prefs = admin.notification_preferences || {};
+        if (document.getElementById('email-notif')) document.getElementById('email-notif').checked = prefs.email_notifications ?? true;
+        if (document.getElementById('rental-notif')) document.getElementById('rental-notif').checked = prefs.rental_reminders ?? true;
+        if (document.getElementById('payment-notif')) document.getElementById('payment-notif').checked = prefs.payment_reminders ?? true;
+        if (document.getElementById('queue-notif')) document.getElementById('queue-notif').checked = prefs.queue_notifications ?? true;
+        if (document.getElementById('system-notif')) document.getElementById('system-notif').checked = prefs.system_updates ?? true;
+        
+      } catch (error) {
+        console.error('Profile initialization failed:', error);
+      }
+    };
+
     // Initialize the page using the central JS helper
     initializeAdminCashierPage(window.initAdminCashierProfilePage);
   </script>
