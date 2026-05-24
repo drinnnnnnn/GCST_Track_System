@@ -7,7 +7,6 @@ let currentAdminId = null;
 let currentTicket = null;
 let notificationPollInterval = null;
 const BASE_PATH = '/GCST_Track_System';
-
 /**
  * Initialize menu and notification listeners
  * Call this in DOMContentLoaded of every page
@@ -25,12 +24,12 @@ function initializeAdminCashierUI() {
             document.querySelectorAll('.dropdown-menu.show, .notification-dropdown.show').forEach(m => {
                 if (m !== menu) m.classList.remove('show');
             });
-            menu.classList.toggle('show');
+            menu?.classList.toggle('show');
         });
     };
 
-    setupDropdown('menu-icon', 'dropdown-menu', '.dropdown-menu');
-    setupDropdown('notification-bell', 'notification-dropdown', '.notification-dropdown');
+    setupDropdown('menu-icon', 'dropdown-menu');
+    setupDropdown('notification-bell', 'notification-dropdown');
 
     // Global click listener to close dropdowns when clicking outside
     document.addEventListener('click', (e) => {
@@ -50,18 +49,18 @@ function checkAuthentication() {
     return fetch(`${BASE_PATH}/actions/get_user.php`)
     .then(res => res.json())
     .then(data => {
-      const allowedRoles = ['admin', 'cashier', 'admincashier', 'superadmin'];
-      const currentId = data.admin_id;
-      if (!currentId || !allowedRoles.includes(data.role)) {
+        const allowedRoles = ['admin', 'cashier', 'admincashier', 'superadmin'];
+        const currentId = data.admin_id;
+        if (!currentId || !allowedRoles.includes(data.role)) {
             window.location.href = `${BASE_PATH}/pages/sign_in_admin_cashier.html`;
-        return null;
-      }
-      currentAdminId = currentId;
-      return data;
+            return null;
+        }
+        currentAdminId = currentId;
+        return data;
     })
     .catch(() => {
-            window.location.href = `${BASE_PATH}/pages/sign_in_admin_cashier.html`;
-      return null;
+        window.location.href = `${BASE_PATH}/pages/sign_in_admin_cashier.html`;
+        return null;
     });
 }
 
@@ -73,13 +72,12 @@ function updateGreeting(name) {
   if (!greetingElement) return;
 
   const hour = new Date().getHours();
-    const timeGreet = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
+  const timeGreet = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
   
-    const existingText = greetingElement.textContent;
-    const prefix = existingText.includes('•') ? existingText.split('•')[0].trim() + ' • ' : '';
-    greetingElement.textContent = prefix ? `${prefix}${name}` : `${timeGreet}, ${name}!`;
+  const existingText = greetingElement.textContent;
+  const prefix = existingText.includes('•') ? existingText.split('•')[0].trim() + ' • ' : '';
+  greetingElement.textContent = prefix ? `${prefix}${name}` : `${timeGreet}, ${name}!`;
 }
-
 /**
  * Update current date and time
  */
@@ -106,14 +104,14 @@ function loadNotifications() {
       const notifBadge = document.getElementById('notif-badge');
       const sidebarBadge = document.getElementById('sidebar-gmail-badge');
       
-        if (notificationsList) {
+      if (notificationsList) {
       notificationsList.innerHTML = '';
 
       if (data.length === 0) {
         notificationsList.innerHTML = '<div class="empty-state"><p>No notifications</p></div>';
         if (notifBadge) notifBadge.style.display = 'none';
         if (sidebarBadge) sidebarBadge.classList.add('hidden');
-                return;
+        return;
       }
 
       data.forEach(notif => {
@@ -124,22 +122,22 @@ function loadNotifications() {
           <div>
             <div class="notification-message">${notif.message || 'New notification'}</div>
             <div class="notification-time">${notif.time || 'Just now'}</div>
-                    </div>`;
+          </div>`;
         notificationsList.appendChild(item);
       });
-        }
+      }
 
       // Show badge with count
-        const count = data.length;
-        if (notifBadge && count > 0) {
+      const count = data.length;
+      if (notifBadge) {
         notifBadge.textContent = data.length;
-        notifBadge.style.display = 'flex';
+        notifBadge.style.display = count > 0 ? 'flex' : 'none';
       }
 
       // Update Sidebar Badge
       if (sidebarBadge) {
-            sidebarBadge.textContent = count;
-        sidebarBadge.classList.remove('hidden');
+        sidebarBadge.textContent = count;
+        sidebarBadge.classList.toggle('hidden', count === 0);
       }
     })
     .catch(err => console.error('Error loading notifications:', err));
@@ -166,11 +164,14 @@ function clearAllNotifications() {
 function startNotifPolling() {
     if (notificationPollInterval) clearInterval(notificationPollInterval);
     
-    // Load immediately then start interval
-    loadNotifications();
-    notificationPollInterval = setInterval(loadNotifications, 30000);
-}
+    const pollTask = () => {
+        checkAuthentication(); // Heartbeat check to keep session alive
+        loadNotifications();
+    };
 
+    pollTask();
+    notificationPollInterval = setInterval(pollTask, 30000);
+}
 /**
  * Stop notification polling
  */
@@ -191,7 +192,7 @@ document.addEventListener('visibilitychange', () => {
  * Format currency value
  */
 function formatCurrency(value) {
-  return '₱' + Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return '₱' + Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /**
@@ -207,7 +208,6 @@ function showLoading(element) {
     `;
   }
 }
-
 /**
  * Show empty state
  */
@@ -222,7 +222,6 @@ function showEmptyState(element, message = 'No data available') {
     `;
   }
 }
-
 /**
  * Show error message
  */
@@ -244,39 +243,39 @@ function showError(element, message = 'An error occurred') {
  */
 window.initializeAdminCashierPage = function(pageCallback) {
     const initSequence = async () => {
-    try {
-      // 1. Load sidebar first so the user sees the UI immediately
-      await autoLoadSidebar();
-      
-      // 2. Authentication
-      const userData = await checkAuthentication();
+        try {
+            // 1. Load sidebar first so the user sees the UI immediately
+            await autoLoadSidebar();
+            
+            // 2. Authentication
+            const userData = await checkAuthentication();
             if (!userData) return;
 
-      // 3. Initialize UI elements now that sidebar is in the DOM
-      initializeAdminCashierUI();
-      updateGreeting(userData.name || 'Admin');
-      updateDateTime();
+            // 3. Initialize UI elements now that sidebar is in the DOM
+            initializeAdminCashierUI();
+            updateGreeting(userData.name || 'Admin');
+            updateDateTime();
             setInterval(updateDateTime, 60000);
 
-      if (!window.location.pathname.includes('admincashier_inventorys.html')) {
-        startNotifPolling();
-      }
+            if (!window.location.pathname.includes('admincashier_inventorys.html')) {
+                startNotifPolling();
+            }
 
             if (typeof pageCallback === 'function') pageCallback(userData);
-    } catch (error) {
-      console.error('Error initializing page:', error);
-    }
-  };
+        } catch (error) {
+            console.error('Error initializing page:', error);
+        }
+    };
 
-  if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', init);
+    if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', initSequence);
     } else {
         initSequence();
-  }
+    }
 
-  // Clean up on page unload
-  window.addEventListener('beforeunload', () => {
-    stopNotifPolling();
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+        stopNotifPolling();
         if (typeof stopSalesPolling === 'function') stopSalesPolling();
     if (typeof stopQueuePolling === 'function') stopQueuePolling();
     if (typeof stopInventoryPolling === 'function') stopInventoryPolling();
@@ -289,10 +288,10 @@ window.initializeAdminCashierPage = function(pageCallback) {
 function fetchWithError(url, options = {}) {
     return fetch(url, options)
         .then(res => res.ok ? res.json() : Promise.reject(`HTTP error! status: ${res.status}`))
-    .catch(err => {
-      console.error('Fetch error:', err);
-      throw err;
-    });
+        .catch(err => {
+            console.error('Fetch error:', err);
+            throw err;
+        });
 }
 
 /* =====================================================
@@ -322,33 +321,28 @@ async function autoLoadSidebar() {
   if (!container) return;
 
   try {
-    // Ensure Chart.js is loaded before attempting to use it
-    if (typeof Chart === 'undefined') {
-      console.warn('Chart.js is not loaded. Charts functionality may be limited.');
-    }
-
     // Use dynamic import instead of relying on global window object
     const { getSidebarHTML } = await import('./admincashier_sidebar_content.js');
     if (container && typeof getSidebarHTML === 'function') {
-      container.innerHTML = getSidebarHTML();
-      const isMinimized = localStorage.getItem('sidebar-minimized') === 'true';
-      if (isMinimized) {
-        document.getElementById('main-sidebar')?.classList.add('minimized');
-        document.querySelector('.content-wrapper')?.classList.add('minimized');
-        document.querySelector('header')?.classList.add('minimized');
-      }
+        container.innerHTML = getSidebarHTML();
+        const isMinimized = localStorage.getItem('sidebar-minimized') === 'true';
+        if (isMinimized) {
+            document.getElementById('main-sidebar')?.classList.add('minimized');
+            document.querySelector('.content-wrapper')?.classList.add('minimized');
+            document.querySelector('header')?.classList.add('minimized');
+        }
       
-      // Automatically highlight the active link based on the current URL
-      const getFileName = (path) => path.split('/').pop() || 'admincashier_dashb.html';
-      const currentFile = getFileName(window.location.pathname);
+        // Automatically highlight the active link based on the current URL
+        const getFileName = (path) => path.split('/').pop() || 'admincashier_dashb.html';
+        const currentFile = getFileName(window.location.pathname);
       
-            container.querySelectorAll('.sidebar-link').forEach(link => {
-        const linkFile = getFileName(link.pathname);
-                const isActive = linkFile && linkFile === currentFile && !link.href.startsWith('javascript');
-                link.classList.toggle('active', isActive);
-      });
+        container.querySelectorAll('.sidebar-link').forEach(link => {
+            const linkFile = getFileName(link.pathname);
+            const isActive = linkFile && linkFile === currentFile && !link.href.startsWith('javascript');
+            link.classList.toggle('active', isActive);
+        });
     }
   } catch (err) {
-        console.warn('Sidebar auto-load failed:', err);
+    console.warn('Sidebar auto-load failed:', err);
   }
 }

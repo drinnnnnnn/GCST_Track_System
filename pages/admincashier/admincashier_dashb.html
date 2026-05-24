@@ -3,46 +3,75 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GCST Admin Cashier - Analytics Dashboard</title>
+  
+  <title>GCST Admin Cashier - Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <link rel="stylesheet" href="../../assets/css/admincashier.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
+
   <style>
-    .stat-card {
-      background: white;
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
-      border: 1px solid rgba(226, 232, 240, 0.8);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .stat-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08);
-      border-color: #4f46e5;
-    }
-    .chart-container-alt {
-      background: white;
-      border-radius: 28px;
-      padding: 28px;
-      border: 1px solid #f1f5f9;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01);
-    }
-    .icon-wrapper {
-      width: 54px;
-      height: 54px;
+    /* Dashboard Specific UI Enhancements */
+    .activity-section h2 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 24px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      border-radius: 16px;
-      flex-shrink: 0;
+      gap: 12px;
     }
-    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 24px;
+    }
+
+    .chart-container {
+      background: #ffffff;
+      border-radius: 28px;
+      padding: 30px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 10px 15px -5px rgba(0,0,0,0.05);
+      border: 1px solid rgba(241, 245, 249, 0.8);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-container:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      border-color: #e2e8f0;
+    }
+
+    .chart-container h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .amount {
+      font-weight: 600 !important;
+    }
+
+    .greeting-section h1,
+    .balance-section h2 {
+      font-weight: 600;
+    }
+
+    .top-selling-list-wrapper::-webkit-scrollbar { width: 5px; }
+    .top-selling-list-wrapper::-webkit-scrollbar-track { background: #f8fafc; }
+    .top-selling-list-wrapper::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+    @media (max-width: 1024px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 
@@ -50,110 +79,94 @@
   <!-- Sidebar Component -->
   <div id="sidebar-container"></div>
   <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
-  
   <div class="content-wrapper">
-    <main class="p-4 md:p-8 max-w-[1600px] mx-auto">
-      <!-- Top Header / Greeting -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
-        <div>
-          <h1 id="greeting-message" class="text-3xl font-black text-gray-900 tracking-tight">Dashboard Overview</h1>
-          <p id="current-date-time" class="text-gray-500 font-medium mt-1">Fetching current time...</p>
+
+<main>
+    <!-- Greeting Section -->
+    <section class="greeting-section">
+      <div class="greeting-content">
+        <h1 id="greeting-message">Welcome back!</h1>
+        <p id="current-date-time">Loading...</p>
+      </div>
+      <div class="greeting-icon">📚</div>
+    </section>
+
+    <!-- Summary Section -->
+    <section class="balance-section">
+      <h2>Dashboard Summary</h2>
+      <div class="balance-cards">
+        <div class="balance-card">
+          <h3>Items in Inventory</h3>
+          <p class="amount" id="totalInventory">0</p>
+        </div> 
+        <div class="balance-card">
+          <h3>Pending Queue</h3>
+          <p class="amount" id="pendingQueue">0</p>
         </div>
-        <div class="flex items-center gap-3">
-          <button onclick="refreshAllDashboardData()" class="px-5 py-3 bg-white border border-gray-200 rounded-2xl text-gray-700 font-bold hover:bg-gray-50 transition-all shadow-sm flex items-center gap-2">
-            <i class="fas fa-sync-alt text-blue-600"></i> Refresh Stats
-          </button>
+        <div class="balance-card">
+          <h3>Total Sales (Today)</h3>
+          <p class="amount" id="totalSalesToday">₱0.00</p>
         </div>
       </div>
+    </section>
 
-      <!-- Stat Summary Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div class="stat-card flex items-center gap-6">
-          <div class="icon-wrapper bg-indigo-50 text-indigo-600">
-            <i class="fas fa-boxes-stacked fa-xl"></i>
-          </div>
-          <div>
-            <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Inventory</h3>
-            <p class="text-3xl font-black text-gray-900" id="totalInventory">0</p>
-          </div>
-        </div>
-        <div class="stat-card flex items-center gap-6">
-          <div class="icon-wrapper bg-amber-50 text-amber-600">
-            <i class="fas fa-user-clock fa-xl"></i>
-          </div>
-          <div>
-            <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Queue Active</h3>
-            <p class="text-3xl font-black text-gray-900" id="pendingQueue">0</p>
-          </div>
-        </div>
-        <div class="stat-card flex items-center gap-6">
-          <div class="icon-wrapper bg-emerald-50 text-emerald-600">
-            <i class="fas fa-wallet fa-xl"></i>
-          </div>
-          <div>
-            <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Today's Sales</h3>
-            <p class="text-3xl font-black text-gray-900" id="totalSalesToday">₱0.00</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Analytics Sections -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <!-- Main Sales Performance -->
-        <div class="chart-container-alt lg:col-span-8">
-          <h3 class="text-xl font-black text-gray-800 mb-8 flex items-center gap-3">
-            <span class="w-2 h-8 bg-blue-600 rounded-full"></span> Sales Performance
-          </h3>
-          <div class="h-[400px]">
+    <!-- Charts Section -->
+    <section class="activity-section">
+      <h2><i class="fas fa-chart-simple"></i> Key Analytics & Activity</h2>
+      <div class="charts-grid">
+        <div class="chart-container">
+          <h3><i class="fas fa-chart-line text-indigo-500"></i> Sales Trends</h3>
+          <div class="chart-wrapper">
             <canvas id="salesChart"></canvas>
           </div>
         </div>
-
-        <!-- Category Breakdown -->
-        <div class="chart-container-alt lg:col-span-4">
-          <h3 class="text-xl font-black text-gray-800 mb-8 flex items-center gap-3">
-            <span class="w-2 h-8 bg-purple-600 rounded-full"></span> Inventory Mix
-          </h3>
-          <div class="h-[400px]">
+        <div class="chart-container">
+          <h3><i class="fas fa-chart-pie text-purple-500"></i> Inventory Breakdown</h3>
+          <div class="chart-wrapper">
             <canvas id="inventoryChart"></canvas>
           </div>
         </div>
-
-        <!-- Ranking Chart -->
-        <div class="chart-container-alt lg:col-span-6">
-          <h3 class="text-xl font-black text-gray-800 mb-8 flex items-center gap-3">
-            <span class="w-2 h-8 bg-amber-500 rounded-full"></span> Top Products Analytics
-          </h3>
-          <div class="h-[400px]">
+        <div class="chart-container">
+          <h3><i class="fas fa-arrow-trend-up text-blue-500"></i> Demand by Volume</h3>
+          <div class="chart-wrapper">
             <canvas id="topProductsChart"></canvas>
           </div>
         </div>
-
-        <!-- Ranking List -->
-        <div class="chart-container-alt lg:col-span-6 flex flex-col">
-          <div class="flex justify-between items-center mb-8">
-            <h3 class="text-xl font-black text-gray-800 flex items-center gap-3">
-              <span class="w-2 h-8 bg-emerald-500 rounded-full"></span> Top Selling List
-            </h3>
-            <span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest border border-emerald-100">Monthly</span>
+        <div class="chart-container">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="!mb-0 font-semibold text-gray-800"><i class="fas fa-ranking-star text-amber-500"></i> Top Items</h3>
+            <span class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[9px] font-semibold uppercase tracking-widest border border-indigo-100">Monthly</span>
           </div>
-          <div id="topSellingContainer" class="space-y-6 overflow-y-auto pr-3 custom-scrollbar flex-1 max-h-[400px]">
-            <div class="flex flex-col items-center justify-center py-20 text-gray-400">
-              <i class="fas fa-circle-notch fa-spin text-3xl mb-4"></i>
-              <p class="text-sm font-bold tracking-tight">Updating analytics data...</p>
+          <div class="top-selling-list-wrapper" style="max-height: 320px; overflow-y: auto;">
+            <div id="topSellingContainer" class="space-y-4 pr-3">
+              <div class="flex flex-col items-center justify-center py-12 text-gray-400">
+                <i class="fas fa-circle-notch fa-spin text-2xl mb-3"></i>
+                <p class="text-sm">Fetching sales data...</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </main>
+    </section>
+  </main>
+
   </div> <!-- End .content-wrapper -->
 
   <!-- Scripts -->
   <script src="../../assets/js/admincashier.js"></script>
   <script>
-    let dashSalesChartInstance = null;
-    let dashInventoryChartInstance = null;
-    let dashTopProductsChartInstance = null;
+    /**
+     * Dashboard State Management
+     */
+    const dashState = {
+      charts: {
+        sales: null,
+        inventory: null,
+        topProducts: null
+      },
+      pollInterval: null,
+      isRefreshing: false
+    };
 
     /**
      * Fetches top selling products and renders them as progress bars.
@@ -163,29 +176,28 @@
       if (!container) return;
 
       try {
-        const response = await fetch('../../actions/get_admincashier_sales.php?period=month');
-        const data = await response.json();
+        const data = await fetchWithError('../../actions/get_admincashier_sales.php?period=month');
+        const payload = data.data || data;
         
         container.innerHTML = '';
-        const payload = data.data || data;
 
         if (payload.top_products && payload.top_products.length > 0) {
           const maxQty = Math.max(...payload.top_products.map(p => p.quantity));
 
           payload.top_products.forEach((item, index) => {
-            const percentage = (item.quantity / maxQty) * 100;
+            const percentage = maxQty > 0 ? (item.quantity / maxQty) * 100 : 0;
             const itemDiv = document.createElement('div');
-            itemDiv.className = 'flex flex-col gap-2 p-3 rounded-2xl hover:bg-gray-50 transition-all duration-300 group';
+            itemDiv.className = 'group flex flex-col gap-1.5 p-3.5 rounded-2xl hover:bg-slate-50 transition-all duration-300 border border-transparent hover:border-slate-100';
             itemDiv.innerHTML = `
-              <div class="flex justify-between items-center text-sm">
+              <div class="flex justify-between items-center text-sm mb-1">
                 <div class="flex items-center gap-3">
-                  <span class="flex items-center justify-center w-8 h-8 rounded-xl bg-gray-100 text-gray-500 text-[11px] font-black group-hover:bg-blue-600 group-hover:text-white transition-colors">${index + 1}</span>
-                  <span class="font-bold text-gray-700 truncate max-w-[180px] md:max-w-[300px]" title="${item.name}">${item.name}</span>
+                  <div class="flex items-center justify-center w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 text-xs font-semibold group-hover:scale-110 transition-transform">${index + 1}</div>
+                  <span class="font-semibold text-slate-700 truncate max-w-[140px] md:max-w-[200px]" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
                 </div>
-                <span class="font-black text-blue-600 text-sm">${item.quantity} <span class="text-[9px] text-gray-400 font-bold uppercase ml-0.5">Units</span></span>
+                <span class="font-semibold text-indigo-600 text-xs">${Number(item.quantity).toLocaleString()} <span class="text-[9px] text-slate-400 font-normal uppercase ml-0.5">Units</span></span>
               </div>
-              <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%" data-target-width="${percentage}%"></div>
+              <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-gradient-to-r from-indigo-400 to-indigo-600 h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(99,102,241,0.4)]" style="width: 0%" data-target-width="${percentage}%"></div>
               </div>
             `;
             container.appendChild(itemDiv);
@@ -198,7 +210,7 @@
         } else {
           container.innerHTML = `
             <div class="flex flex-col items-center justify-center py-12 text-center opacity-60">
-              <div class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
+              <div class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
                 <i class="fas fa-box-open text-gray-300"></i>
               </div>
               <p class="text-sm font-medium text-gray-500">No sales this month</p>
@@ -223,7 +235,11 @@
         const totalInv = metrics.total_inventory ?? metrics.inventory_count ?? metrics.total_items ?? 0;
         const pendingQ = metrics.pending_queue ?? metrics.queue_count ?? metrics.active_queue ?? 0;
 
-        if (document.getElementById('totalSalesToday')) document.getElementById('totalSalesToday').textContent = formatCurrency(totalSales);
+        const salesEl = document.getElementById('totalSalesToday');
+        if (salesEl) {
+            salesEl.textContent = typeof formatCurrency === 'function' ? formatCurrency(totalSales) : '₱' + totalSales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+        
         if (document.getElementById('totalInventory')) document.getElementById('totalInventory').textContent = totalInv;
         if (document.getElementById('pendingQueue')) document.getElementById('pendingQueue').textContent = pendingQ;
       } catch (error) {
@@ -238,72 +254,83 @@
       try {
         const chartData = await fetchWithError('../../actions/get_admincashier_charts.php');
         const data = chartData.data || chartData;
+        const chartFont = { family: "'Outfit', sans-serif" };
         
         // Update or Create Sales Trend Chart
         const salesCtx = document.getElementById('salesChart')?.getContext('2d');
-        if (salesCtx && !dashSalesChartInstance) {
-          dashSalesChartInstance = new Chart(salesCtx, {
+        if (salesCtx && !dashState.charts.sales) {
+          dashState.charts.sales = new Chart(salesCtx, {
             type: 'line',
             data: {
               labels: data.sales_labels || [],
-              datasets: [{ label: 'Daily Sales (₱)', data: data.sales_data || [], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', tension: 0.4, fill: true, borderWidth: 3, pointRadius: 4, pointHoverRadius: 6 }]
+              datasets: [{ label: 'Daily Sales (₱)', data: data.sales_data || [], borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: '#fff', pointBorderWidth: 2 }]
             },
-            options: { 
-              responsive: true, maintainAspectRatio: false, 
-              plugins: { legend: { display: false } },
-              scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { font: chartFont } } } }
           });
-        } else if (dashSalesChartInstance) {
-          dashSalesChartInstance.data.labels = data.sales_labels || [];
-          dashSalesChartInstance.data.datasets[0].data = data.sales_data || [];
-          dashSalesChartInstance.update();
+        } else if (dashState.charts.sales) {
+          dashState.charts.sales.data.labels = data.sales_labels || [];
+          dashState.charts.sales.data.datasets[0].data = data.sales_data || [];
+          dashState.charts.sales.update('none');
         }
 
         // Update or Create Inventory Distribution Chart
         const inventoryCtx = document.getElementById('inventoryChart')?.getContext('2d');
-        if (inventoryCtx && !dashInventoryChartInstance) {
-          dashInventoryChartInstance = new Chart(inventoryCtx, {
+        if (inventoryCtx && !dashState.charts.inventory) {
+          dashState.charts.inventory = new Chart(inventoryCtx, {
             type: 'doughnut',
             data: {
               labels: data.inventory_labels || [],
-              datasets: [{ data: data.inventory_data || [], backgroundColor: ['#4f46e5', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444'], borderWeight: 0, hoverOffset: 10 }]
+              datasets: [{ data: data.inventory_data || [], backgroundColor: ['#6366f1', '#a855f7', '#ec4899', '#3b82f6'], borderWidth: 0 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, font: { family: 'Outfit', weight: 'bold' } } } } }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: chartFont } } } }
           });
-        } else if (dashInventoryChartInstance) {
-          dashInventoryChartInstance.data.labels = data.inventory_labels || [];
-          dashInventoryChartInstance.data.datasets[0].data = data.inventory_data || [];
-          dashInventoryChartInstance.update();
+        } else if (dashState.charts.inventory) {
+          dashState.charts.inventory.data.labels = data.inventory_labels || [];
+          dashState.charts.inventory.data.datasets[0].data = data.inventory_data || [];
+          dashState.charts.inventory.update('none');
         }
 
         // Update or Create Top Products Chart
         const productsCtx = document.getElementById('topProductsChart')?.getContext('2d');
-        if (productsCtx && !dashTopProductsChartInstance) {
-          dashTopProductsChartInstance = new Chart(productsCtx, {
+        if (productsCtx && !dashState.charts.topProducts) {
+          dashState.charts.topProducts = new Chart(productsCtx, {
             type: 'bar',
             data: {
               labels: data.products_labels || [],
-              datasets: [{ label: 'Units Sold', data: data.products_data || [], backgroundColor: '#4f46e5', borderRadius: 8, barThickness: 24 }]
+              datasets: [{ label: 'Units Sold', data: data.products_data || [], backgroundColor: '#6366f1', borderRadius: 6 }]
             },
-            options: { 
-              responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-              plugins: { legend: { display: false } },
-              scales: { x: { beginAtZero: true, grid: { color: '#f1f5f9' } }, y: { grid: { display: false } } }
-            }
+            options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }
           });
-        } else if (dashTopProductsChartInstance) {
-          dashTopProductsChartInstance.data.labels = data.products_labels || [];
-          dashTopProductsChartInstance.data.datasets[0].data = data.products_data || [];
-          dashTopProductsChartInstance.update();
+        } else if (dashState.charts.topProducts) {
+          dashState.charts.topProducts.data.labels = data.products_labels || [];
+          dashState.charts.topProducts.data.datasets[0].data = data.products_data || [];
+          dashState.charts.topProducts.update('none');
         }
       } catch (error) { console.error('Error fetching chart data:', error); }
     }
 
+    /**
+     * Refreshes all dashboard components in parallel
+     */
     async function refreshAllDashboardData() {
-      await fetchSummaryMetrics();
-      await fetchAnalyticsCharts();
-      await fetchTopSellingTable();
+      if (dashState.isRefreshing) return;
+      dashState.isRefreshing = true;
+      
+      try {
+        await Promise.allSettled([
+          fetchSummaryMetrics(),
+          fetchAnalyticsCharts(),
+          fetchTopSellingTable()
+        ]);
+      } finally {
+        dashState.isRefreshing = false;
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text || '';
+      return div.innerHTML;
     }
 
     /**
@@ -311,9 +338,11 @@
      */
     function initAdminCashierDashboardPage(userData) {
       refreshAllDashboardData();
-      const dashInterval = setInterval(refreshAllDashboardData, 20000); // 20s auto-refresh
-
-      window.addEventListener('beforeunload', () => clearInterval(dashInterval));
+      dashState.pollInterval = setInterval(refreshAllDashboardData, 30000); // 30s auto-refresh
+      
+      window.addEventListener('beforeunload', () => {
+        if (dashState.pollInterval) clearInterval(dashState.pollInterval);
+      });
     }
 
     // Initialize the dashboard page using the central JS helper

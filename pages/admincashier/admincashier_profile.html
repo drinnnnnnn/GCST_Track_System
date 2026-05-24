@@ -7,60 +7,73 @@
   <title>GCST Admin Cashier - My Profile</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <link rel="stylesheet" href="../../assets/css/admincashier.css" />
-  <link rel="stylesheet" href="https://cdn.tailwindcss.com" />
+  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    .profile-card {
+    /* Enhanced Activity Section Styling */
+    .activity-section {
       background: var(--surface);
-      border-radius: var(--radius-lg);
-      padding: 28px;
-      box-shadow: var(--shadow-lg);
-      text-align: center;
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(226, 232, 240, 0.8);
       margin-bottom: 24px;
     }
-    
-    .profile-photo {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin: 0 auto 16px;
-      border: 4px solid var(--primary-soft);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-    }
-    
-    .profile-name {
-      margin: 0 0 8px;
-      font-size: 1.5rem;
-      color: var(--text);
+
+    .activity-section h2 {
+      font-size: 1.25rem;
       font-weight: 700;
-    }
-    
-    .profile-info {
-      font-size: 0.9rem;
-      color: var(--muted);
-      margin-bottom: 16px;
-    }
-    
-    .profile-status {
-      display: inline-block;
-      padding: 6px 14px;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      background: #d4edda;
-      color: #155724;
-      margin-bottom: 16px;
-    }
-    
-    .profile-actions {
+      color: var(--text);
+      margin-bottom: 24px;
       display: flex;
-      gap: 10px;
-      justify-content: center;
+      align-items: center;
+      gap: 12px;
     }
-    
+
+    .activity-section h2 i {
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .profile-header-card {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 32px;
+      background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
+      border-radius: 24px;
+      color: white;
+      margin-bottom: 32px;
+      box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.2);
+    }
+
+    .avatar-placeholder {
+      width: 100px;
+      height: 100px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      flex-shrink: 0;
+    }
+
+    .profile-header-info h2 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 800;
+    }
+
+    .profile-header-info p {
+      margin: 4px 0 0;
+      opacity: 0.9;
+      font-weight: 500;
+    }
+
     .btn-action {
       padding: 10px 18px;
       border: none;
@@ -95,7 +108,7 @@
     .tab-buttons {
       display: flex;
       gap: 12px;
-      margin-bottom: 24px;
+      margin-bottom: 32px;
       border-bottom: 2px solid var(--border);
       flex-wrap: wrap;
     }
@@ -171,17 +184,17 @@
     }
     
     .save-button {
-      padding: 14px 28px;
+      padding: 12px 24px;
       background: var(--primary);
       color: white;
       border: none;
       border-radius: var(--radius);
       cursor: pointer;
       font-weight: 600;
-      font-size: 1rem;
+      font-size: 0.95rem;
       transition: all 0.2s ease;
     }
-    
+
     .save-button:hover {
       background: var(--primary-dark);
       transform: translateY(-1px);
@@ -216,21 +229,34 @@
       font-weight: 600;
     }
     
-    .notification-item {
+    .activity-log-item {
       background: var(--surface-soft);
       border-radius: var(--radius);
-      padding: 14px;
       margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 16px;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
     }
-    
-    .notification-label {
-      color: var(--text);
-      font-weight: 600;
+
+    .activity-log-item:hover {
+      background: var(--surface);
+      border-color: var(--border);
+      transform: translateX(4px);
     }
-    
+
+    .activity-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
     .toggle-switch {
       position: relative;
       display: inline-block;
@@ -325,42 +351,32 @@
       <div class="greeting-icon">👤</div>
     </section>
 
-    <!-- Profile Card -->
-    <div class="profile-card">
-      <h2 class="profile-name" id="profile-name">Loading...</h2>
-      <div class="profile-info" style="font-size: 1rem;">
-        <span id="profile-admin-id">Admin ID: ---</span>
-      </div>
-      <div class="profile-status" id="profile-status">Active</div>
-    </div>
-
     <!-- Tabs -->
     <section style="margin-bottom: 24px;">
       <div class="tab-buttons">
         <button class="tab-btn active" onclick="switchTab('personal')">Personal Info</button>
         <button class="tab-btn" onclick="switchTab('account')">Account</button>
-        <button class="tab-btn" onclick="switchTab('notifications')">Notifications</button>
       </div>
     </section>
 
     <!-- Tab: Personal Info -->
     <section id="tab-personal" class="tab-content active">
       <div class="activity-section">
-        <h2>Personal Information</h2>
-        <form onsubmit="saveChanges(event)">
+        <h2><i class="fas fa-id-card"></i> Personal Information</h2>
+        <form id="personal-info-form" onsubmit="saveChanges(event)">
           <div class="form-row">
             <div class="form-group">
-              <label>Full Name</label>
+              <label for="full-name">Full Name</label>
               <input type="text" id="full-name" placeholder="Full Name" readonly>
             </div>
             <div class="form-group">
-              <label>Email</label>
+              <label for="email">Email Address</label>
               <input type="email" id="email" placeholder="Email address" readonly>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>Admin ID</label>
+              <label for="admin-id">Admin ID</label>
               <input type="text" id="admin-id" placeholder="Admin ID" readonly>
             </div>
           </div>
@@ -371,7 +387,7 @@
     <!-- Tab: Account -->
     <section id="tab-account" class="tab-content">
       <div class="activity-section">
-        <h2>Account Settings</h2>
+        <h2><i class="fas fa-cog"></i> Account Summary</h2>
         <div class="info-grid">
           <div class="info-item">
             <div class="info-item-label">Account Created</div>
@@ -386,69 +402,49 @@
             <div class="info-item-value" id="account-status" style="color: var(--success);">Active</div>
           </div>
         </div>
-    </section>
+      </div>
 
-    <!-- Tab: Notifications -->
-    <section id="tab-notifications" class="tab-content">
       <div class="activity-section">
-        <h2>Notification Preferences</h2>
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="!mb-0"><i class="fas fa-history"></i> Recent Security Activity</h2>
+          <button class="btn-action btn-secondary !py-2 !text-xs"><i class="fas fa-sync-alt"></i> Refresh Logs</button>
+        </div>
         
-        <div class="notification-item">
-          <span class="notification-label">
-            <i class="fas fa-envelope"></i> Email Notifications
-          </span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="email-notif" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
+        <div class="space-y-1">
+          <div class="activity-log-item">
+            <div class="flex items-center gap-4">
+              <div class="activity-icon bg-blue-50 text-blue-500">
+                <i class="fas fa-sign-in-alt"></i>
+              </div>
+              <div>
+                <div class="font-bold text-gray-800 text-sm">Account Login</div>
+                <div class="text-xs text-gray-500">Successful login from Authorized IP</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs font-bold text-gray-400">Today, 08:30 AM</div>
+              <span class="status-badge complete mt-1">Active</span>
+            </div>
+          </div>
 
-        <div class="notification-item">
-          <span class="notification-label">
-            <i class="fas fa-bell"></i> Rental Reminders
-          </span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="rental-notif" checked>
-            <span class="toggle-slider"></span>
-          </label>
+          <div class="activity-log-item">
+            <div class="flex items-center gap-4">
+              <div class="activity-icon bg-purple-50 text-purple-500">
+                <i class="fas fa-key"></i>
+              </div>
+              <div>
+                <div class="font-bold text-gray-800 text-sm">Session Verified</div>
+                <div class="text-xs text-gray-500">Heartbeat check successful</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs font-bold text-gray-400">Yesterday, 04:15 PM</div>
+              <span class="status-badge complete mt-1">Verified</span>
+            </div>
+          </div>
         </div>
-
-        <div class="notification-item">
-          <span class="notification-label">
-            <i class="fas fa-money-bill"></i> Payment Reminders
-          </span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="payment-notif" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-
-        <div class="notification-item">
-          <span class="notification-label">
-            <i class="fas fa-ticket-alt"></i> Queue Notifications
-          </span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="queue-notif" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-
-        <div class="notification-item">
-          <span class="notification-label">
-            <i class="fas fa-info-circle"></i> System Updates
-          </span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="system-notif" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-
-        <button class="save-button" style="margin-top: 20px;" onclick="saveNotifications()">
-          <i class="fas fa-check"></i> Save Preferences
-        </button>
       </div>
     </section>
-
   </main>
 
   <!-- Scripts -->
@@ -480,8 +476,6 @@
 
         if (result.success) {
           alert('Profile updated successfully.');
-          const profileName = document.getElementById('profile-name');
-          if (profileName) profileName.textContent = payload.full_name;
         } else {
           throw new Error(result.message || 'Unable to update profile.');
         }
@@ -490,46 +484,11 @@
       }
     };
 
-    window.saveNotifications = async function() {
-      if (!confirm('Are you sure you want to save notification preferences?')) return;
-
-      const payload = {
-        email_notifications: document.getElementById('email-notif').checked,
-        rental_reminders: document.getElementById('rental-notif').checked,
-        payment_reminders: document.getElementById('payment-notif').checked,
-        queue_notifications: document.getElementById('queue-notif').checked,
-        system_updates: document.getElementById('system-notif').checked,
-      };
-
-      try {
-        const result = await fetchWithError('../../actions/save_admincashier_notification_preferences.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (result.success) {
-          alert('Notification preferences saved successfully.');
-        } else {
-          throw new Error(result.message || 'Unable to save notification preferences.');
-        }
-      } catch (error) {
-        alert(error.message || 'Unable to save notification preferences.');
-      }
-    };
-
     window.initAdminCashierProfilePage = async function(userData) {
       try {
         const response = await fetchWithError('../../actions/get_admincashier_profile_data.php');
         const admin = response.admin || {};
 
-        // Update UI components
-        const profileName = document.getElementById('profile-name');
-        if (profileName) profileName.textContent = admin.full_name || admin.username || 'Admin Cashier';
-        
-        const idLabel = document.getElementById('profile-admin-id');
-        if (idLabel) idLabel.textContent = 'Admin ID: ' + (admin.admin_id || '---');
-        
         // Populate form fields
         if (document.getElementById('full-name')) document.getElementById('full-name').value = admin.full_name || '';
         if (document.getElementById('email')) document.getElementById('email').value = admin.email || '';
@@ -543,14 +502,6 @@
           document.getElementById('last-login').textContent = admin.last_login ? new Date(admin.last_login).toLocaleDateString() : 'N/A';
         }
 
-        // Populate notification preferences
-        const prefs = admin.notification_preferences || {};
-        if (document.getElementById('email-notif')) document.getElementById('email-notif').checked = prefs.email_notifications ?? true;
-        if (document.getElementById('rental-notif')) document.getElementById('rental-notif').checked = prefs.rental_reminders ?? true;
-        if (document.getElementById('payment-notif')) document.getElementById('payment-notif').checked = prefs.payment_reminders ?? true;
-        if (document.getElementById('queue-notif')) document.getElementById('queue-notif').checked = prefs.queue_notifications ?? true;
-        if (document.getElementById('system-notif')) document.getElementById('system-notif').checked = prefs.system_updates ?? true;
-        
       } catch (error) {
         console.error('Profile initialization failed:', error);
       }

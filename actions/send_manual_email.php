@@ -24,11 +24,10 @@ $recipient = $_POST['recipient'] ?? '';
 $subject = $_POST['subject'] ?? '';
 $message = $_POST['message'] ?? '';
 $type = $_POST['type'] ?? 'Manual Notification';
-$phoneNumber = $_POST['phone_number'] ?? '';
 
 // Basic validation
-if ((empty($recipient) && empty($phoneNumber)) || empty($subject) || empty($message)) {
-    echo json_encode(['success' => false, 'message' => 'Recipient (Email or Phone), Subject, and Message are required.']);
+if (empty($recipient) || empty($subject) || empty($message)) {
+    echo json_encode(['success' => false, 'message' => 'Recipient Email, Subject, and Message are required.']);
     exit;
 }
 
@@ -70,16 +69,7 @@ if (isset($_FILES['attachments'])) {
     }
 }
 
-// Server-side validation for Philippine mobile number format
-if (!empty($phoneNumber)) {
-    $cleanPhone = str_replace([' ', '-', '(', ')'], '', $phoneNumber);
-    if (!preg_match('/^\+639\d{9}$/', $cleanPhone)) {
-        echo json_encode(['success' => false, 'message' => 'Invalid Philippine mobile number format. Must start with +639.']);
-        exit;
-    }
-}
-
-$result = sendEmailWithLog($conn, $recipient, $subject, $message, $type, $attachments, $phoneNumber);
+$result = sendEmailWithLog($conn, $recipient, $subject, $message, $type, $attachments);
 
 // Clean up temporary attachment files
 foreach ($attachments as $att) {
@@ -88,27 +78,16 @@ foreach ($attachments as $att) {
     }
 }
 
-// Construct a more detailed message for the user
-$feedbackMessage = [];
-if (!empty($recipient)) {
-    $feedbackMessage[] = "Email: " . ucfirst($result['email_status']);
-} else {
-    $feedbackMessage[] = "Email: Skipped (no recipient)";
-}
-
-if (!empty($phoneNumber)) {
-    $feedbackMessage[] = "SMS: " . ucfirst($result['sms_status']);
-} else {
-    $feedbackMessage[] = "SMS: Skipped (no phone number)";
-}
-
-$finalUserMessage = implode(". ", array_filter($feedbackMessage)); // Filter out empty messages
-
 if ($result['success']) {
-    echo json_encode(['success' => true, 'message' => $finalUserMessage]);
+    echo json_encode([
+        'success' => true, 
+        'message' => "Email: " . ucfirst($result['email_status'])
+    ]);
 } else {
-    // If overall failed, include the detailed log message from email_helpers.php
-    echo json_encode(['success' => false, 'message' => $finalUserMessage . ". Details: " . ($result['message'] ?? 'Unknown error.')]);
+    echo json_encode([
+        'success' => false, 
+        'message' => "Email: Failed. Details: " . ($result['message'] ?? 'Unknown error.')
+    ]);
 }
 
 $conn->close();

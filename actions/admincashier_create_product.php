@@ -30,7 +30,7 @@ $category = trim($payload['product_category'] ?? '');
 $description = trim($payload['product_description'] ?? '');
 $productStatus = trim($payload['product_status'] ?? 'available');
 $buyPrice = isset($payload['buy_price']) ? floatval($payload['buy_price']) : null;
-$stockCount = isset($payload['stock_count']) ? intval($payload['stock_count']) : null;
+$stockCount = isset($payload['stock_count']) ? floatval($payload['stock_count']) : null;
 
 // If the product is a book, its buy price should be 0.
 if (strtolower($category) === 'books') {
@@ -89,7 +89,7 @@ if (!$stmt) {
     throw new Exception('Failed to prepare insert statement.');
 }
 
-$stmt->bind_param('ssssdis', $productName, $category, $description, $productStatus, $buyPrice, $stockCount, $imagePath);
+$stmt->bind_param('ssssdds', $productName, $category, $description, $productStatus, $buyPrice, $stockCount, $imagePath);
 if (!$stmt->execute()) {
     throw new Exception('Unable to create product: ' . $stmt->error);
 }

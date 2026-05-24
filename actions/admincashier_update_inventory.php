@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<?php
+﻿﻿<?php
 // Force JSON output even if errors occur
 header('Content-Type: application/json');
 ini_set('display_errors', '0'); // Prevent HTML error output
@@ -76,7 +76,7 @@ try {
     $productCategory = isset($_POST['product_category']) ? trim($_POST['product_category']) : null;
     $buyPrice = filter_input(INPUT_POST, 'buy_price', FILTER_VALIDATE_FLOAT);
     $productStatus = isset($_POST['product_status']) ? trim($_POST['product_status']) : null;
-    $stockCount = filter_input(INPUT_POST, 'stock_count', FILTER_VALIDATE_INT);
+    $stockCount = filter_input(INPUT_POST, 'stock_count', FILTER_VALIDATE_FLOAT);
 
     if (!$productName || !$productCategory || $buyPrice === false || !$productStatus || $stockCount === false) {
         throw new Exception('Invalid or missing product data.');
@@ -98,7 +98,7 @@ try {
     }
 
     $stmt->bind_param(
-        'ssdsisi',
+        'ssdsdsi',
         $productName,
         $productCategory,
         $buyPrice,

@@ -97,7 +97,7 @@ class QueueModel {
     }
 
     public function getByIdWithDetails($id) {
-        $stmt = $this->conn->prepare("SELECT q.*, u.student_id as school_id, u.email, u.phone, u.contact_number, u.first_name, u.last_name 
+        $stmt = $this->conn->prepare("SELECT q.*, u.student_id as school_id, u.email, u.first_name, u.last_name 
                                      FROM queue_tickets q 
                                      LEFT JOIN users u ON q.user_id = u.id 
                                      WHERE q.id = ? LIMIT 1");
@@ -179,7 +179,7 @@ class QueueModel {
      * Retrieves the next person in line who hasn't been alerted yet.
      */
     public function getNextToNotify() {
-        $sql = "SELECT q.*, u.email, u.phone, u.contact_number, u.first_name, u.last_name 
+        $sql = "SELECT q.*, u.email, u.first_name, u.last_name 
                 FROM queue_tickets q 
                 LEFT JOIN users u ON q.user_id = u.id 
                 WHERE q.status = 'waiting' AND q.alert_sent = 0 
@@ -192,7 +192,7 @@ class QueueModel {
      * Retrieves the person currently being served who hasn't been emailed yet.
      */
     public function getServingToNotify() {
-        $sql = "SELECT q.*, u.email, u.phone, u.contact_number, u.first_name, u.last_name 
+        $sql = "SELECT q.*, u.email, u.first_name, u.last_name 
                 FROM queue_tickets q 
                 LEFT JOIN users u ON q.user_id = u.id 
                 WHERE q.status = 'serving' AND q.serving_alert_sent = 0 

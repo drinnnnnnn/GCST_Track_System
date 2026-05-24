@@ -32,7 +32,7 @@ function sanitizeDate($date) {
 }
 
 function findSalesTable($conn) {
-    $candidates = ['sales', 'orders', 'transactions'];
+    $candidates = ['cashier_transactions', 'sales', 'orders', 'transactions'];
     foreach ($candidates as $table) {
         if (tableExists($conn, $table)) {
             return $table;
@@ -43,6 +43,7 @@ function findSalesTable($conn) {
 
 function getDateColumnName($conn, $table) {
     $known = [
+        'cashier_transactions' => 'created_at',
         'sales' => 'sale_date',
         'orders' => 'order_date',
         'transactions' => 'transaction_date'
@@ -61,6 +62,7 @@ function getDateColumnName($conn, $table) {
 
 function getAmountColumnName($conn, $table) {
     $known = [
+        'cashier_transactions' => 'total_amount',
         'sales' => 'total_amount',
         'orders' => 'total_amount',
         'transactions' => 'amount'
@@ -132,22 +134,27 @@ function getSalesSummary($conn, $salesTable, $from = null, $to = null) {
         ];
     }
 
+    $where = buildDateFilter($conn, $salesTable, $from, $to);
+    
+    // Status filtering: Only count finalized 'paid' transactions for sales totals
+    if (columnExists($conn, $salesTable, 'payment_status')) {
+        $statusClause = "payment_status = 'paid'";
+        $where = empty($where) ? "WHERE $statusClause" : "$where AND $statusClause";
+    }
+
     $amountColumn = getAmountColumnName($conn, $salesTable);
-    $dateColumn = getDateColumnName($conn, $salesTable);
     $quantityColumn = getQuantityColumnName($conn, $salesTable);
 
-    if (!$amountColumn || !$dateColumn) {
+    if (!$amountColumn) {
         return [
             'total_sales' => 0,
             'total_transactions' => 0,
             'books_sold' => 0
         ];
     }
-
-    $dateFilter = buildDateFilter($conn, $salesTable, $from, $to);
     $quantityExpression = $quantityColumn ? "SUM(`$quantityColumn`)" : 'COUNT(*)';
 
-    $sql = "SELECT COALESCE(SUM(`$amountColumn`), 0) AS total_sales, COUNT(*) AS total_transactions, COALESCE($quantityExpression, 0) AS books_sold FROM `$salesTable` $dateFilter";
+    $sql = "SELECT COALESCE(SUM(`$amountColumn`), 0) AS total_sales, COUNT(*) AS total_transactions, COALESCE($quantityExpression, 0) AS books_sold FROM `$salesTable` $where";
     $result = $conn->query($sql);
     if (!$result) {
         return [
@@ -176,7 +183,14 @@ function getSalesToday($conn, $salesTable) {
         return 0;
     }
 
-    $sql = "SELECT COALESCE(SUM(`$amountColumn`), 0) AS total_sales_today FROM `$salesTable` WHERE DATE(`$dateColumn`) = CURDATE()";
+    $where = "WHERE DATE(`$dateColumn`) = CURDATE()";
+    
+    // Filter for paid transactions only
+    if (columnExists($conn, $salesTable, 'payment_status')) {
+        $where .= " AND payment_status = 'paid'";
+    }
+
+    $sql = "SELECT COALESCE(SUM(`$amountColumn`), 0) AS total_sales_today FROM `$salesTable` $where";
     $result = $conn->query($sql);
     if (!$result) {
         return 0;

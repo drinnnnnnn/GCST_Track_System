@@ -93,16 +93,18 @@ try {
         throw new Exception('No items in cart.');
     }
 
-    $studentId = ($isGuest) ? $guestSchoolId : ($payload['student_id'] ?? $_SESSION['student_id'] ?? null);
-    
-    if (!$adminId && !$studentId && !$isGuest) {
-        throw new Exception('Authentication required.');
-    }
-
+    // Strict Identification & Verification
     $userId = null;
-    $studentFullName = $isGuest ? ($guestName ?: 'Guest Customer') : null;
+    $studentFullName = null;
+    $studentId = ($isGuest) ? $guestSchoolId : ($payload['student_id'] ?? $_SESSION['student_id'] ?? null);
 
-    if ($studentId && !$isGuest) {
+    if ($isGuest) {
+        $studentFullName = $guestName ?: 'Guest Customer';
+    } else {
+        if (empty($studentId) || $studentId === 'GUEST-CUSTOMER') {
+            throw new Exception('Validation Error: Student identification is required for this transaction.');
+        }
+
         $lookupStmt = $conn->prepare('SELECT id, first_name, last_name FROM users WHERE student_id = ? OR id = ? LIMIT 1');
         $lookupStmt->bind_param('ss', $studentId, $studentId);
         $lookupStmt->execute();
@@ -113,7 +115,7 @@ try {
             $studentFullName = trim((string)$fName . ' ' . (string)$lName);
         } else {
             $lookupStmt->close();
-            throw new Exception('Unable to resolve student ID: ' . $studentId);
+            throw new Exception('Security Alert: The provided Student ID ("' . $studentId . '") is not registered in our system.');
         }
         $lookupStmt->close();
     }
@@ -180,7 +182,7 @@ try {
         `product_id` INT(11) NOT NULL,
         `product_name` VARCHAR(255) NOT NULL,
         `item_type` ENUM('buy', 'rent') NOT NULL,
-        `quantity` INT(11) NOT NULL,
+        `quantity` DECIMAL(10,2) NOT NULL,
         `unit_price` DECIMAL(10,2) NOT NULL,
         `duration` INT(11) DEFAULT NULL,
         `duration_unit` VARCHAR(50) DEFAULT NULL,
@@ -196,7 +198,7 @@ try {
         `transaction_number` VARCHAR(50) NOT NULL,
         `student_id` VARCHAR(50) NOT NULL,
         `product_id` INT(11) NOT NULL,
-        `quantity` INT(11) NOT NULL DEFAULT 1,
+        `quantity` DECIMAL(10,2) NOT NULL DEFAULT 1.00,
         `rental_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `return_date` DATETIME NOT NULL,
         `overdue_charge` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
@@ -322,7 +324,7 @@ try {
     $calculatedSubtotal = 0;
     foreach ($payload['items'] as $item) {
         $productId = intval($item['product_id'] ?? 0);
-        $quantity = intval($item['quantity'] ?? 0);
+        $quantity = floatval($item['quantity'] ?? 0);
         $type = strtolower(trim($item['type'] ?? $item['item_type'] ?? 'buy'));
 
         if ($isGuest && $type === 'rent') {
@@ -387,7 +389,7 @@ try {
         ];
 
         $updateStmt = $conn->prepare("UPDATE products SET `$stockColumn` = `$stockColumn` - ? WHERE product_id = ?");
-        $updateStmt->bind_param('ii', $quantity, $productId);
+        $updateStmt->bind_param('di', $quantity, $productId);
         $updateStmt->execute();
         $updateStmt->close();
     }

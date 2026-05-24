@@ -112,7 +112,13 @@ export function getSidebarHTML() {
         #main-sidebar.sidebar.minimized .sidebar-brand { justify-content: center; padding: 0; margin-bottom: 2.5rem; }
         #main-sidebar.sidebar.minimized .sidebar-link { justify-content: center; padding: 0.85rem; border-radius: 1rem; }
         #main-sidebar.sidebar.minimized .sidebar-link i { margin: 0; font-size: 1.25rem; }
-        #main-sidebar.sidebar.minimized .sidebar-minimize-btn { right: -13px; transform: translateY(-50%) rotate(180deg); }
+        #main-sidebar.sidebar.minimized .sidebar-minimize-btn { 
+            right: -14px; 
+            transform: translateY(-50%) rotate(180deg); 
+        }
+        #main-sidebar.sidebar.minimized .sidebar-minimize-btn:hover {
+            transform: translateY(-50%) rotate(180deg) scale(1.1);
+        }
     }
 
     @media (max-width: 1024px) {
@@ -139,11 +145,33 @@ export function getSidebarHTML() {
     }
 
     .sidebar-minimize-btn {
-        position: absolute; top: 50%; right: -13px; transform: translateY(-50%);
-        background: #ffffff; color: var(--primary-blue); border: 1px solid var(--border-color);
-        border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
-        cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.08); transition: var(--nav-transition); z-index: 10;
-        font-size: 0.75rem;
+        position: absolute; 
+        top: 50%; 
+        right: -14px; 
+        transform: translateY(-50%);
+        background: #ffffff; 
+        color: var(--primary-blue); 
+        border: 1px solid var(--border-color);
+        border-radius: 50%; 
+        width: 28px; 
+        height: 28px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        cursor: pointer; 
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        z-index: 1001;
+        font-size: 0.8rem;
+    }
+    .sidebar-minimize-btn:hover {
+        background: var(--primary-blue);
+        color: #ffffff;
+        transform: translateY(-50%) scale(1.1);
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+    }
+    .sidebar-minimize-btn:active {
+        transform: translateY(-50%) scale(0.95);
     }
 
     .nav-section-label {

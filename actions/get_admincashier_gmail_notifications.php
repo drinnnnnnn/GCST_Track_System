@@ -10,25 +10,23 @@ require_once __DIR__ . '/security.php';
 secureSessionStart();
 requireAuth(['admin', 'admincashier', 'superadmin']);
 
-// Load configuration for API keys
-if (file_exists(__DIR__ . '/../config/config.php')) {
-    require_once __DIR__ . '/../config/config.php';
-}
+// Ensure configuration and database connection are loaded once
+if (file_exists(__DIR__ . '/../config/config.php')) require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../database/connection.php';
 
 try {
-    require_once __DIR__ . '/../database/connection.php';
     $conn = Database::getConnection();
     require_once __DIR__ . '/email_helpers.php';
 
-    // Ensure table structure matches code requirements
+    // Centralized schema check: Ensure table matches email_helpers.php requirements
     $conn->query("CREATE TABLE IF NOT EXISTS email_notifications (
         id INT AUTO_INCREMENT PRIMARY KEY,
         recipient VARCHAR(255) NOT NULL,
         subject VARCHAR(255),
         notification_type VARCHAR(50),
-        phone_number VARCHAR(20) DEFAULT NULL, -- NEW: Add phone_number column
-        status VARCHAR(20),
+        status ENUM('sent','failed','pending') NOT NULL DEFAULT 'pending',
         error_message TEXT,
+        email_body LONGTEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
 
@@ -45,7 +43,7 @@ try {
             echo json_encode(['success' => $success]);
             exit;
         } elseif ($action === 'send_email') {
-            $res = sendEmailWithLog($conn, $input['recipient'], $input['subject'], $input['message'], $input['email_type'], [], $input['phone_number'] ?? null);
+            $res = sendEmailWithLog($conn, $input['recipient'], $input['subject'], $input['message'], $input['email_type'], []);
             echo json_encode($res);
             exit;
         } elseif ($action === 'retry_email' && $id) {
@@ -54,7 +52,7 @@ try {
             $stmt->execute();
             $log = $stmt->get_result()->fetch_assoc();
             if ($log) {
-                $res = sendEmailWithLog($conn, $log['recipient'], $log['subject'], $log['email_body'], $log['notification_type'], [], $log['phone_number']);
+                $res = sendEmailWithLog($conn, $log['recipient'], $log['subject'], $log['email_body'], $log['notification_type'], []);
                 echo json_encode($res);
             } else {
                 echo json_encode(['success' => false, 'error' => 'Log not found']);
@@ -79,11 +77,11 @@ try {
     if ($from_date) { $where[] = "DATE(created_at) >= ?"; $params[] = $from_date; $types .= "s"; }
     if ($to_date) { $where[] = "DATE(created_at) <= ?"; $params[] = $to_date; $types .= "s"; }
     
-    if ($search) { // Updated search to include phone_number
-        $where[] = "(recipient LIKE ? OR phone_number LIKE ? OR subject LIKE ? OR notification_type LIKE ?)";
+    if ($search) {
+        $where[] = "(recipient LIKE ? OR subject LIKE ? OR notification_type LIKE ?)";
         $searchTerm = "%$search%";
-        array_push($params, $searchTerm, $searchTerm, $searchTerm, $searchTerm);
-        $types .= "ssss";
+        array_push($params, $searchTerm, $searchTerm, $searchTerm);
+        $types .= "sss";
     }
 
     $whereClause = implode(" AND ", $where);
@@ -111,7 +109,7 @@ try {
     }
 
     // 3. Fetch the actual logs
-    $logsSql = "SELECT id, recipient, phone_number, subject, notification_type, status, created_at, error_message, email_body as message 
+    $logsSql = "SELECT id, recipient, subject, notification_type, status, created_at, error_message, email_body 
                 FROM email_notifications 
                 WHERE $whereClause 
                 ORDER BY created_at DESC LIMIT 100";

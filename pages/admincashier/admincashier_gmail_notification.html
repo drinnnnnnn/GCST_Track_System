@@ -185,8 +185,26 @@
     .modal-actions {
       display: flex;
       justify-content: flex-end;
-      gap: 12px;
+      gap: 14px;
       flex-wrap: wrap;
+      margin-top: 10px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(15, 23, 42, 0.05);
+    }
+    .modal-actions .toolbar-button {
+      min-width: 130px;
+      justify-content: center;
+      padding: 12px 24px;
+      border-radius: 16px;
+      font-size: 0.94rem;
+    }
+    .toolbar-button:active {
+      transform: scale(0.97);
+    }
+    .toolbar-button.secondary {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+      color: #64748b;
     }
     .modal-close {
       position: absolute;
@@ -237,6 +255,8 @@
       header { flex-direction: column; align-items: stretch; }
       .greeting-section { flex-direction: column; }
       .logs-table { min-width: 100%; }
+      .modal-actions { flex-direction: column-reverse; }
+      .modal-actions .toolbar-button { width: 100%; min-width: unset; }
     }
   </style>
 </head>
@@ -332,6 +352,10 @@
         <div>
           <label for="modalRecipient">Recipient Email</label>
           <input id="modalRecipient" type="email" placeholder="user@example.com" />
+        </div>
+        <div>
+          <label for="modalStatus">Log Status</label>
+          <input id="modalStatus" type="text" readonly style="font-weight: 700; text-transform: uppercase; background: #f8fafc;" />
         </div>
         <div>
           <label for="modalType">Notification Type</label>
@@ -455,20 +479,65 @@
     window.openEmailModal = function(mode, logIdOrObj) {
       const modal = document.getElementById('emailModal');
       if (!modal) return;
+
+      const isSend = mode === 'send';
       const log = typeof logIdOrObj === 'object' ? logIdOrObj : emailLogs.find(e => e.id === logIdOrObj);
+
+      // Show modal and update labels
       modal.classList.add('open');
-      document.getElementById('modalTitle').textContent = mode === 'send' ? 'Send Email Notification' : 'Email Details';
-      document.getElementById('modalSendBtn').style.display = mode === 'send' ? 'inline-flex' : 'none';
-      document.getElementById('modalRecipient').value = log?.recipient || '';
-      document.getElementById('modalSubject').value = log?.subject || '';
-      document.getElementById('modalMessage').value = log?.message || '';
-      document.getElementById('modalType').value = log?.notification_type || 'System Alert';
+      document.getElementById('modalTitle').textContent = isSend ? 'Send Email Notification' : 'Email Details';
+      document.getElementById('modalSendBtn').style.display = isSend ? 'inline-flex' : 'none';
+
+      // Target DOM elements
+      const recipientInput = document.getElementById('modalRecipient');
+      const subjectInput = document.getElementById('modalSubject');
+      const messageInput = document.getElementById('modalMessage');
+      const statusInput = document.getElementById('modalStatus');
+      const typeInput = document.getElementById('modalType');
+      const attachmentRow = document.getElementById('modalAttachments')?.closest('.modal-row');
+
+      // Populate values - Handle both possible property names for content
+      recipientInput.value = log?.recipient || '';
+      subjectInput.value = log?.subject || '';
+      // Fix: Ensure body displays by checking both database field and API alias
+      messageInput.value = log?.email_body || log?.message || '';
+      statusInput.value = log?.status || 'NEW';
+      typeInput.value = log?.notification_type || 'System Alert';
+
+      // Set interaction states based on mode
+      recipientInput.readOnly = !isSend;
+      subjectInput.readOnly = !isSend;
+      messageInput.readOnly = !isSend;
+      typeInput.disabled = !isSend;
+
+      // Show/Hide status field based on context
+      statusInput.closest('div').style.display = isSend ? 'none' : 'block';
+      statusInput.closest('.modal-row').style.gridTemplateColumns = isSend ? '1fr 1fr' : '1.5fr 120px 1fr';
+
+      // Hide attachment controls in view mode for visual clarity
+      if (attachmentRow) {
+        attachmentRow.style.display = isSend ? 'block' : 'none';
+      }
+
+      // Reset file inputs and preview if creating a new message
+      if (isSend && !log) {
+        document.getElementById('attachmentPreview').innerHTML = '';
+        document.getElementById('modalAttachments').value = '';
+      }
     };
 
     window.handleEmailRowAction = function(action, id) {
       if (action === 'retry') {
         fetch(GMAIL_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'retry_email', id }) })
-          .then(res => res.json()).then(res => res.success ? window.loadGmailData() : alert(res.error));
+          .then(res => res.json())
+          .then(res => {
+            if (res.success) {
+              alert("Email Details Sent: Retry initiated successfully.");
+              window.loadGmailData();
+            } else {
+              alert("Retry failed: " + (res.error || "Unknown error"));
+            }
+          });
       } else if (action === 'delete' && confirm('Delete this log?')) {
         fetch(GMAIL_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete_log', id }) })
           .then(res => res.json()).then(res => res.success ? window.loadGmailData() : alert(res.error));
@@ -605,8 +674,8 @@
             const result = await response.json();
             
             if (result.success) {
-              // Use the detailed message from the server to show channel statuses
-              alert(result.message || "Notification sent successfully!");
+              // Handle successful email transmission
+              alert("Email Details Sent successfully!");
               document.getElementById('emailModal').classList.remove('open');
               // Refresh log table
               if (window.loadGmailData) window.loadGmailData();

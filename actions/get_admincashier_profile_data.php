@@ -21,11 +21,10 @@ try {
         ADD COLUMN IF NOT EXISTS `role` VARCHAR(50) DEFAULT 'admincashier' AFTER `password`,
         ADD COLUMN IF NOT EXISTS `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         ADD COLUMN IF NOT EXISTS `last_login` DATETIME DEFAULT NULL,
-        ADD COLUMN IF NOT EXISTS `notification_preferences` TEXT DEFAULT NULL,
         ADD COLUMN IF NOT EXISTS `status` ENUM('active','inactive') DEFAULT 'active'");
 
     // Fetch admin details
-    $stmt = $conn->prepare("SELECT id AS admin_id, username, first_name, last_name, middle_name, email, contact_number, role, created_at, last_login, notification_preferences, status FROM admincashier_acc WHERE id = ?");
+    $stmt = $conn->prepare("SELECT id AS admin_id, username, first_name, last_name, middle_name, email, contact_number, role, created_at, last_login, status FROM admincashier_acc WHERE id = ?");
     if (!$stmt) {
         throw new Exception("Failed to prepare statement: " . $conn->error);
     }
@@ -46,9 +45,6 @@ try {
     unset($admin['first_name']);
     unset($admin['middle_name']);
     unset($admin['last_name']);
-
-    // Decode notification preferences
-    $admin['notification_preferences'] = json_decode($admin['notification_preferences'] ?? '{}', true);
 
     // Ensure transaction tables exist to prevent 500 error on fresh systems
     $conn->query("CREATE TABLE IF NOT EXISTS `cashier_transactions` ( 

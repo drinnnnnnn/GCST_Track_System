@@ -6,7 +6,8 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../database/connection.php';
 $conn = Database::getConnection();
 
-$period = $_GET['period'] ?? 'today';
+$period = !empty($_GET['period']) ? $_GET['period'] : 'today';
+$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
 
 // Define the date filter based on the requested period
 switch ($period) {
@@ -56,7 +57,7 @@ try {
     $chartResult = $conn->query($chartQuery);
     $sales_labels = [];
     $sales_data = [];
-    while ($row = $chartResult->fetch_assoc()) {
+    while ($chartResult && $row = $chartResult->fetch_assoc()) {
         $sales_labels[] = $row['sale_date'];
         $sales_data[] = (float)$row['daily_total'];
     }
@@ -73,28 +74,29 @@ try {
     
     $topResult = $conn->query($topQuery);
     $top_products = [];
-    while ($row = $topResult->fetch_assoc()) {
+    while ($topResult && $row = $topResult->fetch_assoc()) {
         $top_products[] = ['name' => $row['name'], 'quantity' => (int)$row['quantity']];
     }
 
     // 5. Sales History
-    $historyQuery = "SELECT t.created_at as date, t.transaction_number as transaction_id, 
-        GROUP_CONCAT(p.product_name SEPARATOR ', ') as item, 
+    $historyQuery = "SELECT t.id, t.created_at as date, t.transaction_number, 
+        GROUP_CONCAT(IFNULL(p.product_name, 'Deleted Product') SEPARATOR ', ') as item, 
         SUM(ti.quantity) as quantity, t.total_amount as amount
         FROM cashier_transactions t
         JOIN transaction_items ti ON t.id = ti.cashier_transaction_id
-        JOIN products p ON ti.product_id = p.product_id
+        LEFT JOIN products p ON ti.product_id = p.product_id
         WHERE $dateCondition AND t.payment_status = 'paid'
-        GROUP BY t.id
+        GROUP BY t.id, t.created_at, t.transaction_number, t.total_amount
         ORDER BY t.created_at DESC
-        LIMIT 20";
+        LIMIT $limit";
 
     $historyResult = $conn->query($historyQuery);
     $history = [];
-    while ($row = $historyResult->fetch_assoc()) {
+    while ($historyResult && $row = $historyResult->fetch_assoc()) {
         $history[] = [
+            'id' => (int)$row['id'],
             'date' => $row['date'],
-            'transaction_id' => $row['transaction_id'],
+            'transaction_id' => $row['transaction_number'],
             'item' => $row['item'],
             'quantity' => (int)$row['quantity'],
             'amount' => (float)$row['amount']
