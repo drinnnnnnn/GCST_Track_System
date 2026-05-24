@@ -3,7 +3,7 @@ require_once __DIR__ . '/../database/models/SuperAdminModel.php';
 require_once __DIR__ . '/../database/connection.php';
 
 $username = 'aldrin0416';
-$email = 'aldrin.aprao@gmail.com';
+$email = 'aldrinaprao@gmail.com';
 $password = 'Aldrin0416'; 
 $pin = '0425';
 $first_name = 'Aldrin';

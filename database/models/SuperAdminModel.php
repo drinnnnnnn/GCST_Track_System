@@ -18,15 +18,15 @@ class SuperAdminModel {
      */
     private function ensureTableExists() {
         $sql = "CREATE TABLE IF NOT EXISTS `superadmins` (
-            `id` INT(11) NOT NULL AUTO_INCREMENT,
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
             `first_name` VARCHAR(100) NOT NULL,
             `last_name` VARCHAR(100) NOT NULL,
             `username` VARCHAR(50) NOT NULL,
             `email` VARCHAR(100) NOT NULL,
             `password_hash` VARCHAR(255) NOT NULL,
             `security_pin_hash` VARCHAR(255) NOT NULL,
-            `status` ENUM('active', 'inactive', 'suspended') NOT NULL DEFAULT 'active',
-            `failed_login_attempts` INT(11) DEFAULT 0,
+            `status` ENUM('active', 'inactive', 'suspended', 'locked') NOT NULL DEFAULT 'active',
+            `failed_login_attempts` TINYINT UNSIGNED DEFAULT 0,
             `lockout_until` DATETIME DEFAULT NULL,
             `last_login_at` DATETIME DEFAULT NULL,
             `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -36,8 +36,23 @@ class SuperAdminModel {
             UNIQUE KEY `uniq_email` (`email`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
+        $sqlLogs = "CREATE TABLE IF NOT EXISTS `security_logs` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `admin_id` INT UNSIGNED DEFAULT NULL,
+            `event_type` VARCHAR(50) NOT NULL,
+            `identifier` VARCHAR(100) NOT NULL,
+            `ip_address` VARCHAR(45) DEFAULT NULL,
+            `user_agent` TEXT DEFAULT NULL,
+            `details` TEXT DEFAULT NULL,
+            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
         if (!$this->conn->query($sql)) {
-            error_log("SuperAdminModel: Schema initialization failed: " . $this->conn->error);
+            error_log("SuperAdminModel: superadmins table init failed: " . $this->conn->error);
+        }
+        if (!$this->conn->query($sqlLogs)) {
+            error_log("SuperAdminModel: security_logs table init failed: " . $this->conn->error);
         }
     }
 
@@ -101,7 +116,7 @@ class SuperAdminModel {
 
         // Check for temporary lockout
         if ($admin['lockout_until'] && strtotime($admin['lockout_until']) > time()) {
-            return ['locked' => true, 'until' => $admin['lockout_until']];
+            return ['locked' => true, 'id' => $admin['id'], 'until' => $admin['lockout_until']];
         }
 
         // 1. Verify Password
@@ -109,8 +124,8 @@ class SuperAdminModel {
         
         // 2. Verify Security PIN (only if password is correct)
         $pinMatch = false;
-        if ($passwordMatch) {
-            $pinMatch = password_verify($pin, $admin['security_pin_hash'] ?? '');
+        if ($passwordMatch && !empty($admin['security_pin_hash'])) {
+            $pinMatch = password_verify($pin, $admin['security_pin_hash']);
         }
 
         if ($passwordMatch && $pinMatch) {
@@ -123,10 +138,26 @@ class SuperAdminModel {
 
         // Return specific error for incorrect PIN to guide the UI
         if ($passwordMatch && !$pinMatch) {
-            return ['error' => 'invalid_pin'];
+            return ['error' => 'invalid_pin', 'id' => $admin['id']];
         }
 
         return false;
+    }
+
+    /**
+     * Records a security event to the database.
+     * 
+     * @param int|null $adminId The ID of the admin if found
+     * @param string $eventType e.g., 'login_success', 'login_failed', 'account_locked'
+     * @param string $identifier The email or username attempted
+     * @param string|null $ip The visitor's IP address
+     * @param string|null $ua The visitor's User Agent
+     */
+    public function logEvent($adminId, $eventType, $identifier, $ip, $ua, $details = null) {
+        $stmt = $this->conn->prepare("INSERT INTO security_logs (admin_id, event_type, identifier, ip_address, user_agent, details) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("isssss", $adminId, $eventType, $identifier, $ip, $ua, $details);
+        $stmt->execute();
+        $stmt->close();
     }
 
     /**

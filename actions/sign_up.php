@@ -104,6 +104,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
+    // --- Database Schema Check (Self-Healing) ---
+    // Ensure all required registration columns exist in 'users' table to prevent SQL exceptions
+    $required_columns = [
+        'middle_name'    => "VARCHAR(255) AFTER `first_name` ",
+        'sex'            => "VARCHAR(50) AFTER `password` ",
+        'course'         => "VARCHAR(255) AFTER `sex` ",
+        'department'     => "VARCHAR(255) AFTER `course` ",
+        'year_section'   => "VARCHAR(100) AFTER `department` ",
+        'contact_number' => "VARCHAR(20) AFTER `year_section` ",
+        'address'        => "TEXT AFTER `contact_number` ",
+        'status'         => "VARCHAR(50) DEFAULT 'Pending' AFTER `address` ",
+        'school_id_pic'  => "VARCHAR(255) AFTER `status` ",
+        'reg_form'       => "VARCHAR(255) AFTER `school_id_pic` ",
+        'payment_scheme' => "VARCHAR(255) AFTER `reg_form` "
+    ];
+
+    foreach ($required_columns as $col => $definition) {
+        $check = $conn->query("SHOW COLUMNS FROM `users` LIKE '$col'");
+        if ($check && $check->num_rows === 0) {
+            $conn->query("ALTER TABLE `users` ADD COLUMN `$col` $definition");
+        }
+    }
+
     $hashed_password = password_hash($password_raw, PASSWORD_DEFAULT);
     $stmt = $conn->prepare(
         'INSERT INTO users 

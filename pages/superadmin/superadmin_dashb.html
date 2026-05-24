@@ -1,0 +1,106 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  
+  <title>GCST Super Admin Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="../../assets/css/superadmin.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  .chart-container {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  .chart-container h3 {
+    margin-top: 0;
+    color: #333;
+  }
+  .chart-wrapper {
+    position: relative;
+    height: 300px;
+  }
+  .full-width {
+    grid-column: 1 / -1;
+  }
+  @media (max-width: 768px) {
+    .charts-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+
+<body class="antialiased">
+  <!-- Sidebar Component -->
+  <div id="sidebar-container"></div>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <div class="content-wrapper">
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Greeting Section -->
+    <section class="greeting-section">
+      <div class="greeting-content">
+        <h1 id="greeting-message">Welcome, Super Admin!</h1>
+        <p id="current-date-time"></p>
+      </div>
+      <div class="greeting-icon">👋</div>
+    </section>
+
+    <!-- Summary Section -->
+    <section class="balance-section">
+      <h2>Dashboard Summary</h2>
+      <div class="balance-cards">
+        <div class="balance-card">
+          <h3>Total Admin Accounts</h3>
+          <p class="amount" id="totalAdminAccounts">0</p>
+        </div>
+        <div class="balance-card">
+          <h3>Active Sessions</h3>
+          <p class="amount" id="activeSessions">0</p>
+        </div>
+        <div class="balance-card">
+          <h3>System Uptime</h3>
+          <p class="amount" id="systemUptime">0%</p>
+        </div>
+        <div class="balance-card">
+          <h3>Pending Issues</h3>
+          <p class="amount" id="pendingIssues">0</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts Section -->
+    <section class="activity-section">
+      <h2>Analytics</h2>
+      <div class="charts-grid">
+        <div class="chart-container">
+          <h3>Recent Admin Activities</h3>
+          <div class="chart-wrapper">
+            <canvas id="adminActivitiesChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-container">
+          <h3>System Health</h3>
+          <div class="chart-wrapper">
+            <canvas id="systemHealthChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+  <script src="../../assets/js/superadmin.js"></script>
+</body>
+</html>

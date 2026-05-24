@@ -1,0 +1,413 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  
+  <title>GCST Super Admin - System Maintenance</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="../../assets/css/superadmin.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  .chart-container {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  .chart-container h3 {
+    margin-top: 0;
+    color: #333;
+  }
+  .chart-wrapper {
+    position: relative;
+    height: 300px;
+  }
+  .full-width {
+    grid-column: 1 / -1;
+  }
+  @media (max-width: 768px) {
+    .charts-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* System Maintenance Styles */
+  .metrics-section {
+    margin-bottom: 2rem;
+  }
+  .metrics-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+  .metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  .metric-card h3 {
+    margin: 0 0 0.5rem 0;
+    color: #374151;
+    font-size: 0.9rem;
+  }
+  .metric-card p {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1f2937;
+  }
+
+  .maintenance-section {
+    margin-bottom: 2rem;
+  }
+  .maintenance-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .maintenance-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  .maintenance-btn:hover {
+    transform: translateY(-2px);
+  }
+  .maintenance-btn:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .backups-section {
+    margin-bottom: 2rem;
+  }
+  .backups-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  .backups-table th,
+  .backups-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .backups-table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+  }
+  .status-success {
+    color: #059669;
+  }
+  .status-failed {
+    color: #dc2626;
+  }
+  .restore-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+  }
+  .restore-btn:hover {
+    background: #059669;
+  }
+
+  .warnings-section {
+    margin-bottom: 2rem;
+  }
+  .warnings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+  .warning-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid;
+  }
+  .warning-card.warning {
+    border-left-color: #f59e0b;
+  }
+  .warning-card.error {
+    border-left-color: #ef4444;
+  }
+  .warning-card.success {
+    border-left-color: #10b981;
+  }
+  .warning-card h3 {
+    margin: 0 0 0.5rem 0;
+    color: #374151;
+  }
+  .warning-card p {
+    margin: 0;
+    color: #6b7280;
+  }
+
+  @media (max-width: 1024px) {
+    .metrics-cards {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .maintenance-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 768px) {
+    .metrics-cards {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+
+<!--
+<script>
+  window.addEventListener('DOMContentLoaded', function() {
+    fetch('../../actions/get_user.php')
+      .then(res => res.json())
+      .then(data => {
+        const currentId = data.admin_id;
+        if (!currentId) {
+          window.location.href = "../../pages/sign_in_admin_cashier.html";
+          return;
+        }
+        currentSuperAdminId = currentId;
+      })
+      .catch(() => {
+        window.location.href = "../../pages/sign_in_admin_cashier.html";
+      });
+  });
+</script> -->
+
+<body class="antialiased">
+  <!-- Sidebar Component -->
+  <div id="sidebar-container"></div>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <div class="content-wrapper">
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Greeting Section -->
+    <section class="greeting-section">
+      <div class="greeting-content">
+        <h1>System Maintenance</h1>
+        <p>Monitor and maintain system health</p>
+      </div>
+      <div class="greeting-icon">🔧</div>
+    </section>
+
+    <!-- System Metrics -->
+    <section class="metrics-section">
+      <h2>System Metrics</h2>
+      <div class="metrics-cards">
+        <div class="metric-card">
+          <h3>Database Size</h3>
+          <p id="databaseSize">0 MB</p>
+        </div>
+        <div class="metric-card">
+          <h3>Storage Used</h3>
+          <p id="storageUsed">0 GB</p>
+        </div>
+        <div class="metric-card">
+          <h3>Active Connections</h3>
+          <p id="activeConnections">0</p>
+        </div>
+        <div class="metric-card">
+          <h3>Server Load</h3>
+          <p id="serverLoad">0%</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Maintenance Tasks -->
+    <section class="maintenance-section">
+      <h2>Maintenance Tasks</h2>
+      <div class="maintenance-grid">
+        <button class="maintenance-btn" id="clearCacheBtn">
+          <i class="fas fa-broom"></i> Clear System Cache
+        </button>
+        <button class="maintenance-btn" id="backupDatabaseBtn">
+          <i class="fas fa-database"></i> Backup Database
+        </button>
+        <button class="maintenance-btn" id="testEmailBtn">
+          <i class="fas fa-envelope"></i> Test Email Service
+        </button>
+        <button class="maintenance-btn" id="optimizeDatabaseBtn">
+          <i class="fas fa-wrench"></i> Optimize Database
+        </button>
+      </div>
+    </section>
+
+    <!-- Recent Backups -->
+    <section class="backups-section">
+      <h2>Recent Backups</h2>
+      <table class="backups-table">
+        <thead>
+          <tr>
+            <th>Date/Time</th>
+            <th>File Size</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="backupsTableBody">
+          <!-- Rows will be populated by JS -->
+        </tbody>
+      </table>
+    </section>
+
+    <!-- System Warnings -->
+    <section class="warnings-section">
+      <h2>System Warnings</h2>
+      <div class="warnings-grid">
+        <div class="warning-card warning">
+          <h3>QR Scanner Service Degraded</h3>
+          <p>Performance decreased by 5% in last 24 hours</p>
+        </div>
+        <div class="warning-card error">
+          <h3>Storage Usage Above 80%</h3>
+          <p>Suggest archive or upgrade</p>
+        </div>
+        <div class="warning-card success">
+          <h3>All Services Operational</h3>
+          <p>No issues in last 7 days</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Scripts -->
+  <script src="../../assets/js/superadmin.js"></script>
+  <script>
+    let currentSuperAdminId = null;
+
+    // Load system metrics
+    function loadSystemMetrics() {
+      fetch('../../actions/get_system_metrics.php')
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('databaseSize').textContent = data.database_size;
+          document.getElementById('storageUsed').textContent = data.storage_used;
+          document.getElementById('activeConnections').textContent = data.active_connections;
+          document.getElementById('serverLoad').textContent = data.server_load;
+        })
+        .catch(err => console.error('Error loading metrics:', err));
+    }
+
+    // Load recent backups
+    function loadRecentBackups() {
+      fetch('../../actions/get_recent_backups.php')
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.getElementById('backupsTableBody');
+          tbody.innerHTML = '';
+          data.forEach(backup => {
+            const date = new Date(backup.backup_date).toLocaleString();
+            const statusClass = backup.status === 'success' ? 'status-success' : 'status-failed';
+            const statusText = backup.status === 'success' ? 'Success' : 'Failed';
+            tbody.innerHTML += `
+              <tr>
+                <td>${date}</td>
+                <td>${backup.file_size}</td>
+                <td class="${statusClass}">${statusText}</td>
+                <td><button class="restore-btn" onclick="restoreBackup(${backup.id})">Restore</button></td>
+              </tr>
+            `;
+          });
+        })
+        .catch(err => console.error('Error loading backups:', err));
+    }
+
+    // Maintenance button handlers
+    document.getElementById('clearCacheBtn').addEventListener('click', () => {
+      performMaintenance('clear_cache.php', 'clearCacheBtn');
+    });
+
+    document.getElementById('backupDatabaseBtn').addEventListener('click', () => {
+      performMaintenance('backup_database.php', 'backupDatabaseBtn', () => {
+        loadRecentBackups(); // Refresh backups after backup
+      });
+    });
+
+    document.getElementById('testEmailBtn').addEventListener('click', () => {
+      performMaintenance('test_email.php', 'testEmailBtn');
+    });
+
+    document.getElementById('optimizeDatabaseBtn').addEventListener('click', () => {
+      performMaintenance('optimize_database.php', 'optimizeDatabaseBtn');
+    });
+
+    // Perform maintenance task
+    function performMaintenance(endpoint, btnId, callback) {
+      const btn = document.getElementById(btnId);
+      btn.disabled = true;
+      btn.textContent = 'Processing...';
+
+      fetch(`../../actions/${endpoint}`)
+        .then(res => res.json())
+        .then(data => {
+          alert(data.message);
+          if (data.success && callback) callback();
+        })
+        .catch(err => {
+          console.error('Error:', err);
+          alert('An error occurred');
+        })
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = btn.innerHTML.replace('Processing...', btn.textContent.split(' ')[0]); // Reset text
+        });
+    }
+
+    // Restore backup (placeholder)
+    function restoreBackup(backupId) {
+      alert('Restore functionality not implemented yet');
+    }
+
+    // Menu toggle
+    document.getElementById('menu-icon').addEventListener('click', (e) => {
+      e.preventDefault();
+      const menu = document.getElementById('dropdown-menu');
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    });
+
+    document.addEventListener('click', (e) => {
+      const menu = document.getElementById('dropdown-menu');
+      if (!menu.contains(e.target) && !document.getElementById('menu-icon').contains(e.target)) {
+        menu.style.display = 'none';
+      }
+    });
+
+    // Initial loads
+    loadSystemMetrics();
+    loadRecentBackups();
+  </script>
+
+</body>
+</html>
+
+
+
+

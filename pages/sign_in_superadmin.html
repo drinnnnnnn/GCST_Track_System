@@ -1,0 +1,318 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin Sign In</title>
+    <!-- Premium Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --accent: #f59e0b;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --glass: rgba(255, 255, 255, 0.9);
+            --error: #ef4444;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at top left, #1e1b4b, #0f172a);
+            background-size: 400% 400%;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 440px;
+            padding: 60px 45px;
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 35px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            animation: cardEntrance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes cardEntrance {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .header-icon {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 24px;
+            color: #ffffff;
+            font-size: 42px;
+            margin: 0 auto 24px;
+            box-shadow: 0 15px 35px var(--primary-glow);
+            animation: iconFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes iconFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .animate-item {
+            opacity: 0;
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .login-card h1 { animation-delay: 0.1s; font-size: 1.85rem; font-weight: 800; color: var(--text-dark); margin-bottom: 8px; letter-spacing: -1px; }
+        .login-card p { animation-delay: 0.2s; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 40px; line-height: 1.5; }
+        .form-group { animation-delay: 0.3s; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-box {
+            position: relative;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-box label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+            display: block;
+            margin-left: 4px;
+        }
+
+        .input-box input {
+            width: 100%;
+            padding: 15px 18px;
+            padding-right: 50px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .pin-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 5px;
+        }
+
+        .pin-input {
+            letter-spacing: 1.5rem;
+            text-align: center;
+            font-weight: 800;
+            font-size: 1.2rem !important;
+            padding-right: 18px !important;
+        }
+
+        .input-box input:focus {
+            background: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-glow);
+        }
+
+        .input-box i {
+            position: absolute;
+            right: 18px;
+            top: 43px;
+            font-size: 1.25rem;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: 0.2s;
+            z-index: 10;
+        }
+
+        .input-box i:hover { color: var(--primary); }
+
+        .submit-btn {
+            margin-top: 10px;
+            width: 100%;
+            padding: 16px;
+            background: var(--primary-dark);
+            color: white;
+            border: none;
+            border-radius: 18px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 15px -3px var(--primary-glow);
+        }
+
+        .submit-btn:hover {
+            background: var(--text-dark);
+            transform: translateY(-3px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        #status-area {
+            display: none;
+            padding: 14px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            margin-bottom: 25px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+        .msg-error { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+        .msg-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+
+        .security-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f1f5f9;
+            padding: 6px 12px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <!-- Shield/Admin Icon Added Here -->
+    <div class="header-icon animate-item"><i class='bx bx-shield-quarter'></i></div>
+
+    <div class="security-badge animate-item">
+        <i class='bx bxs-lock-alt'></i> End-to-End Encrypted
+    </div>
+
+    <h1 class="animate-item">Super Admin Login</h1>
+    <p class="animate-item">Enter your credentials and security PIN to access the terminal</p>
+
+    <div id="status-area" class="animate-item"></div>
+
+    <div class="form-group animate-item">
+        <form action="../actions/process_superadmin.php" method="POST" id="authForm" onsubmit="return validateLogin()">
+            <div class="input-box">
+                <label for="email">Account Identifier</label>
+                <input type="text" name="email" id="email" placeholder="Username or Email" required autocomplete="username">
+                <i class='bx bxs-user-badge'></i>
+            </div>
+
+            <div class="input-box">
+                <label for="password">Master Password</label>
+                <input type="password" name="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+                <i class='bx bx-show' id="toggleBtn"></i>
+            </div>
+
+            <div class="input-box">
+                <label for="pin">Security PIN (4 Digits)</label>
+                <input type="text" name="pin" id="pin" class="pin-input" placeholder="0000" maxlength="4" required pattern="\d{4}" inputmode="numeric" autocomplete="one-time-code">
+                <i class='bx bxs-key'></i>
+            </div>
+
+            <button type="submit" class="submit-btn" id="loginBtn">
+                Authorize Access
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Password visibility toggle
+    const toggleBtn = document.getElementById("toggleBtn");
+    const passwordField = document.getElementById("password");
+
+    toggleBtn.addEventListener("click", () => {
+        const isPass = passwordField.type === "password";
+        passwordField.type = isPass ? "text" : "password";
+        toggleBtn.classList.toggle("bx-show");
+        toggleBtn.classList.toggle("bx-hide");
+    });
+
+    // PIN Input Masking/Validation
+    const pinInput = document.getElementById("pin");
+    pinInput.addEventListener("input", (e) => {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    });
+
+    function validateLogin() {
+        const btn = document.getElementById("loginBtn");
+        if (pinInput.value.length !== 4) {
+            showLocalError("Security PIN must be exactly 4 digits.");
+            return false;
+        }
+        btn.disabled = true;
+        btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Authenticating...";
+        return true;
+    }
+
+    function showLocalError(msg) {
+        statusArea.style.display = "block";
+        statusArea.className = "animate-item msg-error";
+        statusArea.innerText = msg;
+    }
+
+    // Handle status messages from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const statusArea = document.getElementById("status-area");
+
+    if (urlParams.has('error') || urlParams.has('success')) {
+        statusArea.style.display = "block";
+        const err = urlParams.get('error');
+        statusArea.className = "animate-item msg-error";
+        
+        if (err === 'invalid') {
+            statusArea.innerText = "Authentication failed. Invalid identifier or password.";
+        } else if (err === 'invalid_pin') {
+            statusArea.innerText = "Access Denied: The 4-digit security PIN is incorrect.";
+        } else if (err === 'locked') {
+            statusArea.innerText = "Account Locked: Too many failed attempts. Access restricted temporarily.";
+        } else if (err === 'missing') {
+            statusArea.innerText = "All fields (Identifier, Password, and PIN) are required.";
+        } else if (err === 'unauthorized') {
+            statusArea.innerText = "Access Forbidden: Your account is currently inactive or suspended.";
+        } else if (err === 'database') {
+            statusArea.innerText = "System Error: Unable to reach authentication server. Try again later.";
+        } else if (urlParams.get('success') === '1') {
+            statusArea.className = "animate-item msg-success";
+            statusArea.innerText = "Profile verified. Please login.";
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,309 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  
+  <title>GCST Super Admin - Account Management</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="../../assets/css/superadmin.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  .chart-container {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  .chart-container h3 {
+    margin-top: 0;
+    color: #333;
+  }
+  .chart-wrapper {
+    position: relative;
+    height: 300px;
+  }
+  .full-width {
+    grid-column: 1 / -1;
+  }
+  @media (max-width: 768px) {
+    .charts-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Account Management Styles */
+  .search-section {
+    margin-bottom: 2rem;
+  }
+  .search-bar {
+    width: 100%;
+    max-width: 400px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+  .table-container {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+  }
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .admin-table th,
+  .admin-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .admin-table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+  }
+  .status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .status-active {
+    background: #dcfce7;
+    color: #166534;
+  }
+  .status-inactive {
+    background: #fef2f2;
+    color: #991b1b;
+  }
+  .action-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-right: 0.5rem;
+  }
+  .btn-activate {
+    background: #10b981;
+    color: white;
+  }
+  .btn-suspend {
+    background: #f59e0b;
+    color: white;
+  }
+  .btn-edit {
+    background: #3b82f6;
+    color: white;
+  }
+  .btn-delete {
+    background: #ef4444;
+    color: white;
+  }
+  .btn-activate:hover {
+    background: #059669;
+  }
+  .btn-suspend:hover {
+    background: #d97706;
+  }
+  .btn-edit:hover {
+    background: #2563eb;
+  }
+  .btn-delete:hover {
+    background: #dc2626;
+  }
+</style>
+</head>
+
+<!--
+<script>
+  window.addEventListener('DOMContentLoaded', function() {
+    fetch('../../actions/get_user.php')
+      .then(res => res.json())
+      .then(data => {
+        const currentId = data.admin_id;
+        if (!currentId) {
+          window.location.href = "../../pages/sign_in_admin_cashier.html";
+          return;
+        }
+        currentSuperAdminId = currentId;
+      })
+      .catch(() => {
+        window.location.href = "../../pages/sign_in_admin_cashier.html";
+      });
+  });
+</script> -->
+
+<body class="antialiased">
+  <!-- Sidebar Component -->
+  <div id="sidebar-container"></div>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <div class="content-wrapper">
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Greeting Section -->
+    <section class="greeting-section">
+      <div class="greeting-content">
+        <h1>Account Management</h1>
+        <p>Manage Admin & Staff accounts</p>
+      </div>
+      <div class="greeting-icon">👥</div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="search-section">
+      <input type="text" class="search-bar" id="search-bar" placeholder="Search by name or email...">
+    </section>
+
+    <!-- Table Section -->
+    <section class="table-container">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Last Login</th>
+            <th>Login Attempts</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="admin-table-body">
+          <!-- Rows will be populated by JS -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Scripts -->
+  <script src="../../assets/js/superadmin.js"></script>
+  <script>
+    let currentSuperAdminId = null;
+    let allAdmins = [];
+
+    // Load admins
+    function loadAdmins() {
+      fetch('../../actions/get_admin_accounts.php')
+        .then(res => res.json())
+        .then(data => {
+          allAdmins = data;
+          renderAdmins(data);
+        })
+        .catch(err => console.error('Error loading admins:', err));
+    }
+
+    // Render admins table
+    function renderAdmins(admins) {
+      const tbody = document.getElementById('admin-table-body');
+      tbody.innerHTML = '';
+      admins.forEach(admin => {
+        const statusClass = admin.status === 'active' ? 'status-active' : 'status-inactive';
+        const statusText = admin.status === 'active' ? 'Active' : 'Suspended';
+        const lastLogin = admin.last_login ? new Date(admin.last_login).toLocaleString() : 'Never';
+        const actions = admin.status === 'active' 
+          ? `<button class="action-btn btn-suspend" onclick="updateStatus(${admin.id}, 'inactive')">Suspend</button>`
+          : `<button class="action-btn btn-activate" onclick="updateStatus(${admin.id}, 'active')">Activate</button>`;
+        
+        tbody.innerHTML += `
+          <tr>
+            <td>${admin.name}</td>
+            <td>${admin.email}</td>
+            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            <td>${lastLogin}</td>
+            <td>${admin.login_attempts}</td>
+            <td>
+              ${actions}
+              <button class="action-btn btn-edit" onclick="editAdmin(${admin.id})">Edit</button>
+              <button class="action-btn btn-delete" onclick="deleteAdmin(${admin.id})">Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // Update status
+    function updateStatus(adminId, status) {
+      fetch('../../actions/update_admin_status.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_id: adminId, status: status })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          loadAdmins();
+        } else {
+          alert('Failed to update status');
+        }
+      });
+    }
+
+    // Edit admin (placeholder)
+    function editAdmin(adminId) {
+      alert('Edit functionality not implemented yet');
+    }
+
+    // Delete admin
+    function deleteAdmin(adminId) {
+      if (confirm('Are you sure you want to delete this admin?')) {
+        fetch('../../actions/delete_admin.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ admin_id: adminId })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            loadAdmins();
+          } else {
+            alert('Failed to delete admin');
+          }
+        });
+      }
+    }
+
+    // Search functionality
+    document.getElementById('search-bar').addEventListener('input', function() {
+      const query = this.value.toLowerCase();
+      const filtered = allAdmins.filter(admin => 
+        admin.name.toLowerCase().includes(query) || 
+        admin.email.toLowerCase().includes(query)
+      );
+      renderAdmins(filtered);
+    });
+
+    // Menu toggle
+    document.getElementById('menu-icon').addEventListener('click', (e) => {
+      e.preventDefault();
+      const menu = document.getElementById('dropdown-menu');
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    });
+
+    document.addEventListener('click', (e) => {
+      const menu = document.getElementById('dropdown-menu');
+      if (!menu.contains(e.target) && !document.getElementById('menu-icon').contains(e.target)) {
+        menu.style.display = 'none';
+      }
+    });
+
+    // Initial load
+    loadAdmins();
+  </script>
+
+</body>
+</html>
+
+
+
+

@@ -1,75 +1,63 @@
-﻿﻿let currentAdminId = null;
+﻿﻿/**
+ * GCST Track System - Super Admin Core Logic
+ * Optimized for performance, security, and modularity.
+ */
+
+let currentAdminId = null;
 let notificationPollInterval = null;
+const BASE_PATH = '/GCST_Track_System';
 
 /**
  * Initialize Super Admin menu and notification listeners
- * Call this in DOMContentLoaded of every page
  */
 function initializeSuperAdminUI() {
-  // Menu toggle
-  const menuIcon = document.getElementById('menu-icon');
-  const dropdownMenu = document.getElementById('dropdown-menu');
-  
-  if (menuIcon) {
-    menuIcon.addEventListener('click', (e) => {
+  const setupDropdown = (triggerId, menuId) => {
+    const trigger = document.getElementById(triggerId);
+    const menu = document.getElementById(menuId);
+    if (!trigger || !menu) return;
+
+    trigger.addEventListener('click', (e) => {
       e.preventDefault();
-      dropdownMenu?.classList.toggle('show');
+      e.stopPropagation();
+      // Close other open dropdowns first
+      document.querySelectorAll('.dropdown-menu.show, .notification-dropdown.show').forEach(m => {
+        if (m !== menu) m.classList.remove('show');
+      });
+      menu.classList.toggle('show');
     });
-  }
+  };
+
+  setupDropdown('menu-icon', 'dropdown-menu');
+  setupDropdown('notification-bell', 'notification-dropdown');
 
   // Close menu when clicking outside
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.menu-icon') && !e.target.closest('.dropdown-menu')) {
-      dropdownMenu?.classList.remove('show');
+    if (!e.target.closest('.menu-icon') && !e.target.closest('.dropdown-menu') &&
+        !e.target.closest('.notification-icon') && !e.target.closest('.notification-dropdown')) {
+      document.querySelectorAll('.dropdown-menu.show, .notification-dropdown.show').forEach(m => m.classList.remove('show'));
     }
   });
 
-  // Notification bell toggle
-  const notificationBell = document.getElementById('notification-bell');
-  const notificationDropdown = document.getElementById('notification-dropdown');
-  
-  if (notificationBell) {
-    notificationBell.addEventListener('click', (e) => {
-      e.preventDefault();
-      notificationDropdown?.classList.toggle('show');
-    });
-  }
-
-  // Close notification dropdown when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.notification-icon') && !e.target.closest('.notification-dropdown')) {
-      notificationDropdown?.classList.remove('show');
-    }
-  });
-
-  // Clear notifications button
-  const clearNotifBtn = document.getElementById('clear-notifications');
-  if (clearNotifBtn) {
-    clearNotifBtn.addEventListener('click', clearAllNotifications);
-  }
+  document.getElementById('clear-notifications')?.addEventListener('click', clearAllNotifications);
 }
 
 /**
  * Check authentication and redirect if not logged in
  */
 function checkAuthentication() {
-  return fetch('/GCST_Track_System/actions/get_user.php')
+  return fetch(`${BASE_PATH}/actions/get_user.php`)
     .then(res => res.json())
     .then(data => {
-      // Strictly enforce superadmin role for superadmin pages
       const allowedRoles = ['superadmin'];
       const currentId = data.admin_id;
       if (!currentId || !allowedRoles.includes(data.role)) {
-        window.location.href = "/GCST_Track_System/pages/sign_in_superadmin.html";
+        window.location.href = `${BASE_PATH}/pages/sign_in_superadmin.html`;
         return null;
       }
       currentAdminId = currentId;
       return data;
     })
-    .catch(() => {
-      window.location.href = "/GCST_Track_System/pages/sign_in_superadmin.html";
-      return null;
-    });
+    .catch(() => (window.location.href = `${BASE_PATH}/pages/sign_in_superadmin.html`));
 }
 
 /**
@@ -78,10 +66,13 @@ function checkAuthentication() {
 function updateGreeting(adminName) {
   const greetingElement = document.getElementById('greeting-message');
   if (greetingElement) {
-    // Keep the page-specific greeting if it exists
-    if (!greetingElement.textContent.includes('-')) {
-      greetingElement.textContent = `Welcome, ${adminName}!`;
-    }
+    const hour = new Date().getHours();
+    const timeGreet = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
+    
+    // If the element has specific formatting like "Dashboard • Name", preserve the prefix
+    const existingText = greetingElement.textContent;
+    const prefix = existingText.includes('•') ? existingText.split('•')[0].trim() + ' • ' : '';
+    greetingElement.textContent = prefix ? `${prefix}${adminName}` : `${timeGreet}, ${adminName}!`;
   }
 }
 
@@ -103,20 +94,20 @@ function updateDateTime() {
  * Load notifications from server
  */
 function loadNotifications() {
-  fetch('/GCST_Track_System/actions/get_notifications.php')
+  if (!currentAdminId) return;
+  fetch(`${BASE_PATH}/actions/get_notifications.php`)
     .then(res => res.json())
     .then(data => {
       const notificationsList = document.getElementById('notifications-list');
       const notifBadge = document.getElementById('notif-badge');
       const sidebarBadge = document.getElementById('sidebar-gmail-badge');
       
-      if (!notificationsList) return;
-
+      if (notificationsList) {
       notificationsList.innerHTML = '';
 
       if (data.length === 0) {
         notificationsList.innerHTML = '<div class="empty-state"><p>No notifications</p></div>';
-        if (notifBadge) notifBadge.style.display = 'none';
+        if (notifBadge) notifBadge.style.display = 'none'; 
         if (sidebarBadge) sidebarBadge.classList.add('hidden');
         return;
       }
@@ -133,17 +124,19 @@ function loadNotifications() {
         `;
         notificationsList.appendChild(item);
       });
+      }
 
       // Show badge with count
+      const count = data.length;
       if (notifBadge) {
-        notifBadge.textContent = data.length;
-        notifBadge.style.display = 'flex';
+        notifBadge.textContent = count;
+        notifBadge.style.display = count > 0 ? 'flex' : 'none';
       }
 
       // Update Sidebar Badge
       if (sidebarBadge) {
-        sidebarBadge.textContent = data.length;
-        sidebarBadge.classList.remove('hidden');
+        sidebarBadge.textContent = count;
+        sidebarBadge.classList.toggle('hidden', count === 0);
       }
     })
     .catch(err => console.error('Error loading notifications:', err));
@@ -153,12 +146,11 @@ function loadNotifications() {
  * Clear all notifications
  */
 function clearAllNotifications() {
-  fetch('/GCST_Track_System/actions/mark_notifications_read.php', {
+  if (!currentAdminId) return;
+  fetch(`${BASE_PATH}/actions/mark_notifications_read.php`, {
     method: 'POST'
   })
-    .then(() => {
-      loadNotifications();
-    })
+    .then(() => loadNotifications())
     .catch(err => console.error('Error clearing notifications:', err));
 }
 
@@ -166,16 +158,15 @@ function clearAllNotifications() {
  * Start polling notifications every 30 seconds
  */
 function startNotifPolling() {
-  // Clear any existing interval
-  if (notificationPollInterval) {
-    clearInterval(notificationPollInterval);
-  }
+  if (notificationPollInterval) clearInterval(notificationPollInterval);
 
-  // Poll every 30 seconds and check session health
-  notificationPollInterval = setInterval(() => {
-    checkAuthentication(); // Heartbeat check to ensure session is still valid
+  const pollTask = () => {
+    checkAuthentication(); // Heartbeat
     loadNotifications();
-  }, 30000);
+  };
+
+  pollTask();
+  notificationPollInterval = setInterval(pollTask, 30000);
 }
 
 /**
@@ -192,7 +183,7 @@ function stopNotifPolling() {
  * Format currency value
  */
 function formatCurrency(value) {
-  return '₱' + parseFloat(value || 0).toFixed(2);
+  return '₱' + Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /**
@@ -244,28 +235,25 @@ function showError(element, message = 'An error occurred') {
  * @param {Function} pageCallback - Callback function to initialize page-specific content
  */
 window.initializeSuperAdminPage = function(pageCallback) {
-  const init = async () => {
+  const initSequence = async () => {
     try {
       // 1. Load sidebar first so the user sees the UI immediately
       await autoLoadSidebar();
 
       // 2. Start authentication check
       const userData = await checkAuthentication();
-      if (!userData) return; // checkAuthentication handles the redirect
+      if (!userData) return;
 
       // 3. Initialize UI elements and Security Features
       initializeSuperAdminUI();
       setupInactivityTimer(); // Feature: Auto-logout on idle
       setupBrowserSecurity(); // Security: Prevent back-button access & sync logout
 
-      console.log("Super Admin Page Initialized with enhanced security.");
-
       // Update greeting and time
       updateGreeting(userData.name || 'Admin');
       updateDateTime();
-      setInterval(updateDateTime, 60000); // Update every minute
+      setInterval(updateDateTime, 60000);
 
-      // Load notifications
       loadNotifications();
       startNotifPolling();
 
@@ -279,16 +267,22 @@ window.initializeSuperAdminPage = function(pageCallback) {
   };
 
   if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', init);
+    window.addEventListener('DOMContentLoaded', initSequence);
   } else {
-    init();
+    initSequence();
   }
 
   // Clean up on page unload
   window.addEventListener('beforeunload', () => {
     stopNotifPolling();
   });
-}
+};
+
+// Visibility API: Pause polling when tab is inactive to save resources
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopNotifPolling();
+  else if (currentAdminId) startNotifPolling();
+});
 
 /**
  * Feature: Auto-logout after 15 minutes of inactivity
@@ -340,13 +334,13 @@ function showLockScreen() {
  */
 window.verifyPinOnly = async function(pin) {
   try {
-    const response = await fetch('/GCST_Track_System/actions/verify_superadmin_pin.php', {
+    const response = await fetch(`${BASE_PATH}/actions/verify_superadmin_pin.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pin: pin })
     });
     const result = await response.json();
-    return result.success;
+    return result?.success || false;
   } catch (err) {
     console.error("PIN verification failed", err);
     return false;
@@ -369,7 +363,7 @@ function setupBrowserSecurity() {
   window.addEventListener('storage', (event) => {
     if (event.key === 'gcst_superadmin_logout_event') {
       // If a logout happened in another tab, redirect this tab as well
-      window.location.replace("/GCST_Track_System/pages/sign_in_superadmin.html");
+      window.location.replace(`${BASE_PATH}/pages/sign_in_superadmin.html`);
     }
   });
 }
@@ -380,9 +374,7 @@ function setupBrowserSecurity() {
 function fetchWithError(url, options = {}) {
   return fetch(url, options)
     .then(res => {
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       return res.json();
     })
     .catch(err => {
@@ -421,7 +413,7 @@ window.toggleMinimizeSidebar = function() {
  */
 window.changeSuperadminPin = async function(pinData) {
   try {
-    const response = await fetch('/GCST_Track_System/actions/change_superadmin_pin.php', {
+    const response = await fetch(`${BASE_PATH}/actions/change_superadmin_pin.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(pinData)
@@ -429,14 +421,11 @@ window.changeSuperadminPin = async function(pinData) {
     
     const result = await response.json();
     if (result.success) {
-      alert(result.message || 'PIN updated successfully.');
-    } else {
-      alert(result.message || 'Failed to update PIN.');
+      console.log('PIN updated successfully.');
     }
     return result;
   } catch (error) {
     console.error('Error changing PIN:', error);
-    alert('A network error occurred while updating the PIN.');
   }
 }
 
@@ -445,12 +434,10 @@ async function autoLoadSidebar() {
   if (!container) return;
 
   try {
-    // Use dynamic import instead of relying on global window object
     const { getSidebarHTML } = await import('./superadmin_sidebar_content.js');
     if (container && typeof getSidebarHTML === 'function') {
       container.innerHTML = getSidebarHTML();
 
-      // Apply the saved state from localStorage immediately after injection
       const isMinimized = localStorage.getItem('sidebar-minimized') === 'true';
       if (isMinimized) {
         document.getElementById('main-sidebar')?.classList.add('minimized');
@@ -458,23 +445,17 @@ async function autoLoadSidebar() {
         document.querySelector('header')?.classList.add('minimized');
       }
       
-      // Automatically highlight the active link based on the current URL
       const getFileName = (path) => path.split('/').pop() || 'superadmin_dashb.html';
       const currentFile = getFileName(window.location.pathname);
 
-      const sidebarLinks = container.querySelectorAll('.sidebar-link');
-      sidebarLinks.forEach(link => {
-        // Use link.pathname property to get the resolved path without query strings or hashes
+      container.querySelectorAll('.sidebar-link').forEach(link => {
         const linkFile = getFileName(link.pathname);
-        if (linkFile && linkFile === currentFile && !link.href.startsWith('javascript')) {
-          link.classList.add('active');
-        } else {
-          link.classList.remove('active');
-        }
+        const isActive = linkFile && linkFile === currentFile && !link.href.startsWith('javascript');
+        link.classList.toggle('active', isActive);
       });
     }
   } catch (err) {
-    console.error('Sidebar auto-load failed:', err);
+    console.warn('Sidebar auto-load failed:', err);
   }
 }
 
