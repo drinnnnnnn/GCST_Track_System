@@ -49,7 +49,7 @@
 
     .queue-card h3 {
       font-size: 0.7rem;
-      font-weight: 800;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.12em;
       margin: 0 0 2px;
@@ -58,7 +58,7 @@
 
     .queue-card .amount {
       font-size: 1.5rem;
-      font-weight: 800;
+      font-weight: 600;
       margin: 0;
       color: #0f172a;
       line-height: 1.2;
@@ -93,17 +93,22 @@
 
     .ticket-status.waiting {
       background: #f3f4f6;
-      color: #111827;
+      color: #475569;
     }
 
     .ticket-status.serving {
-      background: #dbf4ff;
-      color: #0369a1;
+      background: #dcfce7;
+      color: #15803d;
     }
 
     .ticket-status.completed {
-      background: #e0f2fe;
-      color: #0c4a6e;
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .ticket-status.expired {
+      background: #fee2e2;
+      color: #b91c1c;
     }
 
     .muted-text {
@@ -194,14 +199,14 @@
               <i class="fas fa-plus text-xl"></i>
             </div>
             <div class="text-left">
-              <h2 class="text-xl font-bold text-slate-900 tracking-tight">Create Queue Ticket</h2>
+              <h2 class="text-xl font-semibold text-slate-900 tracking-tight">Create Queue Ticket</h2>
               <p class="text-sm text-slate-500 font-medium italic">Please ensure your information is correct before generating.</p>
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div class="form-group text-left">
-              <label for="student-name-input" class="block text-xs font-bold text-slate-400 uppercase tracking-[0.15em] mb-3 ml-1">Student Name</label>
+              <label for="student-name-input" class="block text-xs font-semibold text-slate-400 uppercase tracking-[0.15em] mb-3 ml-1">Student Name</label>
               <div class="relative group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
                   <i class="fas fa-user text-sm"></i>
@@ -212,7 +217,7 @@
             </div>
 
             <div class="form-group text-left">
-              <label for="ticket-purpose" class="block text-xs font-bold text-slate-400 uppercase tracking-[0.15em] mb-3 ml-1">Purpose of Visit</label>
+              <label for="ticket-purpose" class="block text-xs font-semibold text-slate-400 uppercase tracking-[0.15em] mb-3 ml-1">Purpose of Visit</label>
               <div class="relative group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
                   <i class="fas fa-clipboard-list text-sm"></i>
@@ -235,7 +240,7 @@
           <div class="flex flex-col md:flex-row items-center justify-between gap-6 pt-8 border-t border-slate-100">
             <div class="flex items-center gap-2 text-slate-400 order-2 md:order-1">
               <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <p id="last-updated-text" class="text-[10px] font-bold uppercase tracking-[0.2em]">
+              <p id="last-updated-text" class="text-[10px] font-semibold uppercase tracking-[0.2em]">
                 System Active • Last synced: --:--
               </p>
             </div>
@@ -249,7 +254,7 @@
       </div>
     </section>
 
-    <div id="confirmation-msg" class="confirmation-message"><i class="fas fa-check-circle"></i> <strong id="confirmation-text">Ticket generated successfully!</strong></div>
+    <div id="confirmation-msg" class="confirmation-message"><i class="fas fa-check-circle"></i> <span id="confirmation-text" class="font-semibold">Ticket generated successfully!</span></div>
 
     <section class="mb-10">
       <div class="bg-white rounded-[2rem] p-6 md:p-8 shadow-xl border border-slate-100 relative overflow-hidden" id="latest-ticket-card">
@@ -259,29 +264,29 @@
         <div class="relative z-10">
           <div class="flex items-center justify-between gap-4 mb-6">
             <div class="text-left">
-              <h2 class="text-xl font-bold text-slate-900 tracking-tight">Latest Ticket</h2>
+              <h2 class="text-xl font-semibold text-slate-900 tracking-tight">Latest Ticket</h2>
               <p class="text-sm text-slate-500 font-medium italic">Your most recent queue ticket is shown here.</p>
             </div>
             <span class="ticket-status waiting" id="latest-ticket-status">Waiting</span>
           </div>
 
           <div class="border-t border-b border-slate-100 py-6 my-6">
-            <p class="text-5xl font-bold text-blue-600 text-center mb-4" id="latest-ticket-number">-</p>
+            <p class="text-5xl font-semibold text-blue-600 text-center mb-4" id="latest-ticket-number">-</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
               <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">Student Name</p>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-[0.15em] mb-1">Student Name</p>
                 <p class="text-slate-800 font-medium text-lg" id="latest-ticket-name"></p>
               </div>
               <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">Purpose</p>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-[0.15em] mb-1">Purpose</p>
                 <p class="text-blue-600 font-medium text-lg" id="latest-ticket-purpose"></p>
               </div>
               <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">Generated</p>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-[0.15em] mb-1">Generated</p>
                 <p class="text-slate-600 text-sm" id="latest-ticket-created"></p>
               </div>
               <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">Waiting Time</p>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-[0.15em] mb-1">Waiting Time</p>
                 <p class="text-slate-600 text-sm" id="latest-ticket-wait"></p>
               </div>
             </div>
@@ -302,22 +307,22 @@
     <section class="mb-12">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div>
-          <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Ticket History</h2>
+          <h2 class="text-2xl font-semibold text-slate-900 tracking-tight">Ticket History</h2>
           <p class="text-sm text-slate-500 font-medium mt-1 italic">Review and filter your past queue activities.</p>
         </div>
         
         <div class="flex flex-wrap gap-2 bg-slate-100/50 p-1.5 rounded-[1.25rem] border border-slate-200/50 backdrop-blur-sm">
-          <button class="filter-button px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 bg-white text-blue-600 shadow-sm active" data-filter="all">All</button>
-          <button class="filter-button px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 text-slate-500 hover:text-slate-700" data-filter="waiting">Waiting</button>
-          <button class="filter-button px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 text-slate-500 hover:text-slate-700" data-filter="serving">Serving</button>
-          <button class="filter-button px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 text-slate-500 hover:text-slate-700" data-filter="completed">Completed</button>
-          <button class="filter-button px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 text-slate-500 hover:text-slate-700" data-filter="expired">Expired</button>
+          <button class="filter-button px-5 py-2.5 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all duration-300 bg-white text-blue-600 shadow-sm active" data-filter="all">All</button>
+          <button class="filter-button px-5 py-2.5 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all duration-300 text-slate-500 hover:text-slate-700" data-filter="waiting">Waiting</button>
+          <button class="filter-button px-5 py-2.5 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all duration-300 text-slate-500 hover:text-slate-700" data-filter="serving">Serving</button>
+          <button class="filter-button px-5 py-2.5 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all duration-300 text-slate-500 hover:text-slate-700" data-filter="completed">Completed</button>
+          <button class="filter-button px-5 py-2.5 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all duration-300 text-slate-500 hover:text-slate-700" data-filter="expired">Expired</button>
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="tickets-container">
         <div class="col-span-full py-20 flex flex-col items-center justify-center text-slate-400">
           <div class="w-16 h-16 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-          <span class="font-semibold uppercase tracking-widest text-[10px]">Syncing History...</span>
+          <span class="font-medium uppercase tracking-widest text-[10px]">Syncing History...</span>
         </div>
       </div>
     </section>
@@ -331,7 +336,7 @@
         <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
           <i class="fas fa-info-circle text-3xl"></i>
         </div>
-        <h3 class="text-2xl font-bold text-slate-900 mb-4">Queue Reminder</h3>
+        <h3 class="text-2xl font-semibold text-slate-900 mb-4">Queue Reminder</h3>
         <p class="text-slate-500 leading-relaxed mb-8">
           Reminder: Kindly monitor your queue ticket status at the kiosk regularly, as no separate reminders will be issued. Please ensure you are properly in line and wait for your turn accordingly.
         </p>
@@ -411,7 +416,7 @@
             <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-6">
               <i class="fas fa-ticket-alt text-3xl"></i>
             </div>
-            <h3 class="text-xl font-bold text-slate-900 mb-2">No tickets found</h3>
+            <h3 class="text-xl font-semibold text-slate-900 mb-2">No tickets found</h3>
             <p class="text-slate-500 max-w-xs font-medium italic">You don't have any ${mapStatus(currentFilter).toLowerCase()} queue tickets yet.</p>
           </div>
         `;
@@ -433,33 +438,33 @@
             
             <div class="relative z-10">
               <div class="flex items-start justify-between mb-6">
-                <div class="text-3xl font-bold text-blue-600 tracking-tighter">${ticket.queue_number}</div>
-                <span class="text-[10px] px-3 py-1 rounded-full uppercase tracking-[0.1em] font-bold ${badgeColors}">
+                <div class="text-3xl font-semibold text-blue-600 tracking-tighter">${ticket.queue_number}</div>
+                <span class="text-[10px] px-3 py-1 rounded-full uppercase tracking-[0.1em] font-semibold ${badgeColors}">
                   ${statusLabel}
                 </span>
               </div>
 
               <div class="space-y-5 flex-1">
                 <div>
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Visit Purpose</p>
+                  <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Visit Purpose</p>
                   <p class="text-slate-800 font-semibold leading-snug">${ticket.purpose || 'General Inquiry'}</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4 pt-5 border-t border-slate-50">
                   <div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Generated</p>
+                    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Generated</p>
                     <p class="text-slate-600 text-[11px] font-medium leading-tight">${formatDateTime(ticket.created_at)}</p>
                   </div>
                   <div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Elapsed</p>
+                    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Elapsed</p>
                     <p class="text-slate-600 text-[11px] font-medium leading-tight">${getWaitingDuration(ticket.created_at)}</p>
                   </div>
                 </div>
 
                 ${ticket.served_at ? `
                   <div class="pt-5 border-t border-slate-50">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Processed On</p>
-                    <p class="text-slate-900 font-bold text-[11px] uppercase">${formatDateTime(ticket.served_at)}</p>
+                    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Processed On</p>
+                    <p class="text-slate-900 font-semibold text-[11px] uppercase">${formatDateTime(ticket.served_at)}</p>
                   </div>
                 ` : ''}
               </div>
@@ -517,7 +522,10 @@
         if (waitEl) waitEl.textContent = 'Waiting time: -';
         if (nameEl) nameEl.textContent = '';
         if (purposeEl) purposeEl.textContent = '';
-        if (statusEl) statusEl.textContent = 'Waiting';
+        if (statusEl) {
+          statusEl.textContent = 'Waiting';
+          statusEl.className = 'ticket-status waiting';
+        }
         if (actionsEl) actionsEl.classList.add('hidden');
         return;
       }
@@ -683,15 +691,15 @@
         <html>
           <head>
             <title>Print Queue Ticket</title>
-            <style>body{font-family:Arial,sans-serif;padding:24px;} .ticket{border:1px solid #ddd;border-radius:12px;padding:24px;} h1{margin-bottom:16px;} p{margin:8px 0;}</style>
+            <style>body{font-family:Arial,sans-serif;padding:24px;} .ticket{border:1px solid #ddd;border-radius:12px;padding:24px;} h1{margin-bottom:16px; font-weight: 600;} p{margin:8px 0;}</style>
           </head>
           <body>
             <div class="ticket">
               <h1>Queue Ticket</h1>
-              <p><strong>Ticket Number:</strong> ${ticket.queue_number}</p>
-              <p><strong>Status:</strong> ${mapStatus(ticket.status)}</p>
-              <p><strong>Generated:</strong> ${formatDateTime(ticket.created_at)}</p>
-              ${ticket.served_at ? `<p><strong>Served:</strong> ${formatDateTime(ticket.served_at)}</p>` : ''}
+              <p><span class="font-semibold">Ticket Number:</span> ${ticket.queue_number}</p>
+              <p><span class="font-semibold">Status:</span> ${mapStatus(ticket.status)}</p>
+              <p><span class="font-semibold">Generated:</span> ${formatDateTime(ticket.created_at)}</p>
+              ${ticket.served_at ? `<p><span class="font-semibold">Served:</span> ${formatDateTime(ticket.served_at)}</p>` : ''}
             </div>
           </body>
         </html>
