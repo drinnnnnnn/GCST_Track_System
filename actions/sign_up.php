@@ -20,12 +20,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sex            = trim(filter_input(INPUT_POST, 'sex', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '');
     $course         = trim(filter_input(INPUT_POST, 'course', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '');
     $department     = trim(filter_input(INPUT_POST, 'department', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '');
-    $year_section   = trim(filter_input(INPUT_POST, 'year_section', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '');
+    $year_level     = trim(filter_input(INPUT_POST, 'year_level', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '');
     $contact_number = trim(filter_input(INPUT_POST, 'contact_number', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '');
     $address        = trim(filter_input(INPUT_POST, 'address', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '');
-    $status         = 'Pending';
+    $status         = 'pending';
 
-    if ($student_id === '' || $last_name === '' || $first_name === '' || $email === '' || $password_raw === '' || $sex === '' || $course === '' || $department === '' || $year_section === '') {
+    if ($student_id === '' || $last_name === '' || $first_name === '' || $email === '' || $password_raw === '' || $sex === '' || $course === '' || $department === '' || $year_level === '') {
         header('Location: http://localhost/GCST_Track_System/pages/superadmin/sign_up.html?status=invalid&show=register');
         exit();
     }
@@ -111,10 +111,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'sex'            => "VARCHAR(50) AFTER `password` ",
         'course'         => "VARCHAR(255) AFTER `sex` ",
         'department'     => "VARCHAR(255) AFTER `course` ",
-        'year_section'   => "VARCHAR(100) AFTER `department` ",
-        'contact_number' => "VARCHAR(20) AFTER `year_section` ",
+        'year_level'     => "VARCHAR(100) AFTER `department` ",
+        'contact_number' => "VARCHAR(20) AFTER `year_level` ",
         'address'        => "TEXT AFTER `contact_number` ",
-        'status'         => "VARCHAR(50) DEFAULT 'Pending' AFTER `address` ",
+        'status'         => "VARCHAR(50) DEFAULT 'pending' AFTER `address` ",
         'school_id_pic'  => "VARCHAR(255) AFTER `status` ",
         'reg_form'       => "VARCHAR(255) AFTER `school_id_pic` ",
         'payment_scheme' => "VARCHAR(255) AFTER `reg_form` "
@@ -130,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $hashed_password = password_hash($password_raw, PASSWORD_DEFAULT);
     $stmt = $conn->prepare(
         'INSERT INTO users 
-         (student_id, last_name, first_name, middle_name, email, password, sex, course, department, year_section, contact_number, address, status, school_id_pic, reg_form, payment_scheme) 
+         (student_id, last_name, first_name, middle_name, email, password, sex, course, department, year_level, contact_number, address, status, school_id_pic, reg_form, payment_scheme) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $stmt->bind_param(
@@ -144,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sex,
         $course,
         $department,
-        $year_section,
+        $year_level,
         $contact_number,
         $address,
         $status,

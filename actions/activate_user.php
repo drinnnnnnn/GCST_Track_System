@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['student_id'])) {
         exit();
     }
 
-    $stmt = $conn->prepare("UPDATE users SET status = 'Active' WHERE student_id = ?");
+    $stmt = $conn->prepare("UPDATE users SET status = 'active' WHERE student_id = ?");
     $stmt->bind_param("s", $student_id);
     $success = $stmt->execute();
     $stmt->close();
@@ -18,8 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['student_id'])) {
     // Update counts
     if ($success) {
         $res = $conn->query("SELECT 
-            SUM(status = 'Active') AS active_count, 
-            SUM(status = 'Suspended') AS suspended_count 
+            SUM(status = 'active') AS active_count, 
+            SUM(status = 'suspended') AS suspended_count 
             FROM users");
         $row = $res->fetch_assoc();
         $active = (int)$row['active_count'];

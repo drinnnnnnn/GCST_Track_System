@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../config/db_connect.php';
+require_once __DIR__ . '/../../config/config.php';
 // Ensure the core connection file is available for the Database class
 require_once __DIR__ . '/../../database/connection.php';
 
@@ -154,10 +154,28 @@ class SuperAdminModel {
      * @param string|null $ua The visitor's User Agent
      */
     public function logEvent($adminId, $eventType, $identifier, $ip, $ua, $details = null) {
-        $stmt = $this->conn->prepare("INSERT INTO security_logs (admin_id, event_type, identifier, ip_address, user_agent, details) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("isssss", $adminId, $eventType, $identifier, $ip, $ua, $details);
-        $stmt->execute();
-        $stmt->close();
+        try {
+            $stmt = $this->conn->prepare("INSERT INTO security_logs (admin_id, event_type, identifier, ip_address, user_agent, details) VALUES (?, ?, ?, ?, ?, ?)");
+            if ($stmt) {
+                $stmt->bind_param("isssss", $adminId, $eventType, $identifier, $ip, $ua, $details);
+                $stmt->execute();
+                $stmt->close();
+            }
+        } catch (Exception $e) {
+            // Log failure to the system error log to avoid breaking the UI/Workflow
+            error_log("Security Logging Failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Records a successful Admin/Cashier registration event.
+     */
+    public function logStaffRegistration($actorId, $targetEmail, $targetName, $targetRole) {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+        $details = "Action: Admin/Cashier Account Registered | New Account: $targetName | Role: $targetRole";
+        
+        $this->logEvent($actorId, 'staff_registration', $targetEmail, $ip, $ua, $details);
     }
 
     /**

@@ -54,6 +54,7 @@ $mysqli->query(
         `password` VARCHAR(255) NOT NULL,
         `role` ENUM('admincashier','cashier','superadmin') NOT NULL DEFAULT 'admincashier',
         `status` ENUM('active','inactive') NOT NULL DEFAULT 'active',
+        `login_attempts` INT DEFAULT 0,
         `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
@@ -234,6 +235,7 @@ addColumnIfNotExists($mysqli, 'users', 'updated_at', "TIMESTAMP NOT NULL DEFAULT
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'role', "ENUM('admincashier','cashier','superadmin') NOT NULL DEFAULT 'admincashier'");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'pin', "VARCHAR(10) DEFAULT NULL AFTER `password` ");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'status', "ENUM('active','inactive') NOT NULL DEFAULT 'active'");
+addColumnIfNotExists($mysqli, 'admincashier_acc', 'login_attempts', "INT DEFAULT 0 AFTER `status` ");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'created_at', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'updated_at', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 addColumnIfNotExists($mysqli, 'products', 'rent_price', "DECIMAL(10,2) NOT NULL DEFAULT 0.00");

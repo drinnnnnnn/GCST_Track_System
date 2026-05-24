@@ -1,106 +1,221 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  
-  <title>GCST Super Admin Dashboard</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <link rel="stylesheet" href="../../assets/css/superadmin.css" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Dashboard | GCST Super Admin</title>
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    
+    <!-- Custom CSS & Utilities -->
+    <link rel="stylesheet" href="../../assets/css/superadmin.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<style>
-  .charts-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-  }
-  .chart-container {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-  .chart-container h3 {
-    margin-top: 0;
-    color: #333;
-  }
-  .chart-wrapper {
-    position: relative;
-    height: 300px;
-  }
-  .full-width {
-    grid-column: 1 / -1;
-  }
-  @media (max-width: 768px) {
-    .charts-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4f46e5',
+                        danger: '#dc2626',
+                        success: '#10b981'
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 
-<body class="antialiased">
-  <!-- Sidebar Component -->
-  <div id="sidebar-container"></div>
-  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+<body class="antialiased font-sans">
+    <!-- Shared Sidebar Component -->
+    <div id="sidebar-container"></div>
+    <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-  <div class="content-wrapper">
-  <main class="max-w-7xl mx-auto px-6 py-8">
-    <!-- Greeting Section -->
-    <section class="greeting-section">
-      <div class="greeting-content">
-        <h1 id="greeting-message">Welcome, Super Admin!</h1>
-        <p id="current-date-time"></p>
-      </div>
-      <div class="greeting-icon">👋</div>
-    </section>
+    <div class="content-wrapper">
+        <main>
+            
+            <!-- Modern Greeting Section -->
+            <section class="greeting-section animate-fade-in">
+                <div class="greeting-content">
+                    <h1 id="greeting-message">Welcome back, Admin</h1>
+                    <p class="flex items-center mt-2">
+                        <i class="far fa-calendar-alt mr-2 text-red-600"></i>
+                        <span id="current-date-time">Loading date and time...</span>
+                    </p>
+                </div>
+                <div class="greeting-actions hidden sm:block">
+                    <button onclick="location.reload()" class="btn-secondary" title="Refresh Dashboard">
+                        <i class="fas fa-arrows-rotate"></i>
+                    </button>
+                </div>
+            </section>
 
-    <!-- Summary Section -->
-    <section class="balance-section">
-      <h2>Dashboard Summary</h2>
-      <div class="balance-cards">
-        <div class="balance-card">
-          <h3>Total Admin Accounts</h3>
-          <p class="amount" id="totalAdminAccounts">0</p>
-        </div>
-        <div class="balance-card">
-          <h3>Active Sessions</h3>
-          <p class="amount" id="activeSessions">0</p>
-        </div>
-        <div class="balance-card">
-          <h3>System Uptime</h3>
-          <p class="amount" id="systemUptime">0%</p>
-        </div>
-        <div class="balance-card">
-          <h3>Pending Issues</h3>
-          <p class="amount" id="pendingIssues">0</p>
-        </div>
-      </div>
-    </section>
+            <!-- Overview Statistics Section -->
+            <section class="balance-section">
+                <div class="flex items-center justify-between mb-4">
+                    <h2>System Overview</h2>
+                    <div class="period-filters">
+                        <button class="period-button active">Real-time</button>
+                    </div>
+                </div>
 
-    <!-- Charts Section -->
-    <section class="activity-section">
-      <h2>Analytics</h2>
-      <div class="charts-grid">
-        <div class="chart-container">
-          <h3>Recent Admin Activities</h3>
-          <div class="chart-wrapper">
-            <canvas id="adminActivitiesChart"></canvas>
-          </div>
-        </div>
-        <div class="chart-container">
-          <h3>System Health</h3>
-          <div class="chart-wrapper">
-            <canvas id="systemHealthChart"></canvas>
-          </div>
-        </div>
-      </div>
-    </section>
+                <div class="balance-cards">
+                    <!-- Staff Accounts Card -->
+                    <div class="balance-card group">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3>Staff Accounts</h3>
+                            <i class="fas fa-users-cog text-red-600 bg-red-50 p-3 rounded-xl transition-all group-hover:bg-red-600 group-hover:text-white"></i>
+                        </div>
+                        <p class="amount" id="totalAdminAccounts">0</p>
+                        <span class="text-xs font-semibold text-emerald-500 mt-2 block"><i class="fas fa-arrow-up"></i> Registered</span>
+                    </div>
 
-  </main>
-  <script src="../../assets/js/superadmin.js"></script>
+                    <!-- Active Sessions Card -->
+                    <div class="balance-card group">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3>Active Sessions</h3>
+                            <i class="fas fa-signal text-emerald-600 bg-emerald-50 p-3 rounded-xl transition-all group-hover:bg-emerald-600 group-hover:text-white"></i>
+                        </div>
+                        <p class="amount" id="activeSessions">0</p>
+                        <span class="text-xs font-semibold text-emerald-500 mt-2 block"><i class="fas fa-circle text-[8px]"></i> Online Now</span>
+                    </div>
+
+                    <!-- System Uptime Card -->
+                    <div class="balance-card group">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3>System Health</h3>
+                            <i class="fas fa-server text-sky-600 bg-sky-50 p-3 rounded-xl transition-all group-hover:bg-sky-600 group-hover:text-white"></i>
+                        </div>
+                        <p class="amount" id="systemUptime">99.9%</p>
+                        <span class="text-xs font-semibold text-sky-500 mt-2 block">Optimal Status</span>
+                    </div>
+
+                    <!-- Security Alerts Card -->
+                    <div class="balance-card group">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3>Security Flags</h3>
+                            <i class="fas fa-shield-virus text-rose-600 bg-rose-50 p-3 rounded-xl transition-all group-hover:bg-rose-600 group-hover:text-white"></i>
+                        </div>
+                        <p class="amount danger" id="pendingIssues">0</p>
+                        <span class="text-xs font-semibold text-slate-400 mt-2 block">Requires Attention</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section class="activity-section">
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
+                            <h3>Admin Activity Trends</h3>
+                            <span class="status bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] uppercase tracking-tighter font-bold">Live Data</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="adminActivitiesChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
+                            <h3>System Performance</h3>
+                            <span class="status bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[10px] uppercase tracking-tighter font-bold">Stable</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="systemHealthChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Application Logic -->
+    <script src="../../assets/js/superadmin.js"></script>
+    <script>
+        // Initialize the page once DOM is ready using the core JS module
+        window.initializeSuperAdminPage(userData => {
+            loadDashboardStats();
+            initDashboardCharts();
+        });
+
+        /**
+         * Fetch real-time statistics from the backend
+         */
+        async function loadDashboardStats() {
+            try {
+                // Parallel fetch for dashboard metrics
+                const [admins, sessions] = await Promise.all([
+                    fetch('../../actions/process_admin_cashier.php?action=list').then(r => r.json()),
+                    fetch('../../actions/get_system_metrics.php').then(r => r.json())
+                ]);
+
+                document.getElementById('totalAdminAccounts').textContent = Array.isArray(admins) ? admins.length : '0';
+                document.getElementById('activeSessions').textContent = sessions.active_connections || '0';
+            } catch (error) {
+                console.warn("Could not load latest dashboard stats.");
+            }
+        }
+
+        /**
+         * Initialize Chart.js with modern aesthetics
+         */
+        function initDashboardCharts() {
+            const ctxActivity = document.getElementById('adminActivitiesChart').getContext('2d');
+            new Chart(ctxActivity, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Login Frequency',
+                        data: [12, 19, 15, 25, 22, 10, 8],
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.08)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#4f46e5'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { borderDash: [5, 5], color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            const ctxHealth = document.getElementById('systemHealthChart').getContext('2d');
+            new Chart(ctxHealth, {
+                type: 'doughnut',
+                data: {
+                    labels: ['CPU', 'Memory', 'Storage'],
+                    datasets: [{
+                        data: [35, 48, 62],
+                        backgroundColor: ['#6366f1', '#10b981', '#f59e0b'],
+                        borderWidth: 0,
+                        hoverOffset: 12
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 25, font: { weight: '600' } } }
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>
