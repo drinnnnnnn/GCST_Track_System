@@ -1122,7 +1122,7 @@
       return parseFloat(product.rent_price ?? 0);
     }
     function getProductStock(product) {
-      return parseInt(product.stock_count ?? product.stock ?? 0, 10);
+      return parseFloat(product.stock_count ?? product.stock ?? 0);
     }
     function renderProducts() {
       const grid = document.getElementById('product-grid');
@@ -1145,14 +1145,23 @@
           const statusLabel = stock <= 0 ? 'Out of Stock' : stock < 5 ? 'Low Stock' : 'In Stock';
           const statusClass = stock <= 0 ? 'out-stock' : stock < 5 ? 'low-stock' : 'in-stock';
           const isBook = (product.product_category || '').toLowerCase() === 'books';
-          
-          let priceHtml = isBook 
-            ? `<span><strong>Rent:</strong> ${formatCurrency(rentPrice)}</span>`
-            : `<span><strong>Buy:</strong> ${formatCurrency(price)}</span>`;
+          const isFabric = (product.product_category || '').toLowerCase() === 'fabric uniform';
 
-          let badgeHtml = isBook 
-            ? `<span class="badge badge-rent-only">Rent Only</span>`
-            : ``;
+          let priceHtml = '';
+          if (isBook) {
+            priceHtml = `<span><strong>Rent:</strong> ${formatCurrency(rentPrice)}</span>`;
+          } else if (isFabric) {
+            priceHtml = `<span><strong>Price/Yard:</strong> ${formatCurrency(price)}</span>`;
+          } else {
+            priceHtml = `<span><strong>Buy:</strong> ${formatCurrency(price)}</span>`;
+          }
+
+          let badgeHtml = '';
+          if (isBook) {
+            badgeHtml = `<span class="badge badge-rent-only">Rent Only</span>`;
+          } else if (isFabric) {
+            badgeHtml = `<span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d; font-size:0.7rem;">Fabric</span>`;
+          }
 
           const card = document.createElement('article');
           card.className = 'product-card';
@@ -1166,7 +1175,7 @@
               <p>${product.product_category || 'Uncategorized'}</p>
               <div class="product-meta">
                 <span class="status-pill ${statusClass}">${statusLabel}</span>
-                <span class="stock-pill">${stock} left</span>
+                <span class="stock-pill">${stock} ${isFabric ? 'yards' : 'left'}</span>
               </div>
               <div class="product-meta">
                 ${priceHtml}
@@ -1230,7 +1239,10 @@
       
       let subtotal = 0;
       cart.forEach(item => {
-        const rowTotal = item.unitPrice * item.quantity;
+        const product = products.find(p => p.product_id == item.product_id);
+        const isFabric = (product?.product_category || '').toLowerCase() === 'fabric uniform';
+        const unitLabel = isFabric ? 'yard/s' : 'unit';
+        const rowTotal = Math.round(item.unitPrice * item.quantity * 100) / 100;
         if (item.selected) subtotal += rowTotal;
         
         const div = document.createElement('div');
@@ -1239,15 +1251,24 @@
           <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="toggleCartItemSelection('${item.product_id}', this.checked)" style="width: 18px; height: 18px; cursor: pointer; accent-color: #4f46e5;">
           <div class="cart-item-info">
             <h4>${item.product_name}</h4>
-            <p>${formatCurrency(item.unitPrice)} / unit</p>
+            <p>${formatCurrency(item.unitPrice)} / ${unitLabel}</p>
             <p style="font-weight: 700; color: #4f46e5; margin-top: 4px; font-size: 0.95rem;">${formatCurrency(rowTotal)}</p>
           </div>
           <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
-            <div class="qty-control">
-              <button type="button" onclick="changeCartQuantity('${item.product_id}', -1)"><i class="fas fa-minus"></i></button>
-              <span>${item.quantity}</span>
-              <button type="button" onclick="changeCartQuantity('${item.product_id}', 1)"><i class="fas fa-plus"></i></button>
-            </div>
+            ${isFabric ? `
+              <div style="display:flex; align-items:center; gap:8px;">
+                <input type="number" step="0.01" min="0.1" value="${item.quantity}" 
+                       onchange="updateFabricYardage('${item.product_id}', this.value)"
+                       style="width: 85px; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 12px; font-size: 0.85rem; font-weight: 700; text-align: center; background:#fff;" />
+                <span style="font-size:0.7rem; font-weight:700; color:#64748b; text-transform:uppercase;">yards</span>
+              </div>
+            ` : `
+              <div class="qty-control">
+                <button type="button" onclick="changeCartQuantity('${item.product_id}', -1)"><i class="fas fa-minus"></i></button>
+                <span>${item.quantity}</span>
+                <button type="button" onclick="changeCartQuantity('${item.product_id}', 1)"><i class="fas fa-plus"></i></button>
+              </div>
+            `}
             <button class="btn btn-danger" type="button" onclick="removeCartItem('${item.product_id}')" style="padding: 4px 8px; font-size: 0.7rem; border-radius: 8px;">
               <i class="fas fa-trash-alt"></i>
             </button>
@@ -1472,6 +1493,28 @@
       item.quantity = nextQty;
       updateCartSummary();
     }
+
+    function updateFabricYardage(productId, value) {
+      const qty = parseFloat(value);
+      if (isNaN(qty) || qty <= 0) {
+        alert('Invalid Quantity: Please enter a valid number of yards.');
+        updateCartSummary();
+        return;
+      }
+      const item = cart.find(i => i.product_id == productId);
+      if (item) {
+        const product = products.find(p => p.product_id == productId);
+        const stock = getProductStock(product);
+        if (qty > stock) {
+          alert(`Stock Alert: Only ${stock} yards available in inventory.`);
+          item.quantity = stock;
+        } else {
+          item.quantity = Math.round(qty * 100) / 100;
+        }
+        updateCartSummary();
+      }
+    }
+
     function removeCartItem(productId) {
       cart = cart.filter(item => item.product_id != productId);
       updateCartSummary();
@@ -1613,9 +1656,12 @@
       const receiptItems = document.getElementById('receipt-items');
       receiptItems.innerHTML = '';
       receipt.items.forEach(item => {
+        const product = products.find(p => p.product_id == item.product_id);
+        const isFabric = (product?.product_category || '').toLowerCase() === 'fabric uniform';
+        const unit = isFabric ? ' yard/s' : '';
         const entry = document.createElement('div');
         entry.className = 'receipt-item-row';
-        entry.innerHTML = `<span>${item.product_name} x ${item.quantity}</span><strong>${formatCurrency(item.total)}</strong>`;
+        entry.innerHTML = `<span>${item.product_name} x ${item.quantity}${unit}</span><strong>${formatCurrency(item.total)}</strong>`;
         receiptItems.appendChild(entry);
       });
       
@@ -1999,9 +2045,12 @@
         if (Array.isArray(items)) {
           const isVoided = txn.payment_status === 'voided';
           items.forEach(item => {
+            const product = products.find(p => p.product_id == item.product_id);
+            const isFabric = (product?.product_category || '').toLowerCase() === 'fabric uniform';
+            const unit = isFabric ? ' yard/s' : '';
             itemsHtml += `
               <div class="receipt-item">
-                <span>${item.product_name} x ${item.quantity}</span>
+                <span>${item.product_name} x ${item.quantity}${unit}</span>
                 <strong style="${isVoided ? 'text-decoration: line-through; color: #94a3b8;' : ''}">${formatCurrency(item.total || (item.unit_price * item.quantity))}</strong>
               </div>`;
           });
@@ -2438,7 +2487,7 @@
             cart = order.items.map(item => ({
               product_id: item.product_id,
               product_name: item.product_name,
-              quantity: parseInt(item.quantity),
+              quantity: parseFloat(item.quantity),
               unitPrice: parseFloat(item.unit_price || (item.total / item.quantity)),
               selected: true // All items from a scanned order are initially selected
             }));

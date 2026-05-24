@@ -256,7 +256,7 @@ const OrderScanner = {
                     cart = order.items.map(item => ({
                         product_id: item.product_id,
                         product_name: item.product_name,
-                        quantity: parseInt(item.quantity) || 0,
+                        quantity: parseFloat(item.quantity) || 0,
                         unitPrice: parseFloat(item.unit_price || (item.total / item.quantity)) || 0,
                         selected: true
                     }));

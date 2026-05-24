@@ -5,7 +5,7 @@ require_once __DIR__ . '/../config/db_connect.php';
 secureSessionStart();
 
 if (!isset($conn) || $conn->connect_error) {
-    header('Location: http://localhost/GCST_Track_System/pages/superadmin/sign_up.html?status=error&show=register');
+    header('Location: ../pages/superadmin/sign_up.html?status=error&show=register');
     exit();
 }
 
@@ -26,22 +26,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $status         = 'pending';
 
     if ($student_id === '' || $last_name === '' || $first_name === '' || $email === '' || $password_raw === '' || $sex === '' || $course === '' || $department === '' || $year_level === '') {
-        header('Location: http://localhost/GCST_Track_System/pages/superadmin/sign_up.html?status=invalid&show=register');
+        header('Location: ../pages/superadmin/sign_up.html?status=invalid&show=register');
         exit();
     }
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        header('Location: http://localhost/GCST_Track_System/pages/superadmin/sign_up.html?status=invalid_email&show=register');
+        header('Location: ../pages/superadmin/sign_up.html?status=invalid_email&show=register');
         exit();
     }
 
     if ($password_raw !== $confirm_pass) {
-        header('Location: http://localhost/GCST_Track_System/pages/superadmin/sign_up.html?status=nomatch&show=register');
+        header('Location: ../pages/superadmin/sign_up.html?status=nomatch&show=register');
         exit();
     }
 
     if (strlen($password_raw) < 8) {
-        header('Location: http://localhost/GCST_Track_System/pages/superadmin/sign_up.html?status=weak_password&show=register');
+        header('Location: ../pages/superadmin/sign_up.html?status=weak_password&show=register');
         exit();
     }
 
@@ -58,13 +58,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($proof_paths as $key => &$path) {
         if (isset($_FILES[$key]) && $_FILES[$key]['error'] === UPLOAD_ERR_OK) {
             if ($_FILES[$key]['size'] > $max_file_size) {
-                header('Location: http://localhost/GCST_Track_System/pages/superadmin/sign_up.html?status=too_large&show=register');
+                header('Location: ../pages/superadmin/sign_up.html?status=too_large&show=register');
                 exit();
             }
 
             $ext = strtolower(pathinfo($_FILES[$key]['name'], PATHINFO_EXTENSION));
             if (!in_array($ext, $allowed_extensions)) {
-                header('Location: http://localhost/GCST_Track_System/pages/superadmin/sign_up.html?status=invalid_file_type&show=register');
+                header('Location: ../pages/superadmin/sign_up.html?status=invalid_file_type&show=register');
                 exit();
             }
 
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             finfo_close($finfo);
 
             if (!in_array($mime_type, $allowed_mimes)) {
-                header('Location: http://localhost/GCST_Track_System/pages/superadmin/sign_up.html?status=invalid_file_type&show=register');
+                header('Location: ../pages/superadmin/sign_up.html?status=invalid_file_type&show=register');
                 exit();
             }
 
@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Ensure all files were successfully uploaded
     if ($proof_paths['school_id_pic'] === '' || $proof_paths['reg_form'] === '' || $proof_paths['payment_scheme'] === '') {
-        header('Location: http://localhost/GCST_Track_System/pages/superadmin/sign_up.html?status=upload_failed&show=register');
+        header('Location: ../pages/superadmin/sign_up.html?status=upload_failed&show=register');
         exit();
     }
 
@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($result->num_rows > 0) {
         $check_stmt->close();
-        header('Location: http://localhost/GCST_Track_System/pages/superadmin/sign_up.html?status=exists&show=register');
+        header('Location: ../pages/superadmin/sign_up.html?status=exists&show=register');
         exit();
     }
 
@@ -108,7 +108,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Ensure all required registration columns exist in 'users' table to prevent SQL exceptions
     $required_columns = [
         'middle_name'    => "VARCHAR(255) AFTER `first_name` ",
-        'sex'            => "VARCHAR(50) AFTER `password` ",
+        'password_hash'  => "VARCHAR(255) AFTER `email` ",
+        'sex'            => "VARCHAR(50) AFTER `password_hash` ",
         'course'         => "VARCHAR(255) AFTER `sex` ",
         'department'     => "VARCHAR(255) AFTER `course` ",
         'year_level'     => "VARCHAR(100) AFTER `department` ",
@@ -130,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $hashed_password = password_hash($password_raw, PASSWORD_DEFAULT);
     $stmt = $conn->prepare(
         'INSERT INTO users 
-         (student_id, last_name, first_name, middle_name, email, password, sex, course, department, year_level, contact_number, address, status, school_id_pic, reg_form, payment_scheme) 
+         (student_id, last_name, first_name, middle_name, email, password_hash, sex, course, department, year_level, contact_number, address, status, school_id_pic, reg_form, payment_scheme) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $stmt->bind_param(
@@ -157,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         updateMemberCount($conn);
         $stmt->close();
         $check_stmt->close();
-        header('Location: http://localhost/GCST_Track_System/pages/superadmin/sign_up.html?status=success&show=register');
+        header('Location: ../pages/superadmin/sign_up.html?status=success&show=register');
         exit();
     }
 

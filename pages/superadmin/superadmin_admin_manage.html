@@ -246,17 +246,22 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-end gap-1.5">
-                                <button onclick="updateStatus(${a.id}, '${isActive ? 'inactive' : 'active'}')" 
+                                <button onclick="updateStatus(this, ${a.id}, '${isActive ? 'inactive' : 'active'}')" 
                                         class="w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isActive ? 'text-orange-500 bg-orange-50 hover:bg-orange-500 hover:text-white' : 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white'}" 
                                         title="${isActive ? 'Suspend Account' : 'Activate Account'}">
                                     <i class="fas ${isActive ? 'fa-user-slash' : 'fa-user-check'} text-xs"></i>
+                                </button>
+                                <button onclick="openEditModal(${a.id})" 
+                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 bg-blue-50 hover:bg-blue-500 hover:text-white transition-all shadow-sm" 
+                                        title="Edit Profile">
+                                    <i class="fas fa-user-pen text-xs"></i>
                                 </button>
                                 <button onclick="openPasswordModal(${a.id})" 
                                         class="w-8 h-8 rounded-lg flex items-center justify-center text-amber-500 bg-amber-50 hover:bg-amber-500 hover:text-white transition-all" 
                                         title="Reset Password">
                                     <i class="fas fa-key text-xs"></i>
                                 </button>
-                                <button onclick="deleteAdmin(${a.id})" 
+                                <button onclick="deleteAdmin(this, ${a.id})" 
                                         class="w-8 h-8 rounded-lg flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white transition-all" 
                                         title="Delete Account">
                                     <i class="fas fa-trash-can text-xs"></i>
@@ -273,18 +278,39 @@
             document.getElementById('password-form').onsubmit = handlePasswordSubmit;
         }
 
-        async function updateStatus(id, status) {
+        async function updateStatus(btn, id, status) {
+            const actionText = status === 'active' ? 'activate' : 'suspend';
+            if (!confirm(`Are you sure you want to ${actionText} this staff account?`)) return;
+
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+
             try {
                 const res = await fetch(apiPath, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'update_status', admin_id: id, status })
                 });
-                if ((await res.json()).success) loadAdmins();
-            } catch (err) { console.error(err); }
+                const result = await res.json();
+                if (result.success) {
+                    loadAdmins();
+                } else {
+                    alert('Failed: ' + result.message);
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                }
+            } catch (err) { 
+                console.error(err); 
+                alert('Network error occurred.');
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
         }
+
         function openEditModal(id) {
-            const a = allAdmins.find(x => x.id === id);
+            // Using loose equality to handle potential string/number ID mismatches
+            const a = allAdmins.find(x => x.id == id);
             if (!a) return;
             document.getElementById('form-id').value = a.id;
             document.getElementById('form-first-name').value = a.first_name;
@@ -351,16 +377,32 @@
             } catch (err) { alert('Request error'); }
         }
 
-        async function deleteAdmin(id) {
+        async function deleteAdmin(btn, id) {
             if (!confirm('Are you sure you want to permanently remove this account?')) return;
+            
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+
             try {
                 const res = await fetch(apiPath, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'delete', admin_id: id })
                 });
-                if ((await res.json()).success) loadAdmins();
-            } catch (err) { console.error(err); }
+                const result = await res.json();
+                if (result.success) {
+                    loadAdmins();
+                } else {
+                    alert('Delete failed: ' + result.message);
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                }
+            } catch (err) { 
+                console.error(err); 
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
         }
     </script>
 </body>

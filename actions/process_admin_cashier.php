@@ -1,4 +1,4 @@
-﻿﻿<?php
+﻿﻿﻿﻿<?php
 /**
  * process_admin_cashier.php
  * Centralized controller for Admin/Cashier account management.
@@ -224,14 +224,20 @@ if (isset($_POST['email']) && isset($_POST['password'])) {
         exit();
     }
 
-    $stmt = $conn->prepare('SELECT id, last_name, first_name, middle_name, password FROM admincashier_acc WHERE email = ?');
+    $stmt = $conn->prepare('SELECT id, last_name, first_name, middle_name, password, status FROM admincashier_acc WHERE email = ?');
     $stmt->bind_param('s', $email);
     $stmt->execute();
     $stmt->store_result();
 
     if ($stmt->num_rows === 1) {
-        $stmt->bind_result($user_id, $last_name, $first_name, $middle_name, $hashed_password);
+        $stmt->bind_result($user_id, $last_name, $first_name, $middle_name, $hashed_password, $status);
         if ($stmt->fetch() && $hashed_password !== null && password_verify($password, $hashed_password)) {
+            if ($status !== 'active') {
+                $stmt->close();
+                header('Location: ../pages/sign_in_admin_cashier.html?error=suspended');
+                exit();
+            }
+
             session_regenerate_id(true);
             $admin_name = trim($first_name . ' ' . ($middle_name ? $middle_name . ' ' : '') . $last_name);
             $_SESSION['admin_id'] = $user_id;

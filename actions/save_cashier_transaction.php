@@ -168,7 +168,7 @@ try {
         `user_id` INT(11) NOT NULL,
         `product_id` INT(11) NOT NULL,
         `type` VARCHAR(20) NOT NULL,
-        `quantity` INT(11) NOT NULL,
+        `quantity` DECIMAL(10,2) NOT NULL,
         `total_amount` DECIMAL(10,2) NOT NULL,
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (`id`)
@@ -186,6 +186,7 @@ try {
         `unit_price` DECIMAL(10,2) NOT NULL,
         `duration` INT(11) DEFAULT NULL,
         `duration_unit` VARCHAR(50) DEFAULT NULL,
+        `unit_name` VARCHAR(50) DEFAULT NULL,
         `total_item_amount` DECIMAL(10,2) NOT NULL,
         `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (`id`),
@@ -247,6 +248,11 @@ try {
         }
     }
 
+    $unitNameCheckTi = $conn->query("SHOW COLUMNS FROM `transaction_items` LIKE 'unit_name'");
+    if (!$unitNameCheckTi || $unitNameCheckTi->num_rows === 0) {
+        $conn->query("ALTER TABLE `transaction_items` ADD COLUMN `unit_name` VARCHAR(50) DEFAULT NULL AFTER `duration_unit` ");
+    }
+
     $txnCheckCt = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'transaction_number'");
     if (!$txnCheckCt || $txnCheckCt->num_rows === 0) {
         $conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `transaction_number` VARCHAR(50) NOT NULL AFTER `id` , ADD UNIQUE KEY `uniq_transaction_number` (`transaction_number`) ");
@@ -284,6 +290,16 @@ try {
     if (!$nameCheck || $nameCheck->num_rows === 0) {
         if (!$conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `student_name` VARCHAR(255) DEFAULT NULL AFTER `user_id` ")) {
             throw new Exception("Failed to add student_name column: " . $conn->error);
+        }
+    }
+
+    $qtyCheckT = $conn->query("SHOW COLUMNS FROM `transactions` LIKE 'quantity'");
+    if ($qtyCheckT && $qtyCheckT->num_rows > 0) {
+        $qtyDef = $qtyCheckT->fetch_assoc()['Type'];
+        if (strpos(strtolower($qtyDef), 'decimal') === false) {
+            if (!$conn->query("ALTER TABLE `transactions` MODIFY COLUMN `quantity` DECIMAL(10,2) NOT NULL")) {
+                throw new Exception("Failed to update transactions quantity column: " . $conn->error);
+            }
         }
     }
 
@@ -382,6 +398,7 @@ try {
             'type' => $type,
             'quantity' => $quantity,
             'unit_price' => $unitPrice,
+            'unit_name' => $item['unit_name'] ?? ($type === 'rent' ? 'day' : 'pc/s'),
             'duration' => $duration,
             'duration_unit' => $item['duration_unit'] ?? ($type === 'rent' ? 'days' : null),
             'return_date' => $returnDate,
@@ -464,14 +481,14 @@ try {
     }
 
     // Insert individual items into the transaction_items table
-    $transactionItemInsert = $conn->prepare("INSERT INTO transaction_items (cashier_transaction_id, product_id, product_name, item_type, quantity, unit_price, duration, duration_unit, total_item_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $transactionItemInsert = $conn->prepare("INSERT INTO transaction_items (cashier_transaction_id, product_id, product_name, item_type, quantity, unit_price, duration, duration_unit, unit_name, total_item_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     if (!$transactionItemInsert) {
         throw new Exception('Failed to prepare transaction_items insert statement: ' . $conn->error);
     }
     foreach ($cartItems as $item) {
         $transactionItemInsert->bind_param(
-            'iisssidsd',
-            $cashierTransactionId, $item['product_id'], $item['product_name'], $item['type'], $item['quantity'], $item['unit_price'], $item['duration'], $item['duration_unit'], $item['total']
+            'iissddissd',
+            $cashierTransactionId, $item['product_id'], $item['product_name'], $item['type'], $item['quantity'], $item['unit_price'], $item['duration'], $item['duration_unit'], $item['unit_name'], $item['total']
         );
         if (!$transactionItemInsert->execute()) {
             throw new Exception('Failed to record transaction item: ' . $transactionItemInsert->error);
@@ -484,13 +501,13 @@ try {
         $rentalInsert = $conn->prepare('INSERT INTO active_rentals (transaction_number, student_id, product_id, quantity, return_date, status) VALUES (?, ?, ?, ?, ?, "active")');
 
         foreach ($cartItems as $item) {
-            $itemInsert->bind_param('iisid', $userId, $item['product_id'], $item['type'], $item['quantity'], $item['total']);
+            $itemInsert->bind_param('iisdd', $userId, $item['product_id'], $item['type'], $item['quantity'], $item['total']);
             if (!$itemInsert->execute()) {
                 throw new Exception('Failed to record item transaction: ' . $itemInsert->error);
             }
 
             if ($item['type'] === 'rent') {
-                $rentalInsert->bind_param('ssiis', $transactionNumber, $studentId, $item['product_id'], $item['quantity'], $item['return_date']);
+                $rentalInsert->bind_param('ssids', $transactionNumber, $studentId, $item['product_id'], $item['quantity'], $item['return_date']);
                 if (!$rentalInsert->execute()) {
                     throw new Exception('Failed to record active rental: ' . $rentalInsert->error);
                 }
@@ -593,7 +610,7 @@ try {
                     foreach ($cartItems as $item) {
                         $itemsHtml .= "<tr>
                             <td style='padding: 12px 8px; border-bottom: 1px solid #f1f5f9; color: #334155;'>{$item['product_name']}</td>
-                            <td style='padding: 12px 8px; border-bottom: 1px solid #f1f5f9; text-align: center; color: #334155;'>{$item['quantity']}</td>
+                            <td style='padding: 12px 8px; border-bottom: 1px solid #f1f5f9; text-align: center; color: #334155;'>{$item['quantity']} {$item['unit_name']}</td>
                             <td style='padding: 12px 8px; border-bottom: 1px solid #f1f5f9; text-align: right; color: #334155;'>₱" . number_format($item['unit_price'], 2) . "</td>
                             <td style='padding: 12px 8px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #0f172a;'>₱" . number_format($item['total'], 2) . "</td>
                         </tr>";
@@ -652,7 +669,7 @@ try {
                     $itemsHtml = '';
                     foreach ($cartItems as $item) {
                         $itemsHtml .= "<tr>
-                            <td style='padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 14px;'>{$item['product_name']} x {$item['quantity']}</td>
+                            <td style='padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 14px;'>{$item['product_name']} x {$item['quantity']} {$item['unit_name']}</td>
                             <td style='padding: 10px 0; border-bottom: 1px solid #f1f5f9; text-align: right; color: #0f172a; font-weight: 500;'>₱" . number_format($item['total'], 2) . "</td>
                         </tr>";
                     }

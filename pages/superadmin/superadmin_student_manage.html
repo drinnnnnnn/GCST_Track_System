@@ -110,6 +110,24 @@
         </main>
     </div>
 
+    <!-- Modern Review & Approval Modal -->
+    <div id="review-modal" class="logout-modal-overlay">
+        <div class="logout-modal-card max-w-2xl">
+            <div class="logout-modal-icon"><i class="fas fa-file-shield"></i></div>
+            <h2 class="logout-modal-title">Review Registration</h2>
+            <p class="text-muted mb-6">Inspect student identity and verification documents for security compliance.</p>
+
+            <div id="review-content" class="text-left space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                <!-- Content dynamically injected -->
+            </div>
+
+            <div class="logout-modal-actions pt-6 border-t border-slate-100 mt-6">
+                <button type="button" onclick="closeReviewModal()" class="btn-modal flex-1 btn-modal-cancel">Close</button>
+                <div id="review-actions-container" class="flex gap-2 flex-1"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modern Student Profile Edit Modal -->
     <div id="student-modal" class="logout-modal-overlay">
         <div class="logout-modal-card">
@@ -186,7 +204,7 @@
                     allStudents = data;
                     document.getElementById('stat-total').textContent = allStudents.length;
                     document.getElementById('stat-verified').textContent = allStudents.filter(s => s.status === 'active').length;
-                    document.getElementById('stat-pending').textContent = allStudents.filter(s => s.status !== 'active').length;
+                    document.getElementById('stat-pending').textContent = allStudents.filter(s => s.status === 'pending').length;
                 }
                 applyFilters();
             } catch (err) { console.error('Load Error:', err); }
@@ -223,7 +241,21 @@
             empty.classList.add('hidden');
 
             data.forEach(s => {
-                const isActive = s.status === 'active';
+                const status = s.status || 'pending';
+                const isActive = status === 'active';
+                const isSuspended = status === 'suspended';
+                const isPending = status === 'pending';
+                
+                let statusBadge = '';
+                if (isActive) {
+                    statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600"><i class="fas fa-check-circle mr-1.5 text-[10px]"></i>Active</span>';
+                } else if (isSuspended) {
+                    statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-600"><i class="fas fa-ban mr-1.5 text-[10px]"></i>Inactive</span>';
+                } else if (isPending) {
+                    statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-600">Pending Approval</span>';
+                } else {
+                    statusBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-500">${status.toUpperCase()}</span>`;
+                }
                 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/50 transition-colors group">
@@ -235,6 +267,7 @@
                                 <div>
                                     <div class="font-bold text-slate-900">${s.first_name} ${s.last_name}</div>
                                     <div class="text-xs text-slate-500 font-semibold">${s.email}</div>
+                                </div>
                             </div>
                         </td>
                         <td class="px-6 py-4">
@@ -245,21 +278,24 @@
                             <div class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">${s.year_level || '1'} Year Level</div>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}">
-                                ${isActive ? 'Verified' : 'Pending'}
-                            </span>
+                            ${statusBadge}
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-end gap-1.5">
-                                <button onclick="updateStatus(${s.id}, '${isActive ? 'inactive' : 'active'}')" 
-                                        class="w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isActive ? 'text-orange-500 bg-orange-50 hover:bg-orange-500 hover:text-white' : 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white'}" 
-                                        title="${isActive ? 'Revoke Verification' : 'Verify Student'}">
-                                    <i class="fas ${isActive ? 'fa-user-slash' : 'fa-user-check'} text-xs"></i>
+                                <button onclick="viewRegistration(${s.id})" 
+                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 bg-blue-50 hover:bg-blue-500 hover:text-white transition-all shadow-sm" 
+                                        title="Review Documents">
+                                    <i class="fas fa-eye text-xs"></i>
                                 </button>
                                 <button onclick="openEditModal(${s.id})" 
-                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 bg-blue-50 hover:bg-blue-500 hover:text-white transition-all" 
+                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 bg-slate-50 hover:bg-slate-500 hover:text-white transition-all shadow-sm" 
                                         title="Edit Profile">
                                     <i class="fas fa-user-edit text-xs"></i>
+                                </button>
+                                <button onclick="updateStatus(${s.id}, '${isActive ? 'suspended' : 'active'}')" 
+                                        class="w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isActive ? 'text-orange-500 bg-orange-50 hover:bg-orange-500 hover:text-white' : 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white'} shadow-sm" 
+                                        title="${isActive ? 'Deactivate Account' : 'Activate Account'}">
+                                    <i class="fas ${isActive ? 'fa-user-slash' : 'fa-user-check'} text-xs"></i>
                                 </button>
                                 <button onclick="deleteStudent(${s.id})" 
                                         class="w-8 h-8 rounded-lg flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white transition-all" 
@@ -279,6 +315,16 @@
         }
 
         async function updateStatus(id, status) {
+            let actionText = 'update';
+            if (status === 'active') actionText = 'approve/activate';
+            if (status === 'suspended') actionText = 'deactivate';
+            if (status === 'rejected') actionText = 'reject';
+            
+            const s = allStudents.find(x => x.id == id);
+            const name = s ? `${s.first_name} ${s.last_name}` : 'this student';
+            
+            if (!confirm(`Are you sure you want to ${actionText} ${name}'s account?`)) return;
+
             try {
                 const res = await fetch(apiPath, {
                     method: 'POST',
@@ -294,8 +340,83 @@
             } catch (err) { console.error(err); alert('Network error occurred.'); }
         }
 
+        function viewRegistration(id) {
+            const s = allStudents.find(x => x.id == id);
+            if (!s) return;
+
+            const content = document.getElementById('review-content');
+            const actions = document.getElementById('review-actions-container');
+            const regDate = s.created_at ? new Date(s.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A';
+
+            content.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <label class="text-[10px] font-bold uppercase text-slate-400 tracking-widest block mb-2">Student Identity</label>
+                        <p class="font-extrabold text-slate-900 text-sm">${s.first_name} ${s.middle_name || ''} ${s.last_name}</p>
+                        <p class="text-xs font-bold text-primary mt-1">${s.student_id}</p>
+                        <div class="mt-3 space-y-1">
+                            <p class="text-[11px] text-slate-600"><i class="fas fa-envelope w-4"></i> ${s.email}</p>
+                            <p class="text-[11px] text-slate-600"><i class="fas fa-phone w-4 text-[10px]"></i> ${s.contact_number || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <label class="text-[10px] font-bold uppercase text-slate-400 tracking-widest block mb-2">Academic Info</label>
+                        <p class="text-xs font-bold text-slate-700">${s.course}</p>
+                        <p class="text-[11px] text-slate-500 font-semibold">${s.department || 'General'}</p>
+                        <p class="text-[11px] text-slate-400 mt-2 font-medium"><i class="fas fa-calendar-day mr-1"></i> Registered on ${regDate}</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <label class="text-[10px] font-bold uppercase text-slate-400 tracking-widest block">Submitted Proofs</label>
+                    <div class="grid grid-cols-1 gap-3">
+                        ${renderDoc(s.school_id_pic, 'School ID Pic')}
+                        ${renderDoc(s.reg_form, 'Registration Form')}
+                        ${renderDoc(s.payment_scheme, 'Payment Scheme')}
+                    </div>
+                </div>
+            `;
+
+            actions.innerHTML = '';
+            if (s.status === 'pending') {
+                actions.innerHTML = `
+                    <button onclick="updateStatus(${s.id}, 'active'); closeReviewModal();" class="btn-modal flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs py-2 rounded-lg transition-colors">Approve Account</button>
+                    <button onclick="updateStatus(${s.id}, 'rejected'); closeReviewModal();" class="btn-modal flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs py-2 rounded-lg transition-colors">Reject Request</button>
+                `;
+            } else {
+                actions.innerHTML = `<button onclick="updateStatus(${s.id}, 'active'); closeReviewModal();" class="btn-modal flex-1 bg-slate-800 hover:bg-black text-white font-bold text-xs py-2 rounded-lg transition-colors">Force Reactivate</button>`;
+            }
+
+            document.getElementById('review-modal').classList.add('active');
+        }
+
+        function renderDoc(path, label) {
+            if (!path) return `<div class="p-3 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-[10px] text-slate-400 italic">${label}: Not provided</div>`;
+            const fullPath = '../../' + path;
+            const isPdf = path.toLowerCase().endsWith('.pdf');
+            return `
+                <div class="p-3 bg-white border border-slate-200 rounded-2xl group hover:border-primary transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center"><i class="fas ${isPdf ? 'fa-file-pdf text-rose-500' : 'fa-image text-blue-500'} mr-3"></i><span class="text-xs font-bold text-slate-700">${label}</span></div>
+                        <a href="${fullPath}" target="_blank" class="text-[10px] font-bold text-primary hover:underline">Open Full File</a>
+                    </div>
+                    ${isPdf ? `
+                        <div class="aspect-[16/5] bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">PDF Document Loaded</p>
+                        </div>
+                    ` : `
+                        <img src="${fullPath}" class="w-full h-32 object-cover rounded-lg border border-slate-100 group-hover:opacity-90">
+                    `}
+                </div>
+            `;
+        }
+
+        function closeReviewModal() {
+            document.getElementById('review-modal').classList.remove('active');
+        }
+
         function openEditModal(id) {
-            const s = allStudents.find(x => x.id === id);
+            const s = allStudents.find(x => x.id == id);
             if (!s) return;
             document.getElementById('form-id').value = s.id;
             document.getElementById('form-first-name').value = s.first_name;

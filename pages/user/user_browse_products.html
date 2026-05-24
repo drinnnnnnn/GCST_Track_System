@@ -102,6 +102,10 @@
       color: #0f172a;
     }
     
+    .stock-available { color: #059669; }
+    .stock-low { color: #d97706; }
+    .stock-unavailable { color: #dc2626; }
+
     .product-stock {
       font-size: 0.85rem;
       font-weight: 600;
@@ -569,6 +573,17 @@
           <span>Proceed to Checkout</span>
         </button>
       </aside>
+
+      <div id="checkout-result" class="checkout-result hidden">
+        <div class="qr-box">
+          <img id="checkout-qr" src="" alt="Order QR Code">
+          <div class="mt-4">
+            <span class="text-xs text-slate-400 uppercase font-bold tracking-widest">Order Reference</span>
+            <span id="order-reference" class="order-reference"></span>
+          </div>
+        </div>
+        <p class="text-sm text-slate-500 font-medium italic">Present this QR code to the cashier to finalize your payment.</p>
+      </div>
     </div>
   </main>
 
@@ -628,6 +643,7 @@
         const stockClass = stockValue > 10 ? 'stock-available' : stockValue > 0 ? 'stock-low' : 'stock-unavailable';
         const productStatus = String(product.product_status || 'available').trim().toLowerCase();
         const category = normalizeCategory(product.product_category);
+        const isFabric = category === 'uniforms' || category === 'fabric' || product.product_name.toLowerCase().includes('fabric');
 
         return `
           <div class="product-card">
@@ -636,8 +652,32 @@
               <h3 class="product-name">${product.product_name}</h3>
               <span class="product-category">${product.product_category || 'Uncategorized'}</span>
               <p class="product-description italic">${product.product_description || 'No description available.'}</p>
-              <div class="space-y-1">
-                ${product.buy_price > 0 && category !== 'books' ? `<div class="flex items-center"><span class="price-label">Buy</span> <span class="price-value">₱${parseFloat(product.buy_price).toFixed(2)}</span></div>` : ''}
+              <div class="space-y-2 mt-2">
+                ${product.buy_price > 0 && category !== 'books' ? `
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <span class="price-label">Buy${isFabric ? ' (per yard)' : ''}</span> 
+                      <span class="price-value">₱${parseFloat(product.buy_price).toFixed(2)}</span>
+                    </div>
+                    ${isFabric ? `
+                      <div class="flex flex-col items-end gap-1">
+                        <div class="flex items-center gap-2">
+                          <input type="number" step="0.25" min="0.25" value="1.00" 
+                            class="w-20 px-2 py-1 text-sm font-semibold bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500" 
+                            id="qty-fabric-${product.product_id}" 
+                            oninput="updateFabricTotal(${product.product_id}, ${product.buy_price})">
+                          <span class="text-[10px] font-bold text-slate-400 uppercase">Yards</span>
+                        </div>
+                      </div>
+                    ` : ''}
+                  </div>
+                  ${isFabric ? `
+                    <div class="text-right border-t border-slate-50 pt-1">
+                      <span class="text-[10px] font-semibold text-slate-400 uppercase">Est. Total: </span>
+                      <span class="text-sm font-bold text-emerald-600" id="total-fabric-${product.product_id}">₱${parseFloat(product.buy_price).toFixed(2)}</span>
+                    </div>
+                  ` : ''}
+                ` : ''}
                 ${product.rent_price > 0 ? `<div class="flex items-center"><span class="price-label">Rent</span> <span class="price-value">₱${parseFloat(product.rent_price).toFixed(2)}</span></div>` : ''}
               </div>
               <div class="pt-2">
@@ -647,7 +687,7 @@
               </div>
             </div>
             <div class="product-actions">
-              ${product.buy_price > 0 && category !== 'books' ? `<button class="btn-action btn-buy" type="button" ${!inStock || productStatus !== 'available' ? 'disabled' : ''} onclick="addToCart('${product.product_id}', 'buy')">Buy</button>` : ''}
+              ${product.buy_price > 0 && category !== 'books' ? `<button class="btn-action btn-buy" type="button" ${!inStock || productStatus !== 'available' ? 'disabled' : ''} onclick="handleAddToCart('${product.product_id}', 'buy', ${isFabric})">${isFabric ? 'Add to Cart' : 'Buy'}</button>` : ''}
               ${product.rent_price > 0 ? `<button class="btn-action btn-rent" type="button" ${!inStock || productStatus !== 'available' ? 'disabled' : ''} onclick="addToCart('${product.product_id}', 'rent')">Rent</button>` : ''}
             </div>
           </div>
@@ -655,7 +695,30 @@
       }).join('');
     }
 
-    function addToCart(productId, type) {
+    function updateFabricTotal(productId, unitPrice) {
+      const input = document.getElementById(`qty-fabric-${productId}`);
+      const totalEl = document.getElementById(`total-fabric-${productId}`);
+      if (!input || !totalEl) return;
+      
+      const yards = parseFloat(input.value) || 0;
+      totalEl.textContent = `₱${(yards * unitPrice).toFixed(2)}`;
+    }
+
+    function handleAddToCart(productId, type, isFabric) {
+      if (isFabric && type === 'buy') {
+        const input = document.getElementById(`qty-fabric-${productId}`);
+        const yards = parseFloat(input.value);
+        if (isNaN(yards) || yards <= 0) {
+          alert('Please enter a valid yard quantity.');
+          return;
+        }
+        addToCart(productId, type, yards, 'yard/s');
+      } else {
+        addToCart(productId, type);
+      }
+    }
+
+    function addToCart(productId, type, customQty = null, unitName = null) {
       const normalizedProductId = Number(productId);
       const product = allProducts.find(item => Number(item.product_id) === normalizedProductId);
       const productStatus = String(product?.product_status || 'available').trim().toLowerCase();
@@ -669,22 +732,28 @@
         return;
       }
 
+      const qtyToAdd = customQty !== null ? parseFloat(customQty) : 1;
+      const uName = unitName || (type === 'rent' ? 'day' : 'pc/s');
       const existing = cart.find(item => Number(item.product_id) === normalizedProductId && item.type === type);
       const unitPrice = type === 'rent' ? parseFloat(product.rent_price) : parseFloat(product.buy_price);
+      const totalStock = Number(product.stock_count ?? product.stock ?? 0);
+
       if (!existing) {
         cart.push({
           product_id: normalizedProductId,
           product_name: product.product_name,
           type,
-          quantity: 1,
+          quantity: qtyToAdd,
           unitPrice,
-          stock: Number(product.stock_count ?? product.stock ?? 0),
-          selected: false,
+          unitName: uName,
+          stock: totalStock,
+          selected: true,
           duration: 1,
           durationUnit: 'days'
         });
-      } else if (existing.quantity < Number(product.stock)) {
-        existing.quantity += 1;
+      } else if (existing.quantity + qtyToAdd <= totalStock) {
+        existing.quantity += qtyToAdd;
+        existing.selected = true;
       } else {
         alert('Maximum stock reached for this item.');
       }
@@ -732,8 +801,8 @@
     function changeCartQuantity(productId, type, delta) {
       const item = cart.find(entry => entry.product_id === productId && entry.type === type);
       if (!item) return;
-      const nextQuantity = item.quantity + delta;
-      if (nextQuantity < 1) {
+      const nextQuantity = Math.round((item.quantity + delta) * 100) / 100;
+      if (nextQuantity < (item.unitName === 'yard/s' ? 0.25 : 1)) {
         return;
       }
       if (nextQuantity > item.stock) {
@@ -796,7 +865,10 @@
           <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="toggleSelectItem(${item.product_id}, '${item.type}', this.checked)">
           <div>
             <span class="font-semibold text-slate-900">${item.product_name}</span>
-            <div class="text-[10px] font-semibold uppercase tracking-widest text-blue-600 mt-1">${item.type} • ₱${item.unitPrice.toFixed(2)}</div>
+            <div class="text-[10px] font-semibold uppercase tracking-widest text-blue-600 mt-1">
+              ${item.type} • ₱${item.unitPrice.toFixed(2)}
+              ${item.unitName ? ` per ${item.unitName}` : ''}
+            </div>
             ${item.type === 'rent' ? `
               <div class="flex items-center gap-2 mt-2">
                 <span class="text-[10px] font-semibold text-slate-400 uppercase">Duration:</span>
@@ -810,9 +882,9 @@
           </div>
           <div class="flex flex-col items-end gap-2">
             <div class="flex items-center gap-2">
-              <button type="button" class="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-md text-xs hover:bg-slate-50" onclick="changeCartQuantity(${item.product_id}, '${item.type}', -1)">−</button>
-              <span class="text-sm font-semibold w-4 text-center">${item.quantity}</span>
-              <button type="button" class="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-md text-xs hover:bg-slate-50" onclick="changeCartQuantity(${item.product_id}, '${item.type}', 1)">+</button>
+              <button type="button" class="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-md text-xs hover:bg-slate-50" onclick="changeCartQuantity(${item.product_id}, '${item.type}', ${item.unitName === 'yard/s' ? -0.25 : -1})">−</button>
+              <span class="text-sm font-semibold min-w-[30px] text-center">${item.quantity}${item.unitName === 'yard/s' ? ' yd' : ''}</span>
+              <button type="button" class="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-md text-xs hover:bg-slate-50" onclick="changeCartQuantity(${item.product_id}, '${item.type}', ${item.unitName === 'yard/s' ? 0.25 : 1})">+</button>
             </div>
             <button type="button" class="text-red-400 hover:text-red-600 transition-colors" onclick="removeCartItem(${item.product_id}, '${item.type}')"><i class="fas fa-trash-alt text-xs"></i></button>
           </div>
@@ -850,9 +922,10 @@
             product_id: normalizedProductId,
             product_name: item.product_name || (product ? product.product_name : 'Unknown item'),
             type: item.type || 'buy',
-            quantity: Math.max(1, parseInt(item.quantity, 10) || 1),
+            quantity: parseFloat(item.quantity) || 1,
             unitPrice,
-            stock: product ? Number(product.stock_count ?? product.stock ?? 0) : (parseInt(item.stock, 10) || 0),
+            unitName: item.unitName || item.unit_name || (item.type === 'rent' ? 'item' : 'pc/s'),
+            stock: product ? Number(product.stock_count ?? product.stock ?? 0) : (parseFloat(item.stock) || 0),
             selected: item.selected === true || item.selected === 'true' || false,
             duration: item.duration || 1,
             durationUnit: item.durationUnit || item.duration_unit || 'days'
@@ -910,6 +983,7 @@
           product_id: item.product_id,
           quantity: item.quantity,
           type: item.type,
+          unit_name: item.unitName,
           unit_price: item.unitPrice,
           duration: item.duration || 1,
           duration_unit: item.durationUnit || 'days'

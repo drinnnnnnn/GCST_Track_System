@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Admin Sign In</title>
     <!-- Premium Fonts and Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
             --primary-glow: rgba(99, 102, 241, 0.4);
             --accent: #f59e0b;
             --text-dark: #0f172a;
@@ -23,16 +23,19 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
         }
 
         body {
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: radial-gradient(circle at top left, #1e1b4b, #0f172a);
-            background-size: 400% 400%;
+            background: #020617;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(79, 70, 229, 0.1) 0px, transparent 50%);
             overflow: hidden;
             padding: 20px;
         }
@@ -45,12 +48,12 @@
 
         .login-card {
             width: 100%;
-            max-width: 440px;
-            padding: 60px 45px;
+            max-width: 460px;
+            padding: 50px;
             background: var(--glass);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
             border-radius: 35px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             text-align: center;
@@ -68,7 +71,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: linear-gradient(135deg, #4f46e5, #1e1b4b);
             border-radius: 24px;
             color: #ffffff;
             font-size: 42px;
@@ -87,9 +90,15 @@
             animation: fadeInUp 0.5s ease forwards;
         }
 
-        .login-card h1 { animation-delay: 0.1s; font-size: 1.85rem; font-weight: 800; color: var(--text-dark); margin-bottom: 8px; letter-spacing: -1px; }
-        .login-card p { animation-delay: 0.2s; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 40px; line-height: 1.5; }
-        .form-group { animation-delay: 0.3s; }
+        .login-card h1 { animation-delay: 0.1s; font-size: 2rem; font-weight: 800; color: var(--text-dark); margin-bottom: 8px; letter-spacing: -1.5px; }
+        .login-card p { animation-delay: 0.2s; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 35px; line-height: 1.6; font-weight: 500; }
+        
+        /* Staggered form elements */
+        .input-group-1 { animation-delay: 0.3s; }
+        .input-group-2 { animation-delay: 0.4s; }
+        .input-group-3 { animation-delay: 0.5s; }
+        .btn-group { animation-delay: 0.6s; }
+        .badge-group { animation-delay: 0.05s; }
 
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(15px); }
@@ -98,7 +107,7 @@
 
         .input-box {
             position: relative;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             text-align: left;
         }
 
@@ -107,46 +116,46 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: var(--primary-dark);
+            color: var(--text-muted);
             margin-bottom: 8px;
             display: block;
-            margin-left: 4px;
+            margin-left: 5px;
         }
 
         .input-box input {
             width: 100%;
-            padding: 15px 18px;
-            padding-right: 50px;
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
-            border-radius: 18px;
-            font-size: 0.95rem;
+            padding: 14px 20px;
+            padding-left: 52px;
+            background: rgba(248, 250, 252, 0.8);
+            border: 2px solid rgba(226, 232, 240, 0.8);
+            border-radius: 20px;
+            font-size: 1rem;
             color: var(--text-dark);
+            font-weight: 600;
             outline: none;
             transition: all 0.3s ease;
         }
 
-        .pin-container {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 5px;
-        }
-
         .pin-input {
-            letter-spacing: 1.5rem;
+            letter-spacing: 1.2rem;
             text-align: center;
-            font-weight: 800;
+            font-weight: 900;
             font-size: 1.2rem !important;
-            padding-right: 18px !important;
+            padding-left: 20px !important;
+            font-family: 'Outfit', sans-serif;
         }
 
         .input-box input:focus {
             background: #fff;
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px var(--primary-glow);
+            box-shadow: 0 10px 25px -5px var(--primary-glow);
+            transform: translateY(-2px);
         }
 
+        /* Enhanced Icon Placement */
+        .input-box i.input-icon {
+            left: 20px;
+        }
         .input-box i {
             position: absolute;
             right: 18px;
@@ -159,59 +168,85 @@
         }
 
         .input-box i:hover { color: var(--primary); }
+        
+        .input-box i.input-icon {
+            position: absolute;
+            left: 20px;
+            right: auto;
+            top: 43px;
+            font-size: 1.4rem;
+            color: var(--primary-dark);
+            pointer-events: none;
+        }
 
         .submit-btn {
-            margin-top: 10px;
+            margin-top: 15px;
             width: 100%;
-            padding: 16px;
-            background: var(--primary-dark);
+            padding: 18px;
+            background: var(--text-dark);
             color: white;
             border: none;
-            border-radius: 18px;
+            border-radius: 20px;
             font-size: 1rem;
-            font-weight: 700;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 15px -3px var(--primary-glow);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
 
         .submit-btn:hover {
-            background: var(--text-dark);
+            background: var(--primary-dark);
             transform: translateY(-3px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 15px 30px var(--primary-glow);
         }
 
         #status-area {
             display: none;
-            padding: 14px;
-            border-radius: 16px;
-            font-size: 0.85rem;
-            margin-bottom: 25px;
-            font-weight: 700;
-            line-height: 1.4;
+            padding: 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-bottom: 30px;
+            font-weight: 800;
+            line-height: 1.5;
+            text-align: left;
         }
-        .msg-error { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
-        .msg-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+        .msg-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .msg-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
 
         .security-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: #f1f5f9;
-            padding: 6px 12px;
+            background: rgba(241, 245, 249, 0.8);
+            padding: 8px 16px;
             border-radius: 100px;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 800;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 15px;
+            letter-spacing: 0.1em;
+            margin-bottom: 20px;
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+
+        /* Support text */
+        .footer-note {
+            margin-top: 30px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .footer-note a {
+            color: var(--primary-dark);
+            text-decoration: none;
         }
     </style>
 </head>
 <body>
 
-<div class="login-card">
+<div class="login-card animate-card">
     <!-- Shield/Admin Icon Added Here -->
     <div class="header-icon animate-item"><i class='bx bx-shield-quarter'></i></div>
 
@@ -220,33 +255,38 @@
     </div>
 
     <h1 class="animate-item">Super Admin Login</h1>
-    <p class="animate-item">Enter your credentials and security PIN to access the terminal</p>
+    <p class="animate-item">High-level authorization required. Please provide your master credentials and security key.</p>
 
     <div id="status-area" class="animate-item"></div>
 
-    <div class="form-group animate-item">
+    <div class="form-group">
         <form action="http://localhost/GCST_Track_System/actions/process_superadmin.php" method="POST" id="authForm" onsubmit="return validateLogin()">
-            <div class="input-box">
+            <div class="input-box animate-item input-group-1">
                 <label for="email">Account Identifier</label>
                 <input type="text" name="email" id="email" placeholder="Username or Email" required autocomplete="username">
-                <i class='bx bxs-user-badge'></i>
+                <i class='bx bxs-user-pin input-icon'></i>
             </div>
 
-            <div class="input-box">
+            <div class="input-box animate-item input-group-2">
                 <label for="password">Master Password</label>
                 <input type="password" name="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+                <i class='bx bxs-lock-open-alt input-icon'></i>
                 <i class='bx bx-show' id="toggleBtn"></i>
             </div>
 
-            <div class="input-box">
+            <div class="input-box animate-item input-group-3">
                 <label for="pin">Security PIN (4 Digits)</label>
-                <input type="text" name="pin" id="pin" class="pin-input" placeholder="0000" maxlength="4" required pattern="\d{4}" inputmode="numeric" autocomplete="one-time-code">
-                <i class='bx bxs-key'></i>
+                <input type="password" name="pin" id="pin" class="pin-input" placeholder="••••" maxlength="4" required pattern="\d{4}" inputmode="numeric" autocomplete="one-time-code">
+                <i class='bx bxs-key input-icon'></i>
             </div>
 
-            <button type="submit" class="submit-btn" id="loginBtn">
-                Authorize Access
-            </button>
+            <div class="animate-item btn-group">
+                <button type="submit" class="submit-btn" id="loginBtn">
+                    Authorize Access
+                </button>
+            </div>
+
+            <div class="footer-note animate-item btn-group">Having trouble? <a href="#">Contact Support</a></div>
         </form>
     </div>
 </div>
@@ -262,6 +302,7 @@
         toggleBtn.classList.toggle("bx-show");
         toggleBtn.classList.toggle("bx-hide");
     });
+
 
     // PIN Input Masking/Validation
     const pinInput = document.getElementById("pin");
