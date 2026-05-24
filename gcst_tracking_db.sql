@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 24, 2026 at 07:48 PM
+-- Generation Time: May 25, 2026 at 01:06 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -70,7 +70,7 @@ CREATE TABLE `admincashier_acc` (
 --
 
 INSERT INTO `admincashier_acc` (`id`, `username`, `last_name`, `first_name`, `middle_name`, `email`, `contact_number`, `password`, `pin`, `created_at`, `role`, `status`, `login_attempts`, `updated_at`, `last_login`, `notification_preferences`) VALUES
-(1, NULL, 'Aprao', 'Aldrin', 'Bautista', 'aldrin@gmail.com', NULL, '$2y$10$6FDlx7AC9fb6DDZFxhaI9eDZgNNEPxWvygS55YIqK0U312nvAGe3i', NULL, '2026-04-27 02:14:25', 'admincashier', 'active', 0, '2026-05-24 13:08:55', NULL, NULL);
+(1, NULL, 'Aprao', 'Aldrin', 'Bautista', 'aldrin@gmail.com', NULL, '$2y$10$6FDlx7AC9fb6DDZFxhaI9eDZgNNEPxWvygS55YIqK0U312nvAGe3i', NULL, '2026-04-27 02:14:25', 'admincashier', 'active', 0, '2026-05-24 22:40:16', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1049,7 +1049,11 @@ INSERT INTO `audit_logs` (`id`, `actor_type`, `actor_id`, `action`, `details`, `
 (924, 'student', 'GC-123456', 'save_user_cart', 'Updated shopping cart', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-25 01:45:57'),
 (925, 'student', 'GC-123456', 'save_user_cart', 'Updated shopping cart', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-25 01:45:59'),
 (926, 'admincashier', '5', 'save_cashier_transaction', 'Saved transaction ORDER-1779644761-413ca0b8 and email status: sent', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-25 01:46:06'),
-(927, 'student', 'GC-123456', 'save_user_cart', 'Updated shopping cart', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-25 01:46:06');
+(927, 'student', 'GC-123456', 'save_user_cart', 'Updated shopping cart', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-25 01:46:06'),
+(928, 'student', 'GC-123456', 'save_user_cart', 'Updated shopping cart', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-25 06:26:34'),
+(929, 'admincashier', '1', 'login', 'Admin Cashier logged in.', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-25 06:27:14'),
+(930, 'admincashier', '1', 'login', 'Admin Cashier logged in.', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-25 06:33:37'),
+(931, 'admincashier', '1', 'login', 'Admin Cashier logged in.', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-25 06:40:27');
 
 -- --------------------------------------------------------
 
@@ -1651,10 +1655,10 @@ INSERT INTO `queue_tickets` (`id`, `user_id`, `queue_number`, `student_name`, `p
 (43, NULL, 'Q-008', 'dsa', 'General Inquiry', 'cancelled', '2026-05-24 03:25:08', '2026-05-24 03:25:47', 0, 0, 0),
 (44, NULL, 'Q-009', 'dsa', 'General Inquiry', 'completed', '2026-05-24 03:27:07', '2026-05-24 03:27:17', 0, 0, 0),
 (45, 3, 'Q-010', 'Aldrin Bautista Aprao', 'Payment', 'cancelled', '2026-05-24 03:51:38', '2026-05-24 03:51:50', 0, 1, 0),
-(46, 3, 'Q-011', 'Aldrin Bautista Aprao', 'Tuition Payment', 'waiting', '2026-05-24 03:58:58', NULL, 0, 0, 0),
-(47, 3, 'Q-012', 'Aldrin Bautista Aprao', 'Payment', 'waiting', '2026-05-24 04:03:44', NULL, 0, 0, 0),
+(46, 3, 'Q-011', 'Aldrin Bautista Aprao', 'Tuition Payment', 'cancelled', '2026-05-24 03:58:58', NULL, 0, 0, 0),
+(47, 3, 'Q-012', 'Aldrin Bautista Aprao', 'Payment', 'cancelled', '2026-05-24 04:03:44', NULL, 0, 0, 0),
 (48, 3, 'Q-013', 'Aldrin Bautista Aprao', 'Tuition Payment', 'cancelled', '2026-05-24 04:07:55', '2026-05-24 04:10:36', 0, 0, 0),
-(49, 3, 'Q-014', 'Aldrin Bautista Aprao', 'Payment', 'waiting', '2026-05-24 17:28:10', NULL, 0, 0, 0);
+(49, 3, 'Q-014', 'Aldrin Bautista Aprao', 'Payment', 'cancelled', '2026-05-24 17:28:10', NULL, 0, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -1738,7 +1742,13 @@ INSERT INTO `security_logs` (`id`, `admin_id`, `event_type`, `identifier`, `ip_a
 (18, 5, 'login_success', 'aldrin.aprao@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-24 13:09:44'),
 (19, 5, 'login_success', 'aldrin0416', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-24 16:52:25'),
 (20, 5, 'login_success', 'aldrin.aprao@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-24 17:31:54'),
-(21, 5, 'login_success', 'aldrin.aprao@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-24 17:46:38');
+(21, 5, 'login_success', 'aldrin.aprao@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-24 17:46:38'),
+(22, 5, 'login_success', 'aldrin.aprao@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-24 21:52:16'),
+(23, 5, 'login_success', 'aldrin.aprao@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-24 21:58:33'),
+(24, 5, 'login_success', 'aldrin.aprao@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-24 22:17:59'),
+(25, 5, 'login_success', 'aldrin.aprao@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-24 22:33:02'),
+(26, 5, 'login_success', 'aldrin.aprao@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-24 22:33:54'),
+(27, 5, 'login_success', 'aldrin.aprao@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-24 22:40:08');
 
 -- --------------------------------------------------------
 
@@ -1767,7 +1777,7 @@ CREATE TABLE `superadmins` (
 --
 
 INSERT INTO `superadmins` (`id`, `first_name`, `last_name`, `username`, `email`, `password_hash`, `security_pin_hash`, `status`, `failed_login_attempts`, `lockout_until`, `last_login_at`, `created_at`, `updated_at`) VALUES
-(5, 'Aldrin', 'Aprao', 'aldrin0416', 'aldrin.aprao@gmail.com', '$2y$10$MBmd6.Msx8agl0uQFrcqqOpl3YPVN.UV3l35f7VIv8Hv6lKkxxaGi', '$2y$10$Dt8AzCee0UbUTwjuDUwhYeqwjF0XU5BOZroeyU5RO.ccD4ahlQ3Eu', 'active', 0, NULL, '2026-05-25 01:46:38', '2026-05-24 09:28:56', '2026-05-24 17:46:38');
+(5, 'Aldrin', 'Aprao', 'aldrin0416', 'aldrin.aprao@gmail.com', '$2y$10$MBmd6.Msx8agl0uQFrcqqOpl3YPVN.UV3l35f7VIv8Hv6lKkxxaGi', '$2y$10$Dt8AzCee0UbUTwjuDUwhYeqwjF0XU5BOZroeyU5RO.ccD4ahlQ3Eu', 'active', 0, NULL, '2026-05-25 06:40:08', '2026-05-24 09:28:56', '2026-05-24 22:40:08');
 
 -- --------------------------------------------------------
 
@@ -2175,7 +2185,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `student_id`, `last_name`, `first_name`, `middle_name`, `email`, `password_hash`, `sex`, `course`, `year_level`, `balance`, `department`, `year_section`, `contact_number`, `address`, `status`, `school_id_pic`, `reg_form`, `payment_scheme`, `created_at`, `role`, `phone`, `updated_at`) VALUES
-(3, 'GC-123456', 'Aprao', 'Aldrin', 'Bautista', 'aldrinbautista0425@gmail.com', '$2y$10$HX8KeL6ehCoObbrFx3iev.zDj8f0pqbNiLLGuNRYYBM6QmPRDCBna', 'Male', 'BSIT', NULL, 0.00, NULL, '3-C', '09351134825', 'Rosario, Cavite', 'inactive', NULL, NULL, NULL, '2026-05-01 08:24:23', 'user', '', '2026-05-24 17:47:53');
+(3, 'GC-123456', 'Aprao', 'Aldrin', 'Bautista', 'aldrinbautista0425@gmail.com', '$2y$10$HX8KeL6ehCoObbrFx3iev.zDj8f0pqbNiLLGuNRYYBM6QmPRDCBna', 'Male', 'BSIT', NULL, 0.00, NULL, '3-C', '09351134825', 'Rosario, Cavite', 'active', NULL, NULL, NULL, '2026-05-01 08:24:23', 'user', '', '2026-05-24 22:18:04'),
+(5, 'GC-123457', 'sdasd', 'sadasd', 'dasdasd', 'aldrin1@gmail.com', '$2y$10$2Xe/bXFMfowjtjKY0r6Gs.Jsfp98a1AM1DcomYd7Jxf1hbM7L5lUW', 'Male', 'BSIT', '3', 0.00, 'Insdkasd', '', '09351134825', '3213213', 'rejected', 'uploads/proofs/SCHOOL_ID_PIC_GC-123457_1779661391.png', 'uploads/proofs/REG_FORM_GC-123457_1779661391.png', 'uploads/proofs/PAYMENT_SCHEME_GC-123457_1779661391.png', '2026-05-24 22:23:11', 'user', NULL, '2026-05-24 22:23:27');
 
 -- --------------------------------------------------------
 
@@ -2194,7 +2205,7 @@ CREATE TABLE `user_carts` (
 --
 
 INSERT INTO `user_carts` (`student_id`, `cart_items`, `updated_at`) VALUES
-('GC-123456', '[]', '2026-05-24 17:46:06');
+('GC-123456', '[{\"product_id\":2,\"product_name\":\"IT Fabric Uniform - Only\",\"type\":\"buy\",\"quantity\":1,\"unit_price\":120,\"stock\":15,\"selected\":false,\"duration\":1,\"durationUnit\":\"days\"}]', '2026-05-24 22:26:34');
 
 --
 -- Indexes for dumped tables
@@ -2414,7 +2425,7 @@ ALTER TABLE `admins`
 -- AUTO_INCREMENT for table `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=928;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=932;
 
 --
 -- AUTO_INCREMENT for table `cashier_transactions`
@@ -2504,7 +2515,7 @@ ALTER TABLE `sales`
 -- AUTO_INCREMENT for table `security_logs`
 --
 ALTER TABLE `security_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT for table `superadmins`
@@ -2540,7 +2551,7 @@ ALTER TABLE `tuition_fees`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- Constraints for dumped tables
