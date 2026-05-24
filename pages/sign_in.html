@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -219,7 +219,7 @@
             <button type="submit" class="btn btn-anim animate-item" id="submitBtn">Sign In</button>
             
             <div class="signup-link footer-anim animate-item">
-                Don't have an account? <a href="../../pages/superadmin/sign_up.html">Sign Up</a>
+                Don't have an account? <a href="http://localhost/GCST_Track_System/pages/superadmin/sign_up.html">Sign Up</a>
             </div>
         </form>
     </div>
@@ -241,17 +241,17 @@
 
             <div id="reset-step-2" style="display:none;">
                 <div class="input-box">
-                    <input type="text" id="reset_otp" placeholder="6-Digit Code" maxlength="6" style="text-align: center; letter-spacing: 4px;">
+                    <input type="text" id="reset_otp" placeholder="6-Digit Code" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="text-align: center; letter-spacing: 4px;">
                 </div>
-                <button type="button" class="btn" onclick="verifyResetCode()">Verify Code</button>
+                <button type="button" class="btn" id="btnVerifyCode" onclick="verifyResetCode()">Verify Code</button>
             </div>
 
             <div id="reset-step-3" style="display:none;">
                 <div class="input-box">
                     <input type="password" id="new_password" placeholder="New Password" required>
-                    <i class='bx bx-lock-alt'></i>
+                    <i class='bx bx-show toggle-password' id="toggleResetPass"></i>
                 </div>
-                <button type="button" class="btn" onclick="performPasswordReset()">Update Password</button>
+                <button type="button" class="btn" id="btnUpdatePass" onclick="performPasswordReset()">Update Password</button>
             </div>
 
             <button type="button" class="btn" style="background: transparent; color: var(--text-muted); box-shadow: none;" onclick="toggleModal('resetModal', false)">Back to Sign In</button>
@@ -305,13 +305,19 @@
         }
 
         // Secure Password Reset Logic
-        let resetData = { email: '', code: '' };
+        let resetData = { email: '', code: '', step: 1 };
+
+        // Try to restore reset state from session storage
+        try {
+            const saved = sessionStorage.getItem('resetContext');
+            if (saved) resetData = JSON.parse(saved);
+        } catch(e) { console.error("Error restoring session:", e); }
 
         async function requestResetCode() {
             const identifier = document.getElementById('reset_identifier').value;
             const btn = document.getElementById('btnRequestCode');
             if(!identifier) return showToast("Identification is required", true);
-            
+
             try {
                 btn.disabled = true;
                 btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Processing...";
@@ -323,6 +329,8 @@
                 const result = await resp.json();
                 if(result.success) {
                     resetData.email = result.email;
+                    resetData.step = 2;
+                    sessionStorage.setItem('resetContext', JSON.stringify(resetData));
                     document.getElementById('reset-step-1').style.display = 'none';
                     document.getElementById('reset-step-2').style.display = 'block';
                     document.getElementById('reset-modal-desc').innerText = result.message;
@@ -337,7 +345,12 @@
 
         async function verifyResetCode() {
             const code = document.getElementById('reset_otp').value;
+            const btn = document.getElementById('btnVerifyCode');
+            if(code.length !== 6) return showToast("Enter the full 6-digit code", true);
+            
             try {
+                btn.disabled = true;
+                btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Verifying...";
                 const resp = await fetch('../actions/verify_reset_code.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -346,18 +359,27 @@
                 const result = await resp.json();
                 if(result.success) {
                     resetData.code = code;
+                    resetData.step = 3;
+                    sessionStorage.setItem('resetContext', JSON.stringify(resetData));
                     document.getElementById('reset-step-2').style.display = 'none';
                     document.getElementById('reset-step-3').style.display = 'block';
                     document.getElementById('reset-modal-desc').innerText = "Verified! Set your new password.";
                 } else throw new Error(result.message);
             } catch(e) { showToast(e.message, true); }
+            finally {
+                btn.disabled = false;
+                btn.innerText = "Verify Code";
+            }
         }
 
         async function performPasswordReset() {
             const password = document.getElementById('new_password').value;
+            const btn = document.getElementById('btnUpdatePass');
             if(password.length < 6) return showToast("Password too short (min 6 chars)", true);
 
             try {
+                btn.disabled = true;
+                btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Updating...";
                 const resp = await fetch('../actions/update_password.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -369,11 +391,33 @@
                 });
                 const result = await resp.json();
                 if(result.success) {
+                    sessionStorage.removeItem('resetContext');
                     showToast("Success! You can now sign in.");
                     setTimeout(() => location.reload(), 2000);
                 } else throw new Error(result.message);
             } catch(e) { showToast(e.message, true); }
+            finally {
+                btn.disabled = false;
+                btn.innerText = "Update Password";
+            }
         }
+
+        // UI Restoration logic on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            if (resetData.email && resetData.step > 1) {
+                toggleModal('resetModal', true);
+                if (resetData.step === 2) {
+                    document.getElementById('reset-step-1').style.display = 'none';
+                    document.getElementById('reset-step-2').style.display = 'block';
+                    document.getElementById('reset-modal-desc').innerText = "Enter the verification code sent to your email.";
+                } else if (resetData.step === 3) {
+                    document.getElementById('reset-step-1').style.display = 'none';
+                    document.getElementById('reset-step-2').style.display = 'none';
+                    document.getElementById('reset-step-3').style.display = 'block';
+                    document.getElementById('reset-modal-desc').innerText = "Verified! Set your new password.";
+                }
+            }
+        });
 
         // Login Validation
         function validateForm(form) {
@@ -389,6 +433,15 @@
         // Password Toggle logic
         document.getElementById('toggleLoginPass').addEventListener('click', function() {
             const passInput = document.getElementById('loginPass');
+            const isPass = passInput.type === 'password';
+            passInput.type = isPass ? 'text' : 'password';
+            this.classList.toggle('bx-show', !isPass);
+            this.classList.toggle('bx-hide', isPass);
+        });
+
+        // New Password Toggle
+        document.getElementById('toggleResetPass')?.addEventListener('click', function() {
+            const passInput = document.getElementById('new_password');
             const isPass = passInput.type === 'password';
             passInput.type = isPass ? 'text' : 'password';
             this.classList.toggle('bx-show', !isPass);

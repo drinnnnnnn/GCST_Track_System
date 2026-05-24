@@ -48,11 +48,81 @@ class SuperAdminModel {
             PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
+        // Table for Student/General users referenced in sign_in.html and QueueModel
+        $sqlUsers = "CREATE TABLE IF NOT EXISTS `users` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `student_id` VARCHAR(50) NOT NULL,
+            `email` VARCHAR(100) NOT NULL,
+            `password_hash` VARCHAR(255) NOT NULL,
+            `first_name` VARCHAR(100) NOT NULL,
+            `last_name` VARCHAR(100) NOT NULL,
+            `status` ENUM('pending', 'active', 'rejected', 'suspended') DEFAULT 'pending',
+            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uniq_student_id` (`student_id`),
+            UNIQUE KEY `uniq_email` (`email`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
+        // Table for Password Reset OTPs (6-digit codes)
+        $sqlResets = "CREATE TABLE IF NOT EXISTS `password_resets` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `email` VARCHAR(100) NOT NULL,
+            `token` VARCHAR(10) NOT NULL,
+            `expires_at` DATETIME NOT NULL,
+            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            INDEX `idx_reset_email` (`email`),
+            INDEX `idx_reset_token` (`token`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
+        // Table for logging all email communications
+        $sqlEmailLogs = "CREATE TABLE IF NOT EXISTS `email_notifications` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `recipient` VARCHAR(100) NOT NULL,
+            `subject` VARCHAR(255) NOT NULL,
+            `notification_type` VARCHAR(50) NOT NULL,
+            `status` ENUM('sent', 'failed') NOT NULL,
+            `error_message` TEXT DEFAULT NULL,
+            `email_body` LONGTEXT DEFAULT NULL,
+            `sent_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            INDEX `idx_email_recipient` (`recipient`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
         if (!$this->conn->query($sql)) {
             error_log("SuperAdminModel: superadmins table init failed: " . $this->conn->error);
         }
         if (!$this->conn->query($sqlLogs)) {
             error_log("SuperAdminModel: security_logs table init failed: " . $this->conn->error);
+        }
+        if (!$this->conn->query($sqlUsers)) {
+            error_log("SuperAdminModel: users table init failed: " . $this->conn->error);
+        }
+
+        // Migration: Ensure password_hash exists in users table (fixes 'Unknown column' fatal error)
+        $resUser = $this->conn->query("SHOW COLUMNS FROM `users` LIKE 'password_hash'");
+        if ($resUser && $resUser->num_rows === 0) {
+            $checkOld = $this->conn->query("SHOW COLUMNS FROM `users` LIKE 'password'");
+            $action = ($checkOld && $checkOld->num_rows > 0) ? "CHANGE `password` `password_hash`" : "ADD COLUMN `password_hash` ";
+            if (!$this->conn->query("ALTER TABLE `users` $action VARCHAR(255) NOT NULL AFTER `email`")) {
+                error_log("SuperAdminModel: Failed to migrate users.password_hash: " . $this->conn->error);
+            }
+        }
+
+        // Migration: Ensure password_hash exists in superadmins table
+        $resAdmin = $this->conn->query("SHOW COLUMNS FROM `superadmins` LIKE 'password_hash'");
+        if ($resAdmin && $resAdmin->num_rows === 0) {
+            if (!$this->conn->query("ALTER TABLE `superadmins` ADD COLUMN `password_hash` VARCHAR(255) NOT NULL AFTER `email`")) {
+                error_log("SuperAdminModel: Failed to migrate superadmins.password_hash: " . $this->conn->error);
+            }
+        }
+
+        if (!$this->conn->query($sqlResets)) {
+            error_log("SuperAdminModel: password_resets table init failed: " . $this->conn->error);
+        }
+        if (!$this->conn->query($sqlEmailLogs)) {
+            error_log("SuperAdminModel: email_notifications table init failed: " . $this->conn->error);
         }
     }
 

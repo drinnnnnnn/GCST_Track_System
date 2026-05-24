@@ -1,6 +1,8 @@
 <?php
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\SMTP;
+require_once __DIR__ . '/../config/config.php';
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -26,14 +28,29 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
     if (!empty($toEmail)) {
         if (filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
         try {
-            // Server settings (Update these with your real Gmail/SMTP credentials)
+            // 1. Validate Configuration
+            if (!defined('SMTP_USER') || SMTP_USER === 'your-email@gmail.com' || empty(SMTP_PASS) || SMTP_PASS === 'your-app-password') {
+                throw new Exception("SMTP service is currently unavailable (Configuration missing).");
+            }
+
+            // 2. Configure PHPMailer using constants
             $mail->isSMTP();
-            $mail->Host       = 'smtp.gmail.com';
-            $mail->SMTPAuth   = true;
-            $mail->Username   = 'aldrinbautista0425@gmail.com'; 
-            $mail->Password   = 'kmml wgyx oaqv glfm'; 
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port       = 587;
+            
+            // If debugging is enabled, log the full SMTP transaction to the server error log
+            if (defined('APP_DEBUG') && APP_DEBUG) {
+                $mail->SMTPDebug = SMTP::DEBUG_SERVER; 
+                $mail->Debugoutput = 'error_log';
+            }
+
+            $mail->Host       = SMTP_HOST;
+            $mail->SMTPAuth   = SMTP_AUTH;
+            $mail->Username   = SMTP_USER;
+            $mail->Password   = SMTP_PASS;
+            $mail->Port       = SMTP_PORT;
+            
+            // Dynamically set encryption based on config
+            $mail->SMTPSecure = (defined('SMTP_SECURE') && strtolower(SMTP_SECURE) === 'ssl') 
+                                ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
 
             // XAMPP SSL Certificate workaround
             $mail->SMTPOptions = [
@@ -44,8 +61,8 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
                 ]
             ];
 
-            // Using the Username as the From address ensures better deliverability with Gmail
-            $mail->setFrom($mail->Username, 'GCST Tracking System');
+            // Use configuration for sender identity
+            $mail->setFrom(MAIL_FROM, MAIL_FROM_NAME);
             $mail->addAddress($toEmail);
             $mail->isHTML(true);
             $mail->Subject = $subject;

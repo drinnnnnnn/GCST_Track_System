@@ -1,9 +1,11 @@
 ﻿<?php 
 session_start();
-require_once __DIR__ . '/../config/db_connect.php';
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once __DIR__ . '/../database/connection.php';
+require_once __DIR__ . '/../database/models/SuperAdminModel.php';
+
+// Initialize connection and ensure table/column naming consistency
+$conn = Database::getConnection();
+new SuperAdminModel();
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $student_id_input = trim($_POST['student_id'] ?? '');
@@ -15,7 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     $stmt = $conn->prepare(
-        "SELECT last_name, first_name, middle_name, password, status, student_id 
+        "SELECT last_name, first_name, middle_name, password_hash, status, student_id 
         FROM users 
         WHERE student_id = ?"
     );
