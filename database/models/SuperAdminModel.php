@@ -55,7 +55,11 @@ class SuperAdminModel {
             `email` VARCHAR(100) NOT NULL,
             `password_hash` VARCHAR(255) NOT NULL,
             `first_name` VARCHAR(100) NOT NULL,
+            `middle_name` VARCHAR(100) DEFAULT NULL,
             `last_name` VARCHAR(100) NOT NULL,
+            `course` VARCHAR(100) DEFAULT NULL,
+            `year_level` INT DEFAULT 1,
+            `balance` DECIMAL(10,2) DEFAULT 0.00,
             `status` ENUM('pending', 'active', 'rejected', 'suspended') DEFAULT 'pending',
             `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -107,6 +111,23 @@ class SuperAdminModel {
             $action = ($checkOld && $checkOld->num_rows > 0) ? "CHANGE `password` `password_hash`" : "ADD COLUMN `password_hash` ";
             if (!$this->conn->query("ALTER TABLE `users` $action VARCHAR(255) NOT NULL AFTER `email`")) {
                 error_log("SuperAdminModel: Failed to migrate users.password_hash: " . $this->conn->error);
+            }
+        }
+
+        // Migration: Add missing columns for student profiles and management
+        $userColumns = [
+            'middle_name' => "VARCHAR(100) DEFAULT NULL AFTER `first_name` ",
+            'course' => "VARCHAR(100) DEFAULT NULL AFTER `last_name` ",
+            'year_level' => "INT DEFAULT 1 AFTER `course` ",
+            'balance' => "DECIMAL(10,2) DEFAULT 0.00 AFTER `year_level` "
+        ];
+
+        foreach ($userColumns as $col => $def) {
+            $res = $this->conn->query("SHOW COLUMNS FROM `users` LIKE '$col'");
+            if ($res && $res->num_rows === 0) {
+                if (!$this->conn->query("ALTER TABLE `users` ADD COLUMN `$col` $def")) {
+                    error_log("SuperAdminModel: Failed to add column users.$col: " . $this->conn->error);
+                }
             }
         }
 

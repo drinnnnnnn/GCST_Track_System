@@ -1,4 +1,4 @@
-﻿<?php 
+﻿﻿<?php 
 session_start();
 require_once __DIR__ . '/../database/connection.php';
 require_once __DIR__ . '/../database/models/SuperAdminModel.php';
@@ -17,7 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     $stmt = $conn->prepare(
-        "SELECT last_name, first_name, middle_name, password_hash, status, student_id 
+        "SELECT id, last_name, first_name, middle_name, password_hash, status, student_id 
         FROM users 
         WHERE student_id = ?"
     );
@@ -26,7 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->store_result();
 
     if ($stmt->num_rows === 1) {
-        $stmt->bind_result($last_name, $first_name, $middle_name, $hashed_password, $status, $student_id);
+        $stmt->bind_result($user_id, $last_name, $first_name, $middle_name, $hashed_password, $status, $student_id);
         $stmt->fetch();
 
         $normalizedStatus = strtolower(trim($status));
@@ -48,6 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($hashed_password && password_verify($password_input, $hashed_password)) {
             $full_name = $first_name . ' ' . ($middle_name ? $middle_name . ' ' : '') . $last_name;
 
+            $_SESSION['user_id'] = $user_id;
             $_SESSION['user_name'] = $full_name;
             $_SESSION['student_id'] = $student_id;
             $_SESSION['role'] = 'student';
