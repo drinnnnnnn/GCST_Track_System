@@ -295,27 +295,9 @@ function fetchWithError(url, options = {}) {
   SIDEBAR AUTO-LOADER & LOGIC
    ===================================================== */
 
-function toggleSidebar() {
-  const sidebar = document.getElementById('main-sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
-  sidebar?.classList.toggle('active');
-  overlay?.classList.toggle('active');
-}
-
-function toggleMinimizeSidebar() {
-  const sidebar = document.getElementById('main-sidebar');
-  const contentWrapper = document.querySelector('.content-wrapper');
-  const header = document.querySelector('header');
-
-  const isMinimized = sidebar?.classList.toggle('minimized');
-  contentWrapper?.classList.toggle('minimized');
-  header?.classList.toggle('minimized');
-
-  // Persist the state in localStorage
-  localStorage.setItem('sidebar-minimized', isMinimized ? 'true' : 'false');
-}
-
 async function autoLoadSidebar() {
+  // Note: Function name kept as autoLoadSidebar to avoid breaking existing page calls,
+  // but it now handles the Top Navbar injection.
   const container = document.getElementById('sidebar-container');
   if (!container) return;
 
@@ -324,20 +306,12 @@ async function autoLoadSidebar() {
     if (container) {
       container.innerHTML = getSidebarHTML();
 
-      // Apply the saved state from localStorage immediately after injection
-      const isMinimized = localStorage.getItem('sidebar-minimized') === 'true';
-      if (isMinimized) {
-        document.getElementById('main-sidebar')?.classList.add('minimized');
-        document.querySelector('.content-wrapper')?.classList.add('minimized');
-        document.querySelector('header')?.classList.add('minimized');
-      }
-      
       // Automatically highlight the active link based on the current URL
       const getFileName = (path) => path.split('/').pop() || 'InUser_home.html';
       const currentFile = getFileName(window.location.pathname);
 
-      const sidebarLinks = container.querySelectorAll('.sidebar-link');
-      sidebarLinks.forEach(link => {
+      const navLinks = container.querySelectorAll('.nav-item');
+      navLinks.forEach(link => {
         const linkFile = getFileName(link.pathname);
         if (linkFile && linkFile === currentFile && !link.href.startsWith('javascript')) {
           link.classList.add('active');
