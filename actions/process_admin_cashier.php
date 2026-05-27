@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<?php
+﻿﻿﻿﻿﻿﻿<?php
 /**
  * process_admin_cashier.php
  * Centralized controller for Admin/Cashier account management.
@@ -239,6 +239,12 @@ if (isset($_POST['email']) && isset($_POST['password'])) {
             }
 
             session_regenerate_id(true);
+            // Update last login timestamp and reset login attempts on success
+            $updateLogin = $conn->prepare("UPDATE admincashier_acc SET last_login = NOW(), login_attempts = 0 WHERE id = ?");
+            $updateLogin->bind_param("i", $user_id);
+            $updateLogin->execute();
+            $updateLogin->close();
+
             $admin_name = trim($first_name . ' ' . ($middle_name ? $middle_name . ' ' : '') . $last_name);
             $_SESSION['admin_id'] = $user_id;
             $_SESSION['admin_name'] = $admin_name;

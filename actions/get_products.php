@@ -27,9 +27,12 @@ $types = "";
 
 // Apply Category Filter
 if (!empty($category) && $category !== 'all') {
-    $sql .= " AND LOWER(product_category) = LOWER(?)";
-    $params[] = $category;
-    $types .= "s";
+    $searchCat = strtolower($category);
+    $baseCat = rtrim($searchCat, 's'); // Handle pluralization (e.g. uniforms -> uniform)
+    $sql .= " AND (LOWER(product_category) LIKE ? OR LOWER(product_category) LIKE ?)";
+    $params[] = "%$searchCat%";
+    $params[] = "%$baseCat%";
+    $types .= "ss";
 }
 
 // Apply Search Filter

@@ -11,29 +11,84 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
+    /* Refined Balance Section Styling */
+    .balance-section {
+      margin-bottom: 2.5rem;
+    }
+
+    .balance-section h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .balance-section h2::before {
+      content: '';
+      width: 4px;
+      height: 24px;
+      background: #2563eb;
+      border-radius: 4px;
+    }
+
     .queue-summary-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
-      margin-bottom: 32px;
+      grid-template-columns: repeat(1, 1fr);
+      gap: 1rem;
+    }
+
+    @media (min-width: 640px) {
+      .queue-summary-grid { 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 1.25rem;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .queue-summary-grid { 
+        grid-template-columns: repeat(4, 1fr); 
+        gap: 1.5rem;
+      }
     }
 
     .queue-card {
-      background: #ffffff;
+      background: white;
       border-radius: 2rem;
-      padding: 24px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid rgba(148, 163, 184, 0.1);
+      padding: 1.5rem;
+      border: 1px solid #f1f5f9;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 1.25rem;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .queue-card::before {
+      content: '';
+      position: absolute;
+      top: -20px;
+      right: -20px;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.03;
+      transition: transform 0.6s ease;
     }
 
     .queue-card:hover {
-      transform: translateY(-5px);
-      box-shadow: var(--shadow);
-      border-color: rgba(37, 99, 235, 0.2);
+      transform: translateY(-4px);
+      box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.1);
+      border-color: #2563eb;
+    }
+
+    .queue-card:hover::before {
+      transform: scale(1.5);
     }
 
     .queue-card-icon {
@@ -43,25 +98,39 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.4rem;
+      font-size: 1.35rem;
       flex-shrink: 0;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 2;
+    }
+
+    .queue-card:hover .queue-card-icon {
+      transform: scale(1.1) rotate(-5deg);
+    }
+
+    .queue-card-content {
+      position: relative;
+      z-index: 2;
+      flex: 1;
     }
 
     .queue-card h3 {
       font-size: 0.7rem;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
-      margin: 0 0 2px;
+      letter-spacing: 0.05em;
+      margin: 0 0 4px;
       color: #94a3b8;
     }
 
     .queue-card .amount {
       font-size: 1.5rem;
-      font-weight: 600;
+      font-weight: 700;
       margin: 0;
+      line-height: 1;
       color: #0f172a;
-      line-height: 1.2;
+      white-space: nowrap;
     }
 
     .ticket-card-header {
@@ -141,48 +210,49 @@
     </section>
 
     <section class="balance-section">
+      <h2>Queue Status Overview</h2>
       <div class="queue-summary-grid">
         <!-- Current Time -->
-        <div class="queue-card">
-          <div class="queue-card-icon bg-blue-50 text-blue-600">
+        <div class="queue-card" style="color: #2563eb;">
+          <div class="queue-card-icon bg-blue-50">
             <i class="fas fa-clock"></i>
           </div>
-          <div>
+          <div class="queue-card-content">
             <h3>Current Time</h3>
             <p class="amount" id="current-clock">--:--:--</p>
           </div>
         </div>
 
         <!-- Now Serving -->
-        <div class="queue-card">
-          <div class="queue-card-icon bg-emerald-50 text-emerald-600">
+        <div class="queue-card" style="color: #059669;">
+          <div class="queue-card-icon bg-emerald-50">
             <i class="fas fa-user-check"></i>
           </div>
-          <div>
+          <div class="queue-card-content">
             <h3>Now Serving</h3>
-            <p class="amount text-emerald-600" id="nowServing">-</p>
+            <p class="amount" id="nowServing">-</p>
           </div>
         </div>
 
         <!-- Next Queue -->
-        <div class="queue-card">
-          <div class="queue-card-icon bg-amber-50 text-amber-600">
+        <div class="queue-card" style="color: #d97706;">
+          <div class="queue-card-icon bg-amber-50">
             <i class="fas fa-user-plus"></i>
           </div>
-          <div>
+          <div class="queue-card-content">
             <h3>Next Queue</h3>
-            <p class="amount text-amber-600" id="nextQueue">-</p>
+            <p class="amount" id="nextQueue">-</p>
           </div>
         </div>
 
         <!-- Waiting Count -->
-        <div class="queue-card">
-          <div class="queue-card-icon bg-indigo-50 text-indigo-600">
+        <div class="queue-card" style="color: #4f46e5;">
+          <div class="queue-card-icon bg-indigo-50">
             <i class="fas fa-users"></i>
           </div>
-          <div>
+          <div class="queue-card-content">
             <h3>Waiting Count</h3>
-            <p class="amount text-indigo-600" id="waitingCount">0</p>
+            <p class="amount" id="waitingCount">0</p>
           </div>
         </div>
       </div>
@@ -353,6 +423,36 @@
     let currentFilter = 'all';
     let currentTicketId = null;
     let cooldownInterval = null;
+    let syncInterval = null;
+    let lastSyncSuccess = true;
+    let queueEventSource = null;
+
+    // Optimized state management for queue metrics
+    const queueOverviewState = {
+      serving: null,
+      next: null,
+      count: null,
+      lastUpdate: 0
+    };
+
+    /**
+     * Fetches and updates tuition balance data if UI elements exist.
+     * Resolves the previously missing function error.
+     */
+    async function loadTuitionBalance() {
+      try {
+        const response = await fetchWithError('../../actions/get_user_full.php?t=' + Date.now(), { cache: 'no-store' });
+        const user = response?.user || {};
+        const balance = parseFloat(user.balance || 0);
+        
+        const balanceEl = document.getElementById('tuition-balance-display'); // Safe selector check
+        if (balanceEl) {
+          balanceEl.textContent = formatCurrency(balance);
+        }
+      } catch (error) {
+        console.warn('Optional balance data skipped or unavailable:', error);
+      }
+    }
 
     function formatDateTime(datetime) {
       if (!datetime) return '-';
@@ -383,9 +483,18 @@
       return 'waiting';
     }
 
-    function getWaitingDuration(createdAt) {
+    /**
+     * Calculates waiting duration between two points in time.
+     * If endAt is null, calculates until NOW (live).
+     */
+    function getWaitingDuration(createdAt, endAt = null) {
       if (!createdAt) return '-';
-      const diff = Date.now() - new Date(createdAt).getTime();
+      const startTime = new Date(createdAt).getTime();
+      const endTime = endAt ? new Date(endAt).getTime() : Date.now();
+      
+      if (isNaN(startTime) || (endAt && isNaN(endTime))) return '-';
+      
+      const diff = Math.max(0, endTime - startTime);
       const minutes = Math.floor(diff / 60000);
       const seconds = Math.floor((diff % 60000) / 1000);
       return `${minutes}m ${seconds}s`;
@@ -457,7 +566,7 @@
                   </div>
                   <div>
                     <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Elapsed</p>
-                    <p class="text-slate-600 text-[11px] font-medium leading-tight">${getWaitingDuration(ticket.created_at)}</p>
+                    <p class="text-slate-600 text-[11px] font-medium leading-tight">${getWaitingDuration(ticket.created_at, ticket.served_at)}</p>
                   </div>
                 </div>
 
@@ -474,39 +583,103 @@
       }).join('');
     }
 
-    async function loadQueueStatus() {
-      try {
-        const data = await fetchWithError('../../actions/get_queue_status.php');
-        document.getElementById('nowServing').textContent = data.now_serving || '-';
-        document.getElementById('nextQueue').textContent = data.next_queue || '-';
-        document.getElementById('waitingCount').textContent = data.counts?.waiting ?? 0;
-      } catch (error) {
-        console.error('Error loading queue status:', error);
+    /**
+     * Updates UI with data received from SSE or Fetch.
+     */
+    function updateQueueUI(data) {
+      if (!data) return;
+      
+      // Sanitize and format data
+      const servingValue = (data.now_serving !== null && data.now_serving !== undefined) 
+                           ? String(data.now_serving).trim() : '-';
+      const nextValue = (data.next_queue !== null && data.next_queue !== undefined) 
+                        ? String(data.next_queue).trim() : '-';
+      const waitingValue = data.counts?.waiting ?? 0;
+
+      // Batch DOM updates based on state changes to prevent UI flickering
+      if (queueOverviewState.serving !== servingValue) {
+        const el = document.getElementById('nowServing');
+        if (el) {
+          el.textContent = servingValue;
+          el.closest('.queue-card').classList.add('scale-105');
+          setTimeout(() => el.closest('.queue-card').classList.remove('scale-105'), 300);
+        }
+        queueOverviewState.serving = servingValue;
       }
+
+      const nextEl = document.getElementById('nextQueue');
+      if (nextEl && queueOverviewState.next !== nextValue) {
+        nextEl.textContent = nextValue;
+        queueOverviewState.next = nextValue;
+      }
+
+      const countEl = document.getElementById('waitingCount');
+      if (countEl && queueOverviewState.count !== waitingValue) {
+        countEl.textContent = waitingValue;
+        queueOverviewState.count = waitingValue;
+      }
+
+      if (data.current_time) {
+        const clock = document.getElementById('current-clock');
+        if (clock) clock.textContent = data.current_time;
+      }
+
+      queueOverviewState.lastUpdate = Date.now();
+    }
+
+    async function loadQueueStatus() {
+      const data = await fetchWithError('../../actions/get_queue_status.php?t=' + Date.now(), { cache: 'no-store' });
+      if (!data || typeof data !== 'object') throw new Error('Malformed queue status response');
+      updateQueueUI(data);
     }
 
     async function loadUserTickets() {
+      const container = document.getElementById('tickets-container');
       try {
-        const data = await fetchWithError('../../actions/get_user_tickets.php');
-        allTickets = data.tickets || [];
-        currentTicketId = allTickets.length ? allTickets[0].id : null;
+        const data = await fetchWithError('../../actions/get_user_tickets.php?t=' + Date.now(), { cache: 'no-store' });
+        allTickets = (data && Array.isArray(data.tickets)) ? data.tickets : [];
+        
         updateLatestTicketCard();
         renderTickets();
       } catch (error) {
         console.error('Error loading user tickets:', error);
-        document.getElementById('tickets-container').innerHTML = `
-          <div class="empty-state" style="grid-column: 1/-1; text-align:center;">
-            <i class="fas fa-exclamation-triangle"></i>
-            <h3>Error loading tickets</h3>
-            <p>Unable to load your queue tickets. Please try again later.</p>
-          </div>
-        `;
+        allTickets = [];
+        updateLatestTicketCard();
+        if (container) {
+          container.innerHTML = `
+            <div class="empty-state" style="grid-column: 1/-1; text-align:center;">
+              <i class="fas fa-exclamation-triangle"></i>
+              <h3>Error loading tickets</h3>
+              <p>Unable to load your queue tickets. Please try again later.</p>
+            </div>
+          `;
+        }
       }
     }
 
+    /**
+     * Updates the text content of the waiting time for the latest ticket.
+     * Called by updateLatestTicketCard and the live clock interval.
+     */
+    function updateLatestTicketDurationUI(ticket, waitEl) {
+      if (!ticket || !waitEl) return;
+      
+      const status = String(ticket.status || 'waiting').toLowerCase();
+      const isWaiting = (status === 'waiting');
+      
+      // Timer stops once serving/completed/cancelled using served_at timestamp
+      const endTime = isWaiting ? null : (ticket.served_at || null);
+      const duration = getWaitingDuration(ticket.created_at, endTime);
+      
+      waitEl.textContent = `Waiting time: ${duration}`;
+    }
+
     function updateLatestTicketCard() {
-      const ticket = allTickets.length ? allTickets[0] : null;
+      const ticket = (Array.isArray(allTickets) && allTickets.length > 0) ? allTickets[0] : null;
+      
+      // Global reference for action buttons (Cancel/Email)
       currentTicketId = ticket ? ticket.id : null;
+      
       const numberEl = document.getElementById('latest-ticket-number');
       const createdEl = document.getElementById('latest-ticket-created');
       const waitEl = document.getElementById('latest-ticket-wait');
@@ -529,33 +702,69 @@
         if (actionsEl) actionsEl.classList.add('hidden');
         return;
       }
-      if (numberEl) numberEl.textContent = ticket.queue_number;
+
+      if (numberEl) numberEl.textContent = ticket.queue_number || '-';
       if (nameEl) nameEl.textContent = `Name: ${ticket.student_name || 'N/A'}`;
       if (purposeEl) purposeEl.textContent = `Purpose: ${ticket.purpose || 'General'}`;
       if (createdEl) createdEl.textContent = `Generated: ${formatDateTime(ticket.created_at)}`;
-      if (waitEl) waitEl.textContent = `Waiting time: ${getWaitingDuration(ticket.created_at)}`;
+      
+      // Visual status pill update
       if (statusEl) {
         statusEl.textContent = mapStatus(ticket.status);
         statusEl.className = `ticket-status ${statusClass(ticket.status)}`;
       }
+
       if (actionsEl) actionsEl.classList.remove('hidden');
       if (cancelButton) {
-        cancelButton.classList.toggle('hidden', !(ticket.status === 'waiting' || ticket.status === 'serving'));
+        const canCancel = (ticket.status === 'waiting' || ticket.status === 'serving');
+        cancelButton.classList.toggle('hidden', !canCancel);
       }
+
+      // Run initial duration calculation
+      updateLatestTicketDurationUI(ticket, waitEl);
+    }
+
+    function updateSyncDisplay(status, isError = false) {
+      const syncEl = document.getElementById('last-updated-text');
+      if (!syncEl) return;
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second: '2-digit'});
+      syncEl.textContent = `System ${status} • Last synced: ${timeStr}`;
+      syncEl.parentElement.classList.toggle('text-red-400', isError);
+      syncEl.parentElement.classList.toggle('text-slate-400', !isError);
     }
 
     async function refreshQueueStatus() {
       try {
-        // Parallel load status and check for alerts
-        await Promise.all([
-          loadQueueStatus(), 
-          loadUserTickets(),
-          // Trigger the email notification processor
-          fetch('../../actions/process_queue_alerts.php').then(r => r.json())
-        ]);
-        document.getElementById('last-updated-text').textContent = `Last updated: ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        await Promise.all([loadQueueStatus(), loadUserTickets()]);
+        fetch('../../actions/process_queue_alerts.php').catch(() => null);
+        lastSyncSuccess = true;
+        updateSyncDisplay('Active');
       } catch (e) {
         console.warn('Queue background processing failed:', e);
+        lastSyncSuccess = false;
+        updateSyncDisplay('Suspended', true);
+      }
+    }
+
+    function startRealTimeSync() {
+      if (queueEventSource) queueEventSource.close();
+      
+      if (!!window.EventSource) {
+        queueEventSource = new EventSource('../../actions/get_queue_status.php?stream=1');
+        queueEventSource.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          updateQueueUI(data);
+          loadUserTickets(); // Instant sync for ticket history when general status changes
+          updateSyncDisplay('Live');
+        };
+        queueEventSource.onerror = () => {
+          queueEventSource.close();
+          startPolling(); // Automatic fallback
+          updateSyncDisplay('Reconnecting...', true);
+        };
+      } else {
+        startPolling();
       }
     }
 
@@ -715,6 +924,13 @@
       const formatted = now.toLocaleTimeString('en-US', { hour12: false });
       const clock = document.getElementById('current-clock');
       if (clock) clock.textContent = formatted;
+
+      // Synchronize latest ticket timer live if it's currently 'waiting'
+      const latestTicket = (allTickets && allTickets.length > 0) ? allTickets[0] : null;
+      const waitEl = document.getElementById('latest-ticket-wait');
+      if (latestTicket && waitEl && latestTicket.status === 'waiting') {
+        updateLatestTicketDurationUI(latestTicket, waitEl);
+      }
     }
 
     async function cancelTicket(ticketId) {
@@ -773,17 +989,43 @@
       if (nameInput && userData) {
         nameInput.value = userData.full_name || userData.name || '';
       }
+      
       updateLiveClock();
       setInterval(updateLiveClock, 1000);
-      await refreshQueueStatus();
-
+      
+      // Load status and balance data
       const savedCooldown = localStorage.getItem('queue_ticket_cooldown');
       if (savedCooldown && parseInt(savedCooldown) > Date.now()) {
         runCooldown(parseInt(savedCooldown));
       }
 
-      await loadTuitionBalance();
-      setInterval(refreshQueueStatus, 30000);
+      // Load initial data
+      await Promise.allSettled([refreshQueueStatus(), loadTuitionBalance()]);
+
+      const startPolling = () => {
+        if (syncInterval) clearInterval(syncInterval);
+        syncInterval = setInterval(refreshQueueStatus, 30000);
+      };
+
+      const stopPolling = () => {
+        if (syncInterval) clearInterval(syncInterval);
+        syncInterval = null;
+        if (queueEventSource) {
+          queueEventSource.close();
+          queueEventSource = null;
+        }
+      };
+
+      startRealTimeSync();
+
+      // Page Visibility API - Optimizes performance and prevents "stale" data on wake
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          startRealTimeSync();
+        } else {
+          stopPolling();
+        }
+      });
     });
   </script>
 </body>

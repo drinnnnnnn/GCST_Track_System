@@ -292,6 +292,49 @@
       transform: translateX(22px);
     }
 
+    /* Verification Modal Animations */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    
+    .animate-in { animation: fadeIn 0.3s ease-out; }
+    .zoom-in { animation: zoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+
+    .verification-otp-input {
+      letter-spacing: 0.5em;
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.5rem;
+    }
+
+    /* Password Visibility Toggle */
+    .password-input-container {
+      position: relative;
+    }
+    .password-input-container input {
+      padding-right: 46px !important;
+    }
+    .password-toggle-btn {
+      position: absolute;
+      right: 0;
+      top: 0;
+      height: 100%;
+      width: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: color 0.2s ease;
+      z-index: 10;
+    }
+    .password-toggle-btn:hover {
+      color: var(--primary);
+    }
+
+    .hidden { display: none !important; }
+
     @media (max-width: 640px) {
       .activity-section {
         padding: 1.5rem;
@@ -404,18 +447,51 @@
         </div>
 
         <h3 style="margin-top: 28px; margin-bottom: 18px;">Change Password</h3>
-        <form onsubmit="changePassword(event)" style="max-width: 500px;">
+
+        <!-- Verification Trigger: Revealed first -->
+        <div id="password-verification-trigger" class="bg-blue-50/50 p-6 rounded-[2rem] border border-blue-100/50 flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-xl">
+              <i class="fas fa-envelope-shield"></i>
+            </div>
+            <div>
+              <p class="font-bold text-slate-900">Email Verification Required</p>
+              <p class="text-xs text-slate-500 font-medium">Please verify your email before updating security credentials.</p>
+            </div>
+          </div>
+          <button onclick="requestVerificationCode(event)" class="w-full md:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all">
+            Send Verification Code
+          </button>
+        </div>
+
+        <!-- Password Form: Hidden until verified -->
+        <form id="password-change-form" onsubmit="changePassword(event)" style="max-width: 500px;" class="hidden">
           <div class="form-group">
             <label>Current Password</label>
-            <input id="current-password" type="password" placeholder="Enter current password">
+            <div class="password-input-container">
+              <input id="current-password" type="password" placeholder="Enter current password">
+              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility(this)" aria-label="Toggle password visibility">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
           </div>
           <div class="form-group">
             <label>New Password</label>
-            <input id="new-password" type="password" placeholder="Enter new password">
+            <div class="password-input-container">
+              <input id="new-password" type="password" placeholder="Enter new password">
+              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility(this)" aria-label="Toggle password visibility">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
           </div>
           <div class="form-group">
             <label>Confirm Password</label>
-            <input id="confirm-password" type="password" placeholder="Confirm new password">
+            <div class="password-input-container">
+              <input id="confirm-password" type="password" placeholder="Confirm new password">
+              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility(this)" aria-label="Toggle password visibility">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
           </div>
           <button type="submit" class="save-button">
             <i class="fas fa-lock"></i> Update Password
@@ -426,14 +502,153 @@
   </main>
   </div>
 
+  <!-- Verification OTP Modal -->
+  <div id="verification-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
+    <div class="bg-white rounded-[2.5rem] shadow-2xl max-w-md w-full overflow-hidden transform transition-all animate-in zoom-in">
+      <div class="p-10 text-center">
+        <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <i class="fas fa-key text-3xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-slate-900 mb-2">Check your inbox</h3>
+        <p class="text-slate-500 text-sm leading-relaxed mb-8">
+          A 6-digit verification code has been sent to your registered email address.
+        </p>
+        
+        <div class="mb-8">
+          <input type="text" id="otp-code" maxlength="6" 
+            class="w-full verification-otp-input py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+            placeholder="••••••">
+        </div>
+
+        <div class="grid grid-cols-1 gap-4">
+          <button onclick="verifyOtpCode(event)" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-blue-500/20">
+            Verify Code
+          </button>
+          <button id="resend-code-btn" onclick="requestVerificationCode(event)" class="text-sm font-semibold text-blue-600 hover:text-blue-700 disabled:text-slate-400">
+            Resend Code <span id="cooldown-timer"></span>
+          </button>
+          <button onclick="closeVerificationModal()" class="text-sm font-medium text-slate-400 hover:text-slate-600">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="../../assets/js/user.js"></script>
   <script>
+    let cooldownTimer = 0;
+    let cooldownInterval = null;
+
+    function togglePasswordVisibility(button) {
+      const input = button.parentElement.querySelector('input');
+      const icon = button.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    }
+
     function switchTab(tab) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('tab-' + tab).classList.add('active');
       event.target.classList.add('active');
+    }
+
+    function openVerificationModal() {
+      const modal = document.getElementById('verification-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeVerificationModal() {
+      const modal = document.getElementById('verification-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function requestVerificationCode(e) {
+      const btn = e.currentTarget;
+      const originalHtml = btn.innerHTML;
+      
+      try {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing...';
+        
+        const response = await fetchWithError('../../actions/send_password_change_otp.php', {
+          method: 'POST'
+        });
+
+        if (response.success) {
+          openVerificationModal();
+          startResendCooldown(60);
+        } else {
+          throw new Error(response.message || 'Failed to send code.');
+        }
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    }
+
+    function startResendCooldown(seconds) {
+      cooldownTimer = seconds;
+      const resendBtn = document.getElementById('resend-code-btn');
+      const timerSpan = document.getElementById('cooldown-timer');
+      
+      if (cooldownInterval) clearInterval(cooldownInterval);
+      
+      resendBtn.disabled = true;
+      cooldownInterval = setInterval(() => {
+        cooldownTimer--;
+        if (cooldownTimer <= 0) {
+          clearInterval(cooldownInterval);
+          resendBtn.disabled = false;
+          timerSpan.textContent = '';
+        } else {
+          timerSpan.textContent = `(${cooldownTimer}s)`;
+        }
+      }, 1000);
+    }
+
+    async function verifyOtpCode(e) {
+      const code = document.getElementById('otp-code').value.trim();
+      if (code.length !== 6) {
+        alert('Please enter the 6-digit code.');
+        return;
+      }
+
+      const btn = e.currentTarget;
+      const originalHtml = btn.innerHTML;
+
+      try {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Verifying...';
+
+        const response = await fetchWithError('../../actions/verify_password_change_otp.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        });
+
+        if (response.success) {
+          closeVerificationModal();
+          document.getElementById('password-verification-trigger').classList.add('hidden');
+          document.getElementById('password-change-form').classList.remove('hidden');
+        } else {
+          throw new Error(response.message || 'Invalid verification code.');
+        }
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
     }
 
     async function saveChanges(event) {
@@ -554,8 +769,20 @@
         document.getElementById('student-id').value = user.student_id || '';
 
         // Account info
-        document.getElementById('account-created').textContent = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
-        document.getElementById('last-login').textContent = user.last_login ? new Date(user.last_login).toLocaleDateString() : 'N/A';
+        const formatDate = (dateStr, showTime = false) => {
+          if (!dateStr) return null;
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) return null;
+          
+          const dPart = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).format(date);
+          if (!showTime) return dPart;
+          
+          const tPart = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).format(date);
+          return `${dPart} – ${tPart}`;
+        };
+
+        document.getElementById('account-created').textContent = formatDate(user.created_at) || 'N/A';
+        document.getElementById('last-login').textContent = formatDate(user.last_login, true) || 'First login';
         document.getElementById('account-status').textContent = user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Active';
 
         const prefs = user.notification_preferences || {};

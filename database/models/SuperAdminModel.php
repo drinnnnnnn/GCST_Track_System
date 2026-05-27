@@ -119,7 +119,8 @@ class SuperAdminModel {
             'middle_name' => "VARCHAR(100) DEFAULT NULL AFTER `first_name` ",
             'course' => "VARCHAR(100) DEFAULT NULL AFTER `last_name` ",
             'year_level' => "INT DEFAULT 1 AFTER `course` ",
-            'balance' => "DECIMAL(10,2) DEFAULT 0.00 AFTER `year_level` "
+            'balance' => "DECIMAL(10,2) DEFAULT 0.00 AFTER `year_level` ",
+            'last_login' => "DATETIME DEFAULT NULL AFTER `status` "
         ];
 
         foreach ($userColumns as $col => $def) {

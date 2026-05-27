@@ -33,6 +33,8 @@ foreach ($items as $item) {
     $quantity = intval($item['quantity'] ?? 0);
     $unitPrice = floatval($item['unitPrice'] ?? $item['unit_price'] ?? 0);
     $productName = trim((string)($item['product_name'] ?? ''));
+    $productCategory = trim((string)($item['product_category'] ?? ''));
+    $productImage = trim((string)($item['product_image'] ?? ''));
     $stock = intval($item['stock'] ?? 0);
     $selected = filter_var($item['selected'] ?? false, FILTER_VALIDATE_BOOLEAN);
     $duration = intval($item['duration'] ?? 1);
@@ -45,6 +47,8 @@ foreach ($items as $item) {
     $validItems[] = [
         'product_id' => $productId,
         'product_name' => $productName,
+        'product_category' => $productCategory,
+        'product_image' => $productImage,
         'type' => $type,
         'quantity' => $quantity,
         'unit_price' => round($unitPrice, 2),

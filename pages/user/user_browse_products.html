@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -17,8 +17,8 @@
 
     .product-card {
       background: #ffffff;
-      border-radius: 2rem;
-      padding: 24px;
+      border-radius: 1.5rem;
+      padding: 1rem;
       border: 1px solid rgba(148, 163, 184, 0.1);
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
       transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -32,15 +32,18 @@
       border-color: var(--primary);
     }
     
+    @media (min-width: 640px) {
+      .product-card { border-radius: 2rem; padding: 24px; }
+    }
+    
     .product-image {
       width: 100%;
-      height: 200px;
-      border-radius: 1.5rem;
+      aspect-ratio: 4/3;
+      border-radius: 1.25rem;
       object-fit: cover;
       margin-bottom: 18px;
       background: #f8fafc;
     }
-    
     .product-info {
       flex: 1;
       display: flex;
@@ -50,7 +53,7 @@
     }
     
     .product-name {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 600;
       color: var(--text);
       line-height: 1.3;
@@ -134,6 +137,117 @@
       justify-content: center;
       gap: 8px;
     }
+
+    /* Product Details Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .modal-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-card {
+      background: white;
+      width: 100%;
+      max-width: 1000px;
+      max-height: 95vh;
+      border-radius: 1.5rem;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      transform: scale(0.9) translateY(20px);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: scale(1) translateY(0);
+    }
+
+    @media (min-width: 768px) {
+      .modal-card { border-radius: 2.5rem; max-height: 90vh; }
+    }
+
+    .modal-content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    @media (min-width: 768px) {
+      .modal-content-scroll { padding: 2.5rem; }
+    }
+    
+    .modal-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+    @media (min-width: 768px) {
+      .modal-grid { grid-template-columns: 400px 1fr; gap: 3rem; }
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: white;
+      border: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+    .modal-close-btn:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+      transform: rotate(90deg);
+    }
+
+    .spec-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.9rem;
+    }
+
+    .spec-label { color: #94a3b8; font-weight: 500; }
+    .spec-value { color: #0f172a; font-weight: 600; }
+
+    .rating-stars { color: #f59e0b; display: flex; gap: 2px; }
+    
+    .modal-qty-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 2px solid #f1f5f9;
+      background: white;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
     
     .btn-buy { background: #059669; color: white; }
     .btn-buy:hover:not(:disabled) { background: #047857; transform: scale(1.02); }
@@ -143,14 +257,15 @@
     
     .products-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+      gap: 16px;
     }
+    @media (min-width: 640px) { .products-grid { gap: 24px; } }
     
     .control-panel {
       background: white;
-      border-radius: 2.5rem;
-      padding: 32px;
+      border-radius: 1.5rem;
+      padding: 1.5rem;
       margin-bottom: 32px;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
       border: 1px solid #f1f5f9;
@@ -158,6 +273,7 @@
       flex-direction: column;
       gap: 20px;
     }
+    @media (min-width: 768px) { .control-panel { border-radius: 2.5rem; padding: 32px; } }
     
     .search-bar {
       display: flex;
@@ -437,32 +553,85 @@
       margin-top: 10px;
     }
 
-    .checkout-result {
-      border-top: 2px solid #f1f5f9;
-      padding-top: 28px;
-      display: grid; gap: 20px;
-      text-align: center;
-      margin-top: 16px;
-    }
-
-    .qr-box {
-      position: relative;
-      margin: 0 auto; padding: 24px;
-      background: #f8fafc;
-      border: 3px dashed #cbd5e1;
-      border-radius: 2.5rem;
-      display: inline-block;
-    }
-
-    .checkout-result img {
-      width: 100%; max-width: 200px; margin: 0 auto;
-      border-radius: 1.5rem;
-      box-shadow: 0 15px 35px rgba(15, 23, 42, 0.1);
-    }
-
-    .order-reference { display: block; font-size: 1rem; color: #2563eb; font-weight: 600; }
-
     .hidden { display: none !important; }
+
+    /* Toast Notification Styling */
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: #0f172a;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 1rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      pointer-events: auto;
+      animation: toast-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes toast-in {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Product Image Feedback Animation */
+    @keyframes product-success-bounce {
+      0% { transform: scale(1) translateY(0); }
+      30% { transform: scale(1.08) translateY(-10px); filter: brightness(1.1); }
+      50% { transform: scale(1.05) translateY(-5px); }
+      70% { transform: scale(1.07) translateY(-7px); }
+      100% { transform: scale(1) translateY(0); }
+    }
+
+    .img-added-anim {
+      animation: product-success-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      z-index: 20;
+    }
+
+    .product-image {
+      will-change: transform;
+      transition: filter 0.3s ease;
+    }
+
+    /* Floating +1 Animation */
+    @keyframes float-plus-one {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, 0) scale(0.5);
+      }
+      30% {
+        opacity: 1;
+        transform: translate(-50%, -20px) scale(1.2);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -60px) scale(1);
+      }
+    }
+
+    .floating-plus-one {
+      pointer-events: none;
+      color: #2563eb;
+      font-weight: 800;
+      font-size: 1.25rem;
+      text-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+      animation: float-plus-one 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      z-index: 10000;
+    }
 
     @media (max-width: 768px) {
       .products-grid {
@@ -499,11 +668,11 @@
     <!-- Controls: Search & Filters Combined -->
     <div class="control-panel">
       <div class="flex flex-col md:flex-row gap-4 items-stretch">
-        <input type="text" id="search-input" placeholder="Search for products..." autocomplete="off" />
-        <button onclick="performSearch()" class="px-8 py-3 bg-slate-900 text-white rounded-2xl font-semibold hover:bg-blue-600 transition-all shadow-lg flex items-center justify-center gap-2">
+        <input type="text" id="search-input" placeholder="Search for products..." autocomplete="off" class="flex-1" />
+        <button onclick="performSearch()" class="px-8 py-4 md:py-3 bg-slate-900 text-white rounded-2xl font-semibold hover:bg-blue-600 transition-all shadow-lg flex items-center justify-center gap-2">
           <i class="fas fa-search"></i> Search
         </button>
-        <label class="availability-toggle">
+        <label class="availability-toggle w-full md:w-auto justify-center">
           <input type="checkbox" id="stock-toggle" />
           <div class="toggle-switch-ui"></div>
           <span class="tracking-widest">In-stock only</span>
@@ -523,7 +692,10 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-10">
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-8 xl:gap-12">
       <section class="space-y-6">
         <div class="products-grid" id="products-container">
           <div class="col-span-full py-20 flex flex-col items-center justify-center text-slate-400">
@@ -533,7 +705,7 @@
         </div>
       </section>
 
-      <aside class="cart-panel">
+      <aside class="cart-panel order-last lg:order-none">
         <div class="cart-header">
           <div>
             <h2>Shopping Cart</h2>
@@ -574,18 +746,85 @@
         </button>
       </aside>
 
-      <div id="checkout-result" class="checkout-result hidden">
-        <div class="qr-box">
-          <img id="checkout-qr" src="" alt="Order QR Code">
-          <div class="mt-4">
-            <span class="text-xs text-slate-400 uppercase font-bold tracking-widest">Order Reference</span>
-            <span id="order-reference" class="order-reference"></span>
-          </div>
-        </div>
-        <p class="text-sm text-slate-500 font-medium italic">Present this QR code to the cashier to finalize your payment.</p>
-      </div>
     </div>
   </main>
+  </div>
+
+  <!-- Detailed Product Modal -->
+  <div id="product-details-modal" class="modal-overlay" onclick="if(event.target === this) closeProductModal()">
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeProductModal()">
+        <i class="fas fa-times"></i>
+      </button>
+      
+      <div class="modal-content-scroll">
+        <div class="modal-grid">
+          <!-- Left: Image Section -->
+          <div class="space-y-4 md:space-y-6">
+            <div class="rounded-2xl md:rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 aspect-square">
+              <img id="modal-p-image" src="" alt="" class="w-full h-full object-cover transition-transform duration-700 hover:scale-110">
+            </div>
+            
+            <div class="p-4 md:p-6 bg-slate-50 rounded-2xl md:rounded-3xl border border-slate-100">
+              <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Specifications</h4>
+              <div id="modal-p-specs" class="space-y-1">
+                <!-- Dynamic Specs -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Details Section -->
+          <div class="flex flex-col">
+            <div class="mb-2">
+              <span id="modal-p-category" class="product-category"></span>
+              <span id="modal-p-status" class="ml-2 text-[10px] font-bold uppercase tracking-wider"></span>
+            </div>
+            <h2 id="modal-p-name" class="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight mb-4"></h2>
+            
+            <div class="flex items-center gap-4 mb-6">
+              <div id="modal-p-stars" class="rating-stars text-lg"></div>
+              <span id="modal-p-reviews-count" class="text-sm font-semibold text-slate-400"></span>
+            </div>
+
+            <p id="modal-p-description" class="text-slate-500 leading-relaxed mb-8 text-lg italic"></p>
+
+            <div class="bg-blue-50/50 p-6 md:p-8 rounded-2xl md:rounded-[2rem] border border-blue-100/50 mb-8">
+              <div class="flex flex-wrap items-end justify-between gap-6">
+                <div>
+                  <span class="text-xs font-bold text-blue-400 uppercase tracking-widest block mb-1">Current Price</span>
+                  <span id="modal-p-price" class="text-3xl md:text-4xl font-black text-blue-600"></span>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Availability</span>
+                  <span id="modal-p-stock" class="text-lg font-bold text-slate-900"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-auto space-y-6">
+              <div id="modal-qty-container" class="flex items-center gap-4">
+                <!-- Dynamic Qty Selector -->
+              </div>
+              <div id="modal-actions" class="flex gap-4">
+                <!-- Dynamic Action Buttons -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <div class="mt-16 pt-12 border-t border-slate-100">
+          <h3 class="text-xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+            <i class="fas fa-comment-dots text-blue-600"></i>
+            Student Feedback
+          </h3>
+          <div id="modal-p-reviews-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Dynamic Reviews -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="../../assets/js/user.js"></script>
   <script>
@@ -621,13 +860,18 @@
       await loadProducts();
     }
 
+    /**
+     * Renders the product grid based on current search and filters.
+     * Refactored for better maintainability and robust category detection.
+     */
     function renderProducts() {
       const container = document.getElementById('products-container');
+      if (!container) return;
 
       if (!Array.isArray(allProducts) || allProducts.length === 0) {
         container.innerHTML = `
-          <div class="empty-state" style="grid-column: 1/-1;">
-            <i class="fas fa-search"></i>
+          <div class="col-span-full py-20 flex flex-col items-center justify-center text-slate-400">
+            <i class="fas fa-search text-5xl mb-4 opacity-20"></i>
             <h3>No products found</h3>
             <p>Try adjusting your search or filters</p>
           </div>
@@ -642,18 +886,21 @@
         const inStock = stockValue > 0;
         const stockClass = stockValue > 10 ? 'stock-available' : stockValue > 0 ? 'stock-low' : 'stock-unavailable';
         const productStatus = String(product.product_status || 'available').trim().toLowerCase();
-        const category = normalizeCategory(product.product_category);
-        const isFabric = category === 'uniforms' || category === 'fabric' || product.product_name.toLowerCase().includes('fabric');
+        
+        // Robust detection for fabric products (Uniforms, Fabrics, etc.)
+        const catLower = (product.product_category || '').toLowerCase();
+        const nameLower = (product.product_name || '').toLowerCase();
+        const isFabric = catLower.includes('uniform') || catLower.includes('fabric') || nameLower.includes('fabric');
 
         return `
-          <div class="product-card">
-            <img src="${imageUrl}" alt="${product.product_name}" class="product-image">
+          <div class="product-card cursor-pointer group" onclick="openProductModal('${product.product_id}')">
+            <img src="${imageUrl}" alt="${product.product_name}" class="product-image" id="prod-img-${product.product_id}">
             <div class="product-info">
               <h3 class="product-name">${product.product_name}</h3>
-              <span class="product-category">${product.product_category || 'Uncategorized'}</span>
+              <span class="product-category">${product.product_category || 'General'}</span>
               <p class="product-description italic">${product.product_description || 'No description available.'}</p>
               <div class="space-y-2 mt-2">
-                ${product.buy_price > 0 && category !== 'books' ? `
+                ${product.buy_price > 0 && catLower !== 'books' ? `
                   <div class="flex items-center justify-between">
                     <div class="flex items-center">
                       <span class="price-label">Buy${isFabric ? ' (per yard)' : ''}</span> 
@@ -664,7 +911,7 @@
                         <div class="flex items-center gap-2">
                           <input type="number" step="0.25" min="0.25" value="1.00" 
                             class="w-20 px-2 py-1 text-sm font-semibold bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500" 
-                            id="qty-fabric-${product.product_id}" 
+                            id="qty-fabric-${product.product_id}" onclick="event.stopPropagation()"
                             oninput="updateFabricTotal(${product.product_id}, ${product.buy_price})">
                           <span class="text-[10px] font-bold text-slate-400 uppercase">Yards</span>
                         </div>
@@ -686,13 +933,187 @@
                   : `<span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Inventory: </span><span class="${stockClass} text-xs font-semibold">${inStock ? `${stockValue} pcs` : 'Out of stock'}</span>`}
               </div>
             </div>
-            <div class="product-actions">
-              ${product.buy_price > 0 && category !== 'books' ? `<button class="btn-action btn-buy" type="button" ${!inStock || productStatus !== 'available' ? 'disabled' : ''} onclick="handleAddToCart('${product.product_id}', 'buy', ${isFabric})">${isFabric ? 'Add to Cart' : 'Buy'}</button>` : ''}
-              ${product.rent_price > 0 ? `<button class="btn-action btn-rent" type="button" ${!inStock || productStatus !== 'available' ? 'disabled' : ''} onclick="addToCart('${product.product_id}', 'rent')">Rent</button>` : ''}
+            <div class="product-actions" onclick="event.stopPropagation()">
+              ${product.buy_price > 0 && catLower !== 'books' ? `<button class="btn-action btn-buy" type="button" ${!inStock || productStatus !== 'available' ? 'disabled' : ''} onclick="handleAddToCart('${product.product_id}', 'buy', ${isFabric}, event)">${isFabric ? 'Add to Cart' : 'Buy'}</button>` : ''} 
+              ${product.rent_price > 0 ? `<button class="btn-action btn-rent" type="button" ${!inStock || productStatus !== 'available' ? 'disabled' : ''} onclick="addToCart('${product.product_id}', 'rent', null, null, event)">Rent</button>` : ''}
             </div>
           </div>
         `;
       }).join('');
+    }
+
+    /**
+     * Opens the detailed product modal with all specifications and feedback.
+     */
+    function openProductModal(productId) {
+      const product = allProducts.find(p => Number(p.product_id) === Number(productId));
+      if (!product) return;
+
+      const modal = document.getElementById('product-details-modal');
+      const statusLower = String(product.product_status || 'available').toLowerCase();
+      const catLower = (product.product_category || '').toLowerCase();
+      const isFabric = catLower.includes('uniform') || catLower.includes('fabric');
+      const inStock = Number(product.stock_count ?? product.stock ?? 0) > 0;
+
+      // Populate Text Content
+      document.getElementById('modal-p-name').textContent = product.product_name;
+      document.getElementById('modal-p-category').textContent = product.product_category || 'General';
+      document.getElementById('modal-p-description').textContent = product.product_description || 'No detailed description provided for this campus resource.';
+      document.getElementById('modal-p-image').src = resolveImagePath(product.product_image);
+      
+      // Status Badge
+      const statusEl = document.getElementById('modal-p-status');
+      statusEl.textContent = statusLower.replace(/_/g, ' ');
+      statusEl.className = statusLower === 'available' ? 'text-emerald-500' : 'text-red-500';
+
+      // Price & Stock
+      const displayPrice = product.buy_price > 0 ? `₱${parseFloat(product.buy_price).toFixed(2)}` : `₱${parseFloat(product.rent_price).toFixed(2)}`;
+      document.getElementById('modal-p-price').textContent = displayPrice;
+      document.getElementById('modal-p-stock').textContent = inStock ? `${product.stock_count ?? product.stock} units left` : 'Sold Out';
+      document.getElementById('modal-p-stock').className = inStock ? 'text-emerald-600 font-bold' : 'text-red-500 font-bold';
+
+      // Render Specs
+      const specs = [
+        { label: 'Asset Code', value: product.barcode || `GCST-${product.product_id}` },
+        { label: 'Department', value: catLower.includes('uniform') ? 'Supply Office' : 'Library / General' },
+        { label: 'Condition', value: 'New / Standard' },
+        { label: 'Material', value: catLower.includes('fabric') ? 'Polyester/Cotton Mix' : 'Standard Quality' }
+      ];
+      document.getElementById('modal-p-specs').innerHTML = specs.map(s => `
+        <div class="spec-item">
+          <span class="spec-label">${s.label}</span>
+          <span class="spec-value">${s.value}</span>
+        </div>
+      `).join('');
+
+      // Render Ratings (Simulated based on product ID)
+      const rating = 4 + (product.product_id % 2 === 0 ? 0.5 : 1);
+      const reviewsCount = (product.product_id * 7) % 50 + 12;
+      document.getElementById('modal-p-stars').innerHTML = Array.from({length: 5}, (_, i) => `<i class="${i < Math.floor(rating) ? 'fas fa-star' : 'far fa-star'}"></i>`).join('');
+      document.getElementById('modal-p-reviews-count').textContent = `(${reviewsCount} Student Reviews)`;
+
+      // Render Placeholder Reviews
+      const reviews = [
+        { user: 'Student #1024', comment: 'Quality is great and very affordable.', date: '2 days ago' },
+        { user: 'Senior High Rep', comment: 'The stock was available exactly when I needed it.', date: '1 week ago' }
+      ];
+      document.getElementById('modal-p-reviews-list').innerHTML = reviews.map(r => `
+        <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+          <div class="flex justify-between items-center mb-3">
+            <span class="font-bold text-slate-800 text-sm">${r.user}</span>
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${r.date}</span>
+          </div>
+          <p class="text-sm text-slate-600 italic">"${r.comment}"</p>
+        </div>
+      `).join('');
+
+      // Actions & Quantity
+      const qtyContainer = document.getElementById('modal-qty-container');
+      const actionContainer = document.getElementById('modal-actions');
+      
+      if (statusLower === 'available' && inStock) {
+        const step = isFabric ? 0.25 : 1;
+        const min = isFabric ? 0.25 : 1;
+        
+        qtyContainer.innerHTML = `
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Quantity</span>
+          <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
+            <button class="modal-qty-btn" onclick="updateModalQty(${product.product_id}, -${step})"><i class="fas fa-minus text-xs"></i></button>
+            <input type="number" id="modal-input-qty" value="${min}" step="${step}" min="${min}" 
+              class="w-20 text-center bg-transparent font-black text-slate-900 border-none focus:ring-0" 
+              onchange="validateModalQty(this, ${min})">
+            <button class="modal-qty-btn" onclick="updateModalQty(${product.product_id}, ${step})"><i class="fas fa-plus text-xs"></i></button>
+          </div>
+          <span class="text-xs font-bold text-slate-400 uppercase">${isFabric ? 'Yards' : 'Pieces'}</span>
+        `;
+
+        actionContainer.innerHTML = '';
+        if (product.buy_price > 0 && catLower !== 'books') {
+          actionContainer.innerHTML += `
+            <button class="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-500/20 active:scale-95" 
+              onclick="handleModalAddToCart(${product.product_id}, 'buy', ${isFabric}, event)">
+              Add to Cart
+            </button>
+          `;
+        }
+        if (product.rent_price > 0) {
+          actionContainer.innerHTML += `
+            <button class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 active:scale-95" 
+              onclick="handleModalAddToCart(${product.product_id}, 'rent', false, event)">
+              Rent Now
+            </button>
+          `;
+        }
+      } else {
+        qtyContainer.innerHTML = '';
+        actionContainer.innerHTML = `<div class="w-full p-4 bg-red-50 text-red-500 rounded-2xl text-center font-bold border border-red-100">Item Currently Unavailable</div>`;
+      }
+
+      // Show Modal
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeProductModal() {
+      const modal = document.getElementById('product-details-modal');
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    /**
+     * Updates quantity within the modal via buttons.
+     */
+    function updateModalQty(productId, delta) {
+      const input = document.getElementById('modal-input-qty');
+      if (!input) return;
+      
+      const product = allProducts.find(p => Number(p.product_id) === Number(productId));
+      const step = parseFloat(input.step) || 1;
+      const min = parseFloat(input.min) || step;
+      const max = parseFloat(product?.stock_count ?? product?.stock ?? 100);
+      
+      let newVal = parseFloat(input.value) + delta;
+      newVal = Math.round(newVal * 100) / 100; // Fix floating point math
+      
+      if (newVal < min) newVal = min;
+      if (newVal > max) {
+        newVal = max;
+        showToast(`Only ${max} units available.`, 'error');
+      }
+      
+      input.value = newVal.toFixed(step % 1 === 0 ? 0 : 2);
+    }
+
+    /**
+     * Validates manual input in the modal quantity field.
+     */
+    function validateModalQty(input, min) {
+      let val = parseFloat(input.value);
+      if (isNaN(val) || val < min) val = min;
+      input.value = val.toFixed(parseFloat(input.step) % 1 === 0 ? 0 : 2);
+    }
+
+    /**
+     * Wrapper to call standard addToCart from the modal interface.
+     */
+    function handleModalAddToCart(productId, type, isFabric, event) {
+      const input = document.getElementById('modal-input-qty');
+      const qty = parseFloat(input?.value) || 1;
+      const unitName = isFabric ? 'yard/s' : (type === 'rent' ? 'day' : 'pc/s');
+      
+      addToCart(productId, type, qty, unitName, event);
+      
+      // Visual feedback in modal
+      const btn = event.currentTarget;
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-check"></i> Added!';
+      
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        closeProductModal();
+      }, 800);
     }
 
     function updateFabricTotal(productId, unitPrice) {
@@ -700,35 +1121,98 @@
       const totalEl = document.getElementById(`total-fabric-${productId}`);
       if (!input || !totalEl) return;
       
-      const yards = parseFloat(input.value) || 0;
+      const yards = Math.max(0.25, parseFloat(input.value) || 0);
       totalEl.textContent = `₱${(yards * unitPrice).toFixed(2)}`;
     }
 
-    function handleAddToCart(productId, type, isFabric) {
-      if (isFabric && type === 'buy') {
+    /**
+     * Dispatches a non-blocking UI notification.
+     */
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      
+      const toast = document.createElement('div');
+      toast.className = `toast ${type === 'error' ? 'bg-red-600' : 'bg-slate-900'}`;
+      toast.innerHTML = `
+        <i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-shopping-cart'}"></i>
+        <span>${message}</span>
+      `;
+      
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-10px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    /**
+     * Triggers a subtle bounce and glow animation on the product image.
+     * Logic ensures the animation restarts on rapid clicks.
+     */
+    function animateProductImage(productId) {
+      const img = document.getElementById(`prod-img-${productId}`);
+      if (!img) return;
+      
+      // Remove existing class to reset animation
+      img.classList.remove('img-added-anim');
+      // Trigger reflow to allow the browser to recognize the class removal
+      void img.offsetWidth; 
+      
+      img.classList.add('img-added-anim');
+      setTimeout(() => img.classList.remove('img-added-anim'), 650);
+    }
+
+    /**
+     * Triggers a floating "+1" text animation above the clicked element.
+     */
+    function triggerFloatingPlusOne(event) {
+      if (!event || !event.target) return;
+      const btn = event.target.closest('button');
+      if (!btn) return;
+
+      const rect = btn.getBoundingClientRect();
+      const el = document.createElement('div');
+      el.className = 'floating-plus-one';
+      el.textContent = '+1';
+      el.style.position = 'fixed';
+      el.style.left = `${rect.left + rect.width / 2}px`;
+      el.style.top = `${rect.top}px`;
+      
+      document.body.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+    }
+
+    function handleAddToCart(productId, type, isFabric, event) {
+      if (isFabric === true && type === 'buy') {
         const input = document.getElementById(`qty-fabric-${productId}`);
         const yards = parseFloat(input.value);
-        if (isNaN(yards) || yards <= 0) {
-          alert('Please enter a valid yard quantity.');
+        if (isNaN(yards) || yards < 0.25) {
+          showToast('Please enter at least 0.25 yards.', 'error');
           return;
         }
-        addToCart(productId, type, yards, 'yard/s');
+        addToCart(productId, type, yards, 'yard/s', event);
       } else {
-        addToCart(productId, type);
+        addToCart(productId, type, 1, null, event);
       }
     }
 
-    function addToCart(productId, type, customQty = null, unitName = null) {
+    function addToCart(productId, type, customQty = null, unitName = null, event = null) {
       const normalizedProductId = Number(productId);
       const product = allProducts.find(item => Number(item.product_id) === normalizedProductId);
       const productStatus = String(product?.product_status || 'available').trim().toLowerCase();
-      if (!product || Number(product.stock) <= 0 || productStatus !== 'available') {
-        alert('Product is unavailable.');
+      
+      const stockValue = Number(product?.stock_count ?? product?.stock ?? 0);
+
+      if (!product || stockValue <= 0 || productStatus !== 'available') {
+        showToast('This product is currently unavailable.', 'error');
         return;
       }
 
       if (type === 'buy' && normalizeCategory(product.product_category) === 'books') {
-        alert('Books are available for rent only.');
+        showToast('Books are available for rent only.', 'error');
         return;
       }
 
@@ -736,26 +1220,34 @@
       const uName = unitName || (type === 'rent' ? 'day' : 'pc/s');
       const existing = cart.find(item => Number(item.product_id) === normalizedProductId && item.type === type);
       const unitPrice = type === 'rent' ? parseFloat(product.rent_price) : parseFloat(product.buy_price);
-      const totalStock = Number(product.stock_count ?? product.stock ?? 0);
 
       if (!existing) {
         cart.push({
           product_id: normalizedProductId,
           product_name: product.product_name,
+          product_category: product.product_category || 'General',
+          product_image: product.product_image || '',
           type,
           quantity: qtyToAdd,
           unitPrice,
           unitName: uName,
-          stock: totalStock,
+          stock: stockValue,
           selected: true,
           duration: 1,
           durationUnit: 'days'
         });
-      } else if (existing.quantity + qtyToAdd <= totalStock) {
+        showToast(`Added ${product.product_name} to cart.`);
+        animateProductImage(normalizedProductId);
+        triggerFloatingPlusOne(event);
+      } else if (existing.quantity + qtyToAdd <= stockValue) {
         existing.quantity += qtyToAdd;
         existing.selected = true;
+        showToast(`Updated ${product.product_name} quantity.`);
+        animateProductImage(normalizedProductId);
+        triggerFloatingPlusOne(event);
       } else {
-        alert('Maximum stock reached for this item.');
+        showToast('Insufficient stock available.', 'error');
+        return;
       }
 
       renderCart();
@@ -805,8 +1297,8 @@
       if (nextQuantity < (item.unitName === 'yard/s' ? 0.25 : 1)) {
         return;
       }
-      if (nextQuantity > item.stock) {
-        alert('Maximum available stock reached for this item.');
+      if (nextQuantity > (item.stock || 0)) {
+        showToast('Maximum available stock reached.', 'error');
         return;
       }
       item.quantity = nextQuantity;
@@ -883,7 +1375,7 @@
           <div class="flex flex-col items-end gap-2">
             <div class="flex items-center gap-2">
               <button type="button" class="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-md text-xs hover:bg-slate-50" onclick="changeCartQuantity(${item.product_id}, '${item.type}', ${item.unitName === 'yard/s' ? -0.25 : -1})">−</button>
-              <span class="text-sm font-semibold min-w-[30px] text-center">${item.quantity}${item.unitName === 'yard/s' ? ' yd' : ''}</span>
+              <span class="text-sm font-semibold min-w-[30px] text-center">${item.unitName === 'yard/s' ? item.quantity.toFixed(2) : item.quantity}${item.unitName === 'yard/s' ? ' yd' : ''}</span>
               <button type="button" class="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-md text-xs hover:bg-slate-50" onclick="changeCartQuantity(${item.product_id}, '${item.type}', ${item.unitName === 'yard/s' ? 0.25 : 1})">+</button>
             </div>
             <button type="button" class="text-red-400 hover:text-red-600 transition-colors" onclick="removeCartItem(${item.product_id}, '${item.type}')"><i class="fas fa-trash-alt text-xs"></i></button>
@@ -897,16 +1389,25 @@
       saveCartToServer();
     }
 
+    /**
+     * Refactored loadProducts with better error handling and stable filtering.
+     */
     async function loadProducts() {
-      const query = new URLSearchParams();
-      if (currentCategory !== 'all') query.set('category', currentCategory);
-      if (currentSearch.trim()) query.set('search', currentSearch.trim());
-      if (document.getElementById('stock-toggle').checked) query.set('available_only', '1');
+      try {
+        const query = new URLSearchParams();
+        if (currentCategory && currentCategory !== 'all') query.set('category', currentCategory);
+        if (currentSearch && currentSearch.trim()) query.set('search', currentSearch.trim());
+        if (document.getElementById('stock-toggle')?.checked) query.set('available_only', '1');
 
-      const url = '../../actions/get_products.php' + (query.toString() ? `?${query.toString()}` : '');
-      const productsData = await fetchWithError(url);
-      allProducts = Array.isArray(productsData) ? productsData : productsData.products || [];
-      renderProducts();
+        const url = '../../actions/get_products.php' + (query.toString() ? `?${query.toString()}` : '');
+        const productsData = await fetchWithError(url);
+        allProducts = Array.isArray(productsData) ? productsData : (productsData?.products || []);
+      } catch (error) {
+        console.error('Failed to load products:', error);
+        allProducts = [];
+      } finally {
+        renderProducts();
+      }
     }
 
     async function loadCart() {
@@ -917,14 +1418,17 @@
         cart = serverCart.map(item => {
           const normalizedProductId = Number(item.product_id);
           const product = allProducts.find(p => Number(p.product_id) === normalizedProductId);
+          
           const unitPrice = parseFloat(item.unitPrice || item.unit_price) || (product ? (item.type === 'rent' ? parseFloat(product.rent_price) : parseFloat(product.buy_price)) : 0);
           return {
             product_id: normalizedProductId,
             product_name: item.product_name || (product ? product.product_name : 'Unknown item'),
+            product_category: item.product_category || (product ? product.product_category : 'General'),
+            product_image: item.product_image || (product ? product.product_image : ''),
             type: item.type || 'buy',
             quantity: parseFloat(item.quantity) || 1,
             unitPrice,
-            unitName: item.unitName || item.unit_name || (item.type === 'rent' ? 'item' : 'pc/s'),
+            unitName: item.unitName || item.unit_name || (item.type === 'rent' ? 'day' : (item.product_category === 'Uniform Fabrics' ? 'yard/s' : 'pc/s')),
             stock: product ? Number(product.stock_count ?? product.stock ?? 0) : (parseFloat(item.stock) || 0),
             selected: item.selected === true || item.selected === 'true' || false,
             duration: item.duration || 1,
@@ -1014,26 +1518,12 @@
         cart = cart.filter(item => !item.selected);
         updateCartDisplay();
         await saveCartToServer();
-        
-        // Ensure the reference is available for display
-        const reference = result.transaction_number || `TXN-${Date.now()}`;
-        // Always prepend 'ORDER-' if missing to satisfy the backend QRService::parse requirement
-        const qrData = String(reference).trim().startsWith('ORDER-') ? reference.trim() : `ORDER-${reference.trim()}`;
 
-        // Use local QR API
-        const qrImg = document.getElementById('checkout-qr');
-        const refText = document.getElementById('order-reference');
-        const resPanel = document.getElementById('checkout-result');
-
-        if (qrImg) qrImg.src = `../../actions/generate_qr_api.php?data=${encodeURIComponent(qrData.trim())}`;
-        if (refText) refText.textContent = reference;
-        if (resPanel) resPanel.classList.remove('hidden');
-        
-        let successMessage = 'Checkout successful! Show the QR code to the cashier for scanning.';
+        let successMessage = 'Checkout successful!';
         if (result.email_status === 'sent') {
-            successMessage += ' A copy of the QR code has also been sent to your Gmail account.';
+            successMessage += ' Your order confirmation and QR code have been sent to your registered Gmail account.';
         } else if (result.email_status === 'failed') {
-            successMessage += ' We attempted to send a copy of the QR code to your Gmail, but it failed. Please ensure your email is valid.';
+            successMessage += ' Order placed, but we could not send the confirmation email. Please check your Dashboard for your Order ID.';
         }
         alert(successMessage);
       } catch (error) {
