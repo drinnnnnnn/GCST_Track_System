@@ -248,9 +248,6 @@ const OrderScanner = {
                 const discountEl = document.getElementById('discount-percent');
                 if (discountEl) discountEl.value = state.discountPercent;
 
-                const studentEl = document.getElementById('checkout-student-id');
-                if (studentEl) studentEl.value = state.studentId;
-
                 // Map items to Cart
                 if (typeof cart !== 'undefined') {
                     cart = order.items.map(item => ({

@@ -130,7 +130,7 @@ function getSalesSummary($conn, $salesTable, $from = null, $to = null) {
         return [
             'total_sales' => 0,
             'total_transactions' => 0,
-            'books_sold' => 0
+            'items_sold' => 0
         ];
     }
 
@@ -149,18 +149,18 @@ function getSalesSummary($conn, $salesTable, $from = null, $to = null) {
         return [
             'total_sales' => 0,
             'total_transactions' => 0,
-            'books_sold' => 0
+            'items_sold' => 0
         ];
     }
     $quantityExpression = $quantityColumn ? "SUM(`$quantityColumn`)" : 'COUNT(*)';
 
-    $sql = "SELECT COALESCE(SUM(`$amountColumn`), 0) AS total_sales, COUNT(*) AS total_transactions, COALESCE($quantityExpression, 0) AS books_sold FROM `$salesTable` $where";
+    $sql = "SELECT COALESCE(SUM(`$amountColumn`), 0) AS total_sales, COUNT(*) AS total_transactions, COALESCE($quantityExpression, 0) AS items_sold FROM `$salesTable` $where";
     $result = $conn->query($sql);
     if (!$result) {
         return [
             'total_sales' => 0,
             'total_transactions' => 0,
-            'books_sold' => 0
+            'items_sold' => 0
         ];
     }
 
@@ -168,7 +168,7 @@ function getSalesSummary($conn, $salesTable, $from = null, $to = null) {
     return [
         'total_sales' => (float)($row['total_sales'] ?? 0),
         'total_transactions' => (int)($row['total_transactions'] ?? 0),
-        'books_sold' => (int)($row['books_sold'] ?? 0)
+        'items_sold' => (int)($row['items_sold'] ?? 0)
     ];
 }
 
@@ -499,30 +499,6 @@ function getRecentActivity($conn, $salesTable = null, $limit = 5) {
         }
     }
 
-    if (tableExists($conn, 'active_rentals')) {
-        $sql = "SELECT product_id, student_id, date_student_received_book AS activity_date, return_date, status FROM active_rentals ORDER BY date_student_received_book DESC LIMIT $limit";
-        $result = $conn->query($sql);
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $item = 'Rental';
-                if (tableExists($conn, 'products') && !empty($row['product_id'])) {
-                    $productResult = $conn->query("SELECT product_name FROM products WHERE product_id = '" . $conn->real_escape_string($row['product_id']) . "' LIMIT 1");
-                    if ($productResult && ($productRow = $productResult->fetch_assoc())) {
-                        $item = $productRow['product_name'];
-                    }
-                }
-                $activities[] = [
-                    'type' => 'Rental',
-                    'item' => $item,
-                    'amount' => 0,
-                    'quantity' => 1,
-                    'date' => $row['activity_date'] ?? ''
-                ];
-            }
-            return $activities;
-        }
-    }
-
     return [];
 }
 
@@ -548,18 +524,7 @@ function getProductInventoryMetrics($conn) {
 }
 
 function getActiveRentalMetrics($conn) {
-    $activeRentals = 0;
-    $overdueCount = 0;
-    if (tableExists($conn, 'active_rentals')) {
-        $activeRes = $conn->query("SELECT COUNT(*) AS total_active FROM active_rentals WHERE status != 'returned'");
-        $activeRow = $activeRes ? $activeRes->fetch_assoc() : null;
-        $activeRentals = (int)($activeRow['total_active'] ?? 0);
-
-        $overdueRes = $conn->query("SELECT COUNT(*) AS total_overdue FROM active_rentals WHERE status = 'overdue' OR (return_date IS NOT NULL AND DATE(return_date) < CURDATE() AND status != 'returned')");
-        $overdueRow = $overdueRes ? $overdueRes->fetch_assoc() : null;
-        $overdueCount = (int)($overdueRow['total_overdue'] ?? 0);
-    }
-    return ['active_rentals' => $activeRentals, 'overdue_items' => $overdueCount];
+    return ['active_rentals' => 0, 'overdue_items' => 0];
 }
 
 function getQueueMetrics($conn) {

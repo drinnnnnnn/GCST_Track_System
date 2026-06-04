@@ -47,7 +47,7 @@ $transactionNumber = $parsed['reference'];
 $cleanReference = str_replace('ORDER-', '', $transactionNumber);
 $prefixedReference = 'ORDER-' . $cleanReference;
 
-$query = "SELECT id, transaction_number, user_id, student_name, transaction_type, items, subtotal, discount_percent, discount_amount, total_amount, payment_status, is_expired, created_at 
+$query = "SELECT id, transaction_number, user_id, student_name, guest_school_id, transaction_type, items, subtotal, discount_percent, discount_amount, total_amount, payment_status, is_expired, created_at 
           FROM cashier_transactions 
           WHERE transaction_number = ? OR transaction_number = ? OR transaction_number = ? LIMIT 1";
 $stmt = $conn->prepare($query);
@@ -91,6 +91,9 @@ if (!empty($order['user_id'])) {
         $order['student_full_name'] = trim($fName . ' ' . $lName);
     }
     $uStmt->close();
+} elseif (!empty($order['guest_school_id'])) {
+    $order['student_id'] = $order['guest_school_id'];
+    $order['student_full_name'] = $order['student_name'];
 }
 
 // Ensure items are properly decoded into an array for the frontend

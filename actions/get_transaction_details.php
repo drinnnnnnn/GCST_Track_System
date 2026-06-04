@@ -35,6 +35,7 @@ try {
             ct.receipt_number,
             ct.user_id,
             ct.student_name,
+            ct.guest_school_id,
             ct.cashier_id,
             ct.transaction_type,
             ct.subtotal,

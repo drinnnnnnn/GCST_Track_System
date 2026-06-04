@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   
   <style>
     :root {
@@ -237,7 +238,7 @@
       <button class="period-button" data-period="week">This Week</button>
       <button class="period-button" data-period="month">This Month</button>
       <button class="period-button" data-period="year">This Year</button>
-      <button class="period-button" id="export-csv-btn" style="margin-left: auto; background: var(--success); color: white;"><i class="fas fa-file-csv"></i> Export CSV</button>
+      <button class="period-button" id="export-csv-btn" style="margin-left: auto; background: var(--success); color: white;"><i class="fas fa-file-excel"></i> Export Excel</button>
     </div>
 
     <!-- Summary Section -->
@@ -337,6 +338,11 @@
     let salesTrendChartInstance = null;
     let topProductsChartInstance = null;
     let salesPollInterval = null;
+    let currentTotalTransactions = 0;
+    let currentAvgTransaction = 0;
+    let currentItemsSold = 0;
+    let currentTopProduct = 'N/A';
+    let currentAdminName = 'Unknown Admin'; // New: Global variable to store admin name
     let lastFetchedSalesHistory = [];
 
     function formatDate(value) {
@@ -365,14 +371,21 @@
         }
 
         currentTotalSales = Number(data.total_sales ?? data.total_sales_today ?? 0);
-        const totalTransactions = Number(data.total_transactions ?? 0);
-        const avgValue = Number(data.average_transaction_value ?? (totalTransactions > 0 ? (currentTotalSales / totalTransactions) : 0));
-        const itemsSold = Number(data.total_items_sold ?? data.books_sold ?? 0);
+        currentTotalTransactions = Number(data.total_transactions ?? 0);
+        currentAvgTransaction = Number(data.average_transaction_value ?? (currentTotalTransactions > 0 ? (currentTotalSales / currentTotalTransactions) : 0));
+        currentItemsSold = Number(data.total_items_sold ?? data.books_sold ?? 0);
+        
+        // Identify Top Selling Product from analytics data
+        if (data.top_products && data.top_products.length > 0) {
+            currentTopProduct = data.top_products[0].name;
+        } else {
+            currentTopProduct = 'N/A';
+        }
 
         document.getElementById('totalSales').textContent = formatCurrency(currentTotalSales);
-        document.getElementById('totalTransactions').textContent = totalTransactions;
-        document.getElementById('avgTransaction').textContent = formatCurrency(avgValue);
-        document.getElementById('itemsSold').textContent = itemsSold;
+        document.getElementById('totalTransactions').textContent = currentTotalTransactions;
+        document.getElementById('avgTransaction').textContent = formatCurrency(currentAvgTransaction);
+        document.getElementById('itemsSold').textContent = currentItemsSold;
 
         if (!salesTrendChartInstance) {
           salesTrendChartInstance = createChart('salesTrendChart', 'line', data.sales_labels || [], data.sales_data || [], 'Daily Sales (₱)');
@@ -512,34 +525,246 @@
 
     window.stopSalesPolling = () => { if (salesPollInterval) clearInterval(salesPollInterval); salesPollInterval = null; };
 
-    window.exportSalesToCSV = function() {
-      if (!lastFetchedSalesHistory.length) return alert('No data available.');
-      const headers = ['Date', 'Transaction ID', 'Product(s)', 'Quantity', 'Amount'];
-      const rows = lastFetchedSalesHistory.map(item => [
-        `"${formatDate(item.date)}"`, 
-        `"${item.transaction_id || ''}"`, 
-        `"${item.item.replace(/"/g, '""')}"`, 
-        item.quantity, 
-        item.amount
-      ]);
+    window.exportSalesToExcel = function() {
+      if (!lastFetchedSalesHistory.length) return alert('No data available for export.');
 
-      // Structured Summary Section
-      rows.push([]); // Empty row for separation
-      rows.push(['', '', '', '"SUMMARY REPORT"', '']);
-      rows.push(['', '', '', '"Report Period"', `"${currentSalesPeriod.toUpperCase()}"`]);
-      rows.push(['', '', '', '"Total Sales Amount"', currentTotalSales.toFixed(2)]);
+      const HIGH_VALUE_THRESHOLD = 1000; // Highlight sales above this amount
+      const COLOR_HIGH_VALUE = { rgb: "E2EFDA" }; // Light Green
+      const COLOR_INVALID_QTY = { rgb: "FCE4D6" }; // Light Red
+      const COLOR_HEADER_BG = { rgb: "4472C4" }; // Professional Blue
+      const COLOR_SECTION_BG = { rgb: "D9E1F2" }; // Light Blue for section separators
+      const COLOR_TOTAL_BG = { rgb: "F2F2F2" }; // Light Grey for summary totals
+      
+      const FIXED_OVERHEAD_PERCENT = 10.0; // Configurable Fixed Overhead Percentage
+      // Configurable Financial Thresholds
+      const LOW_PROFIT_THRESHOLD = 10; // Highlight margins below 10%
+      const COLOR_LOW_PROFIT_BG = { rgb: "FFC7CE" }; // Standard Excel light red
+      const COLOR_LOW_PROFIT_TEXT = { rgb: "9C0006" }; // Standard Excel dark red
 
-      const csv = headers.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `sales_report_${currentSalesPeriod}.csv`;
-      link.click();
+      const now = new Date();
+      const exportDateTime = now.toLocaleString('en-PH', { 
+        year: 'numeric', month: 'long', day: 'numeric', 
+        hour: '2-digit', minute: '2-digit', hour12: true 
+      });
+      const fileTimestamp = now.toISOString().split('T')[0];
+
+      // --- 2. DATA AGGREGATION (CATEGORY SUMMARY) ---
+      const summaryByCategory = {};
+      let totalRevenueForContribution = 0;
+      lastFetchedSalesHistory.forEach(item => {
+        const cat = item.category || 'General Sales';
+        if (!summaryByCategory[cat]) {
+          summaryByCategory[cat] = { qty: 0, revenue: 0, count: 0 };
+        }
+        summaryByCategory[cat].qty += parseFloat(item.quantity || 0);
+        const amt = parseFloat(item.amount || 0);
+        summaryByCategory[cat].revenue += amt;
+        summaryByCategory[cat].count += 1;
+        totalRevenueForContribution += amt;
+      });
+
+      const dataRows = [];
+      
+      // --- 1. REPORT HEADER (High Hierarchy) ---
+      dataRows.push(["GRANBY COLLEGES OF SCIENCE AND TECHNOLOGY - SALES PERFORMANCE REPORT"]);
+      dataRows.push(["SYSTEM: GCST TRACK SYSTEM (POS MODULE)"]);
+      dataRows.push(["REPORT TYPE:", "Detailed Transaction Ledger"]);
+      dataRows.push(["GENERATED BY:", currentAdminName]);
+      dataRows.push(["EXPORT TIMESTAMP:", exportDateTime]);
+      dataRows.push(["REPORTING PERIOD:", currentSalesPeriod.toUpperCase()]);
+      dataRows.push([]); 
+      
+      // --- 2. CATEGORY-LEVEL PERFORMANCE SUMMARY ---
+      dataRows.push(["CATEGORY PERFORMANCE SUMMARY"]);
+      const summaryHeaders = ["Product Category", "Total Items Sold", "Total Sales Amount", "Revenue Contribution (%)", "No. of Transactions"];
+      dataRows.push(summaryHeaders);
+      
+      let grandQty = 0;
+      let grandRev = 0;
+      let grandTxns = 0;
+
+      Object.entries(summaryByCategory).sort().forEach(([cat, stats]) => {
+        const contribution = totalRevenueForContribution > 0 
+          ? (stats.revenue / totalRevenueForContribution) * 100 
+          : 0;
+          
+        dataRows.push([cat, stats.qty, formatCurrency(stats.revenue), contribution.toFixed(2) + '%', stats.count]);
+        grandQty += stats.qty;
+        grandRev += stats.revenue;
+        grandTxns += stats.count;
+      });
+      dataRows.push(["GRAND TOTAL", grandQty, formatCurrency(grandRev), "100.00%", grandTxns]);
+      dataRows.push([]); // Spacer
+      dataRows.push([]); // Spacer
+
+      // --- 2. EXECUTIVE PERFORMANCE SUMMARY ---
+      dataRows.push(["EXECUTIVE SUMMARY"]);
+      dataRows.push(["Metric Name", "Aggregated Value", "Details/Context"]);
+      dataRows.push(["Total Gross Revenue", formatCurrency(currentTotalSales), "Sum of all transactions in period"]);
+      dataRows.push(["Transaction Volume", currentTotalTransactions, "Total number of successful orders"]);
+      dataRows.push(["Inventory Movement", currentItemsSold, "Total units sold/released from stock"]);
+      dataRows.push(["Average Order Value", formatCurrency(currentAvgTransaction), "Mean revenue per unique transaction"]);
+      dataRows.push(["Top Performing Item", currentTopProduct, "Most sold item by volume in this period"]);
+      dataRows.push([]); 
+
+      // --- 3. DETAILED TRANSACTION LEDGER ---
+      dataRows.push(["DETAILED TRANSACTION RECORDS (GROUPED BY CATEGORY)"]);
+      const tableHeaders = [
+        'Category', 'Reference ID', 'Process Date', 
+        'Products & Specifications', 'Qty', 'Unit Price', 'Discounts', 
+        'Total Amount', 'Profit Margin (%)', 'Payment Method'
+      ];
+      dataRows.push(tableHeaders);
+
+      // Sort history items by category for cleaner grouped reporting
+      const sortedHistory = [...lastFetchedSalesHistory].sort((a, b) => 
+        (a.category || 'General Sales').localeCompare(b.category || 'General Sales')
+      );
+
+      sortedHistory.forEach(item => {
+        const qty = parseFloat(item.quantity || 1);
+        const amt = parseFloat(item.amount || 0);
+        const disc = parseFloat(item.discount_amount || 0);
+        const unitP = item.unit_price || (qty > 0 ? (amt + disc) / qty : 0);
+        
+        // --- CONSERVATIVE PROFIT CALCULATION ---
+        const cost = parseFloat(item.cost || 0); // Original acquisition cost
+        const revenue = amt;
+        const overheadCost = revenue * (FIXED_OVERHEAD_PERCENT / 100);
+        const netProfit = revenue - cost - overheadCost;
+        const profitMarginValue = revenue > 0 ? (netProfit / revenue) * 100 : 0;
+        const profitMarginDisplay = revenue > 0 ? profitMarginValue.toFixed(2) + '%' : '—';
+
+        dataRows.push([
+          item.category || 'General Sales',
+          item.transaction_id || item.transaction_number || '---',
+          formatDate(item.date),
+          item.item || 'N/A',
+          qty,
+          formatCurrency(unitP),
+          formatCurrency(disc),
+          formatCurrency(amt),
+          profitMarginDisplay,
+          item.payment_method || 'Cash Payment'
+        ]);
+      });
+      dataRows.push([]); 
+
+      // --- 4. REPORT FOOTER & AUDIT DATA ---
+      dataRows.push(["END OF REPORT"]);
+      dataRows.push(["Grand Total Revenue:", formatCurrency(currentTotalSales)]);
+      dataRows.push(["Verified By:", currentAdminName]);
+      dataRows.push(["Audit Notice:", "This report is an official system-generated document. Unauthorized alteration is prohibited."]);
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(dataRows);
+
+      // --- 4. ADVANCED REPORT FORMATTING ---
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      
+      // Identify key row indices for context-aware styling
+      const catSummaryIdx = dataRows.findIndex(r => r.includes('CATEGORY PERFORMANCE SUMMARY'));
+      const execSummaryIdx = dataRows.findIndex(r => r.includes('EXECUTIVE SUMMARY'));
+      const ledgerHeaderIdx = dataRows.findIndex(r => r.includes('Category') && r.includes('Reference ID'));
+      const reportFooterIdx = dataRows.findIndex(r => r.includes('END OF REPORT'));
+
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        // Identify data rows for conditional evaluation
+        let isLedgerData = R > ledgerHeaderIdx && R < reportFooterIdx;
+        let rowStyle = null;
+        let lowProfitCellStyle = null;
+
+        if (isLedgerData) {
+          const qty = parseFloat(dataRows[R][4] || 0); // Qty is at Index 4 in ledger
+          // Extract numeric value from currency string for threshold check
+          const totalRaw = String(dataRows[R][7] || "0").replace(/[^0-9.-]+/g,"");
+          const total = parseFloat(totalRaw);
+
+          if (qty <= 0) {
+            rowStyle = { fill: { fgColor: COLOR_INVALID_QTY } };
+          } else if (total >= HIGH_VALUE_THRESHOLD) {
+            rowStyle = { fill: { fgColor: COLOR_HIGH_VALUE } };
+          }
+
+          // Financial Analysis: Evaluate Profit Margin (%) threshold
+          const marginStr = String(dataRows[R][8] || "");
+          if (marginStr !== '—' && marginStr.includes('%')) {
+            const marginVal = parseFloat(marginStr.replace('%', ''));
+            if (!isNaN(marginVal) && marginVal < LOW_PROFIT_THRESHOLD) {
+              lowProfitCellStyle = { fill: { fgColor: COLOR_LOW_PROFIT_BG }, font: { color: COLOR_LOW_PROFIT_TEXT, bold: true } };
+            }
+          }
+        }
+
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!ws[cellRef]) continue;
+
+          // Initialize style object
+          ws[cellRef].s = {
+            font: { name: "Arial", sz: 10 },
+            alignment: { vertical: "center", indent: 1 }
+          };
+
+          // Apply Section Title Styling
+          if (R === catSummaryIdx || R === execSummaryIdx || R === ledgerHeaderIdx - 1) {
+            ws[cellRef].s.font = { bold: true, sz: 11, color: { rgb: "000000" } };
+            ws[cellRef].s.fill = { fgColor: COLOR_SECTION_BG };
+          }
+
+          // Apply Table Header Styling (Summary & Ledger)
+          if (R === catSummaryIdx + 1 || R === execSummaryIdx + 1 || R === ledgerHeaderIdx) {
+            ws[cellRef].s.font = { bold: true, color: { rgb: "FFFFFF" } };
+            ws[cellRef].s.fill = { fgColor: COLOR_HEADER_BG };
+            ws[cellRef].s.alignment = { horizontal: "center", vertical: "center" };
+          }
+          
+          // Apply Main Title Styling
+          if (R < catSummaryIdx && C === 0) {
+            ws[cellRef].s.font = { bold: true, sz: 12 };
+          }
+
+          // Apply Summary Totals Styling
+          if (R === execSummaryIdx - 3 || R >= reportFooterIdx) {
+            ws[cellRef].s.font = { bold: true };
+            if (R === execSummaryIdx - 3) ws[cellRef].s.fill = { fgColor: COLOR_TOTAL_BG };
+          }
+
+          // Apply Conditional Formatting
+          if (C === 8 && lowProfitCellStyle) {
+            // Specific Cell Formatting: Low Profit Highlight (Precedence over Row Style)
+            ws[cellRef].s.fill = lowProfitCellStyle.fill;
+            ws[cellRef].s.font = { ...ws[cellRef].s.font, ...lowProfitCellStyle.font };
+          } else if (rowStyle) {
+            // General Row Formatting: High Value or Invalid Qty
+            ws[cellRef].s.fill = rowStyle.fill;
+          }
+        }
+      }
+
+      // --- 5. AUTOMATIC COLUMN SIZING LOGIC ---
+      const colWidths = [];
+      
+      for (let i = 0; i < tableHeaders.length; i++) {
+        let maxCharLen = tableHeaders[i].length;
+        for (let j = 0; j < dataRows.length; j++) {
+          if (dataRows[j][i]) {
+            const cellLen = String(dataRows[j][i]).length;
+            if (cellLen > maxCharLen) maxCharLen = cellLen;
+          }
+        }
+        // Set width: Char count + padding, constrained between 10 and 60
+        colWidths.push({ wch: Math.min(Math.max(maxCharLen, 12) + 2, 60) });
+      }
+      ws['!cols'] = colWidths;
+
+      XLSX.utils.book_append_sheet(wb, ws, "Sales Report");
+      XLSX.writeFile(wb, `Sales_Report_${currentSalesPeriod}_${fileTimestamp}.xlsx`);
     }
 
     window.initAdminCashierSalesPage = function(userData) {
       currentSalesPeriod = 'today';
+      currentAdminName = userData.name || 'Unknown Admin'; // New: Set admin name from user data
       setActivePeriodButton(currentSalesPeriod);
       loadSalesData(currentSalesPeriod);
       startSalesPolling();
@@ -553,7 +778,7 @@
         });
       });
 
-      document.getElementById('export-csv-btn').addEventListener('click', window.exportSalesToCSV);
+      document.getElementById('export-csv-btn').addEventListener('click', window.exportSalesToExcel);
       document.getElementById('historySearch')?.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = lastFetchedSalesHistory.filter(entry => {

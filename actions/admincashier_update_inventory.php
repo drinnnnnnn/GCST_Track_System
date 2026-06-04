@@ -1,4 +1,4 @@
-﻿﻿<?php
+﻿﻿﻿﻿<?php
 // Force JSON output even if errors occur
 header('Content-Type: application/json');
 ini_set('display_errors', '0'); // Prevent HTML error output
@@ -78,8 +78,40 @@ try {
     $productStatus = isset($_POST['product_status']) ? trim($_POST['product_status']) : null;
     $stockCount = filter_input(INPUT_POST, 'stock_count', FILTER_VALIDATE_FLOAT);
 
+    // Book-specific metadata
+    $bookAuthor = isset($_POST['book_author']) ? trim($_POST['book_author']) : null;
+    $bookPages = filter_input(INPUT_POST, 'book_pages', FILTER_VALIDATE_INT);
+    $bookCourse = isset($_POST['book_course']) ? trim($_POST['book_course']) : null;
+    $bookSubject = isset($_POST['book_subject']) ? trim($_POST['book_subject']) : null;
+    $bookEdition = isset($_POST['book_edition']) ? trim($_POST['book_edition']) : null;
+    $bookPublisher = isset($_POST['book_publisher']) ? trim($_POST['book_publisher']) : null;
+    $bookIsbn = isset($_POST['book_isbn']) ? trim($_POST['book_isbn']) : null;
+    $bookYear = filter_input(INPUT_POST, 'book_publication_year', FILTER_VALIDATE_INT);
+
     if (!$productName || !$productCategory || $buyPrice === false || !$productStatus || $stockCount === false) {
         throw new Exception('Invalid or missing product data.');
+    }
+
+    // Conditional Validation for Books
+    if ($productCategory === 'Books') {
+        if (empty($bookAuthor)) throw new Exception('Book Author is required.');
+        if ($bookPages === false || $bookPages <= 0) throw new Exception('A valid page count is required.');
+        if (empty($bookCourse)) throw new Exception('Applicable course/program is required.');
+        
+        if ($bookYear !== null && $bookYear !== false) {
+            if ($bookYear < 1000 || $bookYear > (int)date('Y') + 5) throw new Exception('Invalid publication year.');
+        }
+
+        // Uniqueness check for ISBN (if provided)
+        if (!empty($bookIsbn)) {
+            $isbnCheck = $conn->prepare("SELECT 1 FROM products WHERE book_isbn = ? AND product_id != ? LIMIT 1");
+            $isbnCheck->bind_param('si', $bookIsbn, $productId);
+            $isbnCheck->execute();
+            if ($isbnCheck->get_result()->num_rows > 0) {
+                throw new Exception('Conflict: The provided ISBN is already registered to another book.');
+            }
+            $isbnCheck->close();
+        }
     }
 
     // Prepare the update statement
@@ -89,7 +121,15 @@ try {
                         buy_price = ?, 
                         product_status = ?, 
                         stock_count = ?, 
-                        product_image = ? 
+                        product_image = ?,
+                        book_author = ?,
+                        book_pages = ?,
+                        book_course = ?,
+                        book_subject = ?,
+                        book_edition = ?,
+                        book_publisher = ?,
+                        book_isbn = ?,
+                        book_publication_year = ?
                     WHERE product_id = ?";
 
     $stmt = $conn->prepare($updateQuery);
@@ -98,13 +138,21 @@ try {
     }
 
     $stmt->bind_param(
-        'ssdsdsi',
+        'ssdsdssisssssii',
         $productName,
         $productCategory,
         $buyPrice,
         $productStatus,
         $stockCount,
         $productImage,
+        $bookAuthor,
+        $bookPages,
+        $bookCourse,
+        $bookSubject,
+        $bookEdition,
+        $bookPublisher,
+        $bookIsbn,
+        $bookYear,
         $productId
     );
 

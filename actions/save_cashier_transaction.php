@@ -58,6 +58,22 @@ try {
         if (empty($guestEmail) || !preg_match('/^[a-zA-Z0-9._%+-]+@gmail\.com$/', $guestEmail)) {
             throw new Exception('A valid Gmail address (@gmail.com) is required for guest transactions.');
         }
+
+        // Backend Validation: Ensure discount is only applied to matched School IDs
+        if ($discountPercent > 0 && !empty($guestSchoolId)) {
+            $checkStudent = $conn->prepare("SELECT 1 FROM users WHERE student_id = ? LIMIT 1");
+            $checkStudent->bind_param('s', $guestSchoolId);
+            $checkStudent->execute();
+            $isRealStudent = $checkStudent->get_result()->num_rows > 0;
+            $checkStudent->close();
+
+            if (!$isRealStudent) {
+                throw new Exception('Unauthorized Discount: The provided School ID is not eligible for a student discount.');
+            }
+            if ($discountPercent > 5.01) { // Safety buffer for float comparison
+                throw new Exception('Invalid Discount: Applied rate exceeds the permitted student discount.');
+            }
+        }
     }
 
     // Security Enforcement: Restrict manual admin transactions without QR scan
@@ -125,7 +141,7 @@ try {
     $paymentStatus = isset($payload['payment_status']) && in_array($payload['payment_status'], ['paid', 'pending'], true) ? $payload['payment_status'] : 'paid';
     $receiptNumber = isset($payload['receipt_number']) ? trim((string)$payload['receipt_number']) : null;
 
-    $allowedTypes = ['buy', 'rent'];
+    $allowedTypes = ['buy'];
     $itemTypes = [];
     $cartItems = [];
 
@@ -341,15 +357,7 @@ try {
     foreach ($payload['items'] as $item) {
         $productId = intval($item['product_id'] ?? 0);
         $quantity = floatval($item['quantity'] ?? 0);
-        $type = strtolower(trim($item['type'] ?? $item['item_type'] ?? 'buy'));
-
-        if ($isGuest && $type === 'rent') {
-            throw new Exception('Rentals are not permitted for Guest checkouts. Please register the student first.');
-        }
-
-        if ($type === 'rent' && !$studentId) {
-            throw new Exception('Student ID is required for rental items.');
-        }
+        $type = 'buy';
 
         if ($productId <= 0 || $quantity <= 0 || !in_array($type, $allowedTypes, true)) {
             throw new Exception('Invalid cart item data.');
@@ -357,7 +365,7 @@ try {
 
         $itemTypes[] = $type;
 
-        $stmt = $conn->prepare("SELECT product_id, product_name, product_category, `$stockColumn` AS available_stock, `$buyPriceCol` AS buy_price, $rentPriceCol AS rent_price FROM products WHERE product_id = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT product_id, product_name, product_category, `$stockColumn` AS available_stock, `$buyPriceCol` AS buy_price FROM products WHERE product_id = ? LIMIT 1");
         $stmt->bind_param('i', $productId);
         $stmt->execute();
         $product = $stmt->get_result()->fetch_assoc();
@@ -367,30 +375,15 @@ try {
             throw new Exception('Product not found.');
         }
 
-        if ($type === 'buy' && strtolower($product['product_category'] ?? '') === 'books') {
-            throw new Exception('Books can only be rented. Invalid item: ' . $product['product_name']);
-        }
-
-        if ($type === 'rent' && strtolower($product['product_category'] ?? '') !== 'books') {
-            throw new Exception('Rental is only allowed for Books. Invalid item: ' . $product['product_name']);
-        }
-
         if ($product['available_stock'] < $quantity) {
             throw new Exception('Insufficient stock for ' . $product['product_name']);
         }
 
-        $unitPrice = $type === 'rent' ? floatval($product['rent_price']) : floatval($product['buy_price']);
-        $duration = ($type === 'rent') ? intval($item['duration'] ?? 1) : 1;
+        $unitPrice = floatval($product['buy_price']);
+        $duration = 1;
         
-        $itemTotal = round($unitPrice * $duration * $quantity, 2);
+        $itemTotal = round($unitPrice * $quantity, 2);
         $calculatedSubtotal += $itemTotal;
-
-        $returnDate = null;
-        if ($type === 'rent') {
-            $durationUnit = $item['duration_unit'] ?? 'days';
-            $unit = in_array($durationUnit, ['hours', 'days', 'weeks', 'months']) ? $durationUnit : 'days';
-            $returnDate = date('Y-m-d H:i:s', strtotime("+$duration $unit"));
-        }
 
         $cartItems[] = [
             'product_id' => $productId,
@@ -398,10 +391,10 @@ try {
             'type' => $type,
             'quantity' => $quantity,
             'unit_price' => $unitPrice,
-            'unit_name' => $item['unit_name'] ?? ($type === 'rent' ? 'day' : 'pc/s'),
+            'unit_name' => $item['unit_name'] ?? 'pc/s',
             'duration' => $duration,
-            'duration_unit' => $item['duration_unit'] ?? ($type === 'rent' ? 'days' : null),
-            'return_date' => $returnDate,
+            'duration_unit' => null,
+            'return_date' => null,
             'total' => $itemTotal,
         ];
 
@@ -420,7 +413,7 @@ try {
         throw new Exception('Payment must cover total amount for paid status.');
     }
 
-    $transactionType = count(array_unique($itemTypes)) === 1 ? $itemTypes[0] : 'mixed';
+    $transactionType = 'buy';
     
     // If we are finalizing a scanned pending order, use the existing transaction number
     if ($originalTxnNumber) {
@@ -498,23 +491,14 @@ try {
 
     if ($userId) {
         $itemInsert = $conn->prepare('INSERT INTO transactions (user_id, product_id, type, quantity, total_amount) VALUES (?, ?, ?, ?, ?)'); // This is for user profile history
-        $rentalInsert = $conn->prepare('INSERT INTO active_rentals (transaction_number, student_id, product_id, quantity, return_date, status) VALUES (?, ?, ?, ?, ?, "active")');
 
         foreach ($cartItems as $item) {
             $itemInsert->bind_param('iisdd', $userId, $item['product_id'], $item['type'], $item['quantity'], $item['total']);
             if (!$itemInsert->execute()) {
                 throw new Exception('Failed to record item transaction: ' . $itemInsert->error);
             }
-
-            if ($item['type'] === 'rent') {
-                $rentalInsert->bind_param('ssids', $transactionNumber, $studentId, $item['product_id'], $item['quantity'], $item['return_date']);
-                if (!$rentalInsert->execute()) {
-                    throw new Exception('Failed to record active rental: ' . $rentalInsert->error);
-                }
-            }
         }
         $itemInsert->close();
-        $rentalInsert->close();
     }
 
     $conn->commit();

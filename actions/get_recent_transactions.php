@@ -25,13 +25,26 @@ try {
     }
 
     if ($search) {
-        $where .= " AND (ct.transaction_number LIKE '%$search%' OR u.student_id LIKE '%$search%')";
+        $where .= " AND (ct.id LIKE '%$search%'
+                    OR ct.transaction_number LIKE '%$search%' 
+                    OR u.student_id LIKE '%$search%' 
+                    OR ct.student_name LIKE '%$search%' 
+                    OR ct.guest_school_id LIKE '%$search%' 
+                    OR ct.transaction_type LIKE '%$search%' 
+                    OR ct.items LIKE '%$search%' 
+                    OR ct.payment_status LIKE '%$search%'
+                    OR ct.created_at LIKE '%$search%'
+                    OR ac.first_name LIKE '%$search%' 
+                    OR ac.last_name LIKE '%$search%')";
     }
     if ($from) { $where .= " AND DATE(ct.created_at) >= '$from'"; }
     if ($to) { $where .= " AND DATE(ct.created_at) <= '$to'"; }
 
     // Get total count for pagination
-    $countResult = $conn->query("SELECT COUNT(*) as total FROM cashier_transactions ct LEFT JOIN users u ON ct.user_id = u.id $where");
+    $countResult = $conn->query("SELECT COUNT(*) as total 
+                                FROM cashier_transactions ct 
+                                LEFT JOIN users u ON ct.user_id = u.id 
+                                LEFT JOIN admincashier_acc ac ON ct.cashier_id = ac.id $where");
     $totalRows = $countResult->fetch_assoc()['total'];
     $totalPages = ceil($totalRows / $limit);
 
