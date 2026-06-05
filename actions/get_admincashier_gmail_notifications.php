@@ -13,22 +13,14 @@ requireAuth(['admin', 'admincashier', 'superadmin']);
 // Ensure configuration and database connection are loaded once
 if (file_exists(__DIR__ . '/../config/config.php')) require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../database/connection.php';
+require_once __DIR__ . '/../database/migrations/MigrationManager.php';
 
 try {
     $conn = Database::getConnection();
     require_once __DIR__ . '/email_helpers.php';
 
-    // Centralized schema check: Ensure table matches email_helpers.php requirements
-    $conn->query("CREATE TABLE IF NOT EXISTS email_notifications (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        recipient VARCHAR(255) NOT NULL,
-        subject VARCHAR(255),
-        notification_type VARCHAR(50),
-        status ENUM('sent','failed','pending') NOT NULL DEFAULT 'pending',
-        error_message TEXT,
-        email_body LONGTEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )");
+    // Run migrations to ensure email_notifications exists
+    (new MigrationManager())->run();
 
     // Handle POST actions (Delete Log / Retry)
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {

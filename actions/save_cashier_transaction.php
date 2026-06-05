@@ -12,6 +12,7 @@ requireAuth(['student', 'user', 'admin', 'admincashier', 'superadmin']);
 date_default_timezone_set('Asia/Manila');
 
 try {
+    require_once __DIR__ . '/../database/migrations/MigrationManager.php';
     // Ensure the Database class is available and get the connection
     require_once __DIR__ . '/../database/connection.php';
     $conn = Database::getConnection();
@@ -21,6 +22,9 @@ try {
 
     // Ensure the database session also uses the correct timezone for CURRENT_TIMESTAMP
     $conn->query("SET time_zone = '+08:00'");
+
+    // Centralized Migration Check
+    (new MigrationManager())->run();
 
     // Safe include helper to ensure helpers have access to the database connection
     function safeInclude($path, $name) {
@@ -147,188 +151,6 @@ try {
 
     $conn->begin_transaction();
 
-    // Create the cashier_transactions table if it does not exist.
-    $createTableSql = "CREATE TABLE IF NOT EXISTS `cashier_transactions` ( 
-        `id` INT(11) NOT NULL AUTO_INCREMENT,
-        `transaction_number` VARCHAR(50) NOT NULL,
-        `receipt_number` VARCHAR(100) DEFAULT NULL,
-        `user_id` INT(11) DEFAULT NULL,
-        `student_name` VARCHAR(255) DEFAULT NULL,
-        `guest_school_id` VARCHAR(50) DEFAULT NULL,
-        `guest_email` VARCHAR(255) DEFAULT NULL,
-        `cashier_id` INT(11) NOT NULL,
-        `transaction_type` ENUM('buy','rent','mixed') NOT NULL,
-        `items` TEXT NOT NULL,
-        `subtotal` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-        `discount_percent` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-        `discount_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-        `total_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-        `payment_received` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-        `change_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-        `payment_status` ENUM('paid','pending','voided') NOT NULL DEFAULT 'pending',
-        `is_expired` TINYINT(1) NOT NULL DEFAULT 0,
-        `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (`id`),
-        UNIQUE KEY `uniq_transaction_number` (`transaction_number`),
-        UNIQUE KEY `uniq_receipt_number` (`receipt_number`),
-        KEY `idx_cashier_transactions_user_id` (`user_id`),
-        KEY `idx_cashier_transactions_cashier_id` (`cashier_id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-    if (!$conn->query($createTableSql)) {
-        throw new Exception("Failed to create cashier_transactions table: " . $conn->error);
-    }
-
-    // Create the transactions table if it does not exist (used for profile history)
-    $conn->query("CREATE TABLE IF NOT EXISTS `transactions` (
-        `id` INT(11) NOT NULL AUTO_INCREMENT,
-        `user_id` INT(11) NOT NULL,
-        `product_id` INT(11) NOT NULL,
-        `type` VARCHAR(20) NOT NULL,
-        `quantity` DECIMAL(10,2) NOT NULL,
-        `total_amount` DECIMAL(10,2) NOT NULL,
-        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
-    // Create the active_rentals table if it does not exist.
-    // This table is used for tracking individual items within a cashier_transaction
-    $createTransactionItemsTableSql = "CREATE TABLE IF NOT EXISTS `transaction_items` (
-        `id` INT(11) NOT NULL AUTO_INCREMENT,
-        `cashier_transaction_id` INT(11) NOT NULL,
-        `product_id` INT(11) NOT NULL,
-        `product_name` VARCHAR(255) NOT NULL,
-        `item_type` ENUM('buy', 'rent') NOT NULL,
-        `quantity` DECIMAL(10,2) NOT NULL,
-        `unit_price` DECIMAL(10,2) NOT NULL,
-        `duration` INT(11) DEFAULT NULL,
-        `duration_unit` VARCHAR(50) DEFAULT NULL,
-        `unit_name` VARCHAR(50) DEFAULT NULL,
-        `total_item_amount` DECIMAL(10,2) NOT NULL,
-        `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (`id`),
-        KEY `idx_cashier_transaction_id` (`cashier_transaction_id`),
-        KEY `idx_product_id_ti` (`product_id`),
-        CONSTRAINT `fk_cashier_transaction_id` FOREIGN KEY (`cashier_transaction_id`) REFERENCES `cashier_transactions` (`id`) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-    $createRentalsTableSql = "CREATE TABLE IF NOT EXISTS `active_rentals` (
-        `rental_id` INT(11) NOT NULL AUTO_INCREMENT,
-        `transaction_number` VARCHAR(50) NOT NULL,
-        `student_id` VARCHAR(50) NOT NULL,
-        `product_id` INT(11) NOT NULL,
-        `quantity` DECIMAL(10,2) NOT NULL DEFAULT 1.00,
-        `rental_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        `return_date` DATETIME NOT NULL,
-        `overdue_charge` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-        `rejection_reason` TEXT DEFAULT NULL,
-        `status` ENUM('active','returned','overdue','pending_renewal') NOT NULL DEFAULT 'active',
-        PRIMARY KEY (`rental_id`),
-        KEY `idx_active_rentals_student` (`student_id`),
-        KEY `idx_active_rentals_transaction` (`transaction_number`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-    if (!$conn->query($createTransactionItemsTableSql)) {
-        throw new Exception("Failed to create transaction_items table: " . $conn->error);
-    }
-
-    // Create the lost_books table if it does not exist
-    $createLostBooksTableSql = "CREATE TABLE IF NOT EXISTS `lost_books` (
-        `lost_book_id` INT(11) NOT NULL AUTO_INCREMENT,
-        `rental_id` INT(11) DEFAULT NULL,
-        `product_id` INT(11) NOT NULL,
-        `student_id` VARCHAR(50) NOT NULL,
-        `quantity` INT(11) NOT NULL DEFAULT 1,
-        `lost_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        `status` ENUM('lost','found') NOT NULL DEFAULT 'lost',
-        `reported_by_cashier_id` INT(11) NOT NULL,
-        `found_by_cashier_id` INT(11) DEFAULT NULL,
-        `found_date` TIMESTAMP NULL DEFAULT NULL,
-        `notes` TEXT DEFAULT NULL,
-        PRIMARY KEY (`lost_book_id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-    if (!$conn->query($createLostBooksTableSql)) {
-        throw new Exception("Failed to create lost_books table: " . $conn->error);
-    }
-    if (!$conn->query($createRentalsTableSql)) {
-        throw new Exception("Failed to create active_rentals table: " . $conn->error);
-    }
-
-    $typeColumnInfo = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'transaction_type'");
-    if ($typeColumnInfo === false) {
-        throw new Exception("Failed to check transaction_type column: " . $conn->error);
-    }
-    if ($typeColumnInfo->num_rows > 0) {
-        $typeDef = $typeColumnInfo->fetch_assoc()['Type'];
-        if (strpos($typeDef, "'mixed'") === false) {
-            if (!$conn->query("ALTER TABLE `cashier_transactions` MODIFY COLUMN `transaction_type` ENUM('buy','rent','mixed') NOT NULL")) {
-                throw new Exception("Failed to alter transaction_type column: " . $conn->error);
-            }
-        }
-    }
-
-    $unitNameCheckTi = $conn->query("SHOW COLUMNS FROM `transaction_items` LIKE 'unit_name'");
-    if (!$unitNameCheckTi || $unitNameCheckTi->num_rows === 0) {
-        $conn->query("ALTER TABLE `transaction_items` ADD COLUMN `unit_name` VARCHAR(50) DEFAULT NULL AFTER `duration_unit` ");
-    }
-
-    $txnCheckCt = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'transaction_number'");
-    if (!$txnCheckCt || $txnCheckCt->num_rows === 0) {
-        $conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `transaction_number` VARCHAR(50) NOT NULL AFTER `id` , ADD UNIQUE KEY `uniq_transaction_number` (`transaction_number`) ");
-    }
-
-    $expiredCheck = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'is_expired'");
-    if (!$expiredCheck || $expiredCheck->num_rows === 0) {
-        $conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `is_expired` TINYINT(1) NOT NULL DEFAULT 0 AFTER `payment_status` ");
-    }
-
-    $txnCheckAr = $conn->query("SHOW COLUMNS FROM `active_rentals` LIKE 'transaction_number'");
-    if (!$txnCheckAr || $txnCheckAr->num_rows === 0) {
-        $conn->query("ALTER TABLE `active_rentals` ADD COLUMN `transaction_number` VARCHAR(50) NOT NULL AFTER `rental_id` , ADD INDEX `idx_active_rentals_transaction` (`transaction_number`) ");
-    }
-
-    $overdueCheck = $conn->query("SHOW COLUMNS FROM `active_rentals` LIKE 'overdue_charge'");
-    if (!$overdueCheck || $overdueCheck->num_rows === 0) {
-        $conn->query("ALTER TABLE `active_rentals` ADD COLUMN `overdue_charge` DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `return_date` ");
-    }
-
-    $userCheck = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'user_id'");
-    if ($userCheck === false) {
-        throw new Exception("Failed to check user_id column: " . $conn->error);
-    }
-    if (!$userCheck || $userCheck->num_rows === 0) {
-        if (!$conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `user_id` INT(11) DEFAULT NULL AFTER `receipt_number` , ADD INDEX (`user_id`) ")) {
-            throw new Exception("Failed to add user_id column: " . $conn->error);
-        }
-    }
-
-    $nameCheck = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'student_name'");
-    if ($nameCheck === false) {
-        throw new Exception("Failed to check student_name column: " . $conn->error);
-    }
-    if (!$nameCheck || $nameCheck->num_rows === 0) {
-        if (!$conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `student_name` VARCHAR(255) DEFAULT NULL AFTER `user_id` ")) {
-            throw new Exception("Failed to add student_name column: " . $conn->error);
-        }
-    }
-
-    $qtyCheckT = $conn->query("SHOW COLUMNS FROM `transactions` LIKE 'quantity'");
-    if ($qtyCheckT && $qtyCheckT->num_rows > 0) {
-        $qtyDef = $qtyCheckT->fetch_assoc()['Type'];
-        if (strpos(strtolower($qtyDef), 'decimal') === false) {
-            if (!$conn->query("ALTER TABLE `transactions` MODIFY COLUMN `quantity` DECIMAL(10,2) NOT NULL")) {
-                throw new Exception("Failed to update transactions quantity column: " . $conn->error);
-            }
-        }
-    }
-
-    $gsidCheck = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'guest_school_id'");
-    if (!$gsidCheck || $gsidCheck->num_rows === 0) {
-        $conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `guest_school_id` VARCHAR(50) DEFAULT NULL AFTER `student_name` ");
-    }
-
-    $gEmailCheck = $conn->query("SHOW COLUMNS FROM `cashier_transactions` LIKE 'guest_email'");
-    if (!$gEmailCheck || $gEmailCheck->num_rows === 0) {
-        $conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `guest_email` VARCHAR(255) DEFAULT NULL AFTER `guest_school_id` ");
-    }
-
     $stockColumn = 'stock_count';
     $stockCheck = $conn->query("SHOW COLUMNS FROM `products` LIKE 'stock_count'");
     if ($stockCheck === false) {
@@ -357,6 +179,7 @@ try {
     foreach ($payload['items'] as $item) {
         $productId = intval($item['product_id'] ?? 0);
         $quantity = floatval($item['quantity'] ?? 0);
+        $unitName = isset($item['unit_name']) ? trim($item['unit_name']) : 'pc/s';
         $type = 'buy';
 
         if ($productId <= 0 || $quantity <= 0 || !in_array($type, $allowedTypes, true)) {
@@ -391,7 +214,7 @@ try {
             'type' => $type,
             'quantity' => $quantity,
             'unit_price' => $unitPrice,
-            'unit_name' => $item['unit_name'] ?? 'pc/s',
+            'unit_name' => $unitName,
             'duration' => $duration,
             'duration_unit' => null,
             'return_date' => null,
@@ -713,7 +536,7 @@ try {
     // Log the transaction
     logAudit($conn, $adminId ? 'admincashier' : 'student', $adminId ?? $userId, 'save_cashier_transaction', 'Saved transaction ' . $transactionNumber . ' and email status: ' . $emailStatus);
 
-    echo json_encode([
+    $responseData = [
         'success' => true,
         'message' => 'Transaction completed successfully.',
         'transaction_number' => $transactionNumber,
@@ -735,7 +558,18 @@ try {
             'payment_status' => ucfirst($paymentStatus),
             'created_at' => date('Y-m-d H:i:s')
         ]
-    ]);
+    ];
+
+    // Ensure data is UTF-8 encoded to prevent json_encode failure
+    array_walk_recursive($responseData, function(&$item) {
+        if (is_string($item)) $item = mb_convert_encoding($item, 'UTF-8', 'UTF-8');
+    });
+
+    $json = json_encode($responseData);
+    if ($json === false) throw new Exception('JSON Encoding Error: ' . json_last_error_msg());
+
+    if (ob_get_length()) ob_clean();
+    echo $json;
     exit;
 } catch (Throwable $e) {
     if (isset($conn) && $conn->connect_errno === 0) $conn->rollback();

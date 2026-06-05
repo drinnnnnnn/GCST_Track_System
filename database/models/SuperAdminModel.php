@@ -2,150 +2,15 @@
 require_once __DIR__ . '/../../config/config.php';
 // Ensure the core connection file is available for the Database class
 require_once __DIR__ . '/../../database/connection.php';
+require_once __DIR__ . '/../../database/migrations/MigrationManager.php';
 
 class SuperAdminModel {
     private $conn;
 
     public function __construct() {
-        // Use the centralized Database class instead of global variables
         $this->conn = Database::getConnection();
-        $this->ensureTableExists();
-    }
-
-    /**
-     * Automatically creates the superadmins table if it doesn't exist.
-     * Ensures all fields for the 4-digit PIN and security lockout are properly initialized.
-     */
-    private function ensureTableExists() {
-        $sql = "CREATE TABLE IF NOT EXISTS `superadmins` (
-            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-            `first_name` VARCHAR(100) NOT NULL,
-            `last_name` VARCHAR(100) NOT NULL,
-            `username` VARCHAR(50) NOT NULL,
-            `email` VARCHAR(100) NOT NULL,
-            `password_hash` VARCHAR(255) NOT NULL,
-            `security_pin_hash` VARCHAR(255) NOT NULL,
-            `status` ENUM('active', 'inactive', 'suspended', 'locked') NOT NULL DEFAULT 'active',
-            `failed_login_attempts` TINYINT UNSIGNED DEFAULT 0,
-            `lockout_until` DATETIME DEFAULT NULL,
-            `last_login_at` DATETIME DEFAULT NULL,
-            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY (`id`),
-            UNIQUE KEY `uniq_username` (`username`),
-            UNIQUE KEY `uniq_email` (`email`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-
-        $sqlLogs = "CREATE TABLE IF NOT EXISTS `security_logs` (
-            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-            `admin_id` INT UNSIGNED DEFAULT NULL,
-            `event_type` VARCHAR(50) NOT NULL,
-            `identifier` VARCHAR(100) NOT NULL,
-            `ip_address` VARCHAR(45) DEFAULT NULL,
-            `user_agent` TEXT DEFAULT NULL,
-            `details` TEXT DEFAULT NULL,
-            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-
-        // Table for Student/General users referenced in sign_in.html and QueueModel
-        $sqlUsers = "CREATE TABLE IF NOT EXISTS `users` (
-            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-            `student_id` VARCHAR(50) NOT NULL,
-            `email` VARCHAR(100) NOT NULL,
-            `password_hash` VARCHAR(255) NOT NULL,
-            `first_name` VARCHAR(100) NOT NULL,
-            `middle_name` VARCHAR(100) DEFAULT NULL,
-            `last_name` VARCHAR(100) NOT NULL,
-            `course` VARCHAR(100) DEFAULT NULL,
-            `year_level` INT DEFAULT 1,
-            `balance` DECIMAL(10,2) DEFAULT 0.00,
-            `status` ENUM('pending', 'active', 'rejected', 'suspended') DEFAULT 'pending',
-            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY (`id`),
-            UNIQUE KEY `uniq_student_id` (`student_id`),
-            UNIQUE KEY `uniq_email` (`email`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-
-        // Table for Password Reset OTPs (6-digit codes)
-        $sqlResets = "CREATE TABLE IF NOT EXISTS `password_resets` (
-            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-            `email` VARCHAR(100) NOT NULL,
-            `token` VARCHAR(10) NOT NULL,
-            `expires_at` DATETIME NOT NULL,
-            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (`id`),
-            INDEX `idx_reset_email` (`email`),
-            INDEX `idx_reset_token` (`token`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-
-        // Table for logging all email communications
-        $sqlEmailLogs = "CREATE TABLE IF NOT EXISTS `email_notifications` (
-            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-            `recipient` VARCHAR(100) NOT NULL,
-            `subject` VARCHAR(255) NOT NULL,
-            `notification_type` VARCHAR(50) NOT NULL,
-            `status` ENUM('sent', 'failed') NOT NULL,
-            `error_message` TEXT DEFAULT NULL,
-            `email_body` LONGTEXT DEFAULT NULL,
-            `sent_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (`id`),
-            INDEX `idx_email_recipient` (`recipient`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-
-        if (!$this->conn->query($sql)) {
-            error_log("SuperAdminModel: superadmins table init failed: " . $this->conn->error);
-        }
-        if (!$this->conn->query($sqlLogs)) {
-            error_log("SuperAdminModel: security_logs table init failed: " . $this->conn->error);
-        }
-        if (!$this->conn->query($sqlUsers)) {
-            error_log("SuperAdminModel: users table init failed: " . $this->conn->error);
-        }
-
-        // Migration: Ensure password_hash exists in users table (fixes 'Unknown column' fatal error)
-        $resUser = $this->conn->query("SHOW COLUMNS FROM `users` LIKE 'password_hash'");
-        if ($resUser && $resUser->num_rows === 0) {
-            $checkOld = $this->conn->query("SHOW COLUMNS FROM `users` LIKE 'password'");
-            $action = ($checkOld && $checkOld->num_rows > 0) ? "CHANGE `password` `password_hash`" : "ADD COLUMN `password_hash` ";
-            if (!$this->conn->query("ALTER TABLE `users` $action VARCHAR(255) NOT NULL AFTER `email`")) {
-                error_log("SuperAdminModel: Failed to migrate users.password_hash: " . $this->conn->error);
-            }
-        }
-
-        // Migration: Add missing columns for student profiles and management
-        $userColumns = [
-            'middle_name' => "VARCHAR(100) DEFAULT NULL AFTER `first_name` ",
-            'course' => "VARCHAR(100) DEFAULT NULL AFTER `last_name` ",
-            'year_level' => "INT DEFAULT 1 AFTER `course` ",
-            'balance' => "DECIMAL(10,2) DEFAULT 0.00 AFTER `year_level` ",
-            'last_login' => "DATETIME DEFAULT NULL AFTER `status` "
-        ];
-
-        foreach ($userColumns as $col => $def) {
-            $res = $this->conn->query("SHOW COLUMNS FROM `users` LIKE '$col'");
-            if ($res && $res->num_rows === 0) {
-                if (!$this->conn->query("ALTER TABLE `users` ADD COLUMN `$col` $def")) {
-                    error_log("SuperAdminModel: Failed to add column users.$col: " . $this->conn->error);
-                }
-            }
-        }
-
-        // Migration: Ensure password_hash exists in superadmins table
-        $resAdmin = $this->conn->query("SHOW COLUMNS FROM `superadmins` LIKE 'password_hash'");
-        if ($resAdmin && $resAdmin->num_rows === 0) {
-            if (!$this->conn->query("ALTER TABLE `superadmins` ADD COLUMN `password_hash` VARCHAR(255) NOT NULL AFTER `email`")) {
-                error_log("SuperAdminModel: Failed to migrate superadmins.password_hash: " . $this->conn->error);
-            }
-        }
-
-        if (!$this->conn->query($sqlResets)) {
-            error_log("SuperAdminModel: password_resets table init failed: " . $this->conn->error);
-        }
-        if (!$this->conn->query($sqlEmailLogs)) {
-            error_log("SuperAdminModel: email_notifications table init failed: " . $this->conn->error);
-        }
+        // Ensure schema is up to date
+        (new MigrationManager())->run();
     }
 
     /**

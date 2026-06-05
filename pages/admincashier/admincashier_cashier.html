@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -1202,7 +1202,7 @@
           const statusLabel = stock <= 0 ? 'Out of Stock' : stock < 5 ? 'Low Stock' : 'In Stock';
           const statusClass = stock <= 0 ? 'out-stock' : stock < 5 ? 'low-stock' : 'in-stock';
           const isBook = (product.product_category || '').toLowerCase() === 'books';
-          const isFabric = (product.product_category || '').toLowerCase() === 'fabric uniform';
+          const isFabric = (product.product_category || '').toLowerCase() === 'uniform fabrics';
 
           let priceHtml = '';
           if (isBook) {
@@ -1297,7 +1297,7 @@
       let subtotal = 0;
       cart.forEach(item => {
         const product = products.find(p => p.product_id == item.product_id);
-        const isFabric = (product?.product_category || '').toLowerCase() === 'fabric uniform';
+        const isFabric = (product?.product_category || '').toLowerCase() === 'uniform fabrics';
         const unitLabel = isFabric ? 'yard/s' : 'unit';
         const rowTotal = Math.round(item.unitPrice * item.quantity * 100) / 100;
         if (item.selected) subtotal += rowTotal;
@@ -1534,7 +1534,9 @@
           return;
         }
         const unitPrice = state.transactionType === 'rent' ? getProductRentPrice(product) : getProductPrice(product);
-        cart.push({ product_id: productId, product_name: product.product_name, quantity: 1, unitPrice, selected: true });
+        const isFabric = (product.product_category || '').toLowerCase() === 'uniform fabrics';
+        const unitName = isFabric ? 'yards' : 'pcs';
+        cart.push({ product_id: productId, product_name: product.product_name, quantity: 1, unitPrice, unitName, selected: true });
       }
       updateCartSummary();
     }
@@ -1756,9 +1758,7 @@
       const receiptItems = document.getElementById('receipt-items');
       receiptItems.innerHTML = '';
       receipt.items.forEach(item => {
-        const product = products.find(p => p.product_id == item.product_id);
-        const isFabric = (product?.product_category || '').toLowerCase() === 'fabric uniform';
-        const unit = isFabric ? ' yard/s' : '';
+        const unit = item.unit_name ? ` ${item.unit_name}` : '';
         const entry = document.createElement('div');
         entry.className = 'receipt-item-row';
         entry.innerHTML = `<span>${item.product_name} x ${item.quantity}${unit}</span><strong>${formatCurrency(item.total)}</strong>`;
@@ -1882,7 +1882,12 @@
         transaction_type: state.transactionType,
         is_scanned: state.isQRScanned,
         original_txn_number: state.scannedTxnNumber,
-        items: selectedItems.map(item => ({ product_id: item.product_id, quantity: item.quantity, type: state.transactionType })),
+        items: selectedItems.map(item => ({ 
+            product_id: item.product_id, 
+            quantity: item.quantity, 
+            type: state.transactionType,
+            unit_name: item.unitName 
+        })),
         subtotal: financials.subtotal,
         discount_percent: state.discountPercent,
         discount_amount: financials.discountAmount,
@@ -2206,9 +2211,7 @@
         if (Array.isArray(items)) {
           const isVoided = txn.payment_status === 'voided';
           items.forEach(item => {
-            const product = products.find(p => p.product_id == item.product_id);
-            const isFabric = (product?.product_category || '').toLowerCase() === 'fabric uniform';
-            const unit = isFabric ? ' yard/s' : '';
+            const unit = item.unit_name ? ` ${item.unit_name}` : '';
             itemsHtml += `
               <div class="receipt-item">
                 <span>${item.product_name} x ${item.quantity}${unit}</span>

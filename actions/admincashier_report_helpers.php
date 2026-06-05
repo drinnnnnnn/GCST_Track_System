@@ -540,6 +540,66 @@ function getQueueMetrics($conn) {
     return 0;
 }
 
+function getFabricInventoryReport($conn) {
+    if (!tableExists($conn, 'products')) return [];
+    
+    // Join with transaction_items to calculate total yards sold per fabric item
+    $sql = "SELECT 
+                p.*,
+                COALESCE(SUM(CASE WHEN ti.item_type = 'buy' THEN ti.quantity ELSE 0 END), 0) as total_yards_sold
+            FROM products p
+            LEFT JOIN transaction_items ti ON p.product_id = ti.product_id
+            WHERE p.product_category = 'Uniform Fabrics'
+            GROUP BY p.product_id
+            ORDER BY p.stock_count ASC";
+            
+    $result = $conn->query($sql);
+    $report = [];
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $report[] = $row;
+        }
+    }
+    return $report;
+}
+
+function getFabricAnalytics($conn) {
+    $inventory = getFabricInventoryReport($conn);
+    $summary = [
+        'total_types' => count($inventory),
+        'total_yards' => 0,
+        'yards_sold' => 0,
+        'total_value' => 0,
+        'critical_count' => 0,
+        'top_revenue_fabric' => ['name' => 'N/A', 'revenue' => 0]
+    ];
+
+    foreach ($inventory as $item) {
+        $stock = (float)$item['stock_count'];
+        $sold = (float)$item['total_yards_sold'];
+        $price = (float)$item['buy_price'];
+        
+        $summary['total_yards'] += $stock;
+        $summary['yards_sold'] += $sold;
+        $summary['total_value'] += ($stock * $price);
+        
+        if ($stock < 10) $summary['critical_count']++;
+        
+        $revenue = $sold * $price;
+        if ($revenue > $summary['top_revenue_fabric']['revenue']) {
+            $summary['top_revenue_fabric'] = [
+                'name' => $item['product_name'],
+                'revenue' => $revenue
+            ];
+        }
+    }
+
+    return [
+        'summary' => $summary,
+        'inventory' => $inventory
+    ];
+}
+
 function getRecentProducts($conn, $limit = 5) {
     if (!tableExists($conn, 'products')) {
         return [];

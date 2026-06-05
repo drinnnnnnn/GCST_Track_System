@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -334,15 +334,15 @@
 
     .products-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Changed auto-fill to auto-fit, minmax from 260px to 280px */
-      gap: 24px; /* Changed from 20px to 24px for consistency with inventory-grid */
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
+      gap: 16px;
       /* Responsive grid layout handled by global admincashier.css */
     }
     /* === INVENTORY CARDS === */
 
     .inventory-card {
       background: #ffffff;
-      border-radius: 22px;
+      border-radius: 18px;
       overflow: hidden;
       border: 1px solid #e5e7eb;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
@@ -369,7 +369,7 @@
     .card-image-wrapper {
       position: relative;
       width: 100%;
-      height: 200px;
+      aspect-ratio: 4 / 3;
       overflow: hidden;
       background: #f1f5f9;
       border-bottom: 1px solid #e5e7eb;
@@ -377,6 +377,25 @@
       align-items: center;
       justify-content: center;
       box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.02);
+      cursor: zoom-in;
+    }
+
+    .image-hover-indicator {
+      position: absolute;
+      inset: 0;
+      background: rgba(79, 70, 229, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 1;
+      color: white;
+      font-size: 1.6rem;
+    }
+
+    .card-image-wrapper:hover .image-hover-indicator {
+      opacity: 1;
     }
 
     .category-badge-overlay {
@@ -411,37 +430,25 @@
     }
 
     .inventory-card-body {
-      padding: 20px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
       flex-grow: 1;
     }
 
     .inventory-card-title {
       margin: 0;
-      font-size: 1.05rem;
+      font-size: 0.95rem;
       font-weight: 600;
       color: #111827;
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 1;
-      line-clamp: 1;
-      overflow: hidden;
-      line-height: 1.4;
-    }
-
-    .card-description {
-      font-size: 0.85rem;
-      color: #64748b;
-      line-height: 1.6;
       display: -webkit-box;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 2;
       line-clamp: 2;
       overflow: hidden;
-      min-height: 2.7em;
-      margin-top: 4px;
+      line-height: 1.4;
+      min-height: 2.8em;
     }
 
     .inventory-card-meta {
@@ -449,20 +456,20 @@
       justify-content: space-between;
       align-items: flex-end;
       margin-top: auto;
-      padding-top: 12px;
+      padding-top: 8px;
       border-top: 1px dashed #e2e8f0;
     }
 
     .card-price {
       color: #4f46e5;
       font-weight: 600;
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       letter-spacing: -0.02em;
     }
 
     .card-stock-info {
       color: #1e293b;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 600;
       text-align: right;
     }
@@ -508,7 +515,7 @@
     .inventory-card-footer {
       margin-top: 4px;
       display: flex;
-      gap: 10px;
+      gap: 8px;
     }
 
     /* === PRODUCT DETAILS PANEL === */
@@ -768,6 +775,8 @@
       background: #eef2ff; /* Light background */
       border: 1px solid #d1d5db; /* Subtle border */
     }
+    .product-info-header .image-preview { cursor: zoom-in; transition: transform 0.2s; }
+    .product-info-header .image-preview:hover { transform: scale(1.02); border-color: #4f46e5; }
 
     .product-info-header .image-preview img {
       width: 100%;
@@ -780,6 +789,74 @@
       font-size: 1.2rem;
       font-weight: 600;
       color: var(--text);
+    }
+
+    /* === TOAST NOTIFICATIONS === */
+    .toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .toast {
+      min-width: 320px;
+      background: white;
+      border-radius: 16px;
+      padding: 16px 20px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-left: 6px solid #4f46e5;
+      animation: toastSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      transition: all 0.3s ease;
+      pointer-events: auto;
+    }
+
+    @keyframes toastSlideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .toast.success { border-left-color: #10b981; }
+    .toast.error { border-left-color: #ef4444; }
+
+    .toast-content {
+      flex: 1;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    /* === ITEM HIGHLIGHT ANIMATION === */
+    @keyframes itemHighlight {
+      0% { background-color: rgba(16, 185, 129, 0.15); border-color: #10b981; transform: scale(1.02); }
+      50% { transform: scale(1.01); }
+      100% { background-color: transparent; border-color: #e5e7eb; transform: scale(1); }
+    }
+
+    .item-updated-highlight {
+      animation: itemHighlight 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      z-index: 50;
+    }
+
+    /* === LIGHTBOX MODAL === */
+    .lightbox-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 30000;
+      padding: 20px;
+      cursor: zoom-out;
     }
   </style>
 </head>
@@ -824,7 +901,13 @@
               <!-- Image Upload Section -->
               <div class="lg:w-1/4 flex flex-col gap-4">
                 <div class="form-group">
-                  <label>Product Visual</label>
+                  <label class="flex justify-between items-center">
+                    <span>Product Visual</span>
+                    <button type="button" class="text-[10px] text-indigo-500 hover:underline lowercase font-bold" 
+                            onclick="document.getElementById('new-product-image').value=''; document.getElementById('new-product-image-preview').innerHTML='<div class=\'text-center p-6\'><i class=\'fas fa-cloud-upload-alt text-4xl text-slate-300\'></i><p class=\'text-xs font-semibold text-slate-400\'>Click to upload image</p></div>'">
+                      Clear
+                    </button>
+                  </label>
                   <div id="new-product-image-preview" class="image-preview" onclick="document.getElementById('new-product-image').click()">
                     <div class="text-center p-4">
                       <i class="fas fa-cloud-upload-alt text-3xl text-slate-300 transition-colors mb-2"></i>
@@ -846,9 +929,9 @@
                 
                 <div class="form-group">
                   <label for="new-product-category">Category <span class="text-rose-500">*</span></label>
-                  <select id="new-product-category" name="product_category" required onchange="toggleBookFields('new', this.value)">
+                  <select id="new-product-category" name="product_category" required onchange="toggleCategoryFields('new', this.value)">
                     <option value="" disabled selected>Select category</option>
-                    <option value="Fabric Uniform">Fabric Uniform</option>
+                    <option value="Uniform Fabrics">Uniform Fabrics</option>
                     <option value="Books">Books</option>
                     <option value="Accessories">Accessories</option>
                     <option value="Other">Other</option>
@@ -913,16 +996,56 @@
                   </div>
                 </div>
 
-                <div class="form-section-divider">Additional Info</div>
-                <div class="form-group md:col-span-2">
-                  <label for="new-product-description">Full Description <span class="text-rose-500">*</span></label>
-                  <textarea id="new-product-description" name="product_description" rows="3" placeholder="Enter full product details..." required></textarea>
+                <!-- Uniform Specific Fields (Creation) -->
+                <div id="new-uniform-fields" class="hidden md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div class="form-section-divider">Uniform Information</div>
+                  <div class="form-group">
+                    <label for="new-uniform-course">Applicable Course/Program <span class="text-rose-500">*</span></label>
+                    <select id="new-uniform-course" name="uniform_course">
+                      <option value="" disabled selected>Select Course</option>
+                      <option value="BSIT">BSIT</option>
+                      <option value="BSHM">BSHM</option>
+                      <option value="BEED">BEED</option>
+                      <option value="BSED">BSED</option>
+                      <option value="BSBA">BSBA</option>
+                      <option value="Other">Other Courses</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="new-uniform-type">Uniform Type <span class="text-rose-500">*</span></label>
+                    <select id="new-uniform-type" name="uniform_type" onchange="toggleFabricCombination('new', this.value)">
+                      <option value="" disabled selected>Select Type</option>
+                      <option value="Upper Uniform Fabric">Upper Uniform Fabric</option>
+                      <option value="Lower Uniform Fabric">Lower Uniform Fabric</option>
+                      <option value="Complete Uniform Set">Complete Uniform Set (Upper + Lower)</option>
+                    </select>
+                  </div>
+                  
+                  <div id="new-fabric-combination-fields" class="hidden md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-group">
+                      <label for="new-upper-fabric">Upper Fabric Name/Color <span class="text-rose-500">*</span></label>
+                      <input id="new-upper-fabric" name="uniform_upper_fabric" type="text" placeholder="e.g., White Twill" />
+                    </div>
+                    <div class="form-group">
+                      <label for="new-lower-fabric">Lower Fabric Name/Color <span class="text-rose-500">*</span></label>
+                      <input id="new-lower-fabric" name="uniform_lower_fabric" type="text" placeholder="e.g., Navy Blue" />
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="new-min-yards">Min. Yards per Set <span class="text-rose-500">*</span></label>
+                    <input id="new-min-yards" name="uniform_min_yards" type="number" min="0.01" step="0.01" placeholder="0.00" />
+                  </div>
+                  <div class="form-group">
+                    <label for="new-material">Material Type <span class="text-rose-500">*</span></label>
+                    <input id="new-material" name="uniform_material" type="text" placeholder="e.g., Cotton/Polyester" />
+                  </div>
                 </div>
               </div>
             </div>
 
             <div class="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-slate-100">
-              <button type="button" id="btn-reset-new-product" class="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-wider">Clear Inputs</button>
+              <button type="button" id="btn-reset-new-product" class="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-wider" onclick="toggleCategoryFields('new', 'All')">Clear Inputs</button>
               <button type="submit" class="btn btn-primary !px-10 !py-4 shadow-lg shadow-indigo-200">
                 <i class="fas fa-plus-circle mr-2"></i> Add to Inventory
               </button>
@@ -994,8 +1117,8 @@
                 <div class="grid grid-cols-2 gap-3">
                   <div class="form-group">
                     <label for="detail-category-input">Category</label>
-                    <select id="detail-category-input" onchange="toggleBookFields('detail', this.value)">
-                      <option value="Fabric Uniform">Fabric Uniform</option>
+                    <select id="detail-category-input" onchange="toggleCategoryFields('detail', this.value)">
+                      <option value="Uniform Fabrics">Uniform Fabrics</option>
                     <option value="Books">Books</option>
                       <option value="Accessories">Accessories</option>
                       <option value="Other">Other</option>
@@ -1006,6 +1129,13 @@
                     <select id="detail-status-input">
                       <option value="available">Available</option>
                       <option value="unavailable">Unavailable</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="detail-featured-input">Featured Status</label>
+                    <select id="detail-featured-input">
+                      <option value="0">Standard listing</option>
+                      <option value="1">Featured / Promoted</option>
                     </select>
                   </div>
                 </div>
@@ -1060,6 +1190,52 @@
                     <input id="detail-book-isbn-input" type="text" />
                   </div>
                 </div>
+
+                <!-- Uniform Specific Fields (Editing) -->
+                <div id="detail-uniform-fields" class="hidden space-y-4 mt-4 pt-4 border-t border-gray-100">
+                  <label class="!mb-1 text-xs text-indigo-500 font-bold uppercase tracking-wider">Uniform Information</label>
+                  <div class="form-group">
+                    <label for="detail-uniform-course-input">Applicable Course <span class="text-rose-500">*</span></label>
+                    <select id="detail-uniform-course-input">
+                      <option value="BSIT">BSIT</option>
+                      <option value="BSHM">BSHM</option>
+                      <option value="BEED">BEED</option>
+                      <option value="BSED">BSED</option>
+                      <option value="BSBA">BSBA</option>
+                      <option value="Other">Other Courses</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="detail-uniform-type-input">Uniform Type <span class="text-rose-500">*</span></label>
+                    <select id="detail-uniform-type-input" onchange="toggleFabricCombination('detail', this.value)">
+                      <option value="Upper Uniform Fabric">Upper Uniform Fabric</option>
+                      <option value="Lower Uniform Fabric">Lower Uniform Fabric</option>
+                      <option value="Complete Uniform Set">Complete Uniform Set</option>
+                    </select>
+                  </div>
+
+                  <div id="detail-fabric-combination-fields" class="hidden space-y-4">
+                    <div class="form-group">
+                      <label for="detail-upper-fabric-input">Upper Fabric Name/Color <span class="text-rose-500">*</span></label>
+                      <input id="detail-upper-fabric-input" type="text" />
+                    </div>
+                    <div class="form-group">
+                      <label for="detail-lower-fabric-input">Lower Fabric Name/Color <span class="text-rose-500">*</span></label>
+                      <input id="detail-lower-fabric-input" type="text" />
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="form-group">
+                      <label for="detail-min-yards-input">Min. Yards/Set <span class="text-rose-500">*</span></label>
+                      <input id="detail-min-yards-input" type="number" min="0.01" step="0.01" />
+                    </div>
+                    <div class="form-group">
+                      <label for="detail-material-input">Material <span class="text-rose-500">*</span></label>
+                      <input id="detail-material-input" type="text" />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div class="detail-actions pt-5 border-t border-gray-100 mt-5">
@@ -1071,382 +1247,722 @@
         </aside>
       </div>
     </section>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Image Lightbox Modal -->
+    <div id="image-lightbox" class="lightbox-backdrop hidden" onclick="closeImageLightbox()">
+      <div class="relative max-w-5xl w-full flex flex-col items-center gap-6" onclick="event.stopPropagation()">
+        <button type="button" onclick="closeImageLightbox()" class="absolute -top-12 right-0 text-white text-3xl opacity-70 hover:opacity-100 transition-opacity">
+          <i class="fas fa-times"></i>
+        </button>
+        <div class="bg-white p-3 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300">
+            <img id="lightbox-img" src="" alt="Preview" class="max-h-[75vh] w-auto block rounded-2xl object-contain shadow-inner">
+        </div>
+        <div class="text-center">
+            <h2 id="lightbox-title" class="text-white text-2xl font-bold tracking-tight"></h2>
+            <p id="lightbox-meta" class="text-indigo-300 text-sm font-semibold uppercase tracking-widest mt-1"></p>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script src="../../assets/js/admincashier.js"></script>
   <script>
-    let inventoryProducts = [];
-    let filteredInventoryProducts = [];
-    let selectedInventoryProduct = null;
-    const inventoryFilterState = {
-      query: '',
-      category: 'All'
-    };
-
-    const INVENTORY_API = '../../actions/get_admincashier_products.php';
-    const INVENTORY_UPDATE_API = '../../actions/admincashier_update_inventory.php';
-    const PRODUCT_CREATE_API = '../../actions/admincashier_create_product.php';
-    const PRODUCT_DELETE_API = '../../actions/admincashier_delete_product.php';
-
+    /**
+     * GCST Inventory Management System - Refactored
+     * Enforces modular architecture and reliable state management.
+     */
+    
     const DEFAULT_IMAGE = '../../assets/images/icons/granbylogo.png';
+    
+    /**
+     * Communication Layer
+     */
+    const InventoryAPI = {
+        ENDPOINTS: {
+            LOAD: '../../actions/get_admincashier_products.php',
+            UPDATE: '../../actions/admincashier_update_inventory.php',
+            CREATE: '../../actions/admincashier_create_product.php',
+            DELETE: '../../actions/admincashier_delete_product.php'
+        },
 
-    function getInventoryStockStatus(stock) {
-      const s = parseFloat(stock);
-      if (s <= 0) return 'Out of Stock';
-      if (s < 10) return 'Low Stock';
-      return 'In Stock';
-    }
+        async fetchAll() {
+            return await fetchWithError(this.ENDPOINTS.LOAD);
+        },
 
-    function getInventoryStatusClass(stock) {
-      const s = parseFloat(stock);
-      if (s <= 0) return 'status-out';
-      if (s < 10) return 'status-lowstock';
-      return 'status-instock';
-    }
+        async updateProduct(formData) {
+            try {
+                const response = await fetch(this.ENDPOINTS.UPDATE, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                return await this.handleResponse(response);
+            } catch (err) {
+                return { success: false, message: err.message };
+            }
+        },
 
-    function toggleBookFields(context, category) {
-      const isBook = category === 'Books';
-      const fieldsId = context === 'new' ? 'new-book-fields' : 'detail-book-fields';
-      const extendedId = context === 'new' ? 'new-book-fields-extended' : null;
-      const fieldsEl = document.getElementById(fieldsId);
-      const extendedEl = extendedId ? document.getElementById(extendedId) : null;
-      
-      if (fieldsEl) {
-        fieldsEl.classList.toggle('hidden', !isBook);
-        if (extendedEl) extendedEl.classList.toggle('hidden', !isBook);
-        fieldsEl.querySelectorAll('input').forEach(input => input.required = isBook); // Core fields mandatory
-      }
-    }
+        async createProduct(formData) {
+            try {
+                const response = await fetch(this.ENDPOINTS.CREATE, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                return await this.handleResponse(response);
+            } catch (err) {
+                return { success: false, message: err.message };
+            }
+        },
 
-    function resolveInventoryImagePath(path) {
-      const IMAGE_FALLBACK = `${window.location.origin}/GCST_Track_System/assets/images/icons/granbylogo.png`;
-      if (!path) return IMAGE_FALLBACK;
-      if (path.startsWith('http://') || path.startsWith('https://')) return path;
-      const cleanPath = path.replace(/^\/+/, '');
-      return `${window.location.origin}/GCST_Track_System/${cleanPath}`;
-    }
+        async deleteProduct(productId) {
+            try {
+                const fd = new FormData();
+                fd.append('product_id', productId);
+                const response = await fetch(this.ENDPOINTS.DELETE, {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                return await this.handleResponse(response);
+            } catch (err) {
+                return { success: false, message: err.message };
+            }
+        },
 
-    function renderInventoryViews() {
-      const cardContainer = document.getElementById('products-cards');
-      if (!cardContainer) return;
-      cardContainer.innerHTML = '';
-      if (filteredInventoryProducts.length === 0) {
-        cardContainer.innerHTML = '<div class="empty-state">No products match the current search or filters.</div>';
-        return;
-      }
-      filteredInventoryProducts.forEach(product => {
-        const isSelected = selectedInventoryProduct && Number(selectedInventoryProduct.product_id) === Number(product.product_id);
-        const card = document.createElement('article');
-        card.className = `inventory-card group ${isSelected ? 'selected' : ''}`;
-        const stock = Number(product.stock_count) || 0;
-        let statusLabel = product.product_status === 'unavailable' ? 'Hidden' : getInventoryStockStatus(stock);
-        let statusClass = product.product_status === 'unavailable' ? 'status-out' : getInventoryStatusClass(stock);
-
-        let bookMetaHtml = '';
-        if (product.product_category === 'Books') {
-          const author = product.book_author || 'Unknown Author';
-          const pages = product.book_pages ? `${product.book_pages} pages` : '';
-          bookMetaHtml = `<div class="mt-1 text-[0.7rem] font-bold text-indigo-500 uppercase tracking-tighter"><i class="fas fa-book-open mr-1"></i> ${author} ${pages ? '• ' + pages : ''}</div>`;
-        }
-        
-        card.innerHTML = `
-          <div class="card-image-wrapper">
-            <div class="category-badge-overlay">${product.product_category || 'General'}</div>
-            <img src="${resolveInventoryImagePath(product.product_image)}" alt="${product.product_name}" loading="lazy" onerror="this.src='${DEFAULT_IMAGE}'" />
-          </div>
-          <div class="inventory-card-body">
-            <div>
-              <div class="flex justify-between items-start gap-2">
-                <h3 class="inventory-card-title">${product.product_name || 'Untitled Product'}</h3>
-                <span class="status-pill !py-1 !px-2.5 !text-[0.6rem] ${statusClass}">${statusLabel}</span>
-              </div>
-              ${bookMetaHtml}
-              <p class="card-description">${(product.product_description || '').trim() || 'Product description and specifications are being updated...'}</p>
-            </div>
+        async handleResponse(response) {
+            let text = await response.text();
             
-            <div class="inventory-card-meta">
-              <div class="flex flex-col">
-                <span class="stock-label">Selling Price</span>
-                <span class="card-price">${formatCurrency(product.buy_price)}</span>
-              </div>
-              <div class="text-right">
-                <span class="stock-label">Warehouse Stock</span>
-                <span class="card-stock-info">${stock} <small class="text-gray-400 font-medium">${product.product_category === 'Fabric Uniform' ? 'yds' : 'pcs'}</small></span>
-              </div>
-            </div>
+            // Defensive: Strip leading Byte Order Mark (BOM) and noise that breaks JSON.parse
+            text = text.replace(/^\uFEFF/, '').trim();
+            
+            if (!text) {
+                return { success: false, message: 'Communication failure: The server returned an empty response.' };
+            }
 
-            <div class="inventory-card-footer pt-2">
-              <button class="btn btn-primary flex-1 !rounded-xl !py-3 font-semibold text-xs" type="button" onclick="window.selectInventoryProduct(${product.product_id})"><i class="fas fa-sliders-h mr-2"></i> Manage Item</button>
-              <button class="btn btn-danger !bg-rose-50 !text-rose-600 !border-rose-100 !rounded-xl !px-4" type="button" onclick="window.deleteInventoryProduct(${product.product_id})" title="Remove Product"><i class="fas fa-trash-alt"></i></button>
-            </div>
-          </div>`;
-        cardContainer.appendChild(card);
-      });
-    }
+            try {
+                const json = JSON.parse(text);
+                // If the response is not OK (e.g. 500), try to use the JSON error message if provided
+                if (!response.ok) {
+                    return { success: false, message: json.message || `Server Error (${response.status})` };
+                }
+                if (!response.ok && !json.message) {
+                    json.message = `Server Error (${response.status})`;
+                }
+                return json;
+            } catch (e) {
+                // Detailed logging for developers to see exactly what broke the JSON
+                console.group('Server Response Format Error');
+                console.error('Raw Response Text:', text);
+                console.error('Parsing Error:', e);
+                console.groupEnd();
+                
+                return { 
+                    success: false, 
+                    message: response.ok 
+                        ? 'The server returned an unexpected format. Please check the console for technical details.' 
+                        : `HTTP Error ${response.status}: The server encountered an issue.` 
+                };
+            }
+        }
+    };
 
-    function updateInventorySummary() {
-      const total = filteredInventoryProducts.length;
-      const lowStock = filteredInventoryProducts.filter(p => Number(p.stock_count || 0) < 10).length;
-      const available = filteredInventoryProducts.filter(p => Number(p.stock_count || 0) > 0).length;
-      const value = filteredInventoryProducts.reduce((sum, p) => sum + ((Number(p.buy_price) || 0) * (Number(p.stock_count) || 0)), 0);
-      if (document.getElementById('summary-total')) document.getElementById('summary-total').textContent = total;
-      if (document.getElementById('summary-low')) document.getElementById('summary-low').textContent = lowStock;
-      if (document.getElementById('summary-available')) document.getElementById('summary-available').textContent = available;
-      if (document.getElementById('summary-value')) document.getElementById('summary-value').textContent = formatCurrency(value);
-    }
+    /**
+     * UI and Application Logic
+     */
+    const InventoryApp = {
+        state: {
+            products: [],
+            filtered: [],
+            selected: null,
+            filter: { query: '', category: 'All' },
+            isProcessing: false
+        },
 
-    function applyInventoryFilters() {
-      const query = inventoryFilterState.query.trim().toLowerCase();
-      const cat = inventoryFilterState.category;
-      filteredInventoryProducts = inventoryProducts.filter(p => {
-        const matchesCat = cat === 'All' || (p.product_category || 'Other') === cat;
-        const text = `${p.product_name || ''} ${p.product_category || ''}`.toLowerCase();
-        return matchesCat && (!query || text.includes(query));
-      });
-      renderInventoryViews();
-      updateInventorySummary();
-    }
+        // Consolidated UI references
+        ui: {},
 
-    function buildInventoryCategoryFilters() {
-      const container = document.getElementById('category-filters');
-      if (!container) return;
-      const base = ['All', 'Fabric Uniform', 'Books', 'Accessories'];
-      const extra = Array.from(new Set(inventoryProducts.map(p => p.product_category || 'Other'))).filter(c => c && !base.includes(c));
-      container.innerHTML = '';
-      [...base, ...extra].forEach(category => {
-        const pill = document.createElement('button');
-        pill.className = 'filter-pill' + (inventoryFilterState.category === category ? ' active' : '');
-        pill.textContent = category;
-        pill.onclick = () => { inventoryFilterState.category = category; buildInventoryCategoryFilters(); applyInventoryFilters(); };
-        container.appendChild(pill);
-      });
-    }
+        async init() {
+            this.cacheDOMElements();
+            this.setupEventListeners();
+            await this.refreshData();
+            this.startPolling();
+        },
 
-    function updateInventoryDetailPanel() {
-      const detailSection = document.getElementById('product-details');
-      const emptySection = document.getElementById('detail-empty');
-      if (!selectedInventoryProduct) { detailSection?.classList.add('hidden'); emptySection?.classList.remove('hidden'); return; }
-      detailSection?.classList.remove('hidden'); emptySection?.classList.add('hidden');
-      const fileInput = document.getElementById('detail-product-image');
-      if (fileInput) fileInput.value = '';
-      const { product_name, product_category, product_image, product_status, buy_price, stock_count, book_author, book_pages, book_course, book_subject, book_edition, book_publisher, book_isbn, book_publication_year } = selectedInventoryProduct;
-      const stock = Number(stock_count) || 0;
-      document.getElementById('detail-image').src = resolveInventoryImagePath(product_image);
-      document.getElementById('detail-name').textContent = product_name || 'Unnamed Product';
-      document.getElementById('detail-category').textContent = product_category || 'Other';
-      document.getElementById('detail-stock').textContent = product_category === 'Fabric Uniform' ? `${stock} yards` : `${stock} item${stock === 1 ? '' : 's'}`;
-      document.getElementById('detail-stock').className = `status-pill ${getInventoryStatusClass(stock)}`;
-      
-      document.getElementById('detail-name-input').value = product_name || '';
-      document.getElementById('detail-category-input').value = product_category || 'Other';
-      document.getElementById('detail-buy-input').value = Number(buy_price || 0).toFixed(2);
-      document.getElementById('detail-status-input').value = product_status || 'available';
-      document.getElementById('detail-stock-input').value = stock;
+        cacheDOMElements() {
+            this.ui = {
+                search: document.getElementById('inventory-search'),
+                grid: document.getElementById('products-cards'),
+                detailPanel: document.getElementById('product-details'),
+                detailEmpty: document.getElementById('detail-empty'),
+                addPanel: document.getElementById('add-product-panel'),
+                addForm: document.getElementById('add-product-form'),
+                summary: {
+                    total: document.getElementById('summary-total'),
+                    low: document.getElementById('summary-low'),
+                    available: document.getElementById('summary-available'),
+                    value: document.getElementById('summary-value')
+                },
+                toastContainer: document.getElementById('toast-container'),
+                lightbox: {
+                    backdrop: document.getElementById('image-lightbox'),
+                    img: document.getElementById('lightbox-img'),
+                    title: document.getElementById('lightbox-title'),
+                    meta: document.getElementById('lightbox-meta')
+                }
+            };
+        },
 
-      document.getElementById('detail-book-author-input').value = book_author || '';
-      document.getElementById('detail-book-pages-input').value = book_pages || '';
-      document.getElementById('detail-book-course-input').value = book_course || '';
-      document.getElementById('detail-book-subject-input').value = book_subject || '';
-      document.getElementById('detail-book-edition-input').value = book_edition || '';
-      document.getElementById('detail-book-publisher-input').value = book_publisher || '';
-      document.getElementById('detail-book-isbn-input').value = book_isbn || '';
-      document.getElementById('detail-book-year-input').value = book_publication_year || '';
-      toggleBookFields('detail', product_category);
-    }
+        setupEventListeners() {
+            // Search and Filters
+            this.ui.search?.addEventListener('input', (e) => {
+                this.state.filter.query = e.target.value;
+                this.applyFilters();
+            });
 
-    function syncInventoryDetailHeader() {
-      const name = document.getElementById('detail-name-input')?.value;
-      const cat = document.getElementById('detail-category-input')?.value;
-      const stock = parseInt(document.getElementById('detail-stock-input')?.value) || 0;
-      const hName = document.getElementById('detail-name');
-      const hCat = document.getElementById('detail-category');
-      const hStock = document.getElementById('detail-stock');
-      if (hName) hName.textContent = name || 'Unnamed Product';
-      if (hCat) hCat.textContent = cat || 'Other';
-      if (hStock) { 
-        hStock.textContent = `${stock} item${stock === 1 ? '' : 's'}`; 
-        hStock.className = `status-pill ${getInventoryStatusClass(stock)}`; 
-      }
-    }
+            document.getElementById('refresh-button')?.addEventListener('click', () => this.refreshData());
 
-    window.selectInventoryProduct = function(productId) {
-      selectedInventoryProduct = inventoryProducts.find(p => Number(p.product_id) === Number(productId)) || null;
-      updateInventoryDetailPanel();
-      renderInventoryViews();
-      if (window.innerWidth < 1200 && selectedInventoryProduct) document.querySelector('.inventory-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+            // Add Product Panel Controls
+            document.getElementById('btn-open-add-product')?.addEventListener('click', () => this.toggleAddPanel(true));
+            document.getElementById('btn-close-add-product')?.addEventListener('click', () => this.toggleAddPanel(false));
+            
+            const btnResetNew = document.getElementById('btn-reset-new-product');
+            if (btnResetNew) {
+                btnResetNew.onclick = () => this.resetAddForm();
+            }
 
-    window.deleteInventoryProduct = async function(productId) {
-      if (!productId || !confirm('Are you sure you want to delete this product?')) return;
-      try {
-        const fd = new FormData();
-        fd.append('product_id', productId);
+            // Management Panel Controls
+            document.getElementById('btn-save-product')?.addEventListener('click', () => this.saveCurrentProduct());
+            document.getElementById('btn-clear-selection')?.addEventListener('click', () => this.clearSelection());
+            document.getElementById('btn-close-details')?.addEventListener('click', () => this.clearSelection());
 
-        const response = await fetch(PRODUCT_DELETE_API, { 
-            method: 'POST', 
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }, 
-            body: fd 
-        });
+            // Real-time Detail Header Sync
+            const detailSyncIds = [
+                'detail-name-input', 
+                'detail-category-input', 
+                'detail-stock-input', 
+                'detail-uniform-course-input', 
+                'detail-uniform-type-input'
+            ];
+            detailSyncIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', () => this.syncDetailHeader());
+            });
 
-        if (!response.ok) throw new Error(`Server Error (${response.status})`);
+            // Unified Image Handling
+            document.getElementById('new-product-image')?.addEventListener('change', (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const preview = document.getElementById('new-product-image-preview');
+                    if (preview) preview.innerHTML = `<img src="${event.target.result}" style="height:100%;width:100%;object-fit:cover;" />`;
+                };
+                reader.readAsDataURL(file);
+            });
+            
+            document.getElementById('detail-product-image')?.addEventListener('change', (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = document.getElementById('detail-image');
+                    if (img) img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Form Submission
+            this.ui.addForm?.addEventListener('submit', (e) => this.handleCreateProduct(e));
+        },
+
+        async refreshData() {
+            const btn = document.getElementById('refresh-button');
+            const icon = btn?.querySelector('i');
+            if (btn) btn.disabled = true;
+            if (icon) icon.classList.add('fa-spin');
+
+            // Show loading state in grid if it's the initial load
+            if (this.state.products.length === 0 && this.ui.grid) {
+                this.ui.grid.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-20 text-slate-400">
+                        <i class="fas fa-circle-notch fa-spin text-4xl mb-4 text-indigo-500"></i>
+                        <p class="font-semibold text-lg text-slate-600">Synchronizing Catalog...</p>
+                    </div>`;
+            }
+
+            try {
+                const data = await InventoryAPI.fetchAll();
+                this.state.products = Array.isArray(data) ? data : [];
+                
+                if (this.state.selected) {
+                    const updated = this.state.products.find(p => Number(p.product_id) === Number(this.state.selected.product_id));
+                    if (updated) this.state.selected = updated;
+                }
+
+                this.buildCategoryFilters();
+                this.applyFilters();
+            } catch (err) {
+                console.error('Inventory Load Error:', err);
+                if (this.ui.grid) {
+                    this.ui.grid.innerHTML = `
+                        <div class="col-span-full empty-state" style="border-color: #ef4444; color: #ef4444;">
+                            <i class="fas fa-exclamation-triangle mb-2 text-2xl"></i>
+                            <p>Unable to connect to the inventory server. Please check your connection.</p>
+                        </div>`;
+                }
+            } finally {
+                if (btn) btn.disabled = false;
+                if (icon) icon.classList.remove('fa-spin');
+            }
+        },
+
+        applyFilters() {
+            const query = this.state.filter.query.trim().toLowerCase();
+            const cat = this.state.filter.category;
+
+            this.state.filtered = this.state.products.filter(p => {
+                const matchesCat = cat === 'All' || (p.product_category || 'Other') === cat;
+                const searchable = `${p.product_name} ${p.product_category} ${p.uniform_course || ''} ${p.uniform_type || ''} ${p.book_author || ''}`.toLowerCase();
+                return matchesCat && (!query || searchable.includes(query));
+            });
+
+            this.renderGrid();
+            this.updateSummary();
+        },
+
+        renderGrid() {
+            if (!this.ui.grid) return;
+            if (this.state.filtered.length === 0) {
+                this.ui.grid.innerHTML = '<div class="empty-state">No products found for the current filter.</div>';
+                return;
+            }
+            this.ui.grid.innerHTML = this.state.filtered.map(p => this.generateCardHtml(p)).join('');
+        },
+
+        generateCardHtml(product) {
+            const isSelected = this.state.selected && Number(this.state.selected.product_id) === Number(product.product_id);
+            const stock = Number(product.stock_count) || 0;
+            const statusLabel = product.product_status === 'unavailable' ? 'Hidden' : this.getStockStatus(stock);
+            const statusClass = product.product_status === 'unavailable' ? 'status-out' : this.getStatusClass(stock);
+            const imagePath = this.resolveImagePath(product.product_image);
+
+            let metaHtml = '';
+            if (product.product_category === 'Books') {
+                metaHtml = `<div class="mt-1 text-[0.7rem] font-bold text-indigo-500 uppercase tracking-tighter"><i class="fas fa-book-open mr-1"></i> ${product.book_author || 'Unknown'}</div>`;
+            } else if (product.product_category === 'Uniform Fabrics') {
+                metaHtml = `<div class="mt-1 text-[0.7rem] font-bold text-blue-500 uppercase tracking-tighter"><i class="fas fa-tshirt mr-1"></i> ${product.uniform_course || 'General'}</div>`;
+            }
+
+            return `
+                <article class="inventory-card group ${isSelected ? 'selected' : ''}" data-product-id="${product.product_id}">
+                    <div class="card-image-wrapper" onclick="event.stopPropagation(); window.openImageLightbox('${imagePath}', '${(product.product_name || '').replace(/'/g, "\\'")}', '${product.product_category || 'General'}')">
+                        <div class="category-badge-overlay">${product.product_category || 'General'}</div>
+                        <div class="image-hover-indicator"><i class="fas fa-search-plus"></i></div>
+                        <img src="${imagePath}" alt="${product.product_name}" loading="lazy" onerror="this.onerror=null; this.src='${DEFAULT_IMAGE}'" />
+                    </div>
+                    <div class="inventory-card-body">
+                        <div class="flex justify-between items-start gap-2">
+                            <h3 class="inventory-card-title">${product.product_name}</h3>
+                            <span class="status-pill !py-0.5 !px-2 !text-[0.55rem] ${statusClass}">${statusLabel}</span>
+                        </div>
+                        ${metaHtml}
+                        <div class="inventory-card-meta">
+                            <div class="flex flex-col">
+                                <span class="stock-label">Price</span>
+                                <span class="card-price">${formatCurrency(product.buy_price)}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="stock-label">Stock</span>
+                                <span class="card-stock-info">${stock} <small class="text-gray-400 font-medium">${product.product_category === 'Uniform Fabrics' ? 'yds' : 'pcs'}</small></span>
+                            </div>
+                        </div>
+                        <div class="inventory-card-footer pt-2">
+                            <button class="btn btn-primary flex-1 !rounded-xl !py-2.5 font-semibold text-xs" type="button" onclick="window.selectInventoryProduct(${product.product_id})"><i class="fas fa-sliders-h mr-2"></i> Manage</button>
+                            <button class="btn btn-danger !bg-rose-50 !text-rose-600 !border-rose-100 !rounded-xl !px-4" type="button" onclick="window.deleteInventoryProduct(${product.product_id})"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </div>
+                </article>`;
+        },
+
+        updateSummary() {
+            const total = this.state.filtered.length;
+            const lowStock = this.state.filtered.filter(p => Number(p.stock_count || 0) < 10).length;
+            const available = this.state.filtered.filter(p => Number(p.stock_count || 0) > 0).length;
+            const value = this.state.filtered.reduce((sum, p) => sum + (Number(p.buy_price || 0) * Number(p.stock_count || 0)), 0);
+
+            if (this.ui.summary.total) this.ui.summary.total.textContent = total;
+            if (this.ui.summary.low) this.ui.summary.low.textContent = lowStock;
+            if (this.ui.summary.available) this.ui.summary.available.textContent = available;
+            if (this.ui.summary.value) this.ui.summary.value.textContent = formatCurrency(value);
+        },
+
+        buildCategoryFilters() {
+            const container = document.getElementById('category-filters');
+            if (!container) return;
+
+            const base = ['All', 'Uniform Fabrics', 'Books', 'Accessories'];
+            const extra = [...new Set(this.state.products.map(p => p.product_category))].filter(c => c && !base.includes(c));
+            
+            container.innerHTML = [...base, ...extra].map(cat => `
+                <button class="filter-pill ${this.state.filter.category === cat ? 'active' : ''}" 
+                        onclick="InventoryApp.setCategory('${cat.replace(/'/g, "\\'")}')">${cat}</button>
+            `).join('');
+        },
+
+        setCategory(cat) {
+            this.state.filter.category = cat;
+            this.buildCategoryFilters();
+            this.applyFilters();
+        },
+
+        selectProduct(id) {
+            this.state.selected = this.state.products.find(p => Number(p.product_id) === Number(id)) || null;
+            this.renderGrid();
+            this.updateDetailPanel();
+            
+            if (window.innerWidth < 1200 && this.state.selected) {
+                document.querySelector('.inventory-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        },
+
+        updateDetailPanel() {
+            if (!this.state.selected) {
+                if (this.ui.detailPanel) {
+                    const inputs = this.ui.detailPanel.querySelectorAll('input, select');
+                    inputs.forEach(i => i.value = '');
+                }
+                this.ui.detailPanel?.classList.add('hidden');
+                this.ui.detailEmpty?.classList.remove('hidden');
+                return;
+            }
+
+            this.ui.detailPanel?.classList.remove('hidden');
+            this.ui.detailEmpty?.classList.add('hidden');
+
+            const p = this.state.selected;
+            const imageInput = document.getElementById('detail-product-image');
+            if (imageInput) imageInput.value = '';
+
+            // Populate Fields
+            if (document.getElementById('detail-image')) document.getElementById('detail-image').src = this.resolveImagePath(p.product_image);
+            document.getElementById('detail-name-input').value = p.product_name || '';
+            document.getElementById('detail-category-input').value = p.product_category || 'Other';
+            document.getElementById('detail-buy-input').value = (parseFloat(p.buy_price) || 0).toFixed(2);
+            document.getElementById('detail-status-input').value = p.product_status || 'available';
+            document.getElementById('detail-featured-input').value = p.is_featured || 0;
+            document.getElementById('detail-stock-input').value = p.stock_count || 0;
+
+            // Metadata
+            document.getElementById('detail-book-author-input').value = p.book_author || '';
+            document.getElementById('detail-book-pages-input').value = p.book_pages || '';
+            document.getElementById('detail-book-course-input').value = p.book_course || '';
+            document.getElementById('detail-book-subject-input').value = p.book_subject || '';
+            document.getElementById('detail-book-edition-input').value = p.book_edition || '';
+            document.getElementById('detail-book-publisher-input').value = p.book_publisher || '';
+            document.getElementById('detail-book-isbn-input').value = p.book_isbn || '';
+            document.getElementById('detail-book-year-input').value = p.book_publication_year || '';
+            
+            document.getElementById('detail-uniform-course-input').value = p.uniform_course || 'BSIT';
+            document.getElementById('detail-uniform-type-input').value = p.uniform_type || 'Upper Uniform Fabric';
+            document.getElementById('detail-upper-fabric-input').value = p.uniform_upper_fabric || '';
+            document.getElementById('detail-lower-fabric-input').value = p.uniform_lower_fabric || '';
+            document.getElementById('detail-min-yards-input').value = (parseFloat(p.uniform_min_yards) || 0).toFixed(2);
+            document.getElementById('detail-material-input').value = p.uniform_material || '';
+
+            toggleCategoryFields('detail', p.product_category);
+            toggleFabricCombination('detail', p.uniform_type);
+            this.syncDetailHeader();
+        },
+
+        syncDetailHeader() {
+            const p = this.state.selected;
+            if (!p) return;
+
+            const name = document.getElementById('detail-name-input')?.value;
+            const stock = parseFloat(document.getElementById('detail-stock-input').value) || 0;
+            const catInput = document.getElementById('detail-category-input');
+            const cat = catInput ? catInput.value : 'Other';
+
+            document.getElementById('detail-name').textContent = name || 'Unnamed Product';
+            document.getElementById('detail-category').textContent = cat;
+            
+            const stockEl = document.getElementById('detail-stock');
+            const unit = cat === 'Uniform Fabrics' ? 'yards' : 'pcs';
+            if (stockEl) stockEl.textContent = `${stock} ${unit}`;
+            stockEl.className = `status-pill ${this.getStatusClass(stock)}`;
+        },
+
+        validateForm(context) {
+            const pfx = context === 'new' ? 'new-' : 'detail-';
+            const name = document.getElementById(`${pfx}product-name`)?.value || document.getElementById(`${pfx}name-input`)?.value;
+            const cat = document.getElementById(`${pfx}product-category`)?.value || document.getElementById(`${pfx}category-input`)?.value;
+            const price = parseFloat(document.getElementById(`${pfx}product-price`)?.value || document.getElementById(`${pfx}buy-input`)?.value);
+            const stock = parseFloat(document.getElementById(`${pfx}product-stock`)?.value || document.getElementById(`${pfx}stock-input`)?.value);
+
+            if (!name) return 'Product Name is required.';
+            if (!cat) return 'Category is required.';
+            if (isNaN(price) || price <= 0) return 'Valid Selling Price is required.';
+            if (isNaN(stock) || stock < 0) return 'Valid Stock count is required.';
+
+            if (cat === 'Books') {
+                const author = document.getElementById(`${pfx}book-author`)?.value || document.getElementById(`${pfx}book-author-input`)?.value;
+                const pages = parseInt(document.getElementById(`${pfx}book-pages`)?.value || document.getElementById(`${pfx}book-pages-input`)?.value);
+                const course = document.getElementById(`${pfx}book-course`)?.value || document.getElementById(`${pfx}book-course-input`)?.value;
+
+                if (!author) return 'Book Author is required.';
+                if (isNaN(pages) || pages <= 0) return 'Valid page count is required.';
+                if (!course) return 'Target Course association is required.';
+            } else if (cat === 'Uniform Fabrics') {
+                const course = document.getElementById(`${pfx}uniform-course`)?.value || document.getElementById(`${pfx}uniform-course-input`)?.value;
+                const type = document.getElementById(`${pfx}uniform-type`)?.value || document.getElementById(`${pfx}uniform-type-input`)?.value;
+                const minYards = parseFloat(document.getElementById(`${pfx}min-yards`)?.value || document.getElementById(`${pfx}min-yards-input`)?.value);
+                const material = document.getElementById(`${pfx}material`)?.value || document.getElementById(`${pfx}material-input`)?.value;
+
+                if (!course) return 'Applicable Course association is required.';
+                if (!type) return 'Uniform Type selection is required.';
+                if (isNaN(minYards) || minYards <= 0) return 'Min. Yards per Set is required for fabrics.';
+                if (!material) return 'Material Type is required for fabrics.';
+
+                if (type === 'Complete Uniform Set') {
+                    const upper = document.getElementById(`${pfx}upper-fabric`)?.value || document.getElementById(`${pfx}upper-fabric-input`)?.value;
+                    const lower = document.getElementById(`${pfx}lower-fabric`)?.value || document.getElementById(`${pfx}lower-fabric-input`)?.value;
+                    if (!upper || !lower) return 'Both Upper and Lower fabric names are required for complete sets.';
+                }
+            }
+
+            return null;
+        },
+
+        async saveCurrentProduct() {
+            if (this.state.isProcessing || !this.state.selected) return;
+
+            const btn = document.getElementById('btn-save-product');
+            if (!btn) return;
+            
+            const validationError = this.validateForm('detail');
+            if (validationError) {
+                showToast('Validation Error: ' + validationError, 'error');
+                return;
+            }
+
+            const originalHtml = btn.innerHTML;
+            this.state.isProcessing = true;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            const fd = new FormData();
+            fd.append('product_id', this.state.selected.product_id);
+            
+            // Gather generic values
+            const mapping = {
+                'product_name': 'detail-name-input',
+                'product_category': 'detail-category-input',
+                'buy_price': 'detail-buy-input',
+                'product_status': 'detail-status-input',
+                'stock_count': 'detail-stock-input',
+                'is_featured': 'detail-featured-input',
+                'book_author': 'detail-book-author-input',
+                'book_pages': 'detail-book-pages-input',
+                'book_course': 'detail-book-course-input',
+                'book_subject': 'detail-book-subject-input',
+                'book_edition': 'detail-book-edition-input',
+                'book_publisher': 'detail-book-publisher-input',
+                'book_isbn': 'detail-book-isbn-input',
+                'book_publication_year': 'detail-book-year-input',
+                'uniform_course': 'detail-uniform-course-input',
+                'uniform_type': 'detail-uniform-type-input',
+                'uniform_upper_fabric': 'detail-upper-fabric-input',
+                'uniform_lower_fabric': 'detail-lower-fabric-input',
+                'uniform_min_yards': 'detail-min-yards-input',
+                'uniform_material': 'detail-material-input'
+            };
+
+            Object.entries(mapping).forEach(([key, id]) => {
+                const val = document.getElementById(id)?.value;
+                if (val !== undefined && val !== null) fd.append(key, val);
+            });
+
+            const img = document.getElementById('detail-product-image')?.files[0];
+            if (img) fd.append('product_image', img);
+
+            try {
+                const result = await InventoryAPI.updateProduct(fd);
+                if (result && result.success) {
+                    const productId = this.state.selected.product_id;
+                    this.clearSelection();
+                    await this.refreshData();
+                    this.triggerFeedback(productId);
+                    showToast('✅ Item updated successfully.', 'success');
+                } else {
+                    showToast(result.message || 'The server rejected the update. Please try again.', 'error');
+                }
+            } catch (err) {
+                console.error('Save Product Error:', err);
+                showToast('A network error occurred. Please check your connection.', 'error');
+            } finally {
+                this.state.isProcessing = false;
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        },
+
+        async handleCreateProduct(e) {
+            e.preventDefault();
+            if (this.state.isProcessing || !e.target) return;
+
+            const validationError = this.validateForm('new');
+            if (validationError) {
+                showToast('Validation Error: ' + validationError, 'error');
+                return;
+            }
+
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalHtml = btn.innerHTML;
+            this.state.isProcessing = true;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+            const fd = new FormData(e.target);
+
+            try {
+                const result = await InventoryAPI.createProduct(fd);
+                if (result && result.success) {
+                    this.toggleAddPanel(false);
+                    await this.refreshData();
+                    this.triggerFeedback(result.product.product_id);
+                    showToast('✅ New product registered.', 'success');
+                } else {
+                    showToast(result.message || 'Failed to create product. Verify your inputs.', 'error');
+                }
+            } catch (err) {
+                console.error('Create Product Error:', err);
+                showToast('The server is unreachable. Check if XAMPP is running.', 'error');
+            } finally {
+                this.state.isProcessing = false;
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        },
+
+        async handleDelete(id) {
+            if (!confirm('Confirm deletion of this product? This cannot be undone.')) return;
+            try {
+                const result = await InventoryAPI.deleteProduct(id);
+                if (result && result.success) {
+                    if (this.state.selected?.product_id === id) this.clearSelection();
+                    await this.refreshData();
+                    showToast('Item removed from catalog.', 'success');
+                } else {
+                    showToast(result.message || 'Deletion failed.', 'error');
+                }
+            } catch (err) {
+                showToast('Network error during deletion.', 'error');
+            }
+        },
+
+        clearSelection() {
+            this.state.selected = null;
+            this.renderGrid();
+            this.updateDetailPanel();
+            // Scroll grid back into view if on mobile
+            if (window.innerWidth < 768) {
+                this.ui.grid?.scrollIntoView({ behavior: 'smooth' });
+            }
+        },
+
+        toggleAddPanel(show) {
+            this.ui.addPanel?.classList.toggle('hidden', !show);
+            if (show) this.ui.addPanel?.scrollIntoView({ behavior: 'smooth' });
+            else this.resetAddForm();
+        },
+
+        resetAddForm() {
+            if (this.ui.addForm) {
+                this.ui.addForm.reset();
+                toggleCategoryFields('new', 'All');
+                const preview = document.getElementById('new-product-image-preview');
+                if (preview) preview.innerHTML = `
+                    <div class="text-center p-4">
+                      <i class="fas fa-cloud-upload-alt text-3xl text-slate-300 transition-colors mb-2"></i>
+                      <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Click to upload</p>
+                    </div>`;
+            }
+        },
+
+        triggerFeedback(id) {
+            setTimeout(() => {
+                const card = document.querySelector(`.inventory-card[data-product-id="${id}"]`);
+                if (card) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    card.classList.add('item-updated-highlight');
+                    setTimeout(() => card.classList.remove('item-updated-highlight'), 2500);
+                }
+            }, 300);
+        },
+
+        startPolling() {
+            setInterval(() => this.refreshData(), 30000);
+        },
+
+        // Helpers
+        getStockStatus: (s) => s <= 0 ? 'Out of Stock' : s < 10 ? 'Low Stock' : 'In Stock',
+        getStatusClass: (s) => s <= 0 ? 'status-out' : s < 10 ? 'status-lowstock' : 'status-instock',
+        resolveImagePath: (p) => p ? (p.startsWith('http') ? p : `${window.location.origin}/GCST_Track_System/${p.replace(/^\/+/, '')}`) : DEFAULT_IMAGE
+    };
+
+    /**
+     * Global Logic Bridging
+     */
+    window.showToast = (msg, type) => {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const t = document.createElement('div');
+        t.className = `toast ${type}`;
+        t.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i><div class="toast-content">${msg}</div>`;
+        container.appendChild(t);
+        setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(20px)'; setTimeout(() => t.remove(), 400); }, 4000);
+    };
+
+    function toggleCategoryFields(context, cat) {
+        const isBook = cat === 'Books', isUnif = cat === 'Uniform Fabrics';
+        const pfx = context === 'new' ? 'new-' : 'detail-';
         
-        const data = await response.json();
-        if (data && data.success) {
-          alert('Product deleted successfully.');
-          inventoryProducts = inventoryProducts.filter(p => Number(p.product_id) !== Number(productId));
-          if (selectedInventoryProduct && Number(selectedInventoryProduct.product_id) === Number(productId)) selectedInventoryProduct = null;
-          applyInventoryFilters(); updateInventoryDetailPanel();
-        } else {
-          alert('Error: ' + (data.message || 'Failed to delete product.'));
-        }
-      } catch (err) { 
-        console.error('Network or Server Error during deletion:', err); 
-        // Suppressed technical alert to improve UX; technical details remain in console.
-      }
-    };
-
-    window.startInventoryPolling = function() {
-      if (window.inventoryPollInterval) clearInterval(window.inventoryPollInterval);
-      window.inventoryPollInterval = setInterval(window.fetchInventorySilent, 20000);
-    };
-
-    window.stopInventoryPolling = () => { if (window.inventoryPollInterval) { clearInterval(window.inventoryPollInterval); window.inventoryPollInterval = null; } };
-
-    window.fetchInventorySilent = async function() {
-      try {
-        const data = await fetchWithError(INVENTORY_API);
-        inventoryProducts = Array.isArray(data) ? data : [];
-        if (selectedInventoryProduct) {
-          const updated = inventoryProducts.find(p => Number(p.product_id) === Number(selectedInventoryProduct.product_id));
-          if (updated) selectedInventoryProduct = updated;
-        }
-        applyInventoryFilters();
-      } catch (e) { console.error(e); }
-    };
-
-    async function refreshInventoryData() {
-      const btn = document.getElementById('refresh-button');
-      const icon = btn?.querySelector('i');
-      if (btn) btn.disabled = true; if (icon) icon.classList.add('fa-spin');
-      try {
-        const data = await fetchWithError(INVENTORY_API);
-        inventoryProducts = Array.isArray(data) ? data : [];
-        inventoryFilterState.query = document.getElementById('inventory-search')?.value.trim() || '';
-        buildInventoryCategoryFilters(); applyInventoryFilters();
-      } catch (e) { console.error(e); } finally { if (btn) btn.disabled = false; if (icon) icon.classList.remove('fa-spin'); }
+        const book = document.getElementById(`${pfx}book-fields`), ext = document.getElementById(`${pfx}book-fields-extended`);
+        const unif = document.getElementById(`${pfx}uniform-fields`);
+        
+        if (book) book.classList.toggle('hidden', !isBook);
+        if (ext) ext.classList.toggle('hidden', !isBook);
+        if (unif) unif.classList.toggle('hidden', !isUnif);
     }
 
-    window.initAdminCashierInventoryPage = function() {
-      refreshInventoryData();
-      startInventoryPolling();
-      document.getElementById('inventory-search')?.addEventListener('input', (e) => { inventoryFilterState.query = e.target.value; applyInventoryFilters(); });
-      document.getElementById('refresh-button')?.addEventListener('click', refreshInventoryData);
-      const togglePanel = (show) => {
-        const p = document.getElementById('add-product-panel'); if (!p) return;
-        p.classList.toggle('hidden', !show); 
-        if (show) {
-          p.scrollIntoView({ behavior: 'smooth' }); 
-        } else {
-          // Reset dynamic fields on cancel
-          toggleBookFields('new', 'All');
-          const form = document.getElementById('add-product-form');
-          if (form) {
-            form.reset();
-            document.getElementById('new-product-image-preview').innerHTML = '<div class="text-center p-6"><i class="fas fa-cloud-upload-alt text-4xl text-slate-300 transition-colors mb-2"></i><p class="text-xs font-semibold text-slate-400">Click to upload image</p><p class="text-[10px] text-slate-300 mt-1 italic">JPG, PNG or GIF (Max 5MB)</p></div>';
-          }
-        }
-      };
+    function toggleFabricCombination(context, type) {
+        const isComplete = type === 'Complete Uniform Set';
+        const el = document.getElementById(`${context === 'new' ? 'new-' : 'detail-'}fabric-combination-fields`);
+        if (el) el.classList.toggle('hidden', !isComplete);
+    }
 
-      document.getElementById('btn-open-add-product')?.addEventListener('click', () => togglePanel(true));
-      document.getElementById('btn-close-add-product')?.addEventListener('click', () => togglePanel(false));
-      
-      document.getElementById('btn-reset-new-product')?.addEventListener('click', () => {
-        toggleBookFields('new', 'All');
-        document.getElementById('add-product-form')?.reset();
-        document.getElementById('new-product-image-preview').innerHTML = '<div class="text-center p-6"><i class="fas fa-cloud-upload-alt text-4xl text-slate-300 transition-colors mb-2"></i><p class="text-xs font-semibold text-slate-400">Click to upload image</p><p class="text-[10px] text-slate-300 mt-1 italic">JPG, PNG or GIF (Max 5MB)</p></div>';
-      });
-
-      document.getElementById('new-product-image')?.addEventListener('change', (e) => {
-        const file = e.target.files?.[0]; if (file) document.getElementById('new-product-image-preview').innerHTML = `<img src="${URL.createObjectURL(file)}" style="height:100%;width:100%;object-fit:cover;" />`;
-      });
-      document.getElementById('detail-product-image')?.addEventListener('change', (e) => {
-        const file = e.target.files?.[0]; if (file) document.getElementById('detail-image').src = URL.createObjectURL(file);
-      });
-
-      document.getElementById('add-product-form')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const form = e.target; const btn = form.querySelector('button[type="submit"]');
-        btn.disabled = true; const oldText = btn.innerHTML; btn.innerHTML = 'Saving...';
-        try {
-          const response = await fetch(PRODUCT_CREATE_API, { method: 'POST', body: new FormData(form), headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-          if (!response.ok) throw new Error(`Server Error (${response.status})`);
-          const data = await response.json();
-          if (data && data.success) { 
-            alert('New product added to inventory.');
-            inventoryProducts.unshift(data.product); 
-            applyInventoryFilters(); 
-            togglePanel(false); 
-          } else {
-            alert('Failed to save product: ' + (data.message || 'Unknown error'));
-          }
-        } catch (err) { 
-            console.error('Network or Server Error during creation:', err); 
-            // Suppressed technical alert to improve UX
-        } finally { btn.disabled = false; btn.innerHTML = oldText; }
-      });
-
-      ['detail-name-input', 'detail-category-input', 'detail-stock-input'].forEach(id => {
-        const el = document.getElementById(id); if (el) { el.addEventListener('input', syncInventoryDetailHeader); el.addEventListener('change', syncInventoryDetailHeader); }
-      });
-
-      document.getElementById('btn-save-product')?.addEventListener('click', async (e) => {
-        const btn = e.currentTarget; if (!selectedInventoryProduct || btn.disabled) return;
-        btn.disabled = true; const oldText = btn.innerHTML; btn.innerHTML = 'Saving...';
-        const fd = new FormData();
-        fd.append('product_id', selectedInventoryProduct.product_id);
-        fd.append('product_name', document.getElementById('detail-name-input').value.trim());
-        fd.append('product_category', document.getElementById('detail-category-input').value);
-        fd.append('buy_price', document.getElementById('detail-buy-input').value);
-        fd.append('product_status', document.getElementById('detail-status-input').value);
-        fd.append('stock_count', document.getElementById('detail-stock-input').value);
-        
-        fd.append('book_author', document.getElementById('detail-book-author-input').value);
-        fd.append('book_pages', document.getElementById('detail-book-pages-input').value);
-        fd.append('book_course', document.getElementById('detail-book-course-input').value);
-        fd.append('book_subject', document.getElementById('detail-book-subject-input').value);
-        fd.append('book_edition', document.getElementById('detail-book-edition-input').value);
-        fd.append('book_publisher', document.getElementById('detail-book-publisher-input').value);
-        fd.append('book_isbn', document.getElementById('detail-book-isbn-input').value);
-        fd.append('book_publication_year', document.getElementById('detail-book-year-input').value);
-
-        const img = document.getElementById('detail-product-image')?.files[0]; if (img) fd.append('product_image', img);
-        try {
-          const response = await fetch(INVENTORY_UPDATE_API, { 
-              method: 'POST', 
-              body: fd, 
-              headers: { 'X-Requested-With': 'XMLHttpRequest' } 
-          });
-          if (!response.ok) throw new Error(`Server Error (${response.status})`);
-          const data = await response.json();
-          if (data && data.success) {
-            alert('Product updated successfully.');
-            selectedInventoryProduct = data.product;
-            const idx = inventoryProducts.findIndex(p => Number(p.product_id) === Number(selectedInventoryProduct.product_id));
-            if (idx !== -1) inventoryProducts[idx] = selectedInventoryProduct;
-            applyInventoryFilters(); updateInventoryDetailPanel();
-          } else {
-            alert('Failed to update: ' + (data.message || 'Check inputs.'));
-          }
-        } catch (err) { 
-            console.error('Network or Server Error during update:', err); 
-            // Suppressed technical alert to improve UX
-        } finally { btn.disabled = false; btn.innerHTML = oldText; }
-      });
-      document.getElementById('btn-clear-selection')?.addEventListener('click', () => { selectedInventoryProduct = null; updateInventoryDetailPanel(); });
-      document.getElementById('btn-close-details')?.addEventListener('click', () => { selectedInventoryProduct = null; updateInventoryDetailPanel(); renderInventoryViews(); });
+    window.openImageLightbox = (src, title, cat) => {
+        const l = document.getElementById('image-lightbox');
+        document.getElementById('lightbox-img').src = src;
+        document.getElementById('lightbox-title').textContent = title;
+        document.getElementById('lightbox-meta').textContent = cat;
+        l.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
     };
 
-    // Initialize the inventory page using the central JS helper
+    window.closeImageLightbox = () => {
+        document.getElementById('image-lightbox').classList.add('hidden');
+        document.body.style.overflow = '';
+    };
+
+    window.selectInventoryProduct = (id) => InventoryApp.selectProduct(id);
+    window.deleteInventoryProduct = (id) => InventoryApp.handleDelete(id);
+    window.initAdminCashierInventoryPage = () => InventoryApp.init();
+
     initializeAdminCashierPage(window.initAdminCashierInventoryPage);
   </script>
 </body>

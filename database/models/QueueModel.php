@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../connection.php';
+require_once __DIR__ . '/../migrations/MigrationManager.php';
 
 class QueueModel {
     private $conn;
@@ -7,7 +8,7 @@ class QueueModel {
     public function __construct() {
         $this->conn = Database::getConnection();
         $this->conn->query("SET time_zone = '+08:00'"); // Synchronize with Asia/Manila
-        $this->ensureTableExists();
+        (new MigrationManager())->run();
     }
 
     public function getConnection() {
@@ -15,69 +16,6 @@ class QueueModel {
     }
 
     private function ensureTableExists() {
-        $tableName = 'queue_tickets'; // Use a variable for consistency
-        $sql = "CREATE TABLE IF NOT EXISTS `$tableName` (
-            `id` INT(11) NOT NULL AUTO_INCREMENT,
-            `user_id` INT(11) DEFAULT NULL,
-            `queue_number` VARCHAR(50) NOT NULL,
-            `student_name` VARCHAR(255) DEFAULT NULL,
-            `purpose` VARCHAR(255) DEFAULT NULL,
-            `status` ENUM('waiting', 'serving', 'completed', 'cancelled') NOT NULL DEFAULT 'waiting',
-            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `served_at` TIMESTAMP NULL DEFAULT NULL,
-            `alert_sent` TINYINT(1) DEFAULT 0,
-            `serving_alert_sent` TINYINT(1) DEFAULT 0,
-            `expiry_alert_sent` TINYINT(1) DEFAULT 0,
-            PRIMARY KEY (`id`),
-            KEY `idx_queue_user` (`user_id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-        
-        try {
-            // Attempt to create the table. If it exists, this does nothing.
-            // If it doesn't exist and can't be created, mysqli_report should make this throw an exception.
-            $this->conn->query($sql);
-
-            // Ensure alert_sent column exists for existing tables (Fixes: Unknown column 'q.alert_sent')
-            $res = $this->conn->query("SHOW COLUMNS FROM `$tableName` LIKE 'alert_sent'");
-            if ($res && $res->num_rows === 0) {
-                $this->conn->query("ALTER TABLE `$tableName` ADD COLUMN `alert_sent` TINYINT(1) DEFAULT 0 AFTER `served_at` ");
-            }
-
-            // Ensure expiry_alert_sent column exists
-            $res = $this->conn->query("SHOW COLUMNS FROM `$tableName` LIKE 'expiry_alert_sent'");
-            if ($res && $res->num_rows === 0) {
-                $this->conn->query("ALTER TABLE `$tableName` ADD COLUMN `expiry_alert_sent` TINYINT(1) DEFAULT 0 AFTER `alert_sent` ");
-            }
-
-            // Ensure serving_alert_sent column exists for the new notification feature
-            $res = $this->conn->query("SHOW COLUMNS FROM `$tableName` LIKE 'serving_alert_sent'");
-            if ($res && $res->num_rows === 0) {
-                $this->conn->query("ALTER TABLE `$tableName` ADD COLUMN `serving_alert_sent` TINYINT(1) DEFAULT 0 AFTER `alert_sent` ");
-            }
-
-            error_log("QueueModel: Attempted to ensure table '$tableName' structure is correct.");
-
-            // Verify table existence immediately after the CREATE IF NOT EXISTS statement
-            $checkSql = "SHOW TABLES LIKE '$tableName'";
-            $result = $this->conn->query($checkSql);
-
-            if ($result === false) {
-                error_log("QueueModel: Failed to execute SHOW TABLES query for '$tableName': " . $this->conn->error);
-                throw new Exception("Database error: Could not verify table '$tableName' existence.");
-            }
-
-            if ($result->num_rows === 0) {
-                error_log("QueueModel: Critical error: Table '$tableName' does not exist after attempted creation. Check database permissions or connection.");
-                throw new Exception("Critical database error: Required table '$tableName' is missing or could not be created.");
-            }
-            error_log("QueueModel: Table '$tableName' confirmed to exist.");
-        } catch (mysqli_sql_exception $e) {
-            error_log("QueueModel: mysqli_sql_exception during table '$tableName' check/creation: " . $e->getMessage());
-            throw new Exception("Database schema initialization failed for table '$tableName': " . $e->getMessage());
-        } catch (Exception $e) {
-            error_log("QueueModel: General exception during table '$tableName' check/creation: " . $e->getMessage());
-            throw $e; // Re-throw to propagate
-        }
     }
 
     public function getTicketsByUserId($userId) {

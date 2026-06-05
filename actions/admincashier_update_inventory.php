@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<?php
+﻿﻿<?php
 // Force JSON output even if errors occur
 header('Content-Type: application/json');
 ini_set('display_errors', '0'); // Prevent HTML error output
@@ -10,16 +10,36 @@ requireAuth(['admin', 'admincashier', 'superadmin', 'cashier']);
 
 try {
     require_once __DIR__ . '/../database/connection.php';
+    require_once __DIR__ . '/../database/migrations/MigrationManager.php';
     $conn = Database::getConnection();
+
+    // Check if product_id is provided early for migration checks
+    $productId = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
+    if (!$productId) {
+        throw new Exception('Product ID is required for update.');
+    }
 
     if ($conn->connect_error) {
         throw new Exception('Database connection failed: ' . $conn->connect_error);
     }
 
-    // Check if product_id is provided
-    $productId = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
-    if (!$productId) {
-        throw new Exception('Product ID is required for update.');
+    // Ensure schema is up to date
+    (new MigrationManager())->run();
+
+    // Backward compatibility: Rename category 'Fabric Uniform' to 'Uniform Fabrics'
+    $catCheck = $conn->prepare("SELECT product_category FROM products WHERE product_id = ?");
+    $catCheck->bind_param('i', $productId);
+    $catCheck->execute();
+    $catRes = $catCheck->get_result()->fetch_assoc();
+    $catCheck->close();
+
+    if ($catRes && $catRes['product_category'] === 'Fabric Uniform') {
+        $stmtUpdate = $conn->prepare("UPDATE products SET product_category = 'Uniform Fabrics' WHERE product_id = ?");
+        if ($stmtUpdate) {
+            $stmtUpdate->bind_param('i', $productId);
+            $stmtUpdate->execute();
+            $stmtUpdate->close();
+        }
     }
 
     // Fetch current product data to get existing image path if no new image is uploaded
@@ -63,7 +83,7 @@ try {
         if (move_uploaded_file($file['tmp_name'], $destination)) {
             // Delete old image if it's not the default fallback and exists
             if ($productImage && $productImage !== 'assets/images/icons/granbylogo.png' && file_exists(__DIR__ . '/../' . $productImage)) {
-                unlink(__DIR__ . '/../' . $productImage);
+                @unlink(__DIR__ . '/../' . $productImage);
             }
             $productImage = 'assets/images/products/' . $newFileName; // Store relative path
         } else {
@@ -77,6 +97,7 @@ try {
     $buyPrice = filter_input(INPUT_POST, 'buy_price', FILTER_VALIDATE_FLOAT);
     $productStatus = isset($_POST['product_status']) ? trim($_POST['product_status']) : null;
     $stockCount = filter_input(INPUT_POST, 'stock_count', FILTER_VALIDATE_FLOAT);
+    $isFeatured = filter_input(INPUT_POST, 'is_featured', FILTER_VALIDATE_INT) ?: 0;
 
     // Book-specific metadata
     $bookAuthor = isset($_POST['book_author']) ? trim($_POST['book_author']) : null;
@@ -88,14 +109,41 @@ try {
     $bookIsbn = isset($_POST['book_isbn']) ? trim($_POST['book_isbn']) : null;
     $bookYear = filter_input(INPUT_POST, 'book_publication_year', FILTER_VALIDATE_INT);
 
+    // Uniform-specific metadata
+    $uniformCourse = isset($_POST['uniform_course']) ? trim($_POST['uniform_course']) : null;
+    $uniformType = isset($_POST['uniform_type']) ? trim($_POST['uniform_type']) : null;
+    $upperFabric = isset($_POST['uniform_upper_fabric']) ? trim($_POST['uniform_upper_fabric']) : null;
+    $lowerFabric = isset($_POST['uniform_lower_fabric']) ? trim($_POST['uniform_lower_fabric']) : null;
+    $minYards = filter_input(INPUT_POST, 'uniform_min_yards', FILTER_VALIDATE_FLOAT);
+    $materialType = isset($_POST['uniform_material']) ? trim($_POST['uniform_material']) : null;
+
     if (!$productName || !$productCategory || $buyPrice === false || !$productStatus || $stockCount === false) {
         throw new Exception('Invalid or missing product data.');
     }
 
-    // Conditional Validation for Books
+    if ($stockCount < 0) throw new Exception('Available stock cannot be negative.');
+
+    // 1. Data Normalization
+    // Ensure numeric validation failures from filter_input result in database-safe nulls or defaults
+    $bookPages = ($bookPages === false || $bookPages === null) ? null : (int)$bookPages;
+    $bookYear = ($bookYear === false || $bookYear === null) ? null : (int)$bookYear;
+    $minYards = ($minYards === false || $minYards === null) ? 0.00 : (float)$minYards;
+
+    // 2. Metadata Integrity: Clear irrelevant fields based on the selected category
+    // This prevents "ghost data" if a product is moved between modules (e.g. Book to Fabric)
+    if ($productCategory !== 'Books') {
+        $bookAuthor = $bookPages = $bookCourse = $bookSubject = $bookEdition = $bookPublisher = $bookIsbn = $bookYear = null;
+    }
+    
+    if ($productCategory !== 'Uniform Fabrics') {
+        $uniformCourse = $uniformType = $upperFabric = $lowerFabric = $materialType = null;
+        $minYards = 0.00;
+    }
+
+    // 3. Module-Specific Validation
     if ($productCategory === 'Books') {
         if (empty($bookAuthor)) throw new Exception('Book Author is required.');
-        if ($bookPages === false || $bookPages <= 0) throw new Exception('A valid page count is required.');
+        if (!$bookPages || $bookPages <= 0) throw new Exception('A valid page count is required.');
         if (empty($bookCourse)) throw new Exception('Applicable course/program is required.');
         
         if ($bookYear !== null && $bookYear !== false) {
@@ -112,6 +160,20 @@ try {
             }
             $isbnCheck->close();
         }
+    } elseif ($productCategory === 'Uniform Fabrics') {
+        if (empty($uniformCourse)) throw new Exception('Applicable Course/Program is required.');
+        if (empty($uniformType)) throw new Exception('Uniform Type is required.');
+
+        if ($minYards <= 0) {
+            throw new Exception('Fabrics Module: A valid Min. Yards per Set (> 0) is required.');
+        }
+        if (empty($materialType)) {
+            throw new Exception('Fabrics Module: Material Type is required.');
+        }
+        
+        if ($uniformType === 'Complete Uniform Set') {
+            if (empty($upperFabric) || empty($lowerFabric)) throw new Exception('Fabric Combination details (Upper & Lower) are required for complete sets.');
+        }
     }
 
     // Prepare the update statement
@@ -121,6 +183,7 @@ try {
                         buy_price = ?, 
                         product_status = ?, 
                         stock_count = ?, 
+                        is_featured = ?,
                         product_image = ?,
                         book_author = ?,
                         book_pages = ?,
@@ -129,21 +192,30 @@ try {
                         book_edition = ?,
                         book_publisher = ?,
                         book_isbn = ?,
-                        book_publication_year = ?
+                        book_publication_year = ?,
+                        uniform_course = ?,
+                        uniform_type = ?,
+                        uniform_upper_fabric = ?,
+                        uniform_lower_fabric = ?,
+                        uniform_min_yards = ?,
+                        uniform_material = ?
                     WHERE product_id = ?";
 
     $stmt = $conn->prepare($updateQuery);
     if (!$stmt) {
-        throw new Exception('Failed to prepare update statement: ' . $conn->error);
+        throw new Exception('SQL Preparation Error: ' . $conn->error);
     }
 
+    // Strictly synchronized type string and variable list (22 parameters):
+    // ssdsdis (7) + si (2) + sssss (5) + i (1) + ssss (4) + d (1) + s (1) + i (1) = 22
     $stmt->bind_param(
-        'ssdsdssisssssii',
+        'ssdsdississsssissssdsi', 
         $productName,
         $productCategory,
         $buyPrice,
         $productStatus,
         $stockCount,
+        $isFeatured,
         $productImage,
         $bookAuthor,
         $bookPages,
@@ -153,6 +225,12 @@ try {
         $bookPublisher,
         $bookIsbn,
         $bookYear,
+        $uniformCourse,
+        $uniformType,
+        $upperFabric,
+        $lowerFabric,
+        $minYards,
+        $materialType,
         $productId
     );
 
@@ -168,14 +246,28 @@ try {
     $updatedProduct = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
-    echo json_encode([
+    // Ensure data is UTF-8 encoded to prevent json_encode failure
+    if ($updatedProduct) {
+        array_walk_recursive($updatedProduct, function(&$item) {
+            if (is_string($item)) $item = mb_convert_encoding($item, 'UTF-8', 'UTF-8');
+        });
+    }
+
+    $json = json_encode([
         'success' => true,
         'message' => 'Product updated successfully.',
         'product' => $updatedProduct
     ]);
 
-} catch (Exception $e) {
-    ob_clean(); // Clear any buffered output before sending JSON error
+    if ($json === false) throw new Exception('JSON Encoding Error: ' . json_last_error_msg());
+
+    // Standardized successful response
+    if (ob_get_length()) ob_clean(); 
+    echo $json;
+    exit;
+
+} catch (Throwable $e) {
+    if (ob_get_length()) ob_clean(); // Clear any buffered output before sending JSON error
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 } finally {
     if (isset($conn)) {
