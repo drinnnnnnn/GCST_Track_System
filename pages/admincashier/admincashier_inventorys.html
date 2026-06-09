@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -1001,7 +1001,7 @@
                   <div class="form-section-divider">Uniform Information</div>
                   <div class="form-group">
                     <label for="new-uniform-course">Applicable Course/Program <span class="text-rose-500">*</span></label>
-                    <select id="new-uniform-course" name="uniform_course">
+                    <select id="new-uniform-course" name="course_program">
                       <option value="" disabled selected>Select Course</option>
                       <option value="BSIT">BSIT</option>
                       <option value="BSHM">BSHM</option>
@@ -1031,14 +1031,10 @@
                       <input id="new-lower-fabric" name="uniform_lower_fabric" type="text" placeholder="e.g., Navy Blue" />
                     </div>
                   </div>
-
-                  <div class="form-group">
-                    <label for="new-min-yards">Min. Yards per Set <span class="text-rose-500">*</span></label>
-                    <input id="new-min-yards" name="uniform_min_yards" type="number" min="0.01" step="0.01" placeholder="0.00" />
-                  </div>
-                  <div class="form-group">
+                  
+                  <div class="form-group md:col-span-2">
                     <label for="new-material">Material Type <span class="text-rose-500">*</span></label>
-                    <input id="new-material" name="uniform_material" type="text" placeholder="e.g., Cotton/Polyester" />
+                    <input id="new-material" name="material_type" type="text" placeholder="e.g., Cotton/Polyester" />
                   </div>
                 </div>
               </div>
@@ -1092,6 +1088,38 @@
             </div>
             <!-- Consolidated product details section -->
             <div id="product-details" class="product-details hidden">
+              <!-- Read-only Uniform Summary Section -->
+              <div id="detail-uniform-summary" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-2">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">
+                    <i class="fas fa-info-circle"></i>
+                  </div>
+                  <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Uniform Information</h4>
+                </div>
+                <div class="space-y-2.5 text-xs font-medium">
+                  <div class="flex justify-between pb-2 border-b border-slate-100">
+                    <span class="text-slate-400">Course/Program:</span>
+                    <span id="disp-uniform-course" class="text-slate-700"></span>
+                  </div>
+                  <div class="flex justify-between pb-2 border-b border-slate-100">
+                    <span class="text-slate-400">Uniform Type:</span>
+                    <span id="disp-uniform-type" class="text-slate-700 text-right max-w-[150px] truncate"></span>
+                  </div>
+                  <div class="flex justify-between pb-2 border-b border-slate-100">
+                    <span class="text-slate-400">Material Type:</span>
+                    <span id="disp-uniform-material" class="text-slate-700"></span>
+                  </div>
+                  <div class="flex justify-between pb-2 border-b border-slate-100">
+                    <span class="text-slate-400">Available Stock:</span>
+                    <span id="disp-uniform-stock" class="text-slate-900 font-bold"></span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-400">Price Per Yard:</span>
+                    <span id="disp-uniform-price" class="text-indigo-600 font-bold"></span>
+                  </div>
+                </div>
+              </div>
+
               <div class="product-info-header">
                 <div id="detail-image-preview" class="image-preview">
                   <img id="detail-image" src="" alt="Product image" />
@@ -1198,11 +1226,13 @@
                     <label for="detail-uniform-course-input">Applicable Course <span class="text-rose-500">*</span></label>
                     <select id="detail-uniform-course-input">
                       <option value="BSIT">BSIT</option>
-                      <option value="BSHM">BSHM</option>
-                      <option value="BEED">BEED</option>
-                      <option value="BSED">BSED</option>
+                      <option value="BSCS">BSCS</option>
+                      <option value="BSTM">BSTM</option>
+                      <option value="BEE">BEE</option>
+                      <option value="BSE">BSE</option>
+                      <option value="BSC">BSC</option>
                       <option value="BSBA">BSBA</option>
-                      <option value="Other">Other Courses</option>
+                      <option value="BSA">BSA</option>
                     </select>
                   </div>
                   <div class="form-group">
@@ -1217,23 +1247,17 @@
                   <div id="detail-fabric-combination-fields" class="hidden space-y-4">
                     <div class="form-group">
                       <label for="detail-upper-fabric-input">Upper Fabric Name/Color <span class="text-rose-500">*</span></label>
-                      <input id="detail-upper-fabric-input" type="text" />
+                      <input id="detail-upper-fabric-input" type="text" placeholder="e.g., White Twill" />
                     </div>
                     <div class="form-group">
                       <label for="detail-lower-fabric-input">Lower Fabric Name/Color <span class="text-rose-500">*</span></label>
-                      <input id="detail-lower-fabric-input" type="text" />
+                      <input id="detail-lower-fabric-input" type="text" placeholder="e.g., Navy Blue" />
                     </div>
                   </div>
 
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="form-group">
-                      <label for="detail-min-yards-input">Min. Yards/Set <span class="text-rose-500">*</span></label>
-                      <input id="detail-min-yards-input" type="number" min="0.01" step="0.01" />
-                    </div>
-                    <div class="form-group">
-                      <label for="detail-material-input">Material <span class="text-rose-500">*</span></label>
-                      <input id="detail-material-input" type="text" />
-                    </div>
+                  <div class="form-group">
+                    <label for="detail-material-input">Material <span class="text-rose-500">*</span></label>
+                    <input id="detail-material-input" type="text" />
                   </div>
                 </div>
               </div>
@@ -1289,7 +1313,7 @@
         },
 
         async fetchAll() {
-            return await fetchWithError(this.ENDPOINTS.LOAD);
+            return await fetchWithError(this.ENDPOINTS.LOAD, { cache: 'no-store' });
         },
 
         async updateProduct(formData) {
@@ -1385,11 +1409,22 @@
         // Consolidated UI references
         ui: {},
 
+        // Communication channel for cross-tab sync
+        syncChannel: new BroadcastChannel('inventory_sync_channel'),
+
         async init() {
             this.cacheDOMElements();
             this.setupEventListeners();
             await this.refreshData();
             this.startPolling();
+
+            // Listen for updates from other tabs (e.g. Cashier finalized a sale)
+            this.syncChannel.onmessage = (event) => {
+                if (event.data === 'refresh_inventory') {
+                    this.refreshData();
+                    showToast('🔄 Inventory synced with latest transactions.', 'success');
+                }
+            };
         },
 
         cacheDOMElements() {
@@ -1554,7 +1589,12 @@
             if (product.product_category === 'Books') {
                 metaHtml = `<div class="mt-1 text-[0.7rem] font-bold text-indigo-500 uppercase tracking-tighter"><i class="fas fa-book-open mr-1"></i> ${product.book_author || 'Unknown'}</div>`;
             } else if (product.product_category === 'Uniform Fabrics') {
-                metaHtml = `<div class="mt-1 text-[0.7rem] font-bold text-blue-500 uppercase tracking-tighter"><i class="fas fa-tshirt mr-1"></i> ${product.uniform_course || 'General'}</div>`;
+                metaHtml = `
+                    <div class="mt-1 flex flex-col gap-0.5">
+                        <div class="text-[0.65rem] font-bold text-blue-600 uppercase tracking-tighter"><i class="fas fa-graduation-cap mr-1"></i> ${product.course_program || product.uniform_course || 'N/A'}</div>
+                        <div class="text-[0.65rem] font-medium text-gray-500 truncate">${product.uniform_type || 'N/A'}</div>
+                        <div class="text-[0.65rem] font-medium text-gray-400 truncate"><i class="fas fa-info-circle mr-1"></i> ${product.material_type || product.uniform_material || 'N/A'}</div>
+                    </div>`;
             }
 
             return `
@@ -1572,12 +1612,12 @@
                         ${metaHtml}
                         <div class="inventory-card-meta">
                             <div class="flex flex-col">
-                                <span class="stock-label">Price</span>
+                                <span class="stock-label">${product.product_category === 'Uniform Fabrics' ? 'Price/Yard' : 'Price'}</span>
                                 <span class="card-price">${formatCurrency(product.buy_price)}</span>
                             </div>
                             <div class="text-right">
-                                <span class="stock-label">Stock</span>
-                                <span class="card-stock-info">${stock} <small class="text-gray-400 font-medium">${product.product_category === 'Uniform Fabrics' ? 'yds' : 'pcs'}</small></span>
+                                <span class="stock-label">Available</span>
+                                <span class="card-stock-info">${stock} <small class="text-gray-400 font-medium">${product.product_category === 'Uniform Fabrics' ? 'Yards' : 'pcs'}</small></span>
                             </div>
                         </div>
                         <div class="inventory-card-footer pt-2">
@@ -1666,12 +1706,24 @@
             document.getElementById('detail-book-isbn-input').value = p.book_isbn || '';
             document.getElementById('detail-book-year-input').value = p.book_publication_year || '';
             
-            document.getElementById('detail-uniform-course-input').value = p.uniform_course || 'BSIT';
+            document.getElementById('detail-uniform-course-input').value = p.course_program || p.uniform_course || '';
             document.getElementById('detail-uniform-type-input').value = p.uniform_type || 'Upper Uniform Fabric';
             document.getElementById('detail-upper-fabric-input').value = p.uniform_upper_fabric || '';
             document.getElementById('detail-lower-fabric-input').value = p.uniform_lower_fabric || '';
-            document.getElementById('detail-min-yards-input').value = (parseFloat(p.uniform_min_yards) || 0).toFixed(2);
-            document.getElementById('detail-material-input').value = p.uniform_material || '';
+            document.getElementById('detail-material-input').value = p.material_type || p.uniform_material || '';
+
+            // Populate Read-only Display Summary
+            const courseDisp = document.getElementById('disp-uniform-course');
+            const typeDisp = document.getElementById('disp-uniform-type');
+            const materialDisp = document.getElementById('disp-uniform-material');
+            const stockDisp = document.getElementById('disp-uniform-stock');
+            const priceDisp = document.getElementById('disp-uniform-price');
+
+            if (courseDisp) courseDisp.textContent = p.course_program || p.uniform_course || 'N/A';
+            if (typeDisp) typeDisp.textContent = p.uniform_type || 'N/A';
+            if (materialDisp) materialDisp.textContent = p.material_type || p.uniform_material || 'N/A';
+            if (stockDisp) stockDisp.textContent = `${parseFloat(p.stock_count || 0).toFixed(2)} Yards`;
+            if (priceDisp) priceDisp.textContent = formatCurrency(p.buy_price);
 
             toggleCategoryFields('detail', p.product_category);
             toggleFabricCombination('detail', p.uniform_type);
@@ -1691,7 +1743,7 @@
             document.getElementById('detail-category').textContent = cat;
             
             const stockEl = document.getElementById('detail-stock');
-            const unit = cat === 'Uniform Fabrics' ? 'yards' : 'pcs';
+            const unit = cat === 'Uniform Fabrics' ? 'Yards' : 'pcs';
             if (stockEl) stockEl.textContent = `${stock} ${unit}`;
             stockEl.className = `status-pill ${this.getStatusClass(stock)}`;
         },
@@ -1719,12 +1771,10 @@
             } else if (cat === 'Uniform Fabrics') {
                 const course = document.getElementById(`${pfx}uniform-course`)?.value || document.getElementById(`${pfx}uniform-course-input`)?.value;
                 const type = document.getElementById(`${pfx}uniform-type`)?.value || document.getElementById(`${pfx}uniform-type-input`)?.value;
-                const minYards = parseFloat(document.getElementById(`${pfx}min-yards`)?.value || document.getElementById(`${pfx}min-yards-input`)?.value);
                 const material = document.getElementById(`${pfx}material`)?.value || document.getElementById(`${pfx}material-input`)?.value;
 
                 if (!course) return 'Applicable Course association is required.';
                 if (!type) return 'Uniform Type selection is required.';
-                if (isNaN(minYards) || minYards <= 0) return 'Min. Yards per Set is required for fabrics.';
                 if (!material) return 'Material Type is required for fabrics.';
 
                 if (type === 'Complete Uniform Set') {
@@ -1773,12 +1823,11 @@
                 'book_publisher': 'detail-book-publisher-input',
                 'book_isbn': 'detail-book-isbn-input',
                 'book_publication_year': 'detail-book-year-input',
-                'uniform_course': 'detail-uniform-course-input',
+                'course_program': 'detail-uniform-course-input',
                 'uniform_type': 'detail-uniform-type-input',
                 'uniform_upper_fabric': 'detail-upper-fabric-input',
                 'uniform_lower_fabric': 'detail-lower-fabric-input',
-                'uniform_min_yards': 'detail-min-yards-input',
-                'uniform_material': 'detail-material-input'
+                'material_type': 'detail-material-input'
             };
 
             Object.entries(mapping).forEach(([key, id]) => {
@@ -1795,6 +1844,7 @@
                     const productId = this.state.selected.product_id;
                     this.clearSelection();
                     await this.refreshData();
+                    this.syncChannel.postMessage('refresh_inventory');
                     this.triggerFeedback(productId);
                     showToast('✅ Item updated successfully.', 'success');
                 } else {
@@ -1833,6 +1883,7 @@
                 if (result && result.success) {
                     this.toggleAddPanel(false);
                     await this.refreshData();
+                    this.syncChannel.postMessage('refresh_inventory');
                     this.triggerFeedback(result.product.product_id);
                     showToast('✅ New product registered.', 'success');
                 } else {
@@ -1855,6 +1906,7 @@
                 if (result && result.success) {
                     if (this.state.selected?.product_id === id) this.clearSelection();
                     await this.refreshData();
+                    this.syncChannel.postMessage('refresh_inventory');
                     showToast('Item removed from catalog.', 'success');
                 } else {
                     showToast(result.message || 'Deletion failed.', 'error');
@@ -1933,10 +1985,12 @@
         
         const book = document.getElementById(`${pfx}book-fields`), ext = document.getElementById(`${pfx}book-fields-extended`);
         const unif = document.getElementById(`${pfx}uniform-fields`);
+        const unifSummary = document.getElementById('detail-uniform-summary');
         
         if (book) book.classList.toggle('hidden', !isBook);
         if (ext) ext.classList.toggle('hidden', !isBook);
         if (unif) unif.classList.toggle('hidden', !isUnif);
+        if (context === 'detail' && unifSummary) unifSummary.classList.toggle('hidden', !isUnif);
     }
 
     function toggleFabricCombination(context, type) {

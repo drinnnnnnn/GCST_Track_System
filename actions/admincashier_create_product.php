@@ -6,6 +6,10 @@
  */
 
 header('Content-Type: application/json');
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Expires: 0");
 ini_set('display_errors', '0'); // Prevent output corruption
 ob_start();
 
@@ -46,12 +50,11 @@ try {
     $bookYear = filter_input(INPUT_POST, 'book_publication_year', FILTER_VALIDATE_INT);
 
     // Uniform-specific metadata
-    $uniformCourse = isset($_POST['uniform_course']) ? trim($_POST['uniform_course']) : null;
+    $uniformCourse = isset($_POST['course_program']) ? trim($_POST['course_program']) : (isset($_POST['uniform_course']) ? trim($_POST['uniform_course']) : null);
     $uniformType = isset($_POST['uniform_type']) ? trim($_POST['uniform_type']) : null;
     $upperFabric = isset($_POST['uniform_upper_fabric']) ? trim($_POST['uniform_upper_fabric']) : null;
     $lowerFabric = isset($_POST['uniform_lower_fabric']) ? trim($_POST['uniform_lower_fabric']) : null;
-    $minYards = filter_input(INPUT_POST, 'uniform_min_yards', FILTER_VALIDATE_FLOAT);
-    $materialType = isset($_POST['uniform_material']) ? trim($_POST['uniform_material']) : null;
+    $materialType = isset($_POST['material_type']) ? trim($_POST['material_type']) : (isset($_POST['uniform_material']) ? trim($_POST['uniform_material']) : null);
 
     // Primary Validation
     if (empty($productName)) throw new Exception('Validation Error: Product Name is required.');
@@ -76,7 +79,6 @@ try {
     // Ensure numeric validation failures from filter_input result in database-safe nulls or defaults
     $bookPages = ($bookPages === false || $bookPages === null) ? null : (int)$bookPages;
     $bookYear = ($bookYear === false || $bookYear === null) ? null : (int)$bookYear;
-    $minYards = ($minYards === false || $minYards === null) ? 0.00 : (float)$minYards;
 
     // 4. Metadata Integrity: Clear irrelevant fields based on the selected category
     if ($productCategory !== 'Books') {
@@ -84,7 +86,6 @@ try {
     }
     if ($productCategory !== 'Uniform Fabrics') {
         $uniformCourse = $uniformType = $upperFabric = $lowerFabric = $materialType = null;
-        $minYards = 0.00;
     }
 
     // 5. Module-Specific Validation
@@ -112,9 +113,6 @@ try {
         if (empty($uniformCourse)) throw new Exception('Fabrics Module: Course/Program association is required.');
         if (empty($uniformType)) throw new Exception('Fabrics Module: Uniform Type is required.');
         
-        if ($minYards <= 0) {
-            throw new Exception('Fabrics Module: A valid Min. Yards per Set (> 0) is required.');
-        }
         if (empty($materialType)) {
             throw new Exception('Fabrics Module: Material Type is required.');
         }
@@ -155,16 +153,16 @@ try {
     $sql = "INSERT INTO products (
         product_name, product_category, buy_price, product_status, stock_count, is_featured, product_image,
         book_author, book_pages, book_course, book_subject, book_edition, book_publisher, book_isbn, book_publication_year,
-        uniform_course, uniform_type, uniform_upper_fabric, uniform_lower_fabric, uniform_min_yards, uniform_material
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        uniform_course, uniform_type, uniform_upper_fabric, uniform_lower_fabric, uniform_material
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = $conn->prepare($sql);
     if (!$stmt) throw new Exception('Database Error: Preparation failed - ' . $conn->error);
 
-    // Strictly synchronized type string (21 parameters):
-    // ssdsdis (7) + si (2) + sssssi (6) + ssssds (6) = 21
+    // Strictly synchronized type string (20 parameters):
+    // ssdsdis (7) + sisssssi (8) + sssss (5) = 20
     $stmt->bind_param(
-        'ssdsdississsssissssds',
+        'ssdsdississsssisssss',
         $productName,
         $productCategory,
         $buyPrice,
@@ -184,7 +182,6 @@ try {
         $uniformType,
         $upperFabric,
         $lowerFabric,
-        $minYards,
         $materialType
     );
 
@@ -202,6 +199,10 @@ try {
 
     // Ensure data is UTF-8 encoded to prevent json_encode failure
     if ($productData) {
+        // Robust aliasing for frontend consistency
+        $productData['course_program'] = $productData['uniform_course'] ?? $productData['course_program'] ?? null;
+        $productData['material_type'] = $productData['uniform_material'] ?? $productData['material_type'] ?? null;
+
         array_walk_recursive($productData, function(&$item) {
             if (is_string($item)) $item = mb_convert_encoding($item, 'UTF-8', 'UTF-8');
         });

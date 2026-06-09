@@ -1,6 +1,10 @@
 <?php
 // Force JSON output even if errors occur
 header('Content-Type: application/json');
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Expires: 0");
 ini_set('display_errors', '0'); // Prevent HTML error output
 ob_start(); // Buffer any accidental output
 

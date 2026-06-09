@@ -1,4 +1,4 @@
-﻿﻿<?php
+﻿﻿﻿﻿<?php
 // Force JSON output even if errors occur
 header('Content-Type: application/json');
 ini_set('display_errors', '0'); // Prevent HTML error output
@@ -110,12 +110,11 @@ try {
     $bookYear = filter_input(INPUT_POST, 'book_publication_year', FILTER_VALIDATE_INT);
 
     // Uniform-specific metadata
-    $uniformCourse = isset($_POST['uniform_course']) ? trim($_POST['uniform_course']) : null;
+    $uniformCourse = isset($_POST['course_program']) ? trim($_POST['course_program']) : (isset($_POST['uniform_course']) ? trim($_POST['uniform_course']) : null);
     $uniformType = isset($_POST['uniform_type']) ? trim($_POST['uniform_type']) : null;
     $upperFabric = isset($_POST['uniform_upper_fabric']) ? trim($_POST['uniform_upper_fabric']) : null;
     $lowerFabric = isset($_POST['uniform_lower_fabric']) ? trim($_POST['uniform_lower_fabric']) : null;
-    $minYards = filter_input(INPUT_POST, 'uniform_min_yards', FILTER_VALIDATE_FLOAT);
-    $materialType = isset($_POST['uniform_material']) ? trim($_POST['uniform_material']) : null;
+    $materialType = isset($_POST['material_type']) ? trim($_POST['material_type']) : (isset($_POST['uniform_material']) ? trim($_POST['uniform_material']) : null);
 
     if (!$productName || !$productCategory || $buyPrice === false || !$productStatus || $stockCount === false) {
         throw new Exception('Invalid or missing product data.');
@@ -127,7 +126,6 @@ try {
     // Ensure numeric validation failures from filter_input result in database-safe nulls or defaults
     $bookPages = ($bookPages === false || $bookPages === null) ? null : (int)$bookPages;
     $bookYear = ($bookYear === false || $bookYear === null) ? null : (int)$bookYear;
-    $minYards = ($minYards === false || $minYards === null) ? 0.00 : (float)$minYards;
 
     // 2. Metadata Integrity: Clear irrelevant fields based on the selected category
     // This prevents "ghost data" if a product is moved between modules (e.g. Book to Fabric)
@@ -137,7 +135,6 @@ try {
     
     if ($productCategory !== 'Uniform Fabrics') {
         $uniformCourse = $uniformType = $upperFabric = $lowerFabric = $materialType = null;
-        $minYards = 0.00;
     }
 
     // 3. Module-Specific Validation
@@ -164,9 +161,6 @@ try {
         if (empty($uniformCourse)) throw new Exception('Applicable Course/Program is required.');
         if (empty($uniformType)) throw new Exception('Uniform Type is required.');
 
-        if ($minYards <= 0) {
-            throw new Exception('Fabrics Module: A valid Min. Yards per Set (> 0) is required.');
-        }
         if (empty($materialType)) {
             throw new Exception('Fabrics Module: Material Type is required.');
         }
@@ -197,7 +191,6 @@ try {
                         uniform_type = ?,
                         uniform_upper_fabric = ?,
                         uniform_lower_fabric = ?,
-                        uniform_min_yards = ?,
                         uniform_material = ?
                     WHERE product_id = ?";
 
@@ -206,10 +199,10 @@ try {
         throw new Exception('SQL Preparation Error: ' . $conn->error);
     }
 
-    // Strictly synchronized type string and variable list (22 parameters):
-    // ssdsdis (7) + si (2) + sssss (5) + i (1) + ssss (4) + d (1) + s (1) + i (1) = 22
+    // Strictly synchronized type string and variable list (21 parameters):
+    // ssdsdis (7) + sisssssi (8) + sssss (5) + i (1) = 21
     $stmt->bind_param(
-        'ssdsdississsssissssdsi', 
+        'ssdsdississsssisssssi', 
         $productName,
         $productCategory,
         $buyPrice,
@@ -229,12 +222,12 @@ try {
         $uniformType,
         $upperFabric,
         $lowerFabric,
-        $minYards,
         $materialType,
         $productId
     );
 
     if (!$stmt->execute()) {
+        error_log("Database Error (Product Update ID $productId): " . $stmt->error);
         throw new Exception('Failed to update product: ' . $stmt->error);
     }
     $stmt->close();
@@ -248,6 +241,10 @@ try {
 
     // Ensure data is UTF-8 encoded to prevent json_encode failure
     if ($updatedProduct) {
+        // Robust aliasing for frontend consistency across different load sources
+        $updatedProduct['course_program'] = $updatedProduct['uniform_course'] ?? $updatedProduct['course_program'] ?? null;
+        $updatedProduct['material_type'] = $updatedProduct['uniform_material'] ?? $updatedProduct['material_type'] ?? null;
+        
         array_walk_recursive($updatedProduct, function(&$item) {
             if (is_string($item)) $item = mb_convert_encoding($item, 'UTF-8', 'UTF-8');
         });
@@ -267,6 +264,7 @@ try {
     exit;
 
 } catch (Throwable $e) {
+    error_log("Inventory Update Exception: " . $e->getMessage());
     if (ob_get_length()) ob_clean(); // Clear any buffered output before sending JSON error
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 } finally {

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -1623,7 +1623,7 @@
     function loadProducts() {
       const grid = document.getElementById('product-grid');
       grid.innerHTML = '<div class="empty-state"><p>Loading products...</p></div>';
-      fetch(`${API_ROOT}/get_admincashier_products.php`)
+      fetch(`${API_ROOT}/get_admincashier_products.php`, { cache: 'no-store' })
         .then(response => response.json())
         .then(data => {
           products = Array.isArray(data) ? data : [];
@@ -1911,6 +1911,10 @@
 
         const result = await response.json();
         if (!result.success) throw new Error(result.message || 'Record failure');
+
+        // Signal other tabs (like Inventory) to refresh their data immediately
+        const syncChannel = new BroadcastChannel('inventory_sync_channel');
+        syncChannel.postMessage('refresh_inventory');
 
         showReceipt(result.receipt);
         
@@ -2506,6 +2510,14 @@
       loadPendingOrders(); // Load pending orders on page load
       loadRecentTransactions();
       await loadStudentList(); // Await student list loading
+
+      // Listen for inventory updates from other tabs
+      const syncChannel = new BroadcastChannel('inventory_sync_channel');
+      syncChannel.onmessage = (event) => {
+        if (event.data === 'refresh_inventory') {
+          loadProducts();
+        }
+      };
 
       // Wire up Transaction History Search UI Logic
       const historySearch = document.getElementById('txn-history-search');
