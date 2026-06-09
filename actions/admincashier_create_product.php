@@ -44,9 +44,7 @@ try {
     $bookPages = filter_input(INPUT_POST, 'book_pages', FILTER_VALIDATE_INT);
     $bookCourse = isset($_POST['book_course']) ? trim($_POST['book_course']) : null;
     $bookSubject = isset($_POST['book_subject']) ? trim($_POST['book_subject']) : null;
-    $bookEdition = isset($_POST['book_edition']) ? trim($_POST['book_edition']) : null;
-    $bookPublisher = isset($_POST['book_publisher']) ? trim($_POST['book_publisher']) : null;
-    $bookIsbn = isset($_POST['book_isbn']) ? trim($_POST['book_isbn']) : null;
+    // Note: book_author is handled correctly here and in update_inventory.php. Ensure get_admincashier_products.php also selects this field.
     $bookYear = filter_input(INPUT_POST, 'book_publication_year', FILTER_VALIDATE_INT);
 
     // Uniform-specific metadata
@@ -82,7 +80,7 @@ try {
 
     // 4. Metadata Integrity: Clear irrelevant fields based on the selected category
     if ($productCategory !== 'Books') {
-        $bookAuthor = $bookPages = $bookCourse = $bookSubject = $bookEdition = $bookPublisher = $bookIsbn = $bookYear = null;
+        $bookAuthor = $bookPages = $bookCourse = $bookSubject = $bookYear = null;
     }
     if ($productCategory !== 'Uniform Fabrics') {
         $uniformCourse = $uniformType = $upperFabric = $lowerFabric = $materialType = null;
@@ -96,18 +94,6 @@ try {
 
         if ($bookYear !== null && $bookYear !== false) {
             if ($bookYear < 1000 || $bookYear > (int)date('Y') + 5) throw new Exception('Invalid publication year.');
-        }
-
-        // Uniqueness check for ISBN
-        if (!empty($bookIsbn)) {
-            $isbnCheck = $conn->prepare("SELECT 1 FROM products WHERE book_isbn = ? LIMIT 1");
-            $isbnCheck->bind_param('s', $bookIsbn);
-            $isbnCheck->execute();
-            if ($isbnCheck->get_result()->num_rows > 0) {
-                $isbnCheck->close();
-                throw new Exception('Conflict: The provided ISBN is already registered to another book.');
-            }
-            $isbnCheck->close();
         }
     } elseif ($productCategory === 'Uniform Fabrics') {
         if (empty($uniformCourse)) throw new Exception('Fabrics Module: Course/Program association is required.');
@@ -152,17 +138,17 @@ try {
     // 7. Atomic Insertion
     $sql = "INSERT INTO products (
         product_name, product_category, buy_price, product_status, stock_count, is_featured, product_image,
-        book_author, book_pages, book_course, book_subject, book_edition, book_publisher, book_isbn, book_publication_year,
+        book_author, book_pages, book_course, book_subject, book_publication_year,
         uniform_course, uniform_type, uniform_upper_fabric, uniform_lower_fabric, uniform_material
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = $conn->prepare($sql);
     if (!$stmt) throw new Exception('Database Error: Preparation failed - ' . $conn->error);
 
-    // Strictly synchronized type string (20 parameters):
-    // ssdsdis (7) + sisssssi (8) + sssss (5) = 20
+    // Strictly synchronized type string (17 parameters):
+    // ssdsdis (7) + sis s (4) + i (1) + sssss (5) = 17
     $stmt->bind_param(
-        'ssdsdississsssisssss',
+        'ssdsdissississsss',
         $productName,
         $productCategory,
         $buyPrice,
@@ -174,9 +160,6 @@ try {
         $bookPages,
         $bookCourse,
         $bookSubject,
-        $bookEdition,
-        $bookPublisher,
-        $bookIsbn,
         $bookYear,
         $uniformCourse,
         $uniformType,

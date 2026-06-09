@@ -973,22 +973,10 @@
                     <input id="new-book-course" name="book_course" type="text" placeholder="e.g., BSCS, BSIT" />
                   </div>
                 </div>
-                <div id="new-book-fields-extended" class="hidden md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                <div id="new-book-fields-extended" class="hidden md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                   <div class="form-group">
                     <label for="new-book-subject">Subject</label>
                     <input id="new-book-subject" name="book_subject" type="text" placeholder="e.g., Programming" />
-                  </div>
-                  <div class="form-group">
-                    <label for="new-book-edition">Edition</label>
-                    <input id="new-book-edition" name="book_edition" type="text" placeholder="e.g., 2nd Ed." />
-                  </div>
-                  <div class="form-group">
-                    <label for="new-book-isbn">ISBN</label>
-                    <input id="new-book-isbn" name="book_isbn" type="text" placeholder="000-0-00-000000-0" />
-                  </div>
-                  <div class="form-group">
-                    <label for="new-book-publisher">Publisher</label>
-                    <input id="new-book-publisher" name="book_publisher" type="text" placeholder="Company Name" />
                   </div>
                   <div class="form-group">
                     <label for="new-book-year">Pub. Year</label>
@@ -1003,12 +991,14 @@
                     <label for="new-uniform-course">Applicable Course/Program <span class="text-rose-500">*</span></label>
                     <select id="new-uniform-course" name="course_program">
                       <option value="" disabled selected>Select Course</option>
-                      <option value="BSIT">BSIT</option>
-                      <option value="BSHM">BSHM</option>
-                      <option value="BEED">BEED</option>
-                      <option value="BSED">BSED</option>
-                      <option value="BSBA">BSBA</option>
-                      <option value="Other">Other Courses</option>
+                      <option value="BSIT">BS Information Technology</option>
+                      <option value="BSCS">BS Computer Science</option>
+                      <option value="BSBA">BS Business Administration</option>
+                      <option value="BSHM">BS Criminology</option>
+                      <option value="BEED">Bachelor of Elementary Education</option>
+                      <option value="BSED">Bachelor of Secondary Education</option>
+                      <option value="BSBA">BS Business Administration</option>
+                      <option value="BSTM">BS Tourism Management</option>
                     </select>
                   </div>
                   <div class="form-group">
@@ -1120,6 +1110,38 @@
                 </div>
               </div>
 
+              <!-- Read-only Book Summary Section -->
+              <div id="detail-book-summary" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-2">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">
+                    <i class="fas fa-book"></i>
+                  </div>
+                  <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Book Information</h4>
+                </div>
+                <div class="space-y-2.5 text-xs font-medium">
+                  <div class="flex justify-between pb-2 border-b border-slate-100">
+                    <span class="text-slate-400">Title:</span>
+                    <span id="disp-book-title" class="text-slate-700"></span>
+                  </div>
+                  <div class="flex justify-between pb-2 border-b border-slate-100">
+                    <span class="text-slate-400">Author:</span>
+                    <span id="disp-book-author" class="text-slate-700"></span>
+                  </div>
+                  <div class="flex justify-between pb-2 border-b border-slate-100">
+                    <span class="text-slate-400">Pages:</span>
+                    <span id="disp-book-pages" class="text-slate-700"></span>
+                  </div>
+                  <div class="flex justify-between pb-2 border-b border-slate-100">
+                    <span class="text-slate-400">Course/Subject:</span>
+                    <span id="disp-book-course" class="text-slate-700"></span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-400">Publish Year:</span>
+                    <span id="disp-book-year" class="text-slate-700"></span>
+                  </div>
+                </div>
+              </div>
+
               <div class="product-info-header">
                 <div id="detail-image-preview" class="image-preview">
                   <img id="detail-image" src="" alt="Product image" />
@@ -1195,27 +1217,15 @@
                       <input id="detail-book-course-input" type="text" placeholder="Useful for..." />
                     </div>
                   </div>
-                  <div class="form-group">
-                    <label for="detail-book-subject-input">Subject</label>
-                    <input id="detail-book-subject-input" type="text" />
-                  </div>
                   <div class="grid grid-cols-2 gap-3">
                     <div class="form-group">
-                      <label for="detail-book-edition-input">Edition</label>
-                      <input id="detail-book-edition-input" type="text" />
+                      <label for="detail-book-subject-input">Subject</label>
+                      <input id="detail-book-subject-input" type="text" />
                     </div>
                     <div class="form-group">
                       <label for="detail-book-year-input">Pub. Year</label>
                       <input id="detail-book-year-input" type="number" />
                     </div>
-                  </div>
-                  <div class="form-group">
-                    <label for="detail-book-publisher-input">Publisher</label>
-                    <input id="detail-book-publisher-input" type="text" />
-                  </div>
-                  <div class="form-group">
-                    <label for="detail-book-isbn-input">ISBN Code</label>
-                    <input id="detail-book-isbn-input" type="text" />
                   </div>
                 </div>
 
@@ -1225,14 +1235,14 @@
                   <div class="form-group">
                     <label for="detail-uniform-course-input">Applicable Course <span class="text-rose-500">*</span></label>
                     <select id="detail-uniform-course-input">
-                      <option value="BSIT">BSIT</option>
-                      <option value="BSCS">BSCS</option>
-                      <option value="BSTM">BSTM</option>
-                      <option value="BEE">BEE</option>
-                      <option value="BSE">BSE</option>
-                      <option value="BSC">BSC</option>
-                      <option value="BSBA">BSBA</option>
-                      <option value="BSA">BSA</option>
+                      <option value="BS Information Technology">BS Information Technology</option>
+                      <option value="BS Computer Science">BS Computer Science</option>
+                      <option value="BS Business Administration">BS Business Administration</option>
+                      <option value="BS Criminology">BS Criminology</option>
+                      <option value="Bachelor of Elementary Education">Bachelor of Elementary Education</option>
+                      <option value="Bachelor of Secondary Education">Bachelor of Secondary Education</option>
+                      <option value="BS Business Administration">BS Business Administration</option>
+                      <option value="BS Tourism Management">BS Tourism Management</option>
                     </select>
                   </div>
                   <div class="form-group">
@@ -1587,13 +1597,29 @@
 
             let metaHtml = '';
             if (product.product_category === 'Books') {
-                metaHtml = `<div class="mt-1 text-[0.7rem] font-bold text-indigo-500 uppercase tracking-tighter"><i class="fas fa-book-open mr-1"></i> ${product.book_author || 'Unknown'}</div>`;
+                metaHtml = `
+                  <div class="mt-1 flex flex-col gap-0.5">
+                      <div class="mt-1 text-[0.7rem] font-bold text-indigo-600 uppercase tracking-tight truncate" title="Author: ${product.book_author || 'Unknown'}">
+                          <i class="fas fa-user-edit mr-1.5 opacity-70"></i>${product.book_author || 'Unknown'}
+                      </div>
+                      <div class="text-[0.65rem] font-semibold text-slate-600 truncate">${product.book_course || 'N/A'}</div>
+                      <div class="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                          <span class="text-[0.6rem] font-medium text-slate-400"><i class="fas fa-tag mr-1 opacity-60"></i>${product.book_subject || 'N/A'}</span>
+                          <span class="text-[0.6rem] font-medium text-slate-400"><i class="fas fa-copy mr-1 opacity-60"></i>${product.book_pages || '0'} pgs</span>
+                          <span class="text-[0.6rem] font-medium text-slate-400"><i class="fas fa-calendar-day mr-1 opacity-60"></i>${product.book_publication_year || 'N/A'}</span>
+                      </div>
+                  </div>`;
+                
             } else if (product.product_category === 'Uniform Fabrics') {
                 metaHtml = `
                     <div class="mt-1 flex flex-col gap-0.5">
-                        <div class="text-[0.65rem] font-bold text-blue-600 uppercase tracking-tighter"><i class="fas fa-graduation-cap mr-1"></i> ${product.course_program || product.uniform_course || 'N/A'}</div>
-                        <div class="text-[0.65rem] font-medium text-gray-500 truncate">${product.uniform_type || 'N/A'}</div>
-                        <div class="text-[0.65rem] font-medium text-gray-400 truncate"><i class="fas fa-info-circle mr-1"></i> ${product.material_type || product.uniform_material || 'N/A'}</div>
+                        <div class="text-[0.7rem] font-bold text-blue-600 uppercase tracking-tight truncate" title="Course: ${product.course_program || product.uniform_course || 'N/A'}">
+                            <i class="fas fa-graduation-cap mr-1.5 opacity-70"></i>${product.course_program || product.uniform_course || 'N/A'}
+                        </div>
+                        <div class="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                            <span class="text-[0.6rem] font-medium text-slate-400"><i class="fas fa-tshirt mr-1 opacity-60"></i>${product.uniform_type || 'N/A'}</span>
+                            <span class="text-[0.6rem] font-medium text-slate-400"><i class="fas fa-palette mr-1 opacity-60"></i>${product.material_type || product.uniform_material || 'N/A'}</span>
+                        </div>
                     </div>`;
             }
 
@@ -1701,9 +1727,6 @@
             document.getElementById('detail-book-pages-input').value = p.book_pages || '';
             document.getElementById('detail-book-course-input').value = p.book_course || '';
             document.getElementById('detail-book-subject-input').value = p.book_subject || '';
-            document.getElementById('detail-book-edition-input').value = p.book_edition || '';
-            document.getElementById('detail-book-publisher-input').value = p.book_publisher || '';
-            document.getElementById('detail-book-isbn-input').value = p.book_isbn || '';
             document.getElementById('detail-book-year-input').value = p.book_publication_year || '';
             
             document.getElementById('detail-uniform-course-input').value = p.course_program || p.uniform_course || '';
@@ -1713,6 +1736,18 @@
             document.getElementById('detail-material-input').value = p.material_type || p.uniform_material || '';
 
             // Populate Read-only Display Summary
+            const bookTitleDisp = document.getElementById('disp-book-title');
+            const bookAuthorDisp = document.getElementById('disp-book-author');
+            const bookPagesDisp = document.getElementById('disp-book-pages');
+            const bookCourseDisp = document.getElementById('disp-book-course');
+            const bookYearDisp = document.getElementById('disp-book-year');
+
+            if (bookTitleDisp) bookTitleDisp.textContent = p.product_name || 'N/A';
+            if (bookAuthorDisp) bookAuthorDisp.textContent = p.book_author || 'N/A';
+            if (bookPagesDisp) bookPagesDisp.textContent = p.book_pages || 'N/A';
+            if (bookCourseDisp) bookCourseDisp.textContent = (p.book_course && p.book_subject) ? `${p.book_course} / ${p.book_subject}` : (p.book_course || p.book_subject || 'N/A');
+            if (bookYearDisp) bookYearDisp.textContent = p.book_publication_year || 'N/A';
+
             const courseDisp = document.getElementById('disp-uniform-course');
             const typeDisp = document.getElementById('disp-uniform-type');
             const materialDisp = document.getElementById('disp-uniform-material');
@@ -1819,9 +1854,6 @@
                 'book_pages': 'detail-book-pages-input',
                 'book_course': 'detail-book-course-input',
                 'book_subject': 'detail-book-subject-input',
-                'book_edition': 'detail-book-edition-input',
-                'book_publisher': 'detail-book-publisher-input',
-                'book_isbn': 'detail-book-isbn-input',
                 'book_publication_year': 'detail-book-year-input',
                 'course_program': 'detail-uniform-course-input',
                 'uniform_type': 'detail-uniform-type-input',
@@ -1986,11 +2018,15 @@
         const book = document.getElementById(`${pfx}book-fields`), ext = document.getElementById(`${pfx}book-fields-extended`);
         const unif = document.getElementById(`${pfx}uniform-fields`);
         const unifSummary = document.getElementById('detail-uniform-summary');
+        const bookSummary = document.getElementById('detail-book-summary');
         
         if (book) book.classList.toggle('hidden', !isBook);
         if (ext) ext.classList.toggle('hidden', !isBook);
         if (unif) unif.classList.toggle('hidden', !isUnif);
-        if (context === 'detail' && unifSummary) unifSummary.classList.toggle('hidden', !isUnif);
+        if (context === 'detail') {
+            if (unifSummary) unifSummary.classList.toggle('hidden', !isUnif);
+            if (bookSummary) bookSummary.classList.toggle('hidden', !isBook);
+        }
     }
 
     function toggleFabricCombination(context, type) {

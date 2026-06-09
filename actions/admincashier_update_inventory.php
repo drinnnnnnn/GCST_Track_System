@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<?php
+﻿﻿﻿﻿﻿﻿﻿﻿<?php
 // Force JSON output even if errors occur
 header('Content-Type: application/json');
 ini_set('display_errors', '0'); // Prevent HTML error output
@@ -104,9 +104,7 @@ try {
     $bookPages = filter_input(INPUT_POST, 'book_pages', FILTER_VALIDATE_INT);
     $bookCourse = isset($_POST['book_course']) ? trim($_POST['book_course']) : null;
     $bookSubject = isset($_POST['book_subject']) ? trim($_POST['book_subject']) : null;
-    $bookEdition = isset($_POST['book_edition']) ? trim($_POST['book_edition']) : null;
-    $bookPublisher = isset($_POST['book_publisher']) ? trim($_POST['book_publisher']) : null;
-    $bookIsbn = isset($_POST['book_isbn']) ? trim($_POST['book_isbn']) : null;
+    // Note: book_author is handled correctly here and in create_product.php. Ensure get_admincashier_products.php also selects this field.
     $bookYear = filter_input(INPUT_POST, 'book_publication_year', FILTER_VALIDATE_INT);
 
     // Uniform-specific metadata
@@ -130,7 +128,7 @@ try {
     // 2. Metadata Integrity: Clear irrelevant fields based on the selected category
     // This prevents "ghost data" if a product is moved between modules (e.g. Book to Fabric)
     if ($productCategory !== 'Books') {
-        $bookAuthor = $bookPages = $bookCourse = $bookSubject = $bookEdition = $bookPublisher = $bookIsbn = $bookYear = null;
+        $bookAuthor = $bookPages = $bookCourse = $bookSubject = $bookYear = null;
     }
     
     if ($productCategory !== 'Uniform Fabrics') {
@@ -145,17 +143,6 @@ try {
         
         if ($bookYear !== null && $bookYear !== false) {
             if ($bookYear < 1000 || $bookYear > (int)date('Y') + 5) throw new Exception('Invalid publication year.');
-        }
-
-        // Uniqueness check for ISBN (if provided)
-        if (!empty($bookIsbn)) {
-            $isbnCheck = $conn->prepare("SELECT 1 FROM products WHERE book_isbn = ? AND product_id != ? LIMIT 1");
-            $isbnCheck->bind_param('si', $bookIsbn, $productId);
-            $isbnCheck->execute();
-            if ($isbnCheck->get_result()->num_rows > 0) {
-                throw new Exception('Conflict: The provided ISBN is already registered to another book.');
-            }
-            $isbnCheck->close();
         }
     } elseif ($productCategory === 'Uniform Fabrics') {
         if (empty($uniformCourse)) throw new Exception('Applicable Course/Program is required.');
@@ -183,9 +170,6 @@ try {
                         book_pages = ?,
                         book_course = ?,
                         book_subject = ?,
-                        book_edition = ?,
-                        book_publisher = ?,
-                        book_isbn = ?,
                         book_publication_year = ?,
                         uniform_course = ?,
                         uniform_type = ?,
@@ -199,10 +183,10 @@ try {
         throw new Exception('SQL Preparation Error: ' . $conn->error);
     }
 
-    // Strictly synchronized type string and variable list (21 parameters):
-    // ssdsdis (7) + sisssssi (8) + sssss (5) + i (1) = 21
+    // Strictly synchronized type string and variable list (18 parameters):
+    // ssdsdis (7) + sis s (4) + i (1) + sssss (5) + i (1) = 18
     $stmt->bind_param(
-        'ssdsdississsssisssssi', 
+        'ssdsdissississsssi', 
         $productName,
         $productCategory,
         $buyPrice,
@@ -214,9 +198,6 @@ try {
         $bookPages,
         $bookCourse,
         $bookSubject,
-        $bookEdition,
-        $bookPublisher,
-        $bookIsbn,
         $bookYear,
         $uniformCourse,
         $uniformType,

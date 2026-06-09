@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -1215,9 +1215,34 @@
 
           let badgeHtml = '';
           if (isBook) {
-            badgeHtml = `<span class="badge badge-rent-only">Rent Only</span>`;
+            badgeHtml = `<span class="badge badge-rent-only">Book</span>`;
           } else if (isFabric) {
             badgeHtml = `<span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d; font-size:0.7rem;">Fabric</span>`;
+          }
+
+          let uniformInfoHtml = '';
+          if (isFabric) {
+            const course = product.course_program || product.uniform_course || 'N/A';
+            const type = product.uniform_type || 'N/A';
+            const material = product.material_type || product.uniform_material || 'N/A';
+            
+            uniformInfoHtml = `
+              <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0; font-size: 0.8rem; color: #4b5563;">
+                <p style="font-weight: 800; text-transform: uppercase; font-size: 0.65rem; color: #4f46e5; margin-bottom: 8px; letter-spacing: 0.05em;">Uniform Information</p>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
+                  <span style="color:#64748b;">Course:</span>
+                  <span style="font-weight:600; color:#1e293b;">${course}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
+                  <span style="color:#64748b;">Type:</span>
+                  <span style="font-weight:600; color:#1e293b;">${type}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span style="color:#64748b;">Material:</span>
+                  <span style="font-weight:600; color:#1e293b;">${material}</span>
+                </div>
+              </div>
+            `;
           }
 
           const card = document.createElement('article');
@@ -1237,6 +1262,7 @@
               <div class="product-meta">
                 ${priceHtml}
               </div>
+              ${uniformInfoHtml}
             </div>
             <div class="product-actions">
               <button class="btn btn-primary" type="button" ${stock <= 0 ? 'disabled' : ''} onclick="addProductToCart('${product.product_id}')">Add to cart</button>
@@ -1609,12 +1635,16 @@
       const overview = document.getElementById('checkout-items-overview');
       if (overview) {
           const selected = cart.filter(i => i.selected);
-          overview.innerHTML = selected.map(item => `
+          overview.innerHTML = selected.map(item => {
+            const product = products.find(p => p.product_id == item.product_id);
+            const isFabric = (product?.product_category || '').toLowerCase() === 'uniform fabrics';
+            const unit = isFabric ? ' yards' : '';
+            return `
             <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #475569; margin-bottom: 4px;">
-                <span>${item.product_name} x ${item.quantity}</span>
+                <span>${item.product_name} x ${item.quantity}${unit}</span>
                 <span style="font-weight: 600;">${formatCurrency(item.unitPrice * item.quantity)}</span>
             </div>
-          `).join('');
+          `}).join('');
       }
     }
     function closeCheckoutModal() {
