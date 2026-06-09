@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -1203,6 +1203,7 @@
           const statusClass = stock <= 0 ? 'out-stock' : stock < 5 ? 'low-stock' : 'in-stock';
           const isBook = (product.product_category || '').toLowerCase() === 'books';
           const isFabric = (product.product_category || '').toLowerCase() === 'uniform fabrics';
+          const isOther = !isBook && !isFabric;
 
           let priceHtml = '';
           if (isBook) {
@@ -1215,7 +1216,7 @@
 
           let badgeHtml = '';
           if (isBook) {
-            badgeHtml = `<span class="badge badge-rent-only">Book</span>`;
+            badgeHtml = `<span class="badge badge-rent-only" style="background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; font-size:0.7rem;">Book</span>`;
           } else if (isFabric) {
             badgeHtml = `<span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d; font-size:0.7rem;">Fabric</span>`;
           }
@@ -1244,6 +1245,47 @@
               </div>
             `;
           }
+          
+          let bookInfoHtml = '';
+          if (isBook) {
+            const author = product.book_author || 'N/A';
+            const course = product.book_course || 'N/A';
+            const subject = product.book_subject || 'N/A';
+            const pages = product.book_pages || 'N/A';
+            const pubYear = product.book_publication_year || 'N/A';
+
+            bookInfoHtml = `
+              <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0; font-size: 0.8rem; color: #4b5563;">
+                <p style="font-weight: 800; text-transform: uppercase; font-size: 0.65rem; color: #4f46e5; margin-bottom: 8px; letter-spacing: 0.05em;">Book Information</p>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
+                  <span style="color:#64748b;">Author:</span>
+                  <span style="font-weight:600; color:#1e293b;">${author}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
+                  <span style="color:#64748b;">Course:</span>
+                  <span style="font-weight:600; color:#1e293b;">${course}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
+                  <span style="color:#64748b;">Subject:</span>
+                  <span style="font-weight:600; color:#1e293b;">${subject}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
+                  <span style="color:#64748b;">Pages:</span>
+                  <span style="font-weight:600; color:#1e293b;">${pages}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span style="color:#64748b;">Year:</span>
+                  <span style="font-weight:600; color:#1e293b;">${pubYear}</span>
+                </div>
+              </div>`;
+          }
+
+          // Centralized Add to Cart button rendering logic
+          // This ensures the button is always present for all product types,
+          // only disabled if stock is zero or less.
+          const productActionsHtml = `
+            <button class="btn btn-primary" type="button" ${stock <= 0 ? 'disabled' : ''} onclick="addProductToCart('${product.product_id}')">Add to cart</button>
+          `;
 
           const card = document.createElement('article');
           card.className = 'product-card';
@@ -1263,9 +1305,10 @@
                 ${priceHtml}
               </div>
               ${uniformInfoHtml}
+              ${bookInfoHtml}
             </div>
             <div class="product-actions">
-              <button class="btn btn-primary" type="button" ${stock <= 0 ? 'disabled' : ''} onclick="addProductToCart('${product.product_id}')">Add to cart</button>
+              ${productActionsHtml}
             </div>
           `;
           grid.appendChild(card);
@@ -1323,11 +1366,24 @@
       let subtotal = 0;
       cart.forEach(item => {
         const product = products.find(p => p.product_id == item.product_id);
-        const isFabric = (product?.product_category || '').toLowerCase() === 'uniform fabrics';
-        const unitLabel = isFabric ? 'yard/s' : 'unit';
+        const category = (product?.product_category || '').toLowerCase();
+        const isFabric = category === 'uniform fabrics';
+        const isBook = category === 'books';
+        const unitLabel = isFabric ? 'yard/s' : (isBook ? 'pc/s' : 'unit');
         const rowTotal = Math.round(item.unitPrice * item.quantity * 100) / 100;
         if (item.selected) subtotal += rowTotal;
         
+        let itemDetailsHtml = '';
+        if (isBook) {
+            const author = product?.book_author || 'N/A';
+            const course = product?.book_course || 'N/A';
+            itemDetailsHtml = `
+                <p style="font-size: 0.8rem; color: #6b7280;">Author: ${author}</p>
+                <p style="font-size: 0.8rem; color: #6b7280;">Course: ${course}</p>
+            `;
+        }
+
+
         const div = document.createElement('div');
         div.className = 'cart-item' + (item.selected ? '' : ' deselected');
         div.innerHTML = `
@@ -1335,6 +1391,7 @@
           <div class="cart-item-info">
             <h4>${item.product_name}</h4>
             <p>${formatCurrency(item.unitPrice)} / ${unitLabel}</p>
+            ${itemDetailsHtml}
             <p style="font-weight: 700; color: #4f46e5; margin-top: 4px; font-size: 0.95rem;">${formatCurrency(rowTotal)}</p>
           </div>
           <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
@@ -1541,7 +1598,7 @@
       const product = products.find(p => p.product_id == productId);
       if (!product) return;
 
-      if (state.transactionType === 'rent' && (product.product_category || '').toLowerCase() !== 'books') {
+      if (state.transactionType === 'rent' && (product.product_category || '').toLowerCase() !== 'books') { // This logic is for rental, not general book sales
         alert('Rental is only allowed for items in the "Books" category.');
         return;
       }
@@ -1561,7 +1618,8 @@
         }
         const unitPrice = state.transactionType === 'rent' ? getProductRentPrice(product) : getProductPrice(product);
         const isFabric = (product.product_category || '').toLowerCase() === 'uniform fabrics';
-        const unitName = isFabric ? 'yards' : 'pcs';
+        const isBook = (product.product_category || '').toLowerCase() === 'books';
+        const unitName = isFabric ? 'yards' : (isBook ? 'pcs' : 'unit');
         cart.push({ product_id: productId, product_name: product.product_name, quantity: 1, unitPrice, unitName, selected: true });
       }
       updateCartSummary();

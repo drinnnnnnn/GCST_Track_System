@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -958,29 +958,29 @@
                 </div>
 
                 <!-- Book Specific Fields (Creation) -->
-                <div id="new-book-fields" class="hidden md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div class="form-section-divider">Bibliographic Information</div>
-                  <div class="form-group">
-                    <label for="new-book-author">Book Author <span class="text-rose-500">*</span></label>
-                    <input id="new-book-author" name="book_author" type="text" placeholder="e.g., Robert Martin" />
-                  </div>
-                  <div class="form-group">
-                    <label for="new-book-pages">Page Count <span class="text-rose-500">*</span></label>
-                    <input id="new-book-pages" name="book_pages" type="number" min="1" placeholder="0" />
-                  </div>
-                  <div class="form-group">
-                    <label for="new-book-course">Target Course <span class="text-rose-500">*</span></label>
-                    <input id="new-book-course" name="book_course" type="text" placeholder="e.g., BSCS, BSIT" />
-                  </div>
-                </div>
-                <div id="new-book-fields-extended" class="hidden md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                  <div class="form-group">
-                    <label for="new-book-subject">Subject</label>
-                    <input id="new-book-subject" name="book_subject" type="text" placeholder="e.g., Programming" />
-                  </div>
-                  <div class="form-group">
-                    <label for="new-book-year">Pub. Year</label>
-                    <input id="new-book-year" name="book_publication_year" type="number" placeholder="YYYY" />
+                <div id="new-book-fields" class="hidden md:col-span-2 space-y-4 mt-4 pt-4 border-t border-gray-100">
+                  <label class="form-section-divider">Bibliographic Information</label>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-group">
+                      <label for="new-book-author">Author <span class="text-rose-500">*</span></label>
+                      <input id="new-book-author" name="book_author" type="text" placeholder="e.g., Robert Martin" />
+                    </div>
+                    <div class="form-group">
+                      <label for="new-book-pages">Pages <span class="text-rose-500">*</span></label>
+                      <input id="new-book-pages" name="book_pages" type="number" min="1" placeholder="0" />
+                    </div>
+                    <div class="form-group">
+                      <label for="new-book-course">Target Course <span class="text-rose-500">*</span></label>
+                      <input id="new-book-course" name="book_course" type="text" placeholder="e.g., BSCS, BSIT" />
+                    </div>
+                    <div class="form-group">
+                      <label for="new-book-subject">Subject</label>
+                      <input id="new-book-subject" name="book_subject" type="text" placeholder="e.g., Programming" />
+                    </div>
+                    <div class="form-group">
+                      <label for="new-book-year">Publish Year</label>
+                      <input id="new-book-year" name="book_publication_year" type="number" placeholder="YYYY" />
+                    </div>
                   </div>
                 </div>
 
@@ -989,17 +989,7 @@
                   <div class="form-section-divider">Uniform Information</div>
                   <div class="form-group">
                     <label for="new-uniform-course">Applicable Course/Program <span class="text-rose-500">*</span></label>
-                    <select id="new-uniform-course" name="course_program">
-                      <option value="" disabled selected>Select Course</option>
-                      <option value="BSIT">BS Information Technology</option>
-                      <option value="BSCS">BS Computer Science</option>
-                      <option value="BSBA">BS Business Administration</option>
-                      <option value="BSHM">BS Criminology</option>
-                      <option value="BEED">Bachelor of Elementary Education</option>
-                      <option value="BSED">Bachelor of Secondary Education</option>
-                      <option value="BSBA">BS Business Administration</option>
-                      <option value="BSTM">BS Tourism Management</option>
-                    </select>
+                    <input id="new-uniform-course" name="course_program" type="text" placeholder="e.g., BSIT, BSCS" />
                   </div>
                   <div class="form-group">
                     <label for="new-uniform-type">Uniform Type <span class="text-rose-500">*</span></label>
@@ -1202,28 +1192,26 @@
 
                 <!-- Book Specific Fields (Editing) -->
                 <div id="detail-book-fields" class="hidden space-y-4 mt-4 pt-4 border-t border-gray-100">
-                  <label class="!mb-1 text-xs text-indigo-500 font-bold uppercase tracking-wider">Book Metadata</label>
-                  <div class="form-group">
-                    <label for="detail-book-author-input">Author</label>
-                    <input id="detail-book-author-input" type="text" placeholder="Author's name" />
-                  </div>
-                  <div class="grid grid-cols-2 gap-3">
+                  <label class="!mb-1 text-xs text-indigo-500 font-bold uppercase tracking-wider">📚 Bibliographic Information</label>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="form-group">
-                      <label for="detail-book-pages-input">Pages</label>
+                      <label for="detail-book-author-input">Author <span class="text-rose-500">*</span></label>
+                      <input id="detail-book-author-input" type="text" placeholder="Author's name" />
+                    </div>
+                    <div class="form-group">
+                      <label for="detail-book-pages-input">Pages <span class="text-rose-500">*</span></label>
                       <input id="detail-book-pages-input" type="number" min="1" />
                     </div>
                     <div class="form-group">
-                      <label for="detail-book-course-input">Course</label>
-                      <input id="detail-book-course-input" type="text" placeholder="Useful for..." />
+                      <label for="detail-book-course-input">Target Course <span class="text-rose-500">*</span></label>
+                      <input id="detail-book-course-input" type="text" placeholder="e.g., BSCS, BSIT" />
                     </div>
-                  </div>
-                  <div class="grid grid-cols-2 gap-3">
                     <div class="form-group">
                       <label for="detail-book-subject-input">Subject</label>
                       <input id="detail-book-subject-input" type="text" />
                     </div>
                     <div class="form-group">
-                      <label for="detail-book-year-input">Pub. Year</label>
+                      <label for="detail-book-year-input">Publish Year</label>
                       <input id="detail-book-year-input" type="number" />
                     </div>
                   </div>
@@ -1233,17 +1221,8 @@
                 <div id="detail-uniform-fields" class="hidden space-y-4 mt-4 pt-4 border-t border-gray-100">
                   <label class="!mb-1 text-xs text-indigo-500 font-bold uppercase tracking-wider">Uniform Information</label>
                   <div class="form-group">
-                    <label for="detail-uniform-course-input">Applicable Course <span class="text-rose-500">*</span></label>
-                    <select id="detail-uniform-course-input">
-                      <option value="BS Information Technology">BS Information Technology</option>
-                      <option value="BS Computer Science">BS Computer Science</option>
-                      <option value="BS Business Administration">BS Business Administration</option>
-                      <option value="BS Criminology">BS Criminology</option>
-                      <option value="Bachelor of Elementary Education">Bachelor of Elementary Education</option>
-                      <option value="Bachelor of Secondary Education">Bachelor of Secondary Education</option>
-                      <option value="BS Business Administration">BS Business Administration</option>
-                      <option value="BS Tourism Management">BS Tourism Management</option>
-                    </select>
+                    <label for="detail-uniform-course-input">Applicable Course/Program <span class="text-rose-500">*</span></label>
+                    <input id="detail-uniform-course-input" type="text" placeholder="e.g., BSIT, BSCS" />
                   </div>
                   <div class="form-group">
                     <label for="detail-uniform-type-input">Uniform Type <span class="text-rose-500">*</span></label>
@@ -2015,7 +1994,8 @@
         const isBook = cat === 'Books', isUnif = cat === 'Uniform Fabrics';
         const pfx = context === 'new' ? 'new-' : 'detail-';
         
-        const book = document.getElementById(`${pfx}book-fields`), ext = document.getElementById(`${pfx}book-fields-extended`);
+        const book = document.getElementById(`${pfx}book-fields`);
+        const ext = document.getElementById(`${pfx}ext-fields`);
         const unif = document.getElementById(`${pfx}uniform-fields`);
         const unifSummary = document.getElementById('detail-uniform-summary');
         const bookSummary = document.getElementById('detail-book-summary');
@@ -2023,10 +2003,8 @@
         if (book) book.classList.toggle('hidden', !isBook);
         if (ext) ext.classList.toggle('hidden', !isBook);
         if (unif) unif.classList.toggle('hidden', !isUnif);
-        if (context === 'detail') {
-            if (unifSummary) unifSummary.classList.toggle('hidden', !isUnif);
-            if (bookSummary) bookSummary.classList.toggle('hidden', !isBook);
-        }
+        if (unifSummary) unifSummary.classList.toggle('hidden', !isUnif);
+        if (bookSummary) bookSummary.classList.toggle('hidden', !isBook);
     }
 
     function toggleFabricCombination(context, type) {
