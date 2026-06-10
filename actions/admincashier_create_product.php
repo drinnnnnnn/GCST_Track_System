@@ -87,16 +87,20 @@ try {
     }
 
     // 5. Module-Specific Validation
+    $validCourses = ['BSIT', 'BSED', 'BSBA', 'BSCRIM', 'BSHM', 'BSCS', 'BEED'];
+
     if ($productCategory === 'Books') {
         if (empty($bookAuthor)) throw new Exception('Books Module: Author is required.');
         if (!$bookPages || $bookPages <= 0) throw new Exception('Books Module: Valid page count is required.');
         if (empty($bookCourse)) throw new Exception('Books Module: Course applicability is required.');
+        if (!in_array($bookCourse, $validCourses)) throw new Exception('Books Module: Please select a valid course/program from the whitelist.');
 
         if ($bookYear !== null && $bookYear !== false) {
             if ($bookYear < 1000 || $bookYear > (int)date('Y') + 5) throw new Exception('Invalid publication year.');
         }
     } elseif ($productCategory === 'Uniform Fabrics') {
         if (empty($uniformCourse)) throw new Exception('Fabrics Module: Course/Program association is required.');
+        if (!in_array($uniformCourse, $validCourses)) throw new Exception('Fabrics Module: Please select a valid course/program from the whitelist.');
         if (empty($uniformType)) throw new Exception('Fabrics Module: Uniform Type is required.');
         
         if (empty($materialType)) {

@@ -879,10 +879,17 @@
       <div class="inventory-toolbar">
         <div class="inventory-search">
           <input id="inventory-search" type="search" placeholder="Search products by name, category..." />
+          <select id="course-filter" style="padding: 0 16px; border-radius: 12px; border: none; background: var(--surface-soft); font-size: 0.9rem; outline: none; height: 48px; min-width: 160px; color: var(--text); font-weight: 500;">
+            <option value="All">All Courses</option>
+          </select>
           <button id="btn-open-add-product" type="button" class="btn btn-secondary">Add New Product</button>
           <button id="refresh-button" type="button" class="btn btn-secondary">
             <i class="fas fa-sync-alt"></i>
             <span>Refresh</span>
+          </button>
+          <button id="btn-print-stock-sheet" type="button" class="btn btn-secondary" title="Print blank stock-taking sheet for manual audit">
+            <i class="fas fa-print"></i>
+            <span>Print Inventory</span>
           </button>
         </div>
         <div class="filter-pills" id="category-filters"></div>
@@ -971,7 +978,16 @@
                     </div>
                     <div class="form-group">
                       <label for="new-book-course">Target Course <span class="text-rose-500">*</span></label>
-                      <input id="new-book-course" name="book_course" type="text" placeholder="e.g., BSCS, BSIT" />
+                      <select id="new-book-course" name="book_course" required>
+                        <option value="" disabled selected>Select Course/Program</option>
+                        <option value="BSIT">BSIT</option>
+                        <option value="BSED">BSED</option>
+                        <option value="BSBA">BSBA</option>
+                        <option value="BSCRIM">BSCRIM</option>
+                        <option value="BSHM">BSHM</option>
+                        <option value="BSCS">BSCS</option>
+                        <option value="BEED">BEED</option>
+                      </select>
                     </div>
                     <div class="form-group">
                       <label for="new-book-subject">Subject</label>
@@ -989,7 +1005,16 @@
                   <div class="form-section-divider">Uniform Information</div>
                   <div class="form-group">
                     <label for="new-uniform-course">Applicable Course/Program <span class="text-rose-500">*</span></label>
-                    <input id="new-uniform-course" name="course_program" type="text" placeholder="e.g., BSIT, BSCS" />
+                    <select id="new-uniform-course" name="course_program" required>
+                      <option value="" disabled selected>Select Course/Program</option>
+                      <option value="BSIT">BSIT</option>
+                      <option value="BSED">BSED</option>
+                      <option value="BSBA">BSBA</option>
+                      <option value="BSCRIM">BSCRIM</option>
+                      <option value="BSHM">BSHM</option>
+                      <option value="BSCS">BSCS</option>
+                      <option value="BEED">BEED</option>
+                    </select>
                   </div>
                   <div class="form-group">
                     <label for="new-uniform-type">Uniform Type <span class="text-rose-500">*</span></label>
@@ -1204,7 +1229,16 @@
                     </div>
                     <div class="form-group">
                       <label for="detail-book-course-input">Target Course <span class="text-rose-500">*</span></label>
-                      <input id="detail-book-course-input" type="text" placeholder="e.g., BSCS, BSIT" />
+                      <select id="detail-book-course-input" required>
+                        <option value="" disabled selected>Select Course/Program</option>
+                        <option value="BSIT">BSIT</option>
+                        <option value="BSED">BSED</option>
+                        <option value="BSBA">BSBA</option>
+                        <option value="BSCRIM">BSCRIM</option>
+                        <option value="BSHM">BSHM</option>
+                        <option value="BSCS">BSCS</option>
+                        <option value="BEED">BEED</option>
+                      </select>
                     </div>
                     <div class="form-group">
                       <label for="detail-book-subject-input">Subject</label>
@@ -1222,7 +1256,16 @@
                   <label class="!mb-1 text-xs text-indigo-500 font-bold uppercase tracking-wider">Uniform Information</label>
                   <div class="form-group">
                     <label for="detail-uniform-course-input">Applicable Course/Program <span class="text-rose-500">*</span></label>
-                    <input id="detail-uniform-course-input" type="text" placeholder="e.g., BSIT, BSCS" />
+                    <select id="detail-uniform-course-input" required>
+                      <option value="" disabled selected>Select Course/Program</option>
+                      <option value="BSIT">BSIT</option>
+                      <option value="BSED">BSED</option>
+                      <option value="BSBA">BSBA</option>
+                      <option value="BSCRIM">BSCRIM</option>
+                      <option value="BSHM">BSHM</option>
+                      <option value="BSCS">BSCS</option>
+                      <option value="BEED">BEED</option>
+                    </select>
                   </div>
                   <div class="form-group">
                     <label for="detail-uniform-type-input">Uniform Type <span class="text-rose-500">*</span></label>
@@ -1391,7 +1434,7 @@
             products: [],
             filtered: [],
             selected: null,
-            filter: { query: '', category: 'All' },
+            filter: { query: '', category: 'All', course: 'All' },
             isProcessing: false
         },
 
@@ -1424,6 +1467,7 @@
                 detailEmpty: document.getElementById('detail-empty'),
                 addPanel: document.getElementById('add-product-panel'),
                 addForm: document.getElementById('add-product-form'),
+                btnPrintSheet: document.getElementById('btn-print-stock-sheet'),
                 summary: {
                     total: document.getElementById('summary-total'),
                     low: document.getElementById('summary-low'),
@@ -1447,7 +1491,13 @@
                 this.applyFilters();
             });
 
+            document.getElementById('course-filter')?.addEventListener('change', (e) => {
+                this.state.filter.course = e.target.value;
+                this.applyFilters();
+            });
+
             document.getElementById('refresh-button')?.addEventListener('click', () => this.refreshData());
+            this.ui.btnPrintSheet?.addEventListener('click', () => this.printBlankInventorySheet());
 
             // Add Product Panel Controls
             document.getElementById('btn-open-add-product')?.addEventListener('click', () => this.toggleAddPanel(true));
@@ -1528,6 +1578,7 @@
                 }
 
                 this.buildCategoryFilters();
+                this.buildCourseFilter();
                 this.applyFilters();
             } catch (err) {
                 console.error('Inventory Load Error:', err);
@@ -1544,14 +1595,118 @@
             }
         },
 
+        /**
+         * Generates a printable blank inventory audit sheet.
+         * Optimized for manual handwriting, physical counting, and new item onboarding.
+         */
+        printBlankInventorySheet() {
+            const date = new Date().toLocaleDateString('en-PH', { 
+                year: 'numeric', month: 'long', day: 'numeric' 
+            });
+            
+            // Generate standard empty rows for manual entry
+            let tableRows = '';
+            for(let i = 0; i < 26; i++) {
+                tableRows += `<tr>
+                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>`;
+            }
+
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                showToast('Popup blocked! Please allow popups to print the sheet.', 'error');
+                return;
+            }
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Inventory Management Sheet - GCST</title>
+                    <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
+                        body { font-family: 'Outfit', sans-serif; padding: 30px; color: #1e293b; background: white; -webkit-print-color-adjust: exact; }
+                        .header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #0f172a; }
+                        .header h1 { margin: 0; font-size: 18pt; font-weight: 800; text-transform: uppercase; color: #0f172a; }
+                        .header p { margin: 5px 0; font-size: 9pt; color: #64748b; font-weight: 600; }
+                        .audit-meta { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 25px; margin-top: 25px; }
+                        .meta-box { border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; text-align: left; }
+                        .meta-label { font-weight: 800; text-transform: uppercase; color: #94a3b8; font-size: 7pt; display: block; margin-bottom: 2px; }
+                        .meta-val { font-size: 10pt; color: #1e293b; font-weight: 500; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 25px; border: 1.5px solid #000; }
+                        th { background: #f1f5f9 !important; border: 1px solid #000; padding: 8px 4px; font-size: 7.5pt; font-weight: 800; text-transform: uppercase; text-align: center; }
+                        td { border: 1px solid #000; height: 32px; padding: 4px; font-size: 9pt; }
+                        .guidance-note { margin-top: 20px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 7.5pt; color: #64748b; line-height: 1.5; }
+                        .guidance-note strong { color: #4f46e5; }
+                        .footer { margin-top: 40px; font-size: 8pt; color: #94a3b8; text-align: center; font-style: italic; border-top: 1px solid #f1f5f9; padding-top: 15px; }
+                        @page { size: A4 portrait; margin: 1cm; }
+                        @media print {
+                            .no-print { display: none; }
+                            body { padding: 0; }
+                            .header { border-bottom-width: 3px; }
+                        }
+                    </style>
+                </head>
+                <body onload="window.print(); window.close();">
+                    <div class="header">
+                        <h1>Inventory Management Sheet</h1>
+                        <p>Granby Colleges of Science and Technology - Stock Audit & Onboarding Template</p>
+                        <div class="audit-meta">
+                            <div class="meta-box"><span class="meta-label">Audit Date</span><span class="meta-val">${date}</span></div>
+                            <div class="meta-box"><span class="meta-label">Prepared By</span></div>
+                            <div class="meta-box"><span class="meta-label">Department / Section</span></div>
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 28%;">Product Name / Description</th>
+                                <th style="width: 14%;">Category</th>
+                                <th style="width: 10%;">SKU / ID</th>
+                                <th style="width: 10%;">System Stock</th>
+                                <th style="width: 10%;">Physical Count</th>
+                                <th style="width: 10%;">Variance</th>
+                                <th style="width: 18%;">Remarks / Condition</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+
+                    <div class="guidance-note">
+                        <strong>Field Guidance:</strong> For <strong>Books</strong>, please include Author, Subject, and Year in the description. 
+                        For <strong>Uniform Fabrics</strong>, specify Course/Program, Uniform Type (Upper/Lower), and Material Type. 
+                        Use the 'Variance' column to note discrepancies between digital system data and physical shelf count.
+                    </div>
+
+                    <div class="footer">
+                        This document is a controlled system-generated audit template for internal GCST use only.<br>
+                        Verification required by Warehouse Supervisor and Admin Cashier before system adjustments.
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            showToast('📄 Blank stock sheet ready for printing', 'success');
+        },
+
         applyFilters() {
             const query = this.state.filter.query.trim().toLowerCase();
             const cat = this.state.filter.category;
+            const course = this.state.filter.course;
 
             this.state.filtered = this.state.products.filter(p => {
                 const matchesCat = cat === 'All' || (p.product_category || 'Other') === cat;
+                
+                let matchesCourse = true;
+                if (course !== 'All') {
+                    const pCourse = p.product_category === 'Books' ? p.book_course : 
+                                   p.product_category === 'Uniform Fabrics' ? (p.course_program || p.uniform_course) : null;
+                    matchesCourse = pCourse === course;
+                }
+
                 const searchable = `${p.product_name} ${p.product_category} ${p.uniform_course || ''} ${p.uniform_type || ''} ${p.book_author || ''}`.toLowerCase();
-                return matchesCat && (!query || searchable.includes(query));
+                return matchesCat && matchesCourse && (!query || searchable.includes(query));
             });
 
             this.renderGrid();
@@ -1643,6 +1798,27 @@
             if (this.ui.summary.low) this.ui.summary.low.textContent = lowStock;
             if (this.ui.summary.available) this.ui.summary.available.textContent = available;
             if (this.ui.summary.value) this.ui.summary.value.textContent = formatCurrency(value);
+        },
+
+        buildCourseFilter() {
+            const select = document.getElementById('course-filter');
+            if (!select) return;
+
+            const currentVal = this.state.filter.course;
+            select.innerHTML = '<option value="All">All Courses</option>';
+
+            const courses = new Set();
+            this.state.products.forEach(p => {
+                const c = p.product_category === 'Books' ? p.book_course : 
+                          p.product_category === 'Uniform Fabrics' ? (p.course_program || p.uniform_course) : null;
+                if (c) courses.add(c);
+            });
+
+            Array.from(courses).sort().forEach(c => {
+                const opt = new Option(c, c);
+                if (c === currentVal) opt.selected = true;
+                select.add(opt);
+            });
         },
 
         buildCategoryFilters() {

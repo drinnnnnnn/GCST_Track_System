@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿<?php
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<?php
 // Force JSON output even if errors occur
 header('Content-Type: application/json');
 ini_set('display_errors', '0'); // Prevent HTML error output
@@ -136,16 +136,20 @@ try {
     }
 
     // 3. Module-Specific Validation
+    $validCourses = ['BSIT', 'BSED', 'BSBA', 'BSCRIM', 'BSHM', 'BSCS', 'BEED'];
+
     if ($productCategory === 'Books') {
         if (empty($bookAuthor)) throw new Exception('Book Author is required.');
         if (!$bookPages || $bookPages <= 0) throw new Exception('A valid page count is required.');
         if (empty($bookCourse)) throw new Exception('Applicable course/program is required.');
+        if (!in_array($bookCourse, $validCourses)) throw new Exception('Books Module: Please select a valid course/program from the whitelist.');
         
         if ($bookYear !== null && $bookYear !== false) {
             if ($bookYear < 1000 || $bookYear > (int)date('Y') + 5) throw new Exception('Invalid publication year.');
         }
     } elseif ($productCategory === 'Uniform Fabrics') {
         if (empty($uniformCourse)) throw new Exception('Applicable Course/Program is required.');
+        if (!in_array($uniformCourse, $validCourses)) throw new Exception('Fabrics Module: Please select a valid course/program from the whitelist.');
         if (empty($uniformType)) throw new Exception('Uniform Type is required.');
 
         if (empty($materialType)) {

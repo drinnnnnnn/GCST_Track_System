@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -110,11 +110,10 @@
     #renewals-content,
     #txn-history-content,
     #pending-orders-content {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 18px;
-      flex: 1;
+      display: flex;
+      flex-direction: column;
       overflow-y: auto;
+      flex: 1;
       padding-right: 10px;
       scroll-behavior: smooth;
     }
@@ -156,116 +155,197 @@
     #pending-orders-content::-webkit-scrollbar-thumb:hover {
       background: #94a3b8;
     }
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.25rem;
+      padding: 4px;
+    }
     .product-card {
-      background: #f7f8fc;
-      border-radius: 22px;
+      background: #ffffff;
+      border-radius: 20px;
       overflow: hidden;
-      border: 1px solid #e5e7eb;
+      border: 1px solid #f1f5f9;
       display: flex;
       flex-direction: column;
-      min-height: 360px;
-      justify-content: space-between;
+      height: 100%;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      border-color: #4f46e5;
+    }
+    .product-image-container {
+      width: 100%;
+      height: 140px;
+      overflow: hidden;
+      background: #f8fafc;
+      border-radius: 10px 10px 0 0;
     }
     .product-card img {
       width: 100%;
-      height: 170px;
+      height: 100%;
       object-fit: cover;
-      background: #e5e7eb;
+      transition: transform 0.3s ease;
+    }
+    .product-card:hover img {
+      transform: scale(1.02);
     }
     .product-body {
-      padding: 18px;
-      display: grid;
-      gap: 10px;
+      padding: 0.85rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
     .product-body h3 {
-      font-size: 1rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0f172a;
       margin: 0;
-      color: #111827;
-      min-height: 48px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
     }
-    .product-body p {
-      margin: 0;
-      color: #4b5563;
-      font-size: 0.92rem;
+    .compact-meta {
+      font-size: 0.72rem;
+      color: #64748b;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .badge-rent-only {
-      background: #eef2ff;
-      color: #4338ca;
-      border: 1px solid #c7d2fe;
+    .price-stock-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .stock-badge-compact {
       font-size: 0.7rem;
+      font-weight: 700;
+      color: #64748b;
+      padding-left: 8px;
+      border-left: 1px solid #e2e8f0;
     }
-    .product-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .product-meta span {
-      font-size: 0.84rem;
-      color: #6b7280;
-    }
-    .status-pill,
-    .stock-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 0.78rem;
-      font-weight: 600;
-    }
-    .status-pill.in-stock { background: #ecfdf5; color: #166534; }
-    .status-pill.low-stock { background: #fef3c7; color: #92400e; }
-    .status-pill.out-stock { background: #fee2e2; color: #b91c1c; }
     .product-actions {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 0 18px 18px;
+      padding: 0 0.85rem 0.85rem;
+      margin-top: 0 !important;
     }
-    .product-actions .btn {
-      flex: 1;
+    .product-actions .btn-primary {
+      width: 100%;
+      min-height: 44px;
+      font-weight: 700;
+      border-radius: 12px;
     }
     #cart-content {
       flex: 1;
       overflow-y: auto;
       margin-bottom: 16px;
     }
-    #active-rentals-content,
-    #renewals-content,
-    #txn-history-content,
-    #overdue-rentals-content,
-    #pending-orders-content {
-      flex: 1;
-      overflow-y: auto;
-    }
     .cart-list {
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
+
     .cart-item {
-      display: grid;
-      grid-template-columns: 40px 1fr auto;
+      display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 16px;
-      background: #f8fafc;
-      border-radius: 16px;
-      border: 1px solid #e5e7eb;
-      transition: all 0.2s ease;
-    }
-    .cart-item:hover {
-      border-color: #4f46e5;
+      gap: 14px;
+      padding: 12px;
       background: #ffffff;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
+      border-radius: 14px;
+      border: 1px solid #f1f5f9;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+      position: relative;
     }
+
+    .cart-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+      border-color: #e2e8f0;
+    }
+
     .cart-item.deselected {
       opacity: 0.6;
       filter: grayscale(0.5);
     }
+
+    .cart-thumb {
+      width: 50px;
+      height: 50px;
+      flex-shrink: 0;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #f8fafc;
+      border: 1px solid #f1f5f9;
+    }
+
+    .cart-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .cart-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .cart-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cart-meta {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .cart-price {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #4f46e5;
+      margin-top: 2px;
+    }
+
+    .cart-actions-column {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .cart-subtotal {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .cart-remove-btn {
+      color: #94a3b8;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      transition: color 0.2s;
+      font-size: 0.8rem;
+    }
+
+    .cart-remove-btn:hover {
+      color: #ef4444;
+    }
+
     .cart-item-info h4 {
       margin: 0;
       font-size: 0.95rem;
@@ -282,12 +362,12 @@
       align-items: center;
       background: #ffffff;
       border: 1px solid #d1d5db;
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
     }
     .qty-control button {
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
       border: none;
       background: transparent;
       cursor: pointer;
@@ -302,9 +382,9 @@
       background: #eef2ff;
     }
     .qty-control span {
-      width: 30px;
+      width: 28px;
       text-align: center;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 700;
       color: #111827;
     }
@@ -653,6 +733,18 @@
       }
     }
 
+    @media (max-width: 768px) {
+      .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+    }
+    @media (max-width: 480px) {
+      .products-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     /* Professional Verification Animation */
     @keyframes verified-pop {
       0% { transform: scale(1); }
@@ -689,6 +781,9 @@
         </div>
         <div class="search-group">
           <input id="product-search" class="search-input" type="text" placeholder="Search by name or Category" />
+          <select id="course-filter" class="search-input" style="max-width: 180px;">
+            <option value="All">All Courses</option>
+          </select>
           <button id="qr-scan-btn" class="btn btn-secondary" title="Scan Order QR Code"><i class="fas fa-qrcode"></i> Scan Order</button>
         </div>
         <div class="filter-group" id="category-filters"></div>
@@ -1152,6 +1247,7 @@
     const state = {
       category: 'All',
       query: '',
+      course: 'All',
       transactionType: 'buy',
       discountPercent: 0,
       cashReceived: 0,
@@ -1181,141 +1277,133 @@
     function getProductStock(product) {
       return parseFloat(product.stock_count ?? product.stock ?? 0);
     }
+
+    // Optimized Performance: Debounce Utility
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
     function renderProducts() {
       const grid = document.getElementById('product-grid');
       const count = document.getElementById('product-count');
-      grid.innerHTML = '';
+      
+      if (!grid) return;
+
+      // Application of filters
       const results = products.filter(product => {
-        // Category filtering logic
         if (state.category !== 'All' && (product.product_category || 'Uncategorized') !== state.category) return false;
+
+        if (state.course !== 'All') {
+            const cat = (product.product_category || '').toLowerCase();
+            const productCourse = cat === 'books' ? product.book_course : 
+                                 cat === 'uniform fabrics' ? (product.course_program || product.uniform_course) : null;
+            if (!productCourse || productCourse !== state.course) return false;
+        }
+
         const searchText = `${product.product_name} ${product.product_category || 'Uncategorized'} ${product.barcode ?? ''}`.toLowerCase();
         return searchText.includes(state.query.toLowerCase());
       });
+
+      // Performance: Use DocumentFragment to batch DOM updates
+      const fragment = document.createDocumentFragment();
+
       if (results.length === 0) {
-        grid.innerHTML = '<div class="empty-state">No products found. Try another search or category.</div>';
+        const empty = document.createElement('div');
+        empty.className = 'empty-state col-span-full';
+        empty.textContent = 'No products found. Try another search or category.';
+        fragment.appendChild(empty);
       } else {
         results.forEach(product => {
           const price = getProductPrice(product);
           const rentPrice = getProductRentPrice(product);
           const stock = getProductStock(product);
           const imageSrc = resolveImagePath(product.product_image);
-          const statusLabel = stock <= 0 ? 'Out of Stock' : stock < 5 ? 'Low Stock' : 'In Stock';
           const statusClass = stock <= 0 ? 'out-stock' : stock < 5 ? 'low-stock' : 'in-stock';
           const isBook = (product.product_category || '').toLowerCase() === 'books';
           const isFabric = (product.product_category || '').toLowerCase() === 'uniform fabrics';
-          const isOther = !isBook && !isFabric;
 
-          let priceHtml = '';
+          // Optimized compact metadata logic
+          let metaParts = [product.product_category || 'Other'];
           if (isBook) {
-            priceHtml = `<span><strong>Rent:</strong> ${formatCurrency(rentPrice)}</span>`;
+            if (product.book_author) metaParts.push(product.book_author);
+            if (product.book_pages) metaParts.push(`${product.book_pages} pgs`);
           } else if (isFabric) {
-            priceHtml = `<span><strong>Price/Yard:</strong> ${formatCurrency(price)}</span>`;
-          } else {
-            priceHtml = `<span><strong>Buy:</strong> ${formatCurrency(price)}</span>`;
+            const course = product.course_program || product.uniform_course || 'All';
+            const material = product.material_type || product.uniform_material;
+            metaParts.push(course);
+            if (material) metaParts.push(material);
           }
+          const metaHtml = `<div class="compact-meta">${metaParts.join(' • ')}</div>`;
 
-          let badgeHtml = '';
-          if (isBook) {
-            badgeHtml = `<span class="badge badge-rent-only" style="background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; font-size:0.7rem;">Book</span>`;
-          } else if (isFabric) {
-            badgeHtml = `<span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d; font-size:0.7rem;">Fabric</span>`;
-          }
-
-          let uniformInfoHtml = '';
-          if (isFabric) {
-            const course = product.course_program || product.uniform_course || 'N/A';
-            const type = product.uniform_type || 'N/A';
-            const material = product.material_type || product.uniform_material || 'N/A';
-            
-            uniformInfoHtml = `
-              <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0; font-size: 0.8rem; color: #4b5563;">
-                <p style="font-weight: 800; text-transform: uppercase; font-size: 0.65rem; color: #4f46e5; margin-bottom: 8px; letter-spacing: 0.05em;">Uniform Information</p>
-                <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-                  <span style="color:#64748b;">Course:</span>
-                  <span style="font-weight:600; color:#1e293b;">${course}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-                  <span style="color:#64748b;">Type:</span>
-                  <span style="font-weight:600; color:#1e293b;">${type}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between;">
-                  <span style="color:#64748b;">Material:</span>
-                  <span style="font-weight:600; color:#1e293b;">${material}</span>
-                </div>
-              </div>
-            `;
-          }
-          
-          let bookInfoHtml = '';
-          if (isBook) {
-            const author = product.book_author || 'N/A';
-            const course = product.book_course || 'N/A';
-            const subject = product.book_subject || 'N/A';
-            const pages = product.book_pages || 'N/A';
-            const pubYear = product.book_publication_year || 'N/A';
-
-            bookInfoHtml = `
-              <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0; font-size: 0.8rem; color: #4b5563;">
-                <p style="font-weight: 800; text-transform: uppercase; font-size: 0.65rem; color: #4f46e5; margin-bottom: 8px; letter-spacing: 0.05em;">Book Information</p>
-                <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-                  <span style="color:#64748b;">Author:</span>
-                  <span style="font-weight:600; color:#1e293b;">${author}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-                  <span style="color:#64748b;">Course:</span>
-                  <span style="font-weight:600; color:#1e293b;">${course}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-                  <span style="color:#64748b;">Subject:</span>
-                  <span style="font-weight:600; color:#1e293b;">${subject}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-                  <span style="color:#64748b;">Pages:</span>
-                  <span style="font-weight:600; color:#1e293b;">${pages}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between;">
-                  <span style="color:#64748b;">Year:</span>
-                  <span style="font-weight:600; color:#1e293b;">${pubYear}</span>
-                </div>
-              </div>`;
-          }
-
-          // Centralized Add to Cart button rendering logic
-          // This ensures the button is always present for all product types,
-          // only disabled if stock is zero or less.
-          const productActionsHtml = `
-            <button class="btn btn-primary" type="button" ${stock <= 0 ? 'disabled' : ''} onclick="addProductToCart('${product.product_id}')">Add to cart</button>
-          `;
+          const activePrice = (isBook && state.transactionType === 'rent') ? rentPrice : price;
+          const stockLabel = isFabric ? 'yds' : 'pcs';
+          const stockColor = stock <= 0 ? '#ef4444' : stock < 5 ? '#f59e0b' : '#10b981';
 
           const card = document.createElement('article');
           card.className = 'product-card';
           card.innerHTML = `
-            <img src="${imageSrc}" alt="${product.product_name}" />
+            <div class="product-image-container">
+              <img src="${imageSrc}" alt="${product.product_name}" loading="lazy" />
+            </div>
             <div class="product-body">
-              <div style="display:flex; justify-content:space-between; align-items:start; gap:8px;">
-                <h3>${product.product_name}</h3>
-                ${badgeHtml}
+              <h3 title="${product.product_name}">${product.product_name}</h3>
+              <div class="price-stock-row">
+                <span style="font-weight: 800; color: #4f46e5; font-size: 1.05rem;">${formatCurrency(activePrice)}</span>
+                <span class="stock-badge-compact" style="color: ${stockColor};">
+                  <i class="fas fa-box-open mr-1" style="font-size: 0.65rem;"></i>${stock} ${stockLabel}
+                </span>
               </div>
-              <p>${product.product_category || 'Uncategorized'}</p>
-              <div class="product-meta">
-                <span class="status-pill ${statusClass}">${statusLabel}</span>
-                <span class="stock-pill">${stock} ${isFabric ? 'yards' : 'left'}</span>
-              </div>
-              <div class="product-meta">
-                ${priceHtml}
-              </div>
-              ${uniformInfoHtml}
-              ${bookInfoHtml}
+              ${metaHtml}
             </div>
             <div class="product-actions">
-              ${productActionsHtml}
+              <button class="btn btn-primary" type="button" ${stock <= 0 ? 'disabled' : ''} onclick="addProductToCart('${product.product_id}')">
+                <i class="fas fa-cart-plus"></i> Add to cart
+              </button>
             </div>
           `;
-          grid.appendChild(card);
+          fragment.appendChild(card);
         });
       }
+
+      grid.innerHTML = '';
+      grid.appendChild(fragment);
+
       count.textContent = `${results.length} item${results.length === 1 ? '' : 's'}`;
     }
+
+    // Centralized Debounced Render
+    const debouncedRender = debounce(() => renderProducts(), 250);
+
+    function buildCourseFilter() {
+      const select = document.getElementById('course-filter');
+      if (!select) return;
+      
+      const currentVal = state.course;
+      select.innerHTML = '<option value="All">All Courses</option>';
+      
+      const courses = new Set();
+      products.forEach(p => {
+        const cat = (p.product_category || '').toLowerCase();
+        const c = cat === 'books' ? p.book_course : 
+                  cat === 'uniform fabrics' ? (p.course_program || p.uniform_course) : null;
+        if (c) courses.add(c);
+      });
+
+      Array.from(courses).sort().forEach(c => {
+        const opt = new Option(c, c);
+        if (c === currentVal) opt.selected = true;
+        select.add(opt);
+      });
+    }
+
     function buildCategoryFilters() {
       const filterContainer = document.getElementById('category-filters');
       filterContainer.innerHTML = '';
@@ -1373,33 +1461,37 @@
         const rowTotal = Math.round(item.unitPrice * item.quantity * 100) / 100;
         if (item.selected) subtotal += rowTotal;
         
-        let itemDetailsHtml = '';
+        const imageSrc = resolveImagePath(product?.product_image);
+        
+        let meta = product?.product_category || 'Item';
         if (isBook) {
-            const author = product?.book_author || 'N/A';
-            const course = product?.book_course || 'N/A';
-            itemDetailsHtml = `
-                <p style="font-size: 0.8rem; color: #6b7280;">Author: ${author}</p>
-                <p style="font-size: 0.8rem; color: #6b7280;">Course: ${course}</p>
-            `;
+            meta = `${product.book_course || 'General'} • ${product.book_author || 'N/A'}`;
+        } else if (isFabric) {
+            meta = `${product.course_program || product.uniform_course || 'All'} • ${product.material_type || product.uniform_material || 'Fabric'}`;
         }
-
 
         const div = document.createElement('div');
         div.className = 'cart-item' + (item.selected ? '' : ' deselected');
         div.innerHTML = `
-          <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="toggleCartItemSelection('${item.product_id}', this.checked)" style="width: 18px; height: 18px; cursor: pointer; accent-color: #4f46e5;">
-          <div class="cart-item-info">
-            <h4>${item.product_name}</h4>
-            <p>${formatCurrency(item.unitPrice)} / ${unitLabel}</p>
-            ${itemDetailsHtml}
-            <p style="font-weight: 700; color: #4f46e5; margin-top: 4px; font-size: 0.95rem;">${formatCurrency(rowTotal)}</p>
+          <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="toggleCartItemSelection('${item.product_id}', this.checked)" 
+                 style="width: 16px; height: 16px; cursor: pointer; accent-color: #4f46e5; flex-shrink: 0;">
+          
+          <div class="cart-thumb">
+            <img src="${imageSrc}" alt="${item.product_name}" onerror="this.src='${IMAGE_FALLBACK}'">
           </div>
-          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+
+          <div class="cart-details">
+            <h4 class="cart-name" title="${item.product_name}">${item.product_name}</h4>
+            <div class="cart-meta">${meta}</div>
+            <div class="cart-price">${formatCurrency(item.unitPrice)} <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 500;">/ ${unitLabel}</span></div>
+          </div>
+
+          <div class="cart-actions-column">
             ${isFabric ? `
               <div style="display:flex; align-items:center; gap:8px;">
                 <input type="number" step="0.01" min="0.1" value="${item.quantity}" 
                        onchange="updateFabricYardage('${item.product_id}', this.value)"
-                       style="width: 85px; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 12px; font-size: 0.85rem; font-weight: 700; text-align: center; background:#fff;" />
+                       style="width: 70px; padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-align: center; background:#fff;" />
                 <span style="font-size:0.7rem; font-weight:700; color:#64748b; text-transform:uppercase;">yards</span>
               </div>
             ` : `
@@ -1409,10 +1501,12 @@
                 <button type="button" onclick="changeCartQuantity('${item.product_id}', 1)"><i class="fas fa-plus"></i></button>
               </div>
             `}
-            <button class="btn btn-danger" type="button" onclick="removeCartItem('${item.product_id}')" style="padding: 4px 8px; font-size: 0.7rem; border-radius: 8px;">
-              <i class="fas fa-trash-alt"></i>
-            </button>
+            <div class="cart-subtotal">${formatCurrency(rowTotal)}</div>
           </div>
+          
+          <button class="cart-remove-btn" type="button" onclick="removeCartItem('${item.product_id}')" title="Remove item">
+            <i class="fas fa-times"></i>
+          </button>
         `;
         cartList.appendChild(div);
       });
@@ -1716,6 +1810,7 @@
         .then(data => {
           products = Array.isArray(data) ? data : [];
           buildCategoryFilters();
+          buildCourseFilter();
           renderProducts();
         })
         .catch(() => {
@@ -2655,7 +2750,11 @@
     });
     document.getElementById('product-search').addEventListener('input', () => {
       state.query = document.getElementById('product-search').value.trim();
-      renderProducts();
+      debouncedRender();
+    });
+    document.getElementById('course-filter').addEventListener('change', (e) => {
+      state.course = e.target.value;
+      debouncedRender();
     });
     document.getElementById('active-rental-search').addEventListener('input', (e) => {
       const query = e.target.value.toLowerCase();
