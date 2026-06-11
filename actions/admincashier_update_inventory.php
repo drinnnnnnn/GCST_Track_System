@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<?php
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<?php
 // Force JSON output even if errors occur
 header('Content-Type: application/json');
 ini_set('display_errors', '0'); // Prevent HTML error output
@@ -136,7 +136,16 @@ try {
     }
 
     // 3. Module-Specific Validation
-    $validCourses = ['BSIT', 'BSED', 'BSBA', 'BSCRIM', 'BSHM', 'BSCS', 'BEED'];
+    $validCourses = [
+        'BS Information Technology', 
+        'BS Computer Science', 
+        'BS Tourism Management', 
+        'BS Business Administration', 
+        'B Elementary Education', 
+        'B Secondary Education', 
+        'BS Criminology', 
+        'BS Accountancy'
+    ];
 
     if ($productCategory === 'Books') {
         if (empty($bookAuthor)) throw new Exception('Book Author is required.');

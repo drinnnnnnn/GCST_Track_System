@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -16,30 +16,47 @@
       gap: 24px;
       margin-top: 20px;
       align-items: stretch;
+      flex-wrap: wrap; /* Allow wrapping on smaller screens */
     }
     .cashier-sidebar {
       display: flex;
       flex-direction: column;
       gap: 24px;
-      position: sticky;
-      top: 20px;
+      /* position: sticky; /* Removed sticky for better mobile behavior */
+      /* top: 20px; */
     }
     .panel {
       background: #ffffff;
       border-radius: 22px;
       box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
       padding: 24px;
-      border: 1px solid rgba(229, 231, 235, 0.9);
+      border: 1px solid #e5e7eb; /* Consistent border color */
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      min-height: 0;
+      max-height: calc(100vh - 150px);
+      display: flex; /* Make generic panel a flex container by default */
+      flex-direction: column; /* Stack children vertically */
     }
     .cashier-layout .panel {
-      height: 850px;
+      /* height: calc(100vh - 220px); */ /* Removed fixed height for flexibility */
+      flex: 1; /* Allow product grid to take available space */
+      min-height: 500px;
       display: flex;
       flex-direction: column;
+      overflow: hidden; /* This panel contains the product grid, which has its own scroll */
+    }
+    .cashier-sidebar .panel { /* Specific height for sidebar panels */
+      /* height: calc((100vh - 220px - 24px) / 2); */ /* Removed fixed height for flexibility */
+      flex: 1; /* Distribute height between two panels with gap */
+      min-height: 240px;
+      overflow: hidden; /* This panel contains cart content, which should scroll */
     }
     .management-section .panel {
       height: 600px;
       display: flex;
       flex-direction: column;
+      overflow: hidden; /* These panels contain transaction/pending order tables, which should scroll */
     }
     .panel-header {
       display: flex;
@@ -81,30 +98,20 @@
       transition: all 0.2s ease;
     }
     .search-input:focus {
-      background: #ffffff;
+      background: #fff;
       border-color: #4f46e5;
       box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
     }
     .filter-btn {
-      border: 1px solid #e5e7eb;
+      border: 1px solid #d1d5db;
       background: #f8fafc;
       color: #111827;
       border-radius: 999px;
       padding: 11px 16px;
       cursor: pointer;
       transition: all 0.2s ease;
-      font-size: 0.9rem;
-      white-space: nowrap;
     }
-    .filter-btn.active {
-      border-color: #4f46e5;
-      background: #eef2ff;
-      color: #4338ca;
-      box-shadow: 0 4px 20px rgba(79, 70, 229, 0.12);
-    }
-    /* Consistent Scrollbar Styling for all dashboard containers */
-    .products-grid,
-    #cart-content,
+    /* Consistent Scrollbar Styling for all scrollable containers */
     #active-rentals-content,
     #overdue-rentals-content,
     #renewals-content,
@@ -114,19 +121,23 @@
       flex-direction: column;
       overflow-y: auto;
       flex: 1;
-      padding-right: 10px;
+      padding-right: 8px; /* Consistent padding for scrollbars */
       scroll-behavior: smooth;
     }
-    .products-grid::-webkit-scrollbar,
+    /* Consolidated Scrollbar Styling */
+    #products-grid::-webkit-scrollbar,
     #cart-content::-webkit-scrollbar,
+    .cashier-layout::-webkit-scrollbar, /* Apply to main layout if it ever scrolls */
     #active-rentals-content::-webkit-scrollbar,
+    .panel::-webkit-scrollbar, /* Apply to generic panels */
     #overdue-rentals-content::-webkit-scrollbar,
     #renewals-content::-webkit-scrollbar,
     #txn-history-content::-webkit-scrollbar,
     #pending-orders-content::-webkit-scrollbar {
       width: 6px;
     }
-    .products-grid::-webkit-scrollbar-track,
+    #products-grid::-webkit-scrollbar-track,
+    .cashier-layout::-webkit-scrollbar-track,
     #cart-content::-webkit-scrollbar-track,
     #active-rentals-content::-webkit-scrollbar-track,
     #overdue-rentals-content::-webkit-scrollbar-track,
@@ -134,23 +145,26 @@
     #txn-history-content::-webkit-scrollbar-track,
     #pending-orders-content::-webkit-scrollbar-track {
       background: #f1f5f9;
+      background: #f8fafc; /* Lighter track */
       border-radius: 10px;
     }
-    .products-grid::-webkit-scrollbar-thumb,
+    #products-grid::-webkit-scrollbar-thumb,
     #cart-content::-webkit-scrollbar-thumb,
     #active-rentals-content::-webkit-scrollbar-thumb,
     #overdue-rentals-content::-webkit-scrollbar-thumb,
     #renewals-content::-webkit-scrollbar-thumb,
     #txn-history-content::-webkit-scrollbar-thumb,
     #pending-orders-content::-webkit-scrollbar-thumb {
+      background: #cbd5e1; /* Lighter thumb */
       background: #cbd5e1;
       border-radius: 10px;
     }
-    .products-grid::-webkit-scrollbar-thumb:hover,
+    #products-grid::-webkit-scrollbar-thumb:hover,
     #cart-content::-webkit-scrollbar-thumb:hover,
     #active-rentals-content::-webkit-scrollbar-thumb:hover,
     #overdue-rentals-content::-webkit-scrollbar-thumb:hover,
     #renewals-content::-webkit-scrollbar-thumb:hover,
+    .cashier-layout::-webkit-scrollbar-thumb:hover,
     #txn-history-content::-webkit-scrollbar-thumb:hover,
     #pending-orders-content::-webkit-scrollbar-thumb:hover {
       background: #94a3b8;
@@ -158,8 +172,16 @@
     .products-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 1.25rem;
+      gap: 1rem;
       padding: 4px;
+      flex: 1;
+      min-height: 0; /* Important for flex item scrolling */
+      height: 0; /* Forces flex parent to control height and trigger overflow */
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 10px;
+      scroll-behavior: smooth;
+      overscroll-behavior: contain;
     }
     .product-card {
       background: #ffffff;
@@ -169,7 +191,7 @@
       display: flex;
       flex-direction: column;
       height: 100%;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
     .product-card:hover {
@@ -178,20 +200,34 @@
       border-color: #4f46e5;
     }
     .product-image-container {
-      width: 100%;
-      height: 140px;
+      position: relative;
+      width: calc(100% - 16px);
+      height: 180px;
+      margin: 8px auto 0;
       overflow: hidden;
-      background: #f8fafc;
-      border-radius: 10px 10px 0 0;
+      border-radius: 14px;
+      background: #f8f9fa;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      transition: box-shadow 0.3s ease;
     }
-    .product-card img {
+    .product-image-container img {
       width: 100%;
-      height: 100%;
+      height: 180px;
       object-fit: cover;
-      transition: transform 0.3s ease;
+      object-position: center;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      filter: brightness(0.98);
     }
-    .product-card:hover img {
-      transform: scale(1.02);
+    .product-card:hover .product-image-container {
+      box-shadow: 0 8px 20px rgba(79, 70, 229, 0.12);
+    }
+    .product-card:hover .product-image-container img {
+      transform: scale(1.08);
+      filter: brightness(1.02);
+    }
+    .product-metadata-section {
+      min-height: 52px; /* Stabilizes card height across different categories */
+      margin-bottom: 8px;
     }
     .product-body {
       padding: 0.85rem;
@@ -210,28 +246,51 @@
       white-space: nowrap;
     }
     .compact-meta {
+      font-size: 0.75rem;
+      color: #64748b;
+      line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .product-price { font-size: 1rem; font-weight: 700; color: #4f46e5; }
+    .stock-badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .stock-available { background: #ecfdf5; color: #059669; }
+    .stock-low { background: #fffbeb; color: #d97706; }
+    .stock-out { background: #fef2f2; color: #dc2626; }
+    
+    /* Metadata Layout Enhancements */
+    .compact-meta {
       font-size: 0.72rem;
       color: #64748b;
       line-height: 1.3;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      margin-bottom: 2px;
     }
-    .price-stock-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 2px;
-    }
-    .stock-badge-compact {
-      font-size: 0.7rem;
+    .compact-meta strong {
+      color: #475569;
       font-weight: 700;
-      color: #64748b;
-      padding-left: 8px;
-      border-left: 1px solid #e2e8f0;
     }
+    .truncate-2-lines {
+      display: -webkit-box;
+      line-clamp: 2;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
     .product-actions {
-      padding: 0 0.85rem 0.85rem;
+      padding: 0 0.85rem 0.85rem; /* Keep padding for consistency */
       margin-top: 0 !important;
     }
     .product-actions .btn-primary {
@@ -239,11 +298,6 @@
       min-height: 44px;
       font-weight: 700;
       border-radius: 12px;
-    }
-    #cart-content {
-      flex: 1;
-      overflow-y: auto;
-      margin-bottom: 16px;
     }
     .cart-list {
       display: flex;
@@ -254,8 +308,8 @@
     .cart-item {
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 12px;
+      gap: 12px;
+      padding: 10px 12px;
       background: #ffffff;
       border-radius: 14px;
       border: 1px solid #f1f5f9;
@@ -276,8 +330,8 @@
     }
 
     .cart-thumb {
-      width: 50px;
-      height: 50px;
+      width: 44px;
+      height: 44px;
       flex-shrink: 0;
       border-radius: 10px;
       overflow: hidden;
@@ -306,14 +360,8 @@
       text-overflow: ellipsis;
     }
 
-    .cart-meta {
-      font-size: 0.72rem;
-      color: #94a3b8;
-      font-weight: 500;
-    }
-
     .cart-price {
-      font-size: 0.78rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: #4f46e5;
       margin-top: 2px;
@@ -323,13 +371,14 @@
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 8px;
+      gap: 6px;
     }
 
     .cart-subtotal {
-      font-size: 0.85rem;
-      font-weight: 800;
+      font-size: 0.9rem;
+      font-weight: 900;
       color: #0f172a;
+      letter-spacing: -0.01em;
     }
 
     .cart-remove-btn {
@@ -716,28 +765,39 @@
       border-radius: 10px;
     }
 
-    @media screen and (max-width: 1280px) {
+    /* Responsive Adjustments */
+    @media (max-width: 1280px) {
       .cashier-layout {
         grid-template-columns: 1fr;
+        gap: 32px; /* More space when stacked */
+      }
+      .cashier-sidebar {
+        width: 100%; /* Take full width when stacked */
+        position: static; /* Remove sticky behavior */
+      }
+      .cashier-layout .panel {
+        min-height: 400px; /* Adjust min-height for stacked panels */
+      }
+      .cashier-sidebar .panel {
+        min-height: 300px; /* Adjust min-height for stacked sidebar panels */
       }
     }
-    @media screen and (max-width: 760px) {
-      .product-card img {
-        height: 140px;
-      }
+
+    @media (max-width: 1024px) {
+      .products-grid { grid-template-columns: repeat(2, 1fr); }
+      .product-image-container, .product-image-container img { height: 160px; }
+    }
+
+    @media (max-width: 768px) {
+      .products-grid { grid-template-columns: 1fr; }
+      .product-image-container, .product-image-container img { height: 140px; }
       .summary-row {
         grid-template-columns: 1fr;
       }
       .product-actions {
         flex-direction: column;
       }
-    }
-
-    @media (max-width: 768px) {
-      .products-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-      }
+      .search-group { flex-direction: column; }
     }
     @media (max-width: 480px) {
       .products-grid {
@@ -755,6 +815,76 @@
     .student-card-verified {
       animation: verified-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
       z-index: 10;
+    }
+
+    /* Pagination Styling */
+    .pagination-controls {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 8px;
+      margin-top: 24px;
+      padding-top: 16px;
+      padding-bottom: 10px;
+      border-top: 1px solid #f1f5f9;
+      overflow-x: auto;
+      overflow-y: hidden;
+      flex-wrap: nowrap;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+
+    @media (min-width: 768px) {
+      .pagination-controls {
+        justify-content: center;
+      }
+    }
+
+    .pagination-controls::-webkit-scrollbar {
+      height: 6px;
+    }
+    .pagination-controls::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 10px;
+    }
+    .pagination-controls::-webkit-scrollbar-thumb {
+      background: #bdbdbd;
+      border-radius: 10px;
+    }
+    .pagination-controls::-webkit-scrollbar-thumb:hover {
+      background: #999;
+    }
+    .pagination-btn {
+      min-width: 40px;
+      height: 40px;
+      padding: 0 12px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      color: #64748b;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pagination-btn:hover:not(:disabled) {
+      background: #f8fafc;
+      border-color: #4f46e5;
+      color: #4f46e5;
+    }
+    .pagination-btn.active {
+      background: #4f46e5;
+      color: #ffffff;
+      border-color: #4f46e5;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    }
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #f1f5f9;
     }
   </style>
 </head>
@@ -788,19 +918,17 @@
         </div>
         <div class="filter-group" id="category-filters"></div>
         <div id="product-grid" class="products-grid"></div>
+        <div id="product-pagination" class="pagination-controls"></div>
       </div>
       <div class="cashier-sidebar">
         <div class="panel">
           <div class="panel-header" style="flex-wrap: wrap; gap: 10px;">
             <h2>Cart</h2>
             <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
-              <button id="select-all-btn" class="btn btn-secondary btn-sm" onclick="toggleSelectAllCart(true)"><i class="fas fa-check-double"></i> All</button>
-              <button id="deselect-all-btn" class="btn btn-secondary btn-sm" onclick="toggleSelectAllCart(false)"><i class="fas fa-times"></i> None</button>
-              <button id="delete-selected-cart" class="btn btn-danger btn-sm hidden" onclick="deleteSelectedCartItems()"><i class="fas fa-minus-circle"></i> Selected</button>
-              <button id="clear-cart" class="btn btn-secondary btn-sm"><i class="fas fa-trash-alt"></i> Clear</button>
+              <button id="delete-selected-cart" class="btn btn-danger btn-sm hidden" onclick="deleteSelectedCartItems()"><i class="fas fa-minus-circle"></i> Remove Selected</button>
             </div>
           </div>
-          <div id="cart-content">
+          <div id="cart-content" style="flex: 1; overflow-y: auto; margin-bottom: 16px;">
             <div class="summary-row" style="margin-bottom: 12px; padding: 0 4px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <input type="checkbox" id="select-all-cart" onchange="toggleSelectAllCart(this.checked)" style="width: 18px; height: 18px; cursor: pointer; accent-color: #4f46e5;">
@@ -866,7 +994,7 @@
               </tbody>
           </table>
         </div>
-        <div id="txn-pagination" style="display: flex; justify-content: center; gap: 8px; margin-top: 15px; padding-bottom: 10px;"></div>
+        <div id="txn-pagination" class="pagination-controls" style="margin-top: 15px; border-top: none; padding-top: 0;"></div>
         <div id="txn-history-empty" class="empty-state">No recent transactions found.</div>
       </div>
     </section>
@@ -903,7 +1031,7 @@
               </tbody>
           </table>
         </div>
-        <div id="pending-orders-pagination" style="display: flex; justify-content: center; gap: 8px; margin-top: 15px; padding-bottom: 10px;"></div>
+        <div id="pending-orders-pagination" class="pagination-controls" style="margin-top: 15px; border-top: none; padding-top: 0;"></div>
         <div id="pending-orders-empty" class="empty-state hidden">No pending orders found.</div>
       </div>
     </section>
@@ -1151,9 +1279,6 @@
       <div class="panel qr-panel" style="width: 100%; max-width: 480px;">
         <div class="panel-header">
           <h2 style="font-weight: 700;"><i class="fas fa-qrcode mr-2"></i> Scan Order</h2>
-          <button type="button" onclick="closeQRScanner()" style="border:none; background:#f1f5f9; width: 32px; height: 32px; border-radius: 50%; cursor:pointer; color:#64748b;">
-            <i class="fas fa-times"></i>
-          </button>
         </div>
         <p class="scan-hint" style="text-align: center; margin-bottom: 20px;">Position the student's Order QR code within the frame.</p>
         
@@ -1218,8 +1343,8 @@
   </main>
 
   <script src="../../assets/js/admincashier.js"></script>
-  <script src="../../assets/js/order-scanner.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="../../assets/js/order-scanner.js"></script>
   <script>
     const API_ROOT = window.location.origin + '/GCST_Track_System/actions';
     const ASSET_ROOT = window.location.origin + '/GCST_Track_System/assets';
@@ -1248,6 +1373,8 @@
       category: 'All',
       query: '',
       course: 'All',
+      currentPage: 1,
+      itemsPerPage: 20,
       transactionType: 'buy',
       discountPercent: 0,
       cashReceived: 0,
@@ -1276,6 +1403,82 @@
     }
     function getProductStock(product) {
       return parseFloat(product.stock_count ?? product.stock ?? 0);
+    }
+
+    /**
+     * Helper to resolve display values, ensuring fallback for null/undefined data.
+     */
+    const getSafeVal = (val) => (val && val !== 'null' && val !== 'undefined') ? val : 'N/A';
+
+    /**
+     * Renders detailed or compact information for Book products.
+     */
+    function renderBookInfo(product, isCompact) {
+      const author = getSafeVal(product.book_author);
+      const course = getSafeVal(product.course_program || product.book_course);
+
+      if (isCompact) {
+        return `
+          <div class="compact-meta" title="Author: ${author}"><i class="fas fa-user-edit mr-1 opacity-60"></i> ${author}</div>
+          <div class="compact-meta" title="Course: ${course}"><i class="fas fa-graduation-cap mr-1 opacity-60"></i> ${course}</div>
+        `;
+      }
+
+      const pages = getSafeVal(product.book_pages);
+      const year = getSafeVal(product.book_publication_year);
+      return `
+        <div class="mt-1 space-y-1 text-xs border-l-2 border-indigo-100 pl-2">
+          <div class="text-slate-700"><strong>Author:</strong> ${author}</div>
+          <div class="text-slate-700"><strong>Target Course:</strong> ${course}</div>
+          <div class="text-slate-500 italic">${pages} Pages • Published ${year}</div>
+        </div>`;
+    }
+
+    /**
+     * Renders detailed or compact information for Uniform/Fabric products.
+     */
+    function renderFabricInfo(product, isCompact) {
+      const course = getSafeVal(product.course_program || product.uniform_course);
+      const type = getSafeVal(product.uniform_type);
+
+      if (isCompact) {
+        return `
+          <div class="compact-meta" title="Course: ${course}"><i class="fas fa-university mr-1 opacity-60"></i> ${course}</div>
+          <div class="compact-meta" title="Type: ${type}"><i class="fas fa-tshirt mr-1 opacity-60"></i> ${type}</div>
+        `;
+      }
+
+      const material = getSafeVal(product.material_type || product.uniform_material);
+      return `
+        <div class="mt-1 space-y-1 text-xs border-l-2 border-blue-100 pl-2">
+          <div class="text-slate-700"><strong>Course:</strong> ${course}</div>
+          <div class="text-slate-700"><strong>Uniform:</strong> ${type}</div>
+          <div class="text-slate-500 italic">Material: ${material}</div>
+        </div>`;
+    }
+
+    /**
+     * Default renderer for general categories.
+     */
+    function renderDefaultInfo(product) {
+      return `<div class="compact-meta"><i class="fas fa-tag mr-1 opacity-60"></i> ${product.product_category || 'General'}</div>`;
+    }
+
+    /**
+     * Centralized Product Information Rendering System.
+     * Uses a mapping approach for category-specific rendering to improve modularity and extensibility.
+     */
+    function renderProductInfo(product, isCompact = false) {
+      if (!product) return '';
+
+      const category = (product.product_category || '').toLowerCase();
+      const productRenderMap = {
+        'books': renderBookInfo,
+        'uniform fabrics': renderFabricInfo
+      };
+
+      const handler = productRenderMap[category] || renderDefaultInfo;
+      return handler(product, isCompact);
     }
 
     // Optimized Performance: Debounce Utility
@@ -1308,75 +1511,139 @@
             if (!productCourse || productCourse !== state.course) return false;
         }
 
-        const searchText = `${product.product_name} ${product.product_category || 'Uncategorized'} ${product.barcode ?? ''}`.toLowerCase();
+        // Expanded search mapping to include all relevant metadata
+        const searchText = [
+            product.product_name,
+            product.product_category,
+            product.book_author,
+            product.book_course,
+            product.course_program,
+            product.uniform_course,
+            product.barcode
+        ].filter(Boolean).join(' ').toLowerCase();
+
         return searchText.includes(state.query.toLowerCase());
       });
+
+      // Pagination logic: Slice result set to improve rendering speed and memory usage
+      const totalItems = results.length;
+      const totalPages = Math.ceil(totalItems / state.itemsPerPage);
+      const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+      const paginatedResults = results.slice(startIndex, startIndex + state.itemsPerPage);
 
       // Performance: Use DocumentFragment to batch DOM updates
       const fragment = document.createDocumentFragment();
 
-      if (results.length === 0) {
+      if (paginatedResults.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'empty-state col-span-full';
         empty.textContent = 'No products found. Try another search or category.';
         fragment.appendChild(empty);
       } else {
-        results.forEach(product => {
-          const price = getProductPrice(product);
-          const rentPrice = getProductRentPrice(product);
-          const stock = getProductStock(product);
-          const imageSrc = resolveImagePath(product.product_image);
-          const statusClass = stock <= 0 ? 'out-stock' : stock < 5 ? 'low-stock' : 'in-stock';
-          const isBook = (product.product_category || '').toLowerCase() === 'books';
-          const isFabric = (product.product_category || '').toLowerCase() === 'uniform fabrics';
-
-          // Optimized compact metadata logic
-          let metaParts = [product.product_category || 'Other'];
-          if (isBook) {
-            if (product.book_author) metaParts.push(product.book_author);
-            if (product.book_pages) metaParts.push(`${product.book_pages} pgs`);
-          } else if (isFabric) {
-            const course = product.course_program || product.uniform_course || 'All';
-            const material = product.material_type || product.uniform_material;
-            metaParts.push(course);
-            if (material) metaParts.push(material);
-          }
-          const metaHtml = `<div class="compact-meta">${metaParts.join(' • ')}</div>`;
-
-          const activePrice = (isBook && state.transactionType === 'rent') ? rentPrice : price;
-          const stockLabel = isFabric ? 'yds' : 'pcs';
-          const stockColor = stock <= 0 ? '#ef4444' : stock < 5 ? '#f59e0b' : '#10b981';
-
-          const card = document.createElement('article');
-          card.className = 'product-card';
-          card.innerHTML = `
-            <div class="product-image-container">
-              <img src="${imageSrc}" alt="${product.product_name}" loading="lazy" />
-            </div>
-            <div class="product-body">
-              <h3 title="${product.product_name}">${product.product_name}</h3>
-              <div class="price-stock-row">
-                <span style="font-weight: 800; color: #4f46e5; font-size: 1.05rem;">${formatCurrency(activePrice)}</span>
-                <span class="stock-badge-compact" style="color: ${stockColor};">
-                  <i class="fas fa-box-open mr-1" style="font-size: 0.65rem;"></i>${stock} ${stockLabel}
-                </span>
-              </div>
-              ${metaHtml}
-            </div>
-            <div class="product-actions">
-              <button class="btn btn-primary" type="button" ${stock <= 0 ? 'disabled' : ''} onclick="addProductToCart('${product.product_id}')">
-                <i class="fas fa-cart-plus"></i> Add to cart
-              </button>
-            </div>
-          `;
-          fragment.appendChild(card);
+        paginatedResults.forEach(product => {
+          const cardHtml = createProductCard(product);
+          const div = document.createElement('div');
+          div.innerHTML = cardHtml.trim();
+          fragment.appendChild(div.firstChild);
         });
       }
 
       grid.innerHTML = '';
       grid.appendChild(fragment);
+      
+      count.textContent = `${totalItems} item${totalItems === 1 ? '' : 's'} (Page ${state.currentPage} of ${totalPages || 1})`;
+      renderPagination(totalItems, totalPages);
+    }
 
-      count.textContent = `${results.length} item${results.length === 1 ? '' : 's'}`;
+    /**
+     * Renders pagination controls for the product grid.
+     */
+    function renderPagination(totalItems, totalPages) {
+      const container = document.getElementById('product-pagination');
+      if (!container) return;
+
+      container.innerHTML = '';
+      if (totalItems === 0 || totalPages <= 1) {
+        container.classList.add('hidden');
+        return;
+      }
+      container.classList.remove('hidden');
+
+      const createBtn = (text, page, isActive = false, isDisabled = false) => {
+        const btn = document.createElement('button');
+        btn.className = `pagination-btn ${isActive ? 'active' : ''}`;
+        btn.innerHTML = text;
+        btn.disabled = isDisabled;
+        if (!isDisabled && !isActive) {
+          btn.onclick = () => {
+            state.currentPage = page;
+            renderProducts();
+            document.querySelector('.panel-header h2')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          };
+        }
+        return btn;
+      };
+
+      // Previous Button
+      container.appendChild(createBtn('<i class="fas fa-chevron-left"></i>', state.currentPage - 1, false, state.currentPage === 1));
+
+      // Render page numbers with ellipsis logic
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= state.currentPage - 1 && i <= state.currentPage + 1)) {
+            container.appendChild(createBtn(i, i, i === state.currentPage));
+        } else if (i === state.currentPage - 2 || i === state.currentPage + 2) {
+            const span = document.createElement('span');
+            span.textContent = '...';
+            span.className = 'text-gray-400 px-1';
+            container.appendChild(span);
+        }
+      }
+
+      // Next Button
+      container.appendChild(createBtn('<i class="fas fa-chevron-right"></i>', state.currentPage + 1, false, state.currentPage === totalPages));
+    }
+
+    /**
+     * Generates HTML for a product card using standardized metadata formatting.
+     */
+    function createProductCard(product) {
+      const price = getProductPrice(product);
+      const rentPrice = getProductRentPrice(product);
+      const stock = getProductStock(product);
+      const imageSrc = resolveImagePath(product.product_image);
+      const catLower = (product.product_category || '').toLowerCase();
+      
+      const activePrice = (catLower === 'books' && state.transactionType === 'rent') ? rentPrice : price;
+      
+      let stockClass = stock > 10 ? 'stock-available' : stock > 0 ? 'stock-low' : 'stock-out';
+      let stockLabel = stock > 10 ? 'In Stock' : stock > 0 ? 'Low Stock' : 'Out of Stock';
+      let stockIcon = stock > 10 ? 'check-circle' : stock > 0 ? 'exclamation-triangle' : 'times-circle';
+
+      const featuredBadge = (parseInt(product.is_featured) === 1) ? 
+        `<div class="absolute top-2.5 right-2.5 z-10"><span class="bg-amber-400 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm border border-white/20">PROMOTED</span></div>` : ''; // Moved inside product-image-container
+
+      return `
+        <article class="product-card relative flex flex-col h-full">
+          <div class="product-image-container relative">
+            ${featuredBadge}
+            <img src="${imageSrc}" alt="${product.product_name}" loading="lazy" class="w-full h-full object-cover" onerror="this.src='${IMAGE_FALLBACK}'" />
+          </div>
+          <div class="product-body flex-1 flex flex-col p-3">
+            <h3 class="text-sm font-bold text-gray-800 truncate-2-lines min-h-[2.5rem] mb-1" title="${product.product_name}">${product.product_name}</h3>
+            <div class="product-metadata-section">
+               ${renderProductInfo(product, true)}
+            </div>
+            <div class="mt-auto flex items-center justify-between pt-2 border-t border-slate-50">
+              <div class="flex flex-col">
+                <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">${catLower === 'uniform fabrics' ? 'Per Yard' : 'Price'}</span>
+                <span class="product-price text-base font-black">${formatCurrency(activePrice)}</span>
+              </div>
+              <button class="btn btn-primary !p-3 !rounded-xl" type="button" ${stock <= 0 ? 'disabled' : ''} onclick="addProductToCart('${product.product_id}', event)">
+                <i class="fas fa-cart-plus"></i>
+              </button>
+            </div>
+          </div>
+        </article>`;
     }
 
     // Centralized Debounced Render
@@ -1418,6 +1685,7 @@
             alert('During a rental session, only the "Books" category is allowed.');
             return;
           }
+          state.currentPage = 1; // Reset to page 1 on category switch
           state.category = category;
           buildCategoryFilters();
           renderProducts();
@@ -1463,13 +1731,6 @@
         
         const imageSrc = resolveImagePath(product?.product_image);
         
-        let meta = product?.product_category || 'Item';
-        if (isBook) {
-            meta = `${product.book_course || 'General'} • ${product.book_author || 'N/A'}`;
-        } else if (isFabric) {
-            meta = `${product.course_program || product.uniform_course || 'All'} • ${product.material_type || product.uniform_material || 'Fabric'}`;
-        }
-
         const div = document.createElement('div');
         div.className = 'cart-item' + (item.selected ? '' : ' deselected');
         div.innerHTML = `
@@ -1482,7 +1743,6 @@
 
           <div class="cart-details">
             <h4 class="cart-name" title="${item.product_name}">${item.product_name}</h4>
-            <div class="cart-meta">${meta}</div>
             <div class="cart-price">${formatCurrency(item.unitPrice)} <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 500;">/ ${unitLabel}</span></div>
           </div>
 
@@ -1688,9 +1948,25 @@
       });
       updateCartSummary();
     }
-    function addProductToCart(productId) {
+    function addProductToCart(productId, event = null) {
       const product = products.find(p => p.product_id == productId);
       if (!product) return;
+
+      // Button Interaction State
+      let btn = event?.target;
+      if (btn) {
+        if (btn.tagName !== 'BUTTON') btn = btn.closest('button');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        setTimeout(() => {
+          btn.innerHTML = '<i class="fas fa-check"></i> Added';
+          setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+          }, 1000);
+        }, 500);
+      }
 
       if (state.transactionType === 'rent' && (product.product_category || '').toLowerCase() !== 'books') { // This logic is for rental, not general book sales
         alert('Rental is only allowed for items in the "Books" category.');
@@ -2750,10 +3026,12 @@
     });
     document.getElementById('product-search').addEventListener('input', () => {
       state.query = document.getElementById('product-search').value.trim();
+      state.currentPage = 1; // Reset page on search
       debouncedRender();
     });
     document.getElementById('course-filter').addEventListener('change', (e) => {
       state.course = e.target.value;
+      state.currentPage = 1; // Reset page on course filter
       debouncedRender();
     });
     document.getElementById('active-rental-search').addEventListener('input', (e) => {
@@ -2784,6 +3062,7 @@
     document.getElementById('clear-search').addEventListener('click', () => {
       document.getElementById('product-search').value = '';
       state.query = '';
+      state.currentPage = 1; // Reset page on clear search
       renderProducts();
     });
     document.getElementById('discount-percent').addEventListener('input', () => {
@@ -2897,45 +3176,6 @@
     const printBtn = document.getElementById('print-receipt');
     if (printBtn) printBtn.addEventListener('click', printReceipt);
     
-
-    function loadOrderByQR(transactionNumber) {
-      fetch(`${API_ROOT}/get_order_by_qr.php?transaction_number=${encodeURIComponent(transactionNumber)}`, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.order) {
-            const order = data.order;
-            
-            // Populate state and UI
-            state.isQRScanned = true;
-            state.studentId = order.student_id || '';
-            state.transactionType = order.transaction_type; // Set transaction type from scanned order
-            
-            // Clear current cart and load order items
-            cart = order.items.map(item => ({
-              product_id: item.product_id,
-              product_name: item.product_name,
-              quantity: parseFloat(item.quantity),
-              unitPrice: parseFloat(item.unit_price || (item.total / item.quantity)),
-              selected: true // All items from a scanned order are initially selected
-            }));
-
-            updateStudentDisplay(state.studentId);
-            updateCartSummary();
-            
-            // Provide feedback and open checkout
-            if (typeof SCAN_SOUND !== 'undefined') SCAN_SOUND.play();
-            alert(`Order ${transactionNumber} loaded for ${order.student_full_name || 'Student'}`);
-            openCheckoutModal();
-          } else {
-            if (typeof ERROR_SOUND !== 'undefined') ERROR_SOUND.play();
-            alert(data.message || 'Order not found or already processed.');
-          }
-        })
-        .catch(err => console.error('Error loading order:', err));
-    }
-
     // --- Global Hardware Scanner Listener ---
     window.addEventListener('keydown', (e) => {
       // If the user is currently typing in a search input, textarea, or registration field, 
@@ -2962,8 +3202,6 @@
 
           if (typeof OrderScanner !== 'undefined') {
               OrderScanner.handleScanSuccess(code);
-          } else {
-              loadOrderByQR(code);
           }
         }
       } else if (e.key.length === 1) { // Only append single character keys
@@ -3046,18 +3284,6 @@
       });
     }
 
-    /**
-     * Scanner Integration
-     * Unified logic using the OrderScanner module.
-     */
-    function openQRScanner() {
-        if (typeof OrderScanner !== 'undefined') {
-            OrderScanner.open();
-        } else {
-            console.error("OrderScanner module not loaded.");
-        }
-    }
-
     function toggleTxnAutoRefresh(enabled) {
       if (txnAutoRefreshInterval) clearInterval(txnAutoRefreshInterval);
       if (enabled) {
@@ -3081,30 +3307,6 @@
       }
     }
 
-    function closeQRScanner() {
-        if (typeof OrderScanner !== 'undefined') {
-            OrderScanner.close();
-        }
-    }
-
-    // Event listener for hardware scanner input (hidden input field)
-    document.getElementById('hardware-scan-input')?.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const scannedCode = this.value.trim();
-        if (scannedCode) {
-          loadOrderByQR(scannedCode);
-          this.value = ''; // Clear input after processing
-          closeQRScanner(); // Close scanner modal after processing
-        }
-      }
-    });
-
-    // Safe attachment of Scan Order button
-    document.addEventListener('DOMContentLoaded', () => {
-        const scanBtn = document.getElementById('qr-scan-btn');
-        if (scanBtn) scanBtn.addEventListener('click', openQRScanner);
-    });
   </script>
 </body>
 </html>

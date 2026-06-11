@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -604,7 +604,8 @@
 
     .product-preview img {
       width: 100%;
-      height: 180px;
+      height: auto;
+      aspect-ratio: 16 / 9;
       object-fit: cover;
       border-radius: 16px;
     }
@@ -879,9 +880,7 @@
       <div class="inventory-toolbar">
         <div class="inventory-search">
           <input id="inventory-search" type="search" placeholder="Search products by name, category..." />
-          <select id="course-filter" style="padding: 0 16px; border-radius: 12px; border: none; background: var(--surface-soft); font-size: 0.9rem; outline: none; height: 48px; min-width: 160px; color: var(--text); font-weight: 500;">
-            <option value="All">All Courses</option>
-          </select>
+          
           <button id="btn-open-add-product" type="button" class="btn btn-secondary">Add New Product</button>
           <button id="refresh-button" type="button" class="btn btn-secondary">
             <i class="fas fa-sync-alt"></i>
@@ -891,6 +890,9 @@
             <i class="fas fa-print"></i>
             <span>Print Inventory</span>
           </button>
+        <select id="course-filter" style="padding: 0 16px; border-radius: 12px; border: none; background: var(--surface-soft); font-size: 0.9rem; outline: none; height: 48px; min-width: 160px; color: var(--text); font-weight: 500;">
+            <option value="All">All Courses</option>
+          </select>
         </div>
         <div class="filter-pills" id="category-filters"></div>
       </div>
@@ -978,15 +980,16 @@
                     </div>
                     <div class="form-group">
                       <label for="new-book-course">Target Course <span class="text-rose-500">*</span></label>
-                      <select id="new-book-course" name="book_course" required>
+                      <select id="new-book-course" name="book_course">
                         <option value="" disabled selected>Select Course/Program</option>
-                        <option value="BSIT">BSIT</option>
-                        <option value="BSED">BSED</option>
-                        <option value="BSBA">BSBA</option>
-                        <option value="BSCRIM">BSCRIM</option>
-                        <option value="BSHM">BSHM</option>
-                        <option value="BSCS">BSCS</option>
-                        <option value="BEED">BEED</option>
+                          <option value="BS Information Technology">BS Information Technology</option>
+                          <option value="BS Computer Science">BS Computer Science</option>
+                          <option value="BS Tourism Management">BS Tourism Management</option>
+                          <option value="BS Business Administration">BS Business Administration</option>
+                          <option value="B Elementary Education">B Elementary Education</option>
+                          <option value="B Secondary Education">B Secondary Education</option>
+                          <option value="BS Criminology">BS Criminology</option>
+                          <option value="BS Accountancy">BS Accountancy</option>
                       </select>
                     </div>
                     <div class="form-group">
@@ -1005,15 +1008,16 @@
                   <div class="form-section-divider">Uniform Information</div>
                   <div class="form-group">
                     <label for="new-uniform-course">Applicable Course/Program <span class="text-rose-500">*</span></label>
-                    <select id="new-uniform-course" name="course_program" required>
+                    <select id="new-uniform-course" name="course_program">
                       <option value="" disabled selected>Select Course/Program</option>
-                      <option value="BSIT">BSIT</option>
-                      <option value="BSED">BSED</option>
-                      <option value="BSBA">BSBA</option>
-                      <option value="BSCRIM">BSCRIM</option>
-                      <option value="BSHM">BSHM</option>
-                      <option value="BSCS">BSCS</option>
-                      <option value="BEED">BEED</option>
+                      <option value="BS Information Technology">BS Information Technology</option>
+                      <option value="BS Computer Science">BS Computer Science</option>
+                      <option value="BS Tourism Management">BS Tourism Management</option>
+                      <option value="BS Business Administration">BS Business Administration</option>
+                      <option value="B Elementary Education">B Elementary Education</option>
+                      <option value="B Secondary Education">B Secondary Education</option>
+                      <option value="BS Criminology">BS Criminology</option>
+                      <option value="BS Accountancy">BS Accountancy</option>
                     </select>
                   </div>
                   <div class="form-group">
@@ -1047,7 +1051,7 @@
 
             <div class="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-slate-100">
               <button type="button" id="btn-reset-new-product" class="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-wider" onclick="toggleCategoryFields('new', 'All')">Clear Inputs</button>
-              <button type="submit" class="btn btn-primary !px-10 !py-4 shadow-lg shadow-indigo-200">
+              <button id="btn-add-to-inventory" type="submit" class="btn btn-primary !px-10 !py-4 shadow-lg shadow-indigo-200">
                 <i class="fas fa-plus-circle mr-2"></i> Add to Inventory
               </button>
             </div>
@@ -1228,16 +1232,17 @@
                       <input id="detail-book-pages-input" type="number" min="1" />
                     </div>
                     <div class="form-group">
-                      <label for="detail-book-course-input">Target Course <span class="text-rose-500">*</span></label>
+                      <label for="detail-book-course-input">Target Course<span class="text-rose-500">*</span></label>
                       <select id="detail-book-course-input" required>
                         <option value="" disabled selected>Select Course/Program</option>
-                        <option value="BSIT">BSIT</option>
-                        <option value="BSED">BSED</option>
-                        <option value="BSBA">BSBA</option>
-                        <option value="BSCRIM">BSCRIM</option>
-                        <option value="BSHM">BSHM</option>
-                        <option value="BSCS">BSCS</option>
-                        <option value="BEED">BEED</option>
+                      <option value="BS Information Technology">BS Information Technology</option>
+                      <option value="BS Computer Science">BS Computer Science</option>
+                      <option value="BS Tourism Management">BS Tourism Management</option>
+                      <option value="BS Business Administration">BS Business Administration</option>
+                      <option value="B Elementary Education">B Elementary Education</option>
+                      <option value="B Secondary Education">B Secondary Education</option>
+                      <option value="BS Criminology">BS Criminology</option>
+                      <option value="BS Accountancy">BS Accountancy</option>
                       </select>
                     </div>
                     <div class="form-group">
@@ -1258,13 +1263,14 @@
                     <label for="detail-uniform-course-input">Applicable Course/Program <span class="text-rose-500">*</span></label>
                     <select id="detail-uniform-course-input" required>
                       <option value="" disabled selected>Select Course/Program</option>
-                      <option value="BSIT">BSIT</option>
-                      <option value="BSED">BSED</option>
-                      <option value="BSBA">BSBA</option>
-                      <option value="BSCRIM">BSCRIM</option>
-                      <option value="BSHM">BSHM</option>
-                      <option value="BSCS">BSCS</option>
-                      <option value="BEED">BEED</option>
+                      <option value="BS Information Technology">BS Information Technology</option>
+                      <option value="BS Computer Science">BS Computer Science</option>
+                      <option value="BS Tourism Management">BS Tourism Management</option>
+                      <option value="BS Business Administration">BS Business Administration</option>
+                      <option value="B Elementary Education">B Elementary Education</option>
+                      <option value="B Secondary Education">B Secondary Education</option>
+                      <option value="BS Criminology">BS Criminology</option>
+                      <option value="BS Accountancy">BS Accountancy</option>
                     </select>
                   </div>
                   <div class="form-group">
@@ -1442,7 +1448,14 @@
         ui: {},
 
         // Communication channel for cross-tab sync
-        syncChannel: new BroadcastChannel('inventory_sync_channel'),
+        syncChannel: (() => {
+            try {
+                return new BroadcastChannel('inventory_sync_channel');
+            } catch (e) {
+                console.warn('BroadcastChannel not supported or restricted in this environment.');
+                return { postMessage: () => {}, onmessage: null };
+            }
+        })(),
 
         async init() {
             this.cacheDOMElements();
@@ -1500,7 +1513,7 @@
             this.ui.btnPrintSheet?.addEventListener('click', () => this.printBlankInventorySheet());
 
             // Add Product Panel Controls
-            document.getElementById('btn-open-add-product')?.addEventListener('click', () => this.toggleAddPanel(true));
+            document.getElementById('btn-open-add-product')?.addEventListener('click', () => this.showAddProductForm());
             document.getElementById('btn-close-add-product')?.addEventListener('click', () => this.toggleAddPanel(false));
             
             const btnResetNew = document.getElementById('btn-reset-new-product');
@@ -1840,12 +1853,17 @@
             this.applyFilters();
         },
 
+        showAddProductForm() {
+            console.log("Opening Add Product Panel...");
+            this.toggleAddPanel(true);
+        },
+
         selectProduct(id) {
             this.state.selected = this.state.products.find(p => Number(p.product_id) === Number(id)) || null;
             this.renderGrid();
             this.updateDetailPanel();
             
-            if (window.innerWidth < 1200 && this.state.selected) {
+            if (window.innerWidth < 1024 && this.state.selected) {
                 document.querySelector('.inventory-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         },
@@ -1866,7 +1884,11 @@
 
             const p = this.state.selected;
             const imageInput = document.getElementById('detail-product-image');
-            if (imageInput) imageInput.value = '';
+            
+            // Safe reset of file input
+            if (imageInput) {
+                try { imageInput.value = ''; } catch(e) {}
+            }
 
             // Populate Fields
             if (document.getElementById('detail-image')) document.getElementById('detail-image').src = this.resolveImagePath(p.product_image);
@@ -2057,6 +2079,7 @@
                 return;
             }
 
+            console.log('Submitting product registration...');
             const btn = e.target.querySelector('button[type="submit"]');
             const originalHtml = btn.innerHTML;
             this.state.isProcessing = true;
@@ -2064,9 +2087,11 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
 
             const fd = new FormData(e.target);
+            console.log('FormData Payload:', [...fd.entries()]);
 
             try {
                 const result = await InventoryAPI.createProduct(fd);
+                console.log('Server Response:', result);
                 if (result && result.success) {
                     this.toggleAddPanel(false);
                     await this.refreshData();
@@ -2152,6 +2177,9 @@
         getStatusClass: (s) => s <= 0 ? 'status-out' : s < 10 ? 'status-lowstock' : 'status-instock',
         resolveImagePath: (p) => p ? (p.startsWith('http') ? p : `${window.location.origin}/GCST_Track_System/${p.replace(/^\/+/, '')}`) : DEFAULT_IMAGE
     };
+
+    // Expose to window for dynamic onclick handlers in templates
+    window.InventoryApp = InventoryApp;
 
     /**
      * Global Logic Bridging

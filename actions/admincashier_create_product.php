@@ -87,7 +87,16 @@ try {
     }
 
     // 5. Module-Specific Validation
-    $validCourses = ['BSIT', 'BSED', 'BSBA', 'BSCRIM', 'BSHM', 'BSCS', 'BEED'];
+    $validCourses = [
+        'BS Information Technology', 
+        'BS Computer Science', 
+        'BS Tourism Management', 
+        'BS Business Administration', 
+        'B Elementary Education', 
+        'B Secondary Education', 
+        'BS Criminology', 
+        'BS Accountancy'
+    ];
 
     if ($productCategory === 'Books') {
         if (empty($bookAuthor)) throw new Exception('Books Module: Author is required.');
@@ -172,7 +181,10 @@ try {
         $materialType
     );
 
-    if (!$stmt->execute()) throw new Exception('Database Error: Execution failed during product creation.');
+    if (!$stmt->execute()) {
+        error_log("Product Creation SQL Error: " . $stmt->error);
+        throw new Exception('Database Error: Execution failed during product creation.');
+    }
     
     $newId = $conn->insert_id;
     $stmt->close();

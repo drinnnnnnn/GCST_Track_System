@@ -17,125 +17,87 @@
 
     .product-card {
       background: #ffffff;
-      border-radius: 1.5rem;
-      padding: 1rem;
-      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid #f1f5f9;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transition: all 0.25s ease;
       display: flex;
       flex-direction: column;
+      height: 100%;
+      cursor: pointer;
     }
     
     .product-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15);
-      border-color: var(--primary);
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      border-color: #2563eb;
     }
-    
-    @media (min-width: 640px) {
-      .product-card { border-radius: 2rem; padding: 24px; }
-    }
-    
+
     .product-image {
       width: 100%;
-      aspect-ratio: 4/3;
-      border-radius: 1.25rem;
+      height: 130px;
       object-fit: cover;
-      margin-bottom: 18px;
-      background: #f8fafc;
+      object-position: center;
+      border-radius: 12px 12px 0 0;
+      transition: transform .25s ease;
     }
+    .product-card:hover .product-image { transform: scale(1.03); }
+
     .product-info {
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin-bottom: 16px;
+      padding: 0.85rem;
+      gap: 4px;
     }
-    
+
     .product-name {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--text);
-      line-height: 1.3;
-    }
-    
-    .product-category {
-      display: inline-block;
-      padding: 4px 14px;
-      border-radius: 999px;
-      background: rgba(37, 99, 235, 0.08);
-      color: #1d4ed8;
-      font-size: 0.8rem;
-      font-weight: 600;
-      width: fit-content;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .product-description {
-      font-size: 0.9rem;
-      color: #64748b;
-      line-height: 1.6;
-      display: -webkit-box;
-      line-clamp: 2;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      min-height: 2.8rem;
-    }
-
-    .product-price {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      margin-top: 8px;
-    }
-    
-    .price-label {
-      color: #94a3b8;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      margin-right: 4px;
-    }
-
-    .price-value {
-      font-weight: 600;
-      font-size: 1.05rem;
+      font-size: 0.95rem;
+      font-weight: 700;
       color: #0f172a;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    
-    .stock-available { color: #059669; }
-    .stock-low { color: #d97706; }
-    .stock-unavailable { color: #dc2626; }
 
-    .product-stock {
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin-top: 4px;
+    .compact-meta {
+      font-size: 0.75rem;
+      color: #64748b;
+      line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    
+
+    .product-price-value { font-size: 1rem; font-weight: 700; color: #2563eb; }
+
+    .stock-badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .stock-available { background: #ecfdf5; color: #059669; }
+    .stock-low { background: #fffbeb; color: #d97706; }
+    .stock-out { background: #fef2f2; color: #dc2626; }
+
     .product-actions {
       display: flex;
-      gap: 10px;
-      margin-top: auto;
-      padding-top: 20px;
+      padding: 0 0.85rem 0.85rem;
+      gap: 8px;
     }
     
     .btn-action {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      border-radius: 1rem;
-      cursor: pointer;
+      width: 100%;
+      min-height: 44px;
+      border-radius: 12px;
       font-size: 0.9rem;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
+      font-weight: 700;
     }
 
     /* Product Details Modal Styling */
@@ -225,19 +187,33 @@
       transform: rotate(90deg);
     }
 
-    .spec-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid #f1f5f9;
-      font-size: 0.9rem;
+    .spec-group {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid #f1f5f9;
+      margin-top: 12px;
+    }
+    .spec-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 10px;
+      padding: 10px 0;
+    }
+    .spec-row:not(:last-child) {
+      border-bottom: 1px solid #eef2f6;
+    }
+    .spec-label {
+      font-weight: 600;
+      color: #64748b;
+      font-size: 0.85rem;
+    }
+    .spec-value {
+      font-weight: 500;
+      color: #0f172a;
+      font-size: 0.85rem;
     }
 
-    .spec-label { color: #94a3b8; font-weight: 500; }
-    .spec-value { color: #0f172a; font-weight: 600; }
-
-    .rating-stars { color: #f59e0b; display: flex; gap: 2px; }
-    
     .modal-qty-btn {
       width: 44px;
       height: 44px;
@@ -257,8 +233,8 @@
     
     .products-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.25rem;
     }
     @media (min-width: 640px) { .products-grid { gap: 24px; } }
     
@@ -680,14 +656,24 @@
       </div>
 
       <div class="filter-group">
-        <div class="flex items-center space-x-3 mb-2">
-          <div class="h-1 w-6 bg-blue-600 rounded-full"></div>
-          <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em]">Quick Filters</h3>
-        </div>
         <div class="filter-buttons">
-          <button class="filter-btn active" data-category="all" onclick="filterByCategory('all', this)">All Categories</button>
-          <button class="filter-btn" data-category="uniforms" onclick="filterByCategory('uniforms', this)">Uniform Fabrics</button>
+          <button class="filter-btn active" data-category="all" onclick="filterByCategory('all', this)">All Items</button>
+          <button class="filter-btn" data-category="books" onclick="filterByCategory('books', this)">Books</button>
+          <button class="filter-btn" data-category="uniform fabrics" onclick="filterByCategory('uniform fabrics', this)">Uniform Fabrics</button>
           <button class="filter-btn" data-category="accessories" onclick="filterByCategory('accessories', this)">Accessories</button>
+          
+          <!-- New Course Filter Integration -->
+          <select id="course-filter" onchange="performSearch()" class="filter-btn outline-none cursor-pointer">
+            <option value="All">All Courses</option>
+                <option value="BS Information Technology">BS Information Technology</option>
+                <option value="BS Computer Science">BS Computer Science</option>
+                <option value="BS Tourism Management">BS Tourism Management</option>
+                <option value="BS Business Administration">BS Business Administration</option>
+                <option value="B Elementary Education">B Elementary Education</option>
+                <option value="B Secondary Education">B Secondary Education</option>
+                <option value="BS Criminology">BS Criminology</option>
+                <option value="BS Accountancy">BS Accountancy</option>
+          </select>
         </div>
       </div>
     </div>
@@ -781,11 +767,6 @@
             </div>
             <h2 id="modal-p-name" class="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight mb-4"></h2>
             
-            <div class="flex items-center gap-4 mb-6">
-              <div id="modal-p-stars" class="rating-stars text-lg"></div>
-              <span id="modal-p-reviews-count" class="text-sm font-semibold text-slate-400"></span>
-            </div>
-
             <p id="modal-p-description" class="text-slate-500 leading-relaxed mb-8 text-lg italic"></p>
 
             <div class="bg-blue-50/50 p-6 md:p-8 rounded-2xl md:rounded-[2rem] border border-blue-100/50 mb-8">
@@ -809,17 +790,6 @@
                 <!-- Dynamic Action Buttons -->
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Reviews Section -->
-        <div class="mt-16 pt-12 border-t border-slate-100">
-          <h3 class="text-xl font-bold text-slate-900 mb-8 flex items-center gap-3">
-            <i class="fas fa-comment-dots text-blue-600"></i>
-            Student Feedback
-          </h3>
-          <div id="modal-p-reviews-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Dynamic Reviews -->
           </div>
         </div>
       </div>
@@ -881,65 +851,66 @@
 
       container.innerHTML = allProducts.map(product => {
         const imageUrl = resolveImagePath(product.product_image);
-        // Handle both stock and stock_count for database compatibility
         const stockValue = Number(product.stock_count ?? product.stock ?? 0);
-        const inStock = stockValue > 0;
-        const stockClass = stockValue > 10 ? 'stock-available' : stockValue > 0 ? 'stock-low' : 'stock-unavailable';
-        const productStatus = String(product.product_status || 'available').trim().toLowerCase();
-        
-        // Robust detection for fabric products (Uniforms, Fabrics, etc.)
+
         const catLower = (product.product_category || '').toLowerCase();
         const nameLower = (product.product_name || '').toLowerCase();
         const isFabric = catLower.includes('uniform') || catLower.includes('fabric') || nameLower.includes('fabric');
+
+        // Dynamic Metadata Logic
+        let metaHtml = '';
+        if (catLower === 'books') {
+          metaHtml = `<div class="compact-meta">${product.author || product.book_author || 'Unknown Author'} • ${product.pages || product.book_pages || 0} Pages</div>`;
+        } else if (isFabric) {
+          metaHtml = `
+            <div class="compact-meta">${product.course_program || product.uniform_course || 'General'} • ${product.uniform_type || 'Fabric'}</div>
+            <div class="compact-meta">${product.material_type || product.uniform_material || 'Standard'}</div>
+          `;
+        } else {
+          metaHtml = `<div class="compact-meta">${product.product_category || 'General'}</div>`;
+        }
+
+        // Stock Badge Logic
+        let stockClass = stockValue > 10 ? 'stock-available' : stockValue > 0 ? 'stock-low' : 'stock-out';
+        let stockLabel = stockValue > 10 ? 'Available' : stockValue > 0 ? 'Low Stock' : 'Out of Stock';
+        let stockIcon = stockValue > 10 ? 'check-circle' : stockValue > 0 ? 'exclamation-triangle' : 'times-circle';
 
         return `
           <div class="product-card cursor-pointer group" onclick="openProductModal('${product.product_id}')">
             <img src="${imageUrl}" alt="${product.product_name}" class="product-image" id="prod-img-${product.product_id}">
             <div class="product-info">
               <h3 class="product-name">${product.product_name}</h3>
-              <span class="product-category">${product.product_category || 'General'}</span>
-              <p class="product-description italic">${product.product_description || 'No description available.'}</p>
-              <div class="space-y-2 mt-2">
-                ${product.buy_price > 0 && catLower !== 'books' ? `
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                      <span class="price-label">Buy${isFabric ? ' (per yard)' : ''}</span> 
-                      <span class="price-value">₱${parseFloat(product.buy_price).toFixed(2)}</span>
-                    </div>
-                    ${isFabric ? `
-                      <div class="flex flex-col items-end gap-1">
-                        <div class="flex items-center gap-2">
-                          <input type="number" step="0.25" min="0.25" value="1.00" 
-                            class="w-20 px-2 py-1 text-sm font-semibold bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500" 
-                            id="qty-fabric-${product.product_id}" onclick="event.stopPropagation()"
-                            oninput="updateFabricTotal(${product.product_id}, ${product.buy_price})">
-                          <span class="text-[10px] font-bold text-slate-400 uppercase">Yards</span>
-                        </div>
-                      </div>
-                    ` : ''}
-                  </div>
-                  ${isFabric ? `
-                    <div class="text-right border-t border-slate-50 pt-1">
-                      <span class="text-[10px] font-semibold text-slate-400 uppercase">Est. Total: </span>
-                      <span class="text-sm font-bold text-emerald-600" id="total-fabric-${product.product_id}">₱${parseFloat(product.buy_price).toFixed(2)}</span>
-                    </div>
-                  ` : ''}
-                ` : ''}
-                ${product.rent_price > 0 ? `<div class="flex items-center"><span class="price-label">Rent</span> <span class="price-value">₱${parseFloat(product.rent_price).toFixed(2)}</span></div>` : ''}
+              ${metaHtml}
+              <div class="mt-auto pt-2 flex items-center justify-between">
+                <span class="product-price-value">${formatCurrency(product.buy_price > 0 ? product.buy_price : product.rent_price)}</span>
+                <span class="stock-badge ${stockClass}">
+                  <i class="fas fa-${stockIcon}"></i> ${stockLabel}
+                </span>
               </div>
-              <div class="pt-2">
-                ${productStatus !== 'available' 
-                  ? `<span class="text-[10px] font-semibold uppercase text-red-500 tracking-wider">${productStatus.replace(/_/g, ' ')}</span>` 
-                  : `<span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Inventory: </span><span class="${stockClass} text-xs font-semibold">${inStock ? `${stockValue} pcs` : 'Out of stock'}</span>`}
-              </div>
+              ${isFabric ? `
+                <div class="mt-2" onclick="event.stopPropagation()">
+                  <input type="number" step="0.25" min="0.25" value="1.00" 
+                    class="w-full px-2 py-1 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg text-center" 
+                    id="qty-fabric-${product.product_id}" oninput="updateFabricTotal(${product.product_id}, ${product.buy_price})">
+                </div>` : ''}
             </div>
             <div class="product-actions" onclick="event.stopPropagation()">
-              ${product.buy_price > 0 && catLower !== 'books' ? `<button class="btn-action btn-buy" type="button" ${!inStock || productStatus !== 'available' ? 'disabled' : ''} onclick="handleAddToCart('${product.product_id}', 'buy', ${isFabric}, event)">${isFabric ? 'Add to Cart' : 'Buy'}</button>` : ''} 
-              ${product.rent_price > 0 ? `<button class="btn-action btn-rent" type="button" ${!inStock || productStatus !== 'available' ? 'disabled' : ''} onclick="addToCart('${product.product_id}', 'rent', null, null, event)">Rent</button>` : ''}
+              ${product.buy_price > 0 ? `<button class="btn-action btn-buy" type="button" ${stockValue <= 0 ? 'disabled' : ''} onclick="handleAddToCart('${product.product_id}', 'buy', ${isFabric}, event)">Add to Cart</button>` : ''} 
+              ${product.rent_price > 0 ? `<button class="btn-action btn-rent" type="button" ${stockValue <= 0 ? 'disabled' : ''} onclick="addToCart('${product.product_id}', 'rent', 1, 'day', event)">Rent Now</button>` : ''}
             </div>
           </div>
         `;
       }).join('');
+    }
+
+    function renderSpecRow(label, value) {
+      if (value === null || value === undefined || value === '') return '';
+      return `
+        <div class="spec-row">
+          <span class="spec-label">${label}</span>
+          <span class="spec-value">${value}</span>
+        </div>
+      `;
     }
 
     /**
@@ -952,13 +923,14 @@
       const modal = document.getElementById('product-details-modal');
       const statusLower = String(product.product_status || 'available').toLowerCase();
       const catLower = (product.product_category || '').toLowerCase();
-      const isFabric = catLower.includes('uniform') || catLower.includes('fabric');
-      const inStock = Number(product.stock_count ?? product.stock ?? 0) > 0;
+      const nameLower = (product.product_name || '').toLowerCase();
+      const isFabric = catLower.includes('uniform') || catLower.includes('fabric') || nameLower.includes('fabric');
+      const stockValue = Number(product.stock_count ?? product.stock ?? 0);
+      const inStock = stockValue > 0;
 
       // Populate Text Content
       document.getElementById('modal-p-name').textContent = product.product_name;
       document.getElementById('modal-p-category').textContent = product.product_category || 'General';
-      document.getElementById('modal-p-description').textContent = product.product_description || 'No detailed description provided for this campus resource.';
       document.getElementById('modal-p-image').src = resolveImagePath(product.product_image);
       
       // Status Badge
@@ -969,43 +941,49 @@
       // Price & Stock
       const displayPrice = product.buy_price > 0 ? `₱${parseFloat(product.buy_price).toFixed(2)}` : `₱${parseFloat(product.rent_price).toFixed(2)}`;
       document.getElementById('modal-p-price').textContent = displayPrice;
-      document.getElementById('modal-p-stock').textContent = inStock ? `${product.stock_count ?? product.stock} units left` : 'Sold Out';
-      document.getElementById('modal-p-stock').className = inStock ? 'text-emerald-600 font-bold' : 'text-red-500 font-bold';
 
-      // Render Specs
-      const specs = [
-        { label: 'Asset Code', value: product.barcode || `GCST-${product.product_id}` },
-        { label: 'Department', value: catLower.includes('uniform') ? 'Supply Office' : 'Library / General' },
-        { label: 'Condition', value: 'New / Standard' },
-        { label: 'Material', value: catLower.includes('fabric') ? 'Polyester/Cotton Mix' : 'Standard Quality' }
-      ];
-      document.getElementById('modal-p-specs').innerHTML = specs.map(s => `
-        <div class="spec-item">
-          <span class="spec-label">${s.label}</span>
-          <span class="spec-value">${s.value}</span>
-        </div>
-      `).join('');
-
-      // Render Ratings (Simulated based on product ID)
-      const rating = 4 + (product.product_id % 2 === 0 ? 0.5 : 1);
-      const reviewsCount = (product.product_id * 7) % 50 + 12;
-      document.getElementById('modal-p-stars').innerHTML = Array.from({length: 5}, (_, i) => `<i class="${i < Math.floor(rating) ? 'fas fa-star' : 'far fa-star'}"></i>`).join('');
-      document.getElementById('modal-p-reviews-count').textContent = `(${reviewsCount} Student Reviews)`;
-
-      // Render Placeholder Reviews
-      const reviews = [
-        { user: 'Student #1024', comment: 'Quality is great and very affordable.', date: '2 days ago' },
-        { user: 'Senior High Rep', comment: 'The stock was available exactly when I needed it.', date: '1 week ago' }
-      ];
-      document.getElementById('modal-p-reviews-list').innerHTML = reviews.map(r => `
-        <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100">
-          <div class="flex justify-between items-center mb-3">
-            <span class="font-bold text-slate-800 text-sm">${r.user}</span>
-            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${r.date}</span>
+      // Render Specifications section
+      let specsHtml = '';
+      if (catLower === 'books') {
+        specsHtml = `
+          <h4 class="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">📚 Book Information</h4>
+          <div class="spec-group">
+            ${renderSpecRow('Author', product.author || product.book_author)}
+            ${renderSpecRow('Pages', product.pages || product.book_pages)}
+            ${renderSpecRow('Course Program', product.course_program || product.book_course)}
+            ${renderSpecRow('Publish Year', product.publish_year || product.book_publication_year)}
+            ${renderSpecRow('Subject', product.book_subject)}
+            ${renderSpecRow('Reference ID', product.barcode)}
           </div>
-          <p class="text-sm text-slate-600 italic">"${r.comment}"</p>
-        </div>
-      `).join('');
+        `;
+      } else if (isFabric) {
+        specsHtml = `
+          <h4 class="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-1">👕 Uniform Information</h4>
+          <div class="spec-group">
+            ${renderSpecRow('Course Program', product.course_program || product.uniform_course)}
+            ${renderSpecRow('Uniform Type', product.uniform_type)}
+            ${renderSpecRow('Material Type', product.material_type || product.uniform_material)}
+          </div>
+        `;
+      } else {
+        specsHtml = `
+          <div class="spec-group">
+            ${renderSpecRow('Asset Code', product.barcode || `GCST-${product.product_id}`)}
+            ${renderSpecRow('Category', product.product_category || 'General')}
+          </div>
+        `;
+      }
+      document.getElementById('modal-p-specs').innerHTML = specsHtml;
+
+      // Stock Status Badge Sync
+      let stockClass = stockValue > 10 ? 'stock-available' : stockValue > 0 ? 'stock-low' : 'stock-out';
+      let stockLabel = stockValue > 10 ? 'Available' : stockValue > 0 ? 'Low Stock' : 'Out of Stock';
+      
+      document.getElementById('modal-p-stock').innerHTML = `
+        <span class="stock-badge ${stockClass}">
+          ${stockLabel} (${stockValue} ${isFabric ? 'yds' : 'pcs'})
+        </span>
+      `;
 
       // Actions & Quantity
       const qtyContainer = document.getElementById('modal-qty-container');
@@ -1028,7 +1006,7 @@
         `;
 
         actionContainer.innerHTML = '';
-        if (product.buy_price > 0 && catLower !== 'books') {
+        if (product.buy_price > 0) {
           actionContainer.innerHTML += `
             <button class="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-500/20 active:scale-95" 
               onclick="handleModalAddToCart(${product.product_id}, 'buy', ${isFabric}, event)">
@@ -1211,11 +1189,6 @@
         return;
       }
 
-      if (type === 'buy' && normalizeCategory(product.product_category) === 'books') {
-        showToast('Books are available for rent only.', 'error');
-        return;
-      }
-
       const qtyToAdd = customQty !== null ? parseFloat(customQty) : 1;
       const uName = unitName || (type === 'rent' ? 'day' : 'pc/s');
       const existing = cart.find(item => Number(item.product_id) === normalizedProductId && item.type === type);
@@ -1394,10 +1367,12 @@
      */
     async function loadProducts() {
       try {
+        const courseFilter = document.getElementById('course-filter')?.value || 'All';
         const query = new URLSearchParams();
         if (currentCategory && currentCategory !== 'all') query.set('category', currentCategory);
         if (currentSearch && currentSearch.trim()) query.set('search', currentSearch.trim());
         if (document.getElementById('stock-toggle')?.checked) query.set('available_only', '1');
+        if (courseFilter !== 'All') query.set('course_program', courseFilter);
 
         const url = '../../actions/get_products.php' + (query.toString() ? `?${query.toString()}` : '');
         const productsData = await fetchWithError(url);

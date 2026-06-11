@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -270,106 +270,101 @@
       </div>
     </section>
 
-    <!-- Fabric Inventory Report Module -->
+    <!-- Comprehensive Inventory Report Module -->
     <section class="balance-section mt-12">
       <div class="flex justify-between items-center mb-6">
-        <h2 class="m-0">Fabric Inventory Report</h2>
-        <button onclick="window.exportFabricToExcel()" class="period-button" style="background: var(--primary); color: white;">
-          <i class="fas fa-file-download mr-2"></i> Export Fabric Summary
+        <h2 class="m-0">Unified Inventory Report</h2>
+        <button onclick="window.exportInventoryToExcel()" class="period-button" style="background: var(--primary); color: white;">
+          <i class="fas fa-file-download mr-2"></i> Export Inventory Report
         </button>
       </div>
       
-      <!-- Fabric Summary Cards -->
+      <!-- Inventory Summary Cards -->
       <div class="balance-cards mb-8">
         <div class="balance-card" style="border-left: 4px solid var(--primary);">
-          <h3>Total Fabric Types</h3>
-          <p id="totalFabricTypes">0</p>
+          <h3>Total Product Lines</h3>
+          <p id="totalInventoryProducts">0</p>
         </div>
         <div class="balance-card" style="border-left: 4px solid var(--success);">
-          <h3>Total Available Yards</h3>
-          <p id="totalAvailableYards">0.00 yd</p>
+          <h3>Total Stock Units</h3>
+          <p id="totalStockQuantity">0</p>
         </div>
         <div class="balance-card" style="border-left: 4px solid #f59e0b;">
-          <h3>Total Yards Sold</h3>
-          <p id="totalYardsSold">0.00 yd</p>
+          <h3>Inventory Asset Value</h3>
+          <p id="totalInventoryValue">₱0.00</p>
         </div>
         <div class="balance-card" style="border-left: 4px solid var(--danger);">
-          <h3>Critical Stock Count</h3>
-          <p id="criticalFabricCount" class="text-red-600">0</p>
+          <h3>Low Stock Alerts</h3>
+          <p id="lowStockCount" class="text-red-600">0</p>
         </div>
       </div>
 
-      <!-- Fabric Analytics Grid -->
+      <!-- Inventory Analytics Grid -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="chart-container">
-          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Top Fabric by Revenue</h3>
-          <div id="topFabricRevenue" class="text-2xl font-bold">₱0.00</div>
-          <div id="topFabricRevenueName" class="text-sm text-gray-400 mt-1">N/A</div>
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Top Valued Category</h3>
+          <div id="topCategoryValue" class="text-2xl font-bold">₱0.00</div>
+          <div id="topCategoryName" class="text-sm text-gray-400 mt-1">N/A</div>
         </div>
         <div class="chart-container">
-          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Inventory Value</h3>
-          <div id="fabricInventoryValue" class="text-2xl font-bold">₱0.00</div>
-          <div class="text-sm text-gray-400 mt-1">Estimated Asset Value</div>
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Avg Stock Level</h3>
+          <div id="avgStockLevel" class="text-2xl font-bold">0.0</div>
+          <div class="text-sm text-gray-400 mt-1">Units per Product</div>
         </div>
         <div class="chart-container">
-          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Stock Health</h3>
-          <div id="fabricHealthIndicator" class="text-2xl font-bold text-green-500">100%</div>
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Inventory Health</h3>
+          <div id="inventoryHealthScore" class="text-2xl font-bold text-green-500">100%</div>
           <div class="text-sm text-gray-400 mt-1">Healthy vs Total Items</div>
         </div>
       </div>
 
-      <!-- Fabric Filters -->
+      <!-- Inventory Filters -->
       <div class="bg-white p-6 rounded-3xl shadow-sm mb-6 border border-gray-100">
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div>
-            <label class="block text-xs font-bold text-gray-400 mb-2 uppercase">Course/Program</label>
-            <select id="fabricFilterCourse" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">All Courses</option>
+            <label class="block text-xs font-bold text-gray-400 mb-2 uppercase">Category</label>
+            <select id="inventoryFilterCategory" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">All Categories</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-400 mb-2 uppercase">Uniform Type</label>
-            <select id="fabricFilterType" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">All Types</option>
-              <option value="Upper Fabric">Upper Fabric</option>
-              <option value="Lower Fabric">Lower Fabric</option>
-              <option value="Complete Uniform Set">Complete Set</option>
+            <label class="block text-xs font-bold text-gray-400 mb-2 uppercase">Course/Program</label>
+            <select id="inventoryFilterCourse" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">All Programs</option>
             </select>
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-400 mb-2 uppercase">Stock Status</label>
-            <select id="fabricFilterStatus" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
+            <select id="inventoryFilterStatus" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">All Statuses</option>
-              <option value="Healthy">Healthy (>20yd)</option>
-              <option value="Low">Low (10-20yd)</option>
-              <option value="Critical">Critical (<10yd)</option>
-              <option value="Urgent">Urgent (<5yd)</option>
+              <option value="Healthy">Healthy (>=10)</option>
+              <option value="Low">Low (1-9)</option>
+              <option value="Out of Stock">Out of Stock (0)</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-400 mb-2 uppercase">Search Fabric</label>
-            <input type="text" id="fabricSearch" placeholder="Name or Color..." class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
+            <label class="block text-xs font-bold text-gray-400 mb-2 uppercase">Search Inventory</label>
+            <input type="text" id="inventorySearch" placeholder="Product name or detail..." class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
           </div>
         </div>
       </div>
 
-      <!-- Fabric Inventory Table -->
+      <!-- Inventory Table -->
       <div class="history-card">
         <div style="overflow-x:auto;">
           <table class="history-table">
             <thead>
               <tr>
-                <th>Fabric Name</th>
-                <th>Specifications</th>
-                <th style="text-align: right;">Price/Yd</th>
+                <th>Product Details</th>
+                <th>Category</th>
+                <th style="text-align: right;">Unit Price</th>
                 <th style="text-align: right;">Current Stock</th>
-                <th style="text-align: right;">Total Sold</th>
                 <th style="text-align: right;">Value</th>
                 <th style="text-align: center;">Status</th>
               </tr>
             </thead>
-            <tbody id="fabricInventoryBody">
-              <tr><td colspan="7" class="empty-state">Loading fabric data...</td></tr>
+            <tbody id="inventoryReportBody">
+              <tr><td colspan="6" class="empty-state">Loading inventory data...</td></tr>
             </tbody>
           </table>
         </div>
@@ -453,10 +448,10 @@
     let currentTotalTransactions = 0;
     let currentAvgTransaction = 0;
     let currentItemsSold = 0;
-    let currentTopProduct = 'N/A';
-    let lastFetchedFabricInventory = [];
-    let currentAdminName = 'Unknown Admin'; // New: Global variable to store admin name
+    let lastFetchedInventory = [];
     let lastFetchedSalesHistory = [];
+    let currentTopProduct = 'N/A';
+    let currentAdminName = 'Unknown Admin'; // New: Global variable to store admin name
 
     function formatDate(value) {
       const date = new Date(value);
@@ -518,13 +513,7 @@
         lastFetchedSalesHistory = Array.isArray(data.history) ? data.history : [];
         renderSalesHistory(lastFetchedSalesHistory);
 
-        // Fabric Reporting Logic
-        if (data.fabric_report) {
-          lastFetchedFabricInventory = data.fabric_report.inventory || [];
-          renderFabricInventory(lastFetchedFabricInventory);
-          updateFabricSummary(data.fabric_report.summary || {});
-          populateFabricFilters(lastFetchedFabricInventory);
-        }
+        // Sales trend polling complete. Inventory is handled by loadInventoryData.
 
       } catch (error) {
         console.error('Unable to load sales data:', error);
@@ -532,32 +521,56 @@
       }
     }
 
-    function renderFabricInventory(inventory) {
-      const body = document.getElementById('fabricInventoryBody');
+    async function loadInventoryData() {
+      const body = document.getElementById('inventoryReportBody');
+      try {
+        const products = await fetchWithError(`../../actions/get_admincashier_products.php`);
+        lastFetchedInventory = Array.isArray(products) ? products : [];
+        renderInventoryTable(lastFetchedInventory);
+        updateInventorySummary(lastFetchedInventory);
+        populateInventoryFilters(lastFetchedInventory);
+      } catch (error) {
+        console.error('Unable to load inventory data:', error);
+        if (body) body.innerHTML = '<tr><td colspan="6" class="empty-state">Unable to load inventory data.</td></tr>';
+      }
+    }
+
+    function renderInventoryTable(products) {
+      const body = document.getElementById('inventoryReportBody');
       if (!body) return;
       body.innerHTML = '';
 
-      inventory.forEach(item => {
-        const yards = parseFloat(item.stock_count || 0);
-        const sold = parseFloat(item.total_yards_sold || 0);
-        const status = getStockStatus(yards);
+      if (products.length === 0) {
+        body.innerHTML = '<tr><td colspan="6" class="empty-state">No matching products found.</td></tr>';
+        return;
+      }
+
+      products.forEach(item => {
+        const stock = parseFloat(item.stock_count || 0);
+        const status = getStockStatus(stock);
+        const value = stock * parseFloat(item.buy_price || 0);
         
+        // Category-specific metadata for display
+        let metadata = '';
+        if (item.product_category === 'Books') {
+          metadata = `<div class="text-xs text-gray-400">Author: ${item.book_author || 'N/A'}</div>`;
+        } else if (item.product_category === 'Uniform Fabrics') {
+          metadata = `<div class="text-xs text-gray-400">${item.uniform_type || 'Fabric'} | ${item.uniform_color || 'Standard'}</div>`;
+        }
+
         const row = document.createElement('tr');
-        if (yards < 10) row.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
+        if (stock < 5) row.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
         
         row.innerHTML = `
           <td>
             <div class="font-bold text-gray-800">${item.product_name}</div>
-            <div class="text-xs text-gray-400">${item.uniform_course || 'General'}</div>
+            ${metadata}
+            <div class="text-xs text-blue-500">${item.course_program || item.book_course || 'General'}</div>
           </td>
-          <td>
-            <div class="text-sm">${item.uniform_type || 'N/A'}</div>
-            <div class="text-xs text-gray-400">${item.uniform_color || 'Standard'}</div>
-          </td>
+          <td class="text-sm font-medium text-gray-600">${item.product_category}</td>
           <td style="text-align: right;">${formatCurrency(item.buy_price)}</td>
-          <td style="text-align: right;" class="font-semibold">${yards.toFixed(2)} yd</td>
-          <td style="text-align: right;">${sold.toFixed(2)} yd</td>
-          <td style="text-align: right;">${formatCurrency(yards * item.buy_price)}</td>
+          <td style="text-align: right;" class="font-semibold">${stock}</td>
+          <td style="text-align: right;">${formatCurrency(value)}</td>
           <td style="text-align: center;">
             <span class="status-badge ${status.class}">${status.label}</span>
           </td>
@@ -566,34 +579,59 @@
       });
     }
 
-    function getStockStatus(yards) {
-      if (yards < 5) return { label: 'Urgent Restock', class: 'bg-red-700 text-white' };
-      if (yards < 10) return { label: 'Critical Stock', class: 'bg-red-100 text-red-700' };
-      if (yards <= 20) return { label: 'Low Stock', class: 'bg-yellow-100 text-yellow-700' };
+    function getStockStatus(stock) {
+      if (stock <= 0) return { label: 'Out of Stock', class: 'bg-red-700 text-white' };
+      if (stock < 10) return { label: 'Critical Stock', class: 'bg-red-100 text-red-700' };
+      if (stock < 20) return { label: 'Low Stock', class: 'bg-yellow-100 text-yellow-700' };
       return { label: 'Healthy Stock', class: 'bg-green-100 text-green-700' };
     }
 
-    function updateFabricSummary(summary) {
-      document.getElementById('totalFabricTypes').textContent = summary.total_types || 0;
-      document.getElementById('totalAvailableYards').textContent = `${parseFloat(summary.total_yards || 0).toFixed(2)} yd`;
-      document.getElementById('totalYardsSold').textContent = `${parseFloat(summary.yards_sold || 0).toFixed(2)} yd`;
-      document.getElementById('criticalFabricCount').textContent = summary.critical_count || 0;
-      document.getElementById('fabricInventoryValue').textContent = formatCurrency(summary.total_value || 0);
+    function updateInventorySummary(products) {
+      const totalProducts = products.length;
+      const totalStock = products.reduce((acc, p) => acc + parseFloat(p.stock_count || 0), 0);
+      const totalValue = products.reduce((acc, p) => acc + (parseFloat(p.stock_count || 0) * parseFloat(p.buy_price || 0)), 0);
+      const lowStockCount = products.filter(p => parseFloat(p.stock_count || 0) < 10).length;
       
-      if (summary.top_revenue_fabric) {
-        document.getElementById('topFabricRevenue').textContent = formatCurrency(summary.top_revenue_fabric.revenue);
-        document.getElementById('topFabricRevenueName').textContent = summary.top_revenue_fabric.name;
-      }
+      document.getElementById('totalInventoryProducts').textContent = totalProducts;
+      document.getElementById('totalStockQuantity').textContent = totalStock;
+      document.getElementById('totalInventoryValue').textContent = formatCurrency(totalValue);
+      document.getElementById('lowStockCount').textContent = lowStockCount;
+
+      // Group by category for top category
+      const catValues = products.reduce((acc, p) => {
+        const cat = p.product_category || 'General';
+        acc[cat] = (acc[cat] || 0) + (parseFloat(p.stock_count || 0) * parseFloat(p.buy_price || 0));
+        return acc;
+      }, {});
+      
+      let topCat = 'N/A', topVal = 0;
+      Object.entries(catValues).forEach(([name, val]) => {
+        if (val > topVal) { topVal = val; topCat = name; }
+      });
+
+      document.getElementById('topCategoryValue').textContent = formatCurrency(topVal);
+      document.getElementById('topCategoryName').textContent = topCat;
+      document.getElementById('avgStockLevel').textContent = totalProducts > 0 ? (totalStock / totalProducts).toFixed(1) : '0.0';
+      
+      const health = totalProducts > 0 ? ((products.filter(p => parseFloat(p.stock_count || 0) >= 10).length / totalProducts) * 100).toFixed(0) : 100;
+      const healthEl = document.getElementById('inventoryHealthScore');
+      healthEl.textContent = health + '%';
+      healthEl.className = `text-2xl font-bold ${health > 70 ? 'text-green-500' : health > 40 ? 'text-yellow-500' : 'text-red-500'}`;
     }
 
-    function populateFabricFilters(inventory) {
-      const courseSelect = document.getElementById('fabricFilterCourse');
-      const courses = [...new Set(inventory.map(i => i.uniform_course).filter(Boolean))].sort();
+    function populateInventoryFilters(products) {
+      const categorySelect = document.getElementById('inventoryFilterCategory');
+      const categories = [...new Set(products.map(i => i.product_category).filter(Boolean))].sort();
+      if (categorySelect && categorySelect.options.length <= 1) {
+        categories.forEach(c => categorySelect.add(new Option(c, c)));
+      }
+
+      const courseSelect = document.getElementById('inventoryFilterCourse');
+      const courses = [...new Set(products.map(i => i.course_program || i.book_course).filter(Boolean))].sort();
       if (courseSelect.options.length <= 1) {
         courses.forEach(c => courseSelect.add(new Option(c, c)));
       }
     }
-
     function renderSalesHistory(history) {
       const historyBody = document.getElementById('historyBody');
       if (!historyBody) return;
@@ -625,24 +663,24 @@
       }
     }
 
-    function handleFabricFiltering() {
-      const course = document.getElementById('fabricFilterCourse').value;
-      const type = document.getElementById('fabricFilterType').value;
-      const statusFilter = document.getElementById('fabricFilterStatus').value;
-      const search = document.getElementById('fabricSearch').value.toLowerCase();
+    function handleInventoryFiltering() {
+      const category = document.getElementById('inventoryFilterCategory').value;
+      const course = document.getElementById('inventoryFilterCourse').value;
+      const statusFilter = document.getElementById('inventoryFilterStatus').value;
+      const search = document.getElementById('inventorySearch').value.toLowerCase();
 
-      const filtered = lastFetchedFabricInventory.filter(item => {
-        const yards = parseFloat(item.stock_count || 0);
-        const statusObj = getStockStatus(yards);
+      const filtered = lastFetchedInventory.filter(item => {
+        const stock = parseFloat(item.stock_count || 0);
+        const statusObj = getStockStatus(stock);
         
-        const matchesCourse = !course || item.uniform_course === course;
-        const matchesType = !type || item.uniform_type === type;
+        const matchesCategory = !category || item.product_category === category;
+        const matchesCourse = !course || (item.course_program === course || item.book_course === course);
         const matchesStatus = !statusFilter || statusObj.label.includes(statusFilter);
-        const matchesSearch = !search || item.product_name.toLowerCase().includes(search) || (item.uniform_color && item.uniform_color.toLowerCase().includes(search));
+        const matchesSearch = !search || item.product_name.toLowerCase().includes(search) || (item.book_author && item.book_author.toLowerCase().includes(search));
         
-        return matchesCourse && matchesType && matchesStatus && matchesSearch;
+        return matchesCategory && matchesCourse && matchesStatus && matchesSearch;
       });
-      renderFabricInventory(filtered);
+      renderInventoryTable(filtered);
     }
 
     function createChart(elementId, type, labels, data, label, backgroundColor, borderColor) {
@@ -723,7 +761,10 @@
 
     function startSalesPolling() {
       if (salesPollInterval) clearInterval(salesPollInterval);
-      salesPollInterval = setInterval(() => loadSalesData(currentSalesPeriod), 10000);
+      salesPollInterval = setInterval(() => {
+        loadSalesData(currentSalesPeriod);
+        loadInventoryData();
+      }, 10000);
     }
 
     window.stopSalesPolling = () => { if (salesPollInterval) clearInterval(salesPollInterval); salesPollInterval = null; };
@@ -965,53 +1006,52 @@
       XLSX.writeFile(wb, `Sales_Report_${currentSalesPeriod}_${fileTimestamp}.xlsx`);
     }
 
-    window.exportFabricToExcel = function() {
-      if (!lastFetchedFabricInventory.length) return alert('No fabric data to export.');
+    window.exportInventoryToExcel = function() {
+      if (!lastFetchedInventory.length) return alert('No inventory data to export.');
       
       const headers = [
-        "Fabric Name", "Course", "Type", "Color", 
-        "Price/Yard", "Current Stock (Yd)", "Total Sold (Yd)", 
-        "Inventory Value", "Stock Status"
+        "Product Name", "Category", "Course/Program", "Metadata", 
+        "Unit Price", "Stock Count", "Inventory Value", "Stock Status"
       ];
       
-      const rows = lastFetchedFabricInventory.map(item => {
-        const yards = parseFloat(item.stock_count || 0);
+      const rows = lastFetchedInventory.map(item => {
+        const stock = parseFloat(item.stock_count || 0);
+        const metadata = item.product_category === 'Books' ? `Author: ${item.book_author}` : (item.uniform_type || 'N/A');
         return [
           item.product_name,
-          item.uniform_course || 'General',
-          item.uniform_type || 'N/A',
-          item.uniform_color || 'Standard',
+          item.product_category,
+          item.course_program || item.book_course || 'General',
+          metadata,
           item.buy_price,
-          yards,
-          parseFloat(item.total_yards_sold || 0),
-          yards * item.buy_price,
-          getStockStatus(yards).label
+          stock,
+          stock * item.buy_price,
+          getStockStatus(stock).label
         ];
       });
 
       const wb = XLSX.utils.book_new();
       const wsData = [
-        ["GRANBY COLLEGES - FABRIC INVENTORY REPORT"],
+        ["GRANBY COLLEGES - COMPREHENSIVE INVENTORY REPORT"],
         ["Generated on:", new Date().toLocaleString()],
         [],
         headers,
         ...rows
       ];
-      
+
       const ws = XLSX.utils.aoa_to_sheet(wsData);
-      
+
       // Styling
       const range = XLSX.utils.decode_range(ws['!ref']);
       for (let R = 3; R <= range.e.r; ++R) {
         for (let C = 0; C <= range.e.c; ++C) {
           const cell = ws[XLSX.utils.encode_cell({r:R, c:C})];
           if(!cell) continue;
-          
+
           if (R === 3) {
             cell.s = { font: { bold: true, color: {rgb: "FFFFFF"} }, fill: { fgColor: {rgb: "4472C4"} } };
           } else {
             // Conditional formatting for Status column
-            if (C === 8) {
+            if (C === 7) {
               const val = cell.v;
               if (val === 'Urgent Restock') cell.s = { font: { color: {rgb: "9C0006"}, bold: true }, fill: { fgColor: {rgb: "FFC7CE"} } };
               if (val === 'Critical Stock') cell.s = { font: { color: {rgb: "9C0006"} }, fill: { fgColor: {rgb: "FFC7CE"} } };
@@ -1022,8 +1062,8 @@
         }
       }
 
-      XLSX.utils.book_append_sheet(wb, ws, "Fabric Inventory");
-      XLSX.writeFile(wb, `Fabric_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, "Inventory Summary");
+      XLSX.writeFile(wb, `Inventory_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
     window.initAdminCashierSalesPage = function(userData) {
@@ -1031,6 +1071,7 @@
       currentAdminName = userData.name || 'Unknown Admin'; // New: Set admin name from user data
       setActivePeriodButton(currentSalesPeriod);
       loadSalesData(currentSalesPeriod);
+      loadInventoryData();
       startSalesPolling();
 
       document.querySelectorAll('.period-button[data-period]').forEach(button => {
@@ -1052,10 +1093,10 @@
         renderSalesHistory(filtered);
       });
 
-      document.getElementById('fabricFilterCourse')?.addEventListener('change', handleFabricFiltering);
-      document.getElementById('fabricFilterType')?.addEventListener('change', handleFabricFiltering);
-      document.getElementById('fabricFilterStatus')?.addEventListener('change', handleFabricFiltering);
-      document.getElementById('fabricSearch')?.addEventListener('input', handleFabricFiltering);
+      document.getElementById('inventoryFilterCategory')?.addEventListener('change', handleInventoryFiltering);
+      document.getElementById('inventoryFilterCourse')?.addEventListener('change', handleInventoryFiltering);
+      document.getElementById('inventoryFilterStatus')?.addEventListener('change', handleInventoryFiltering);
+      document.getElementById('inventorySearch')?.addEventListener('input', handleInventoryFiltering);
     };
 
     initializeAdminCashierPage(window.initAdminCashierSalesPage);
