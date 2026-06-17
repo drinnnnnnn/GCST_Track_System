@@ -35,13 +35,13 @@ try {
         throw new Exception('Invalid window number. Must be between 1 and 3.');
     }
 
+    $actorId = $_SESSION['admin_id'] ?? null;
     // Perform the reassignment using the QueueModel
-    $success = $queueModel->reassignTicket($ticketId, $newWindowNumber);
+    $success = $queueModel->reassignTicket($ticketId, $newWindowNumber, $actorId);
 
     if ($success) {
-        $actorId = $_SESSION['admin_id'] ?? $_SESSION['username'];
         $ticket = $queueModel->getById($ticketId); // Fetch updated ticket for logging
-        if ($ticket) {
+        if ($ticket && $actorId) {
             logAudit($conn, $_SESSION['role'], $actorId, 'reassign_queue_ticket', "Reassigned ticket #{$ticket['queue_number']} to Window {$newWindowNumber}");
         }
         

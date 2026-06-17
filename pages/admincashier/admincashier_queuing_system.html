@@ -713,6 +713,7 @@
               <span class="font-semibold text-gray-800">${t.student_name || 'Walk-in'}</span>
               <span class="text-xs text-gray-400 font-mono">[${t.school_id || 'N/A'}]</span>
             </div>
+            ${t.cashier_name ? `<div class="text-[10px] text-emerald-600 font-bold mb-1"><i class="fas fa-user-tie mr-1"></i> SERVED BY: ${t.cashier_name.toUpperCase()}</div>` : ''}
             <div class="text-sm text-gray-600">
               <span class="opacity-70">Purpose:</span> ${t.purpose || 'General Inquiry'} 
               <span class="mx-2 opacity-30">|</span> 
@@ -976,9 +977,9 @@
 
       // Map currently serving tickets to Windows
       const windowStates = {
-        1: { num: '---', name: 'Available' },
-        2: { num: '---', name: 'Available' },
-        3: { num: '---', name: 'Available' }
+        1: { num: '---', name: 'Available', cashier: '' },
+        2: { num: '---', name: 'Available', cashier: '' },
+        3: { num: '---', name: 'Available', cashier: '' }
       };
 
       tickets.forEach(t => {
@@ -993,6 +994,7 @@
             const displayNum = t.queue_number.includes('-') ? t.queue_number : '#' + t.queue_number;
             windowStates[winId].num = displayNum;
             windowStates[winId].name = t.student_name || 'Walk-in';
+            windowStates[winId].cashier = t.cashier_name ? 'Served by ' + t.cashier_name : '';
           }
         }
       });
@@ -1002,7 +1004,7 @@
         const numEl = document.getElementById(`win-${w}-num`);
         const nameEl = document.getElementById(`win-${w}-name`);
         if (numEl) numEl.textContent = windowStates[w].num;
-        if (nameEl) nameEl.textContent = windowStates[w].name;
+        if (nameEl) nameEl.innerHTML = `${windowStates[w].name} ${windowStates[w].cashier ? `<br><span class="text-[10px] opacity-60">${windowStates[w].cashier}</span>` : ''}`;
       });
 
       // Recalculate Live Stats

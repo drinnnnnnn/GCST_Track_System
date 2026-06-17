@@ -26,8 +26,11 @@ if (!$id || !in_array($status, ['waiting', 'serving', 'completed', 'cancelled'])
 
 try {
     $model = new QueueModel();
+    // Capture the cashier ID from the session if the ticket is being served
+    $servedBy = ($status === 'serving') ? ($_SESSION['admin_id'] ?? null) : null;
+
     // Pass windowNumber to ensure serving logic correctly clears previous tickets in that window
-    $success = $model->updateStatus((int)$id, $status, $windowNumber);
+    $success = $model->updateStatus((int)$id, $status, $windowNumber, $servedBy);
 
     $updatedTicket = null;
     if ($success) {

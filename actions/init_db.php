@@ -256,9 +256,11 @@ addColumnIfNotExists($mysqli, 'queue', 'purpose', "VARCHAR(255) DEFAULT NULL AFT
 addColumnIfNotExists($mysqli, 'queue', 'status', "ENUM('waiting','serving','completed','cancelled') NOT NULL DEFAULT 'waiting'");
 addColumnIfNotExists($mysqli, 'queue', 'queue_type', "ENUM('regular', 'priority') NOT NULL DEFAULT 'regular' AFTER `status` ");
 addColumnIfNotExists($mysqli, 'queue', 'window_number', "INT(11) DEFAULT NULL AFTER `queue_type` ");
+addColumnIfNotExists($mysqli, 'queue', 'served_by', "INT(11) DEFAULT NULL AFTER `window_number` ");
 addColumnIfNotExists($mysqli, 'queue_tickets', 'alert_sent', "TINYINT(1) DEFAULT 0 AFTER `served_at` ");
 addColumnIfNotExists($mysqli, 'queue_tickets', 'queue_type', "ENUM('regular', 'priority') NOT NULL DEFAULT 'regular' AFTER `status` ");
 addColumnIfNotExists($mysqli, 'queue_tickets', 'window_number', "INT(11) DEFAULT NULL AFTER `queue_type` ");
+addColumnIfNotExists($mysqli, 'queue_tickets', 'served_by', "INT(11) DEFAULT NULL AFTER `window_number` ");
 
 // Ensure critical columns exist in active_rentals for the renewal system
 addColumnIfNotExists($mysqli, 'active_rentals', 'rental_date', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `quantity` ");

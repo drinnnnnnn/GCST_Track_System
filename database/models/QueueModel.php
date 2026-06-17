@@ -19,11 +19,13 @@ class QueueModel {
     }
 
     public function getTicketsByUserId($userId) {
-        $stmt = $this->conn->prepare("SELECT * FROM queue_tickets WHERE user_id = ? ORDER BY created_at DESC");
+        $stmt = $this->conn->prepare("SELECT q.*, CONCAT(a.first_name, ' ', a.last_name) as cashier_name
+                                     FROM queue_tickets q 
+                                     LEFT JOIN admincashier_acc a ON q.served_by = a.id
+                                     WHERE q.user_id = ? ORDER BY q.created_at DESC");
         $stmt->bind_param("i", $userId);
         $stmt->execute();
-        $result = $stmt->get_result();
-        return $result->fetch_all(MYSQLI_ASSOC);
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     }
 
     public function getById($id) {
@@ -35,9 +37,11 @@ class QueueModel {
     }
 
     public function getByIdWithDetails($id) {
-        $stmt = $this->conn->prepare("SELECT q.*, u.student_id as school_id, u.email, u.first_name, u.last_name 
+        $stmt = $this->conn->prepare("SELECT q.*, u.student_id as school_id, u.email, u.first_name, u.last_name,
+                                     CONCAT(a.first_name, ' ', a.last_name) as cashier_name
                                      FROM queue_tickets q 
                                      LEFT JOIN users u ON q.user_id = u.id 
+                                     LEFT JOIN admincashier_acc a ON q.served_by = a.id
                                      WHERE q.id = ? LIMIT 1");
         $stmt->bind_param("i", $id);
         $stmt->execute();
@@ -90,9 +94,10 @@ class QueueModel {
 
     public function getAllActive() {
         // Fetch waiting/serving tickets plus today's completed tickets for real-time statistics
-        $sql = "SELECT q.*, u.student_id as school_id 
+        $sql = "SELECT q.*, u.student_id as school_id, CONCAT(a.first_name, ' ', a.last_name) as cashier_name
                 FROM queue_tickets q 
                 LEFT JOIN users u ON q.user_id = u.id 
+                LEFT JOIN admincashier_acc a ON q.served_by = a.id
                 WHERE q.status IN ('waiting', 'serving') OR (q.status = 'completed' AND DATE(q.created_at) = CURDATE())
                 ORDER BY FIELD(q.status, 'serving', 'waiting', 'completed'), q.created_at ASC";
         $result = $this->conn->query($sql);
@@ -187,7 +192,7 @@ class QueueModel {
         return $stmt->execute();
     }
 
-    public function updateStatus($id, $status, $windowNumber = null) {
+    public function updateStatus($id, $status, $windowNumber = null, $servedBy = null) {
         $this->conn->begin_transaction();
         try {
             // Prevent processing tickets that have already expired or been completed
@@ -209,15 +214,28 @@ class QueueModel {
             // Ensure windowNumber is an integer if provided
             $winVal = ($windowNumber !== null) ? intval($windowNumber) : null;
             $windowPart = ($winVal !== null) ? ", window_number = ?" : "";
+            
+            $servedByPart = "";
+            $params = [$status];
+            $types = "s";
 
-            $sql = "UPDATE queue_tickets SET status = ? $servedAtPart $windowPart WHERE id = ?";
-            $stmt = $this->conn->prepare($sql);
             if ($winVal !== null) {
-                $stmt->bind_param("sii", $status, $winVal, $id);
-            } else {
-                $stmt->bind_param("si", $status, $id);
+                $params[] = $winVal;
+                $types .= "i";
+            }
+            
+            if ($servedBy !== null && $status === 'serving') {
+                $servedByPart = ", served_by = ?";
+                $params[] = intval($servedBy);
+                $types .= "i";
             }
 
+            $sql = "UPDATE queue_tickets SET status = ? $servedAtPart $windowPart $servedByPart WHERE id = ?";
+            $params[] = $id;
+            $types .= "i";
+
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param($types, ...$params);
             $success = $stmt->execute();
 
             $this->conn->commit();
@@ -237,7 +255,7 @@ class QueueModel {
      * @throws Exception If the ticket is not found, not serving, or already in the target window.
      * @return bool True on successful reassignment.
      */
-    public function reassignTicket($ticketId, $newWindowNumber) {
+    public function reassignTicket($ticketId, $newWindowNumber, $servedBy = null) {
         $this->conn->begin_transaction();
         try {
             $currentTicket = $this->getById($ticketId);
@@ -254,7 +272,7 @@ class QueueModel {
 
             // Use the existing updateStatus logic which handles completing other tickets in the new window
             // and updates the target ticket's window number.
-            $success = $this->updateStatus($ticketId, 'serving', $newWindowNumber);
+            $success = $this->updateStatus($ticketId, 'serving', $newWindowNumber, $servedBy);
 
             $this->conn->commit();
             return $success;
