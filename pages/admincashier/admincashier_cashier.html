@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -171,52 +171,73 @@
     }
     .products-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: 1rem;
-      padding: 4px;
+      padding: 0.75rem 0.25rem 0.25rem 0;
       flex: 1;
-      min-height: 0; /* Important for flex item scrolling */
-      height: 0; /* Forces flex parent to control height and trigger overflow */
+      min-height: 0;
+      height: 0;
       overflow-y: auto;
       overflow-x: hidden;
-      padding-right: 10px;
       scroll-behavior: smooth;
       overscroll-behavior: contain;
+      align-content: start;
     }
     .product-card {
       background: #ffffff;
-      border-radius: 20px;
+      border-radius: 16px;
       overflow: hidden;
-      border: 1px solid #f1f5f9;
+      border: 1px solid #e5e7eb;
       display: flex;
       flex-direction: column;
-      height: 100%;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      justify-content: space-between;
+      min-width: 0;
+      width: 100%;
+      min-height: 300px;
+      max-height: 100%;
+      box-sizing: border-box;
+      position: relative;
+      transition: all 0.25s ease;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+    .product-card-body {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .product-card * {
+      min-width: 0;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      box-sizing: border-box;
     }
     .product-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-      border-color: #4f46e5;
+      transform: translateY(-4px);
+      box-shadow: 0 18px 32px rgba(15, 23, 42, 0.12);
+      border-color: #cbd5e1;
     }
     .product-image-container {
       position: relative;
-      width: calc(100% - 16px);
-      height: 180px;
-      margin: 8px auto 0;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      min-height: 160px;
       overflow: hidden;
-      border-radius: 14px;
-      background: #f8f9fa;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-      transition: box-shadow 0.3s ease;
+      background: #f9fafb;
+      flex-shrink: 0;
+      margin: 0;
+      border-bottom: 1px solid #eef2ff;
     }
     .product-image-container img {
       width: 100%;
-      height: 180px;
+      height: 100%;
       object-fit: cover;
       object-position: center;
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      filter: brightness(0.98);
+      transition: transform 0.3s ease;
+      display: block;
+    }
+    .product-card:hover .product-image-container img {
+      transform: scale(1.04);
     }
     .product-card:hover .product-image-container {
       box-shadow: 0 8px 20px rgba(79, 70, 229, 0.12);
@@ -226,24 +247,85 @@
       filter: brightness(1.02);
     }
     .product-metadata-section {
-      min-height: 52px; /* Stabilizes card height across different categories */
-      margin-bottom: 8px;
+      min-height: 52px;
+      margin-bottom: 6px;
     }
     .product-body {
-      padding: 0.85rem;
-      flex: 1;
+      padding: 0.9rem 0.9rem 0.2rem;
+      flex: 1 1 auto;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 0.35rem;
+      min-width: 0;
+      min-height: 0;
+      visibility: visible;
+      opacity: 1;
+      color: #111827;
+    }
+    .product-info {
+      display: block;
+      visibility: visible;
+      opacity: 1;
+      color: #111827;
+    }
+    .product-title,
+    .product-category,
+    .product-metadata-section,
+    .compact-meta,
+    .product-stock-row,
+    .product-price {
+      color: #111827;
     }
     .product-body h3 {
       font-size: 0.95rem;
-      font-weight: 700;
+      font-weight: 800;
       color: #0f172a;
       margin: 0;
-      text-overflow: ellipsis;
-      overflow: hidden;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      line-height: 1.3;
+    }
+    .product-category {
+      display: block;
+      font-size: 0.78rem;
+      color: #374151;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .product-metadata-section {
+      display: block;
+      visibility: visible;
+      opacity: 1;
+      color: #111827;
+    }
+    .compact-meta {
+      display: block;
+      visibility: visible;
+      opacity: 1;
+      color: #64748b;
+      line-height: 1.4;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .product-stock-row {
+      display: flex;
+      align-items: center;
+      margin-top: 0.1rem;
+    }
+    .product-actions {
+      margin-top: auto;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 2;
+      padding: 0.75rem 0.9rem 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      background: linear-gradient(to top, #ffffff, #f8fafc);
+      border-top: 1px solid #eef2ff;
     }
     .compact-meta {
       font-size: 0.75rem;
@@ -253,7 +335,90 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .product-price { font-size: 1rem; font-weight: 700; color: #4f46e5; }
+    .product-price {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #16a34a;
+      letter-spacing: 0.01em;
+    }
+    .add-to-cart-btn {
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      width: 100%;
+      min-height: 48px;
+      margin-top: auto;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.82rem 0.95rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.25s ease, background 0.25s ease, opacity 0.25s ease;
+      box-shadow: 0 6px 18px rgba(34, 197, 94, 0.18);
+      position: relative;
+      z-index: 5;
+      overflow: hidden;
+      white-space: nowrap;
+      box-sizing: border-box;
+      text-align: center;
+      line-height: 1;
+    }
+    .add-to-cart-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+      transform: translateX(-120%);
+      transition: transform 0.5s ease;
+    }
+    .add-to-cart-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(34, 197, 94, 0.3);
+      background: linear-gradient(135deg, #16a34a, #15803d);
+    }
+    .add-to-cart-btn:active {
+      transform: scale(0.98);
+    }
+    .add-to-cart-btn:hover::after {
+      transform: translateX(120%);
+    }
+    .add-to-cart-btn:active {
+      transform: scale(0.98);
+    }
+    .add-to-cart-btn:focus-visible {
+      outline: 3px solid rgba(34, 197, 94, 0.2);
+      outline-offset: 2px;
+    }
+    .add-to-cart-btn:disabled {
+      background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+      color: #eef2ff;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+      opacity: 0.95;
+    }
+    .add-to-cart-btn.loading {
+      background: linear-gradient(135deg, #60a5fa, #2563eb);
+      opacity: 0.88;
+      pointer-events: none;
+    }
+    .add-to-cart-btn.success-state {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      box-shadow: 0 10px 24px rgba(22, 163, 74, 0.28);
+      animation: cartButtonPulse 0.5s ease;
+    }
+    @keyframes cartButtonPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
     .stock-badge {
       padding: 4px 10px;
       border-radius: 999px;
@@ -290,14 +455,69 @@
     }
 
     .product-actions {
-      padding: 0 0.85rem 0.85rem; /* Keep padding for consistency */
-      margin-top: 0 !important;
+      margin-top: auto;
+      width: 100%;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 2;
+      padding: 0.75rem 0.9rem 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      background: linear-gradient(to top, #ffffff, #f8fafc);
+      border-top: 1px solid #eef2ff;
+      overflow: visible;
     }
     .product-actions .btn-primary {
       width: 100%;
       min-height: 44px;
       font-weight: 700;
       border-radius: 12px;
+    }
+    @media (max-width: 992px) {
+      .products-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 768px) {
+      .products-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+      }
+      .product-card {
+        min-height: 260px;
+      }
+      .add-to-cart-btn {
+        min-height: 46px;
+        padding: 0.72rem 0.9rem;
+        font-size: 0.88rem;
+      }
+      .product-actions {
+        padding: 0.7rem 0.8rem 0.8rem;
+      }
+      .product-price {
+        font-size: 0.95rem;
+      }
+    }
+    @media (max-width: 600px) {
+      .products-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .product-card {
+        min-height: 260px;
+      }
+    }
+    @media (max-width: 576px) {
+      .products-grid {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+      }
+      .product-image-container {
+        aspect-ratio: 16 / 10;
+      }
+      .product-card {
+        min-height: 280px;
+      }
     }
     .cart-list {
       display: flex;
@@ -1461,7 +1681,10 @@
      * Default renderer for general categories.
      */
     function renderDefaultInfo(product) {
-      return `<div class="compact-meta"><i class="fas fa-tag mr-1 opacity-60"></i> ${product.product_category || 'General'}</div>`;
+      const category = product?.product_category || 'General';
+      const brand = product?.brand || '';
+      const detailLine = brand ? `${category} • ${brand}` : category;
+      return `<div class="compact-meta" title="${detailLine}"><i class="fas fa-tag mr-1 opacity-60"></i> ${detailLine}</div>`;
     }
 
     /**
@@ -1638,19 +1861,40 @@
 
     function createProductInfo(product) {
       const info = document.createElement('div');
-      info.className = 'product-body flex-1 flex flex-col p-3';
+      info.className = 'product-body product-info';
+      info.style.display = 'block';
+      info.style.visibility = 'visible';
+      info.style.opacity = '1';
 
       const title = document.createElement('h3');
-      title.className = 'text-sm font-bold text-gray-800 truncate-2-lines min-h-[2.5rem] mb-1';
-      title.title = product.product_name;
-      title.textContent = product.product_name;
+      title.className = 'product-title';
+      title.title = product?.product_name || 'Unknown Product';
+      title.textContent = product?.product_name || 'Unknown Product';
+
+      const category = document.createElement('div');
+      category.className = 'product-category';
+      category.textContent = product?.product_category || 'General';
 
       const meta = document.createElement('div');
       meta.className = 'product-metadata-section';
-      meta.innerHTML = renderProductInfo(product, true);
+      const metaHTML = renderProductInfo(product, true);
+      if (metaHTML && metaHTML.trim()) {
+        meta.innerHTML = metaHTML;
+      } else {
+        meta.innerHTML = '<div class="compact-meta">No additional details</div>';
+      }
+
+      const stockRow = document.createElement('div');
+      stockRow.className = 'product-stock-row';
+      const stock = getProductStock(product);
+      const stockClass = stock > 0 ? (stock <= 5 ? 'stock-low' : 'stock-available') : 'stock-out';
+      const stockLabel = stock > 0 ? `${stock} available` : 'Out of Stock';
+      stockRow.innerHTML = `<span class="stock-badge ${stockClass}">${stockLabel}</span>`;
 
       info.appendChild(title);
+      info.appendChild(category);
       info.appendChild(meta);
+      info.appendChild(stockRow);
       return info;
     }
 
@@ -1662,20 +1906,25 @@
       const activePrice = (catLower === 'books' && state.transactionType === 'rent') ? rentPrice : price;
 
       const actions = document.createElement('div');
-      actions.className = 'product-actions mt-auto flex items-center justify-between pt-2 border-t border-slate-50';
+      actions.className = 'product-actions';
 
       const priceInfo = document.createElement('div');
-      priceInfo.className = 'flex flex-col';
+      priceInfo.className = 'flex items-center justify-between gap-2';
       priceInfo.innerHTML = `
         <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">${catLower === 'uniform fabrics' ? 'Per Yard' : 'Price'}</span>
-        <span class="product-price text-base font-black">${formatCurrency(activePrice)}</span>
+        <span class="product-price">${formatCurrency(activePrice)}</span>
       `;
 
       const btn = document.createElement('button');
-      btn.className = 'btn btn-primary !p-3 !rounded-xl';
+      btn.className = 'add-to-cart-btn';
       btn.type = 'button';
-      if (stock <= 0) btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-cart-plus"></i>';
+      btn.setAttribute('aria-label', `Add ${product.product_name} to cart`);
+      if (stock <= 0) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-ban"></i><span>Out of Stock</span>';
+      } else {
+        btn.innerHTML = '<i class="fas fa-cart-plus"></i><span>Add to Cart</span>';
+      }
       btn.onclick = (e) => addProductToCart(product.product_id, e);
 
       actions.appendChild(priceInfo);
@@ -1989,38 +2238,55 @@
       const product = products.find(p => p.product_id == productId);
       if (!product) return;
 
-      // Button Interaction State
       let btn = event?.target;
+      let originalHtml = '';
+      let wasDisabled = false;
+
       if (btn) {
         if (btn.tagName !== 'BUTTON') btn = btn.closest('button');
-        const originalHtml = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
-        setTimeout(() => {
-          btn.innerHTML = '<i class="fas fa-check"></i> Added';
-          setTimeout(() => {
-            btn.innerHTML = originalHtml;
-            btn.disabled = false;
-          }, 1000);
-        }, 500);
+        if (btn) {
+          originalHtml = btn.innerHTML;
+          wasDisabled = btn.disabled;
+          if (!wasDisabled) {
+            btn.disabled = true;
+            btn.classList.add('loading');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Adding...</span>';
+          }
+        }
       }
 
-      if (state.transactionType === 'rent' && (product.product_category || '').toLowerCase() !== 'books') { // This logic is for rental, not general book sales
+      if (state.transactionType === 'rent' && (product.product_category || '').toLowerCase() !== 'books') {
         alert('Rental is only allowed for items in the "Books" category.');
+        if (btn && !wasDisabled) {
+          btn.disabled = false;
+          btn.classList.remove('loading');
+          btn.innerHTML = originalHtml;
+        }
         return;
       }
 
       const stock = getProductStock(product);
       const existing = cart.find(item => item.product_id === productId);
+
       if (existing) {
         if (existing.quantity + 1 > stock) {
           alert('Stock limit reached for this product.');
+          if (btn && !wasDisabled) {
+            btn.disabled = false;
+            btn.classList.remove('loading');
+            btn.innerHTML = originalHtml;
+          }
           return;
         }
         existing.quantity += 1;
       } else {
         if (stock <= 0) {
           alert('This item is out of stock.');
+          if (btn && !wasDisabled) {
+            btn.disabled = false;
+            btn.classList.remove('loading');
+            btn.innerHTML = originalHtml;
+          }
           return;
         }
         const unitPrice = state.transactionType === 'rent' ? getProductRentPrice(product) : getProductPrice(product);
@@ -2029,6 +2295,20 @@
         const unitName = isFabric ? 'yards' : (isBook ? 'pcs' : 'unit');
         cart.push({ product_id: productId, product_name: product.product_name, quantity: 1, unitPrice, unitName, selected: true });
       }
+
+      if (btn) {
+        btn.classList.remove('loading');
+        btn.classList.add('success-state');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-check"></i><span>Added</span>';
+
+        setTimeout(() => {
+          btn.classList.remove('success-state');
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+        }, 1100);
+      }
+
       updateCartSummary();
     }
     function changeCartQuantity(productId, delta) {
@@ -2816,7 +3096,10 @@
           document.getElementById('pending-orders-body').innerHTML = '<tr><td colspan="6" class="empty-state">Error loading pending orders. Please refresh.</td></tr>';
         })
         .finally(() => {
-          if (searchSpinner) searchSpinner.classList.add('hidden');
+          const pendingSearchSpinner = document.getElementById('pending-order-search-spinner');
+          if (pendingSearchSpinner) {
+            pendingSearchSpinner.classList.add('hidden');
+          }
         });
     }
 
@@ -3061,17 +3344,17 @@
       toggleTxnAutoRefresh(true);
       togglePendingAutoRefresh(true);
     });
-    document.getElementById('product-search').addEventListener('input', () => {
-      state.query = document.getElementById('product-search').value.trim();
+    document.getElementById('product-search')?.addEventListener('input', () => {
+      state.query = document.getElementById('product-search')?.value.trim() || '';
       state.currentPage = 1; // Reset page on search
       debouncedRender();
     });
-    document.getElementById('course-filter').addEventListener('change', (e) => {
+    document.getElementById('course-filter')?.addEventListener('change', (e) => {
       state.course = e.target.value;
       state.currentPage = 1; // Reset page on course filter
       debouncedRender();
     });
-    document.getElementById('active-rental-search').addEventListener('input', (e) => {
+    document.getElementById('active-rental-search')?.addEventListener('input', (e) => {
       const query = e.target.value.toLowerCase();
       const filtered = activeRentals.filter(item => {
         const studentName = `${item.first_name} ${item.last_name}`.toLowerCase();
@@ -3082,22 +3365,23 @@
       renderActiveRentals(filtered);
     });
     let pendingOrderSearchTimeout = null;
-    document.getElementById('pending-order-search').addEventListener('input', (e) => {
+    document.getElementById('pending-order-search')?.addEventListener('input', (e) => {
       clearTimeout(pendingOrderSearchTimeout);
       pendingOrderSearchTimeout = setTimeout(() => {
         loadPendingOrders();
       }, 400);
     });
-    document.getElementById('txn-date-from').addEventListener('change', () => {
-      const search = document.getElementById('txn-history-search').value.trim();
+    document.getElementById('txn-date-from')?.addEventListener('change', () => {
+      const search = document.getElementById('txn-history-search')?.value.trim() || '';
       loadRecentTransactions(1, search);
     });
-    document.getElementById('txn-date-to').addEventListener('change', () => {
-      const search = document.getElementById('txn-history-search').value.trim();
+    document.getElementById('txn-date-to')?.addEventListener('change', () => {
+      const search = document.getElementById('txn-history-search')?.value.trim() || '';
       loadRecentTransactions(1, search);
     });
-    document.getElementById('clear-search').addEventListener('click', () => {
-      document.getElementById('product-search').value = '';
+    document.getElementById('clear-search')?.addEventListener('click', () => {
+      const searchInput = document.getElementById('product-search');
+      if (searchInput) searchInput.value = '';
       state.query = '';
       state.currentPage = 1; // Reset page on clear search
       renderProducts();
@@ -3208,7 +3492,8 @@
       });
     }
 
-    document.getElementById('clear-cart').addEventListener('click', clearCart);
+    const clearCartBtn = document.getElementById('clear-cart');
+    if (clearCartBtn) clearCartBtn.addEventListener('click', clearCart);
     // Added safety check for missing print-receipt button
     const printBtn = document.getElementById('print-receipt');
     if (printBtn) printBtn.addEventListener('click', printReceipt);

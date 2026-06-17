@@ -10,32 +10,34 @@
 
     <style>
         :root {
-            --primary: #818cf8;
-            --primary-dark: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.4);
-            --accent: #f59e0b;
-            --text-dark: #0f172a;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #60a5fa;
+            --text-main: #1e293b;
             --text-muted: #64748b;
-            --glass: rgba(255, 255, 255, 0.9);
+            --white: #ffffff;
             --error: #ef4444;
+            --error-bg: #fee2e2;
+            --success: #166534;
+            --success-bg: #dcfce7;
+            --border-color: #d1d5db;
         }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         body {
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: #020617;
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(79, 70, 229, 0.1) 0px, transparent 50%);
+            background: linear-gradient(-45deg, #c9d6ff, #e2e2e2, #aec0ff, #f0f2f5);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             overflow: hidden;
             padding: 20px;
         }
@@ -46,247 +48,200 @@
             100% { background-position: 0% 50%; }
         }
 
-        .login-card {
-            width: 100%;
-            max-width: 460px;
-            padding: 50px;
-            background: var(--glass);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 35px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            text-align: center;
-            animation: cardEntrance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        @keyframes cardEntrance {
-            from { opacity: 0; transform: translateY(40px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .header-icon {
-            width: 80px;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #4f46e5, #1e1b4b);
-            border-radius: 24px;
-            color: #ffffff;
-            font-size: 42px;
-            margin: 0 auto 24px;
-            box-shadow: 0 15px 35px var(--primary-glow);
-            animation: iconFloat 3s ease-in-out infinite;
-        }
-
-        @keyframes iconFloat {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .animate-item {
-            opacity: 0;
-            animation: fadeInUp 0.5s ease forwards;
-        }
-
-        .login-card h1 { animation-delay: 0.1s; font-size: 2rem; font-weight: 800; color: var(--text-dark); margin-bottom: 8px; letter-spacing: -1.5px; }
-        .login-card p { animation-delay: 0.2s; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 35px; line-height: 1.6; font-weight: 500; }
-        
-        /* Staggered form elements */
-        .input-group-1 { animation-delay: 0.3s; }
-        .input-group-2 { animation-delay: 0.4s; }
-        .input-group-3 { animation-delay: 0.5s; }
-        .btn-group { animation-delay: 0.6s; }
-        .badge-group { animation-delay: 0.05s; }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(15px); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 2.5rem;
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.4s ease;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .header-icon {
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 14px;
+            color: var(--white);
+            font-size: 32px;
+            margin: 0 auto 24px;
+            box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
+        }
+
+        .login-card h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+
+        .login-card p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
         .input-box {
             position: relative;
-            margin-bottom: 24px;
+            margin-bottom: 1.25rem;
             text-align: left;
         }
 
         .input-box label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin-bottom: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 6px;
             display: block;
-            margin-left: 5px;
         }
 
         .input-box input {
             width: 100%;
-            padding: 14px 20px;
-            padding-left: 52px;
-            background: rgba(248, 250, 252, 0.8);
-            border: 2px solid rgba(226, 232, 240, 0.8);
-            border-radius: 20px;
-            font-size: 1rem;
-            color: var(--text-dark);
-            font-weight: 600;
+            padding: 12px 14px 12px 42px;
+            background: #f9fafb;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            color: var(--text-main);
             outline: none;
-            transition: all 0.3s ease;
-        }
-
-        .pin-input {
-            letter-spacing: 1.2rem;
-            text-align: center;
-            font-weight: 900;
-            font-size: 1.2rem !important;
-            padding-left: 20px !important;
-            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s ease;
         }
 
         .input-box input:focus {
-            background: #fff;
+            background: var(--white);
             border-color: var(--primary);
-            box-shadow: 0 10px 25px -5px var(--primary-glow);
-            transform: translateY(-2px);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
         }
 
-        /* Enhanced Icon Placement */
-        .input-box i.input-icon {
-            left: 20px;
-        }
-        .input-box i {
-            position: absolute;
-            right: 18px;
-            top: 43px;
-            font-size: 1.25rem;
-            color: #94a3b8;
-            cursor: pointer;
-            transition: 0.2s;
-            z-index: 10;
-        }
-
-        .input-box i:hover { color: var(--primary); }
-        
         .input-box i.input-icon {
             position: absolute;
-            left: 20px;
-            right: auto;
-            top: 43px;
-            font-size: 1.4rem;
-            color: var(--primary-dark);
+            left: 14px;
+            top: 36px;
+            font-size: 1.2rem;
+            color: var(--text-muted);
             pointer-events: none;
         }
 
-        .submit-btn {
-            margin-top: 15px;
-            width: 100%;
-            padding: 18px;
-            background: var(--text-dark);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            font-size: 1rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
+        .input-box #toggleBtn {
+            position: absolute;
+            right: 14px;
+            top: 36px;
+            font-size: 1.2rem;
+            color: var(--text-muted);
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            transition: color 0.2s;
+        }
+
+        .input-box #toggleBtn:hover {
+            color: var(--primary);
+        }
+
+        .pin-input {
+            letter-spacing: 0.8rem;
+            text-align: center;
+            font-weight: 700;
+            padding-left: 14px !important;
+        }
+
+        .submit-btn {
+            margin-top: 1rem;
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         .submit-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-3px);
-            box-shadow: 0 15px 30px var(--primary-glow);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
         }
 
         #status-area {
             display: none;
-            padding: 16px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            margin-bottom: 30px;
-            font-weight: 800;
-            line-height: 1.5;
-            text-align: left;
-        }
-        .msg-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-        .msg-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-
-        .security-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(241, 245, 249, 0.8);
-            padding: 8px 16px;
-            border-radius: 100px;
-            font-size: 0.65rem;
-            font-weight: 800;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 20px;
-            border: 1px solid rgba(226, 232, 240, 0.5);
-        }
-
-        /* Support text */
-        .footer-note {
-            margin-top: 30px;
-            font-size: 0.75rem;
-            color: var(--text-muted);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
             font-weight: 600;
+            line-height: 1.5;
         }
-        .footer-note a {
-            color: var(--primary-dark);
-            text-decoration: none;
+        .msg-error { background: var(--error-bg); color: var(--error); border: 1px solid #fecaca; }
+        .msg-success { background: var(--success-bg); color: var(--success); border: 1px solid #bbf7d0; }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
         }
     </style>
 </head>
 <body>
 
-<div class="login-card animate-card">
-    <!-- Shield/Admin Icon Added Here -->
-    <div class="header-icon animate-item"><i class='bx bx-shield-quarter'></i></div>
-
-    <div class="security-badge animate-item">
-        <i class='bx bxs-lock-alt'></i> End-to-End Encrypted
+<div class="login-card">
+    <div class="logo-container">
+        <div class="header-icon"><i class='bx bx-shield-quarter'></i></div>
     </div>
-
-    <h1 class="animate-item">Super Admin Login</h1>
-    <p class="animate-item">High-level authorization required. Please provide your master credentials and security key.</p>
-
-    <div id="status-area" class="animate-item"></div>
+    <h1>Super Admin Login</h1>
+    <p class="subtitle">Enter your master credentials to authorize access.</p>
+    
+    <div id="status-area"></div>
 
     <div class="form-group">
         <form action="http://localhost/GCST_Track_System/actions/process_superadmin.php" method="POST" id="authForm" onsubmit="return validateLogin()">
-            <div class="input-box animate-item input-group-1">
+            <div class="input-box">
                 <label for="email">Account Identifier</label>
                 <input type="text" name="email" id="email" placeholder="Username or Email" required autocomplete="username">
                 <i class='bx bxs-user-pin input-icon'></i>
             </div>
 
-            <div class="input-box animate-item input-group-2">
+            <div class="input-box">
                 <label for="password">Master Password</label>
                 <input type="password" name="password" id="password" placeholder="••••••••" required autocomplete="current-password">
                 <i class='bx bxs-lock-open-alt input-icon'></i>
                 <i class='bx bx-show' id="toggleBtn"></i>
             </div>
 
-            <div class="input-box animate-item input-group-3">
+            <div class="input-box">
                 <label for="pin">Security PIN (4 Digits)</label>
                 <input type="password" name="pin" id="pin" class="pin-input" placeholder="••••" maxlength="4" required pattern="\d{4}" inputmode="numeric" autocomplete="one-time-code">
                 <i class='bx bxs-key input-icon'></i>
             </div>
 
-            <div class="animate-item btn-group">
+            <div class="btn-group">
                 <button type="submit" class="submit-btn" id="loginBtn">
                     Authorize Access
                 </button>
             </div>
-
-            <div class="footer-note animate-item btn-group">Having trouble? <a href="#">Contact Support</a></div>
         </form>
     </div>
 </div>
@@ -323,29 +278,29 @@
 
     function showLocalError(msg) {
         statusArea.style.display = "block";
-        statusArea.className = "animate-item msg-error";
+        statusArea.className = "msg-error";
         statusArea.innerText = msg;
     }
 
     // Handle status messages from URL
     const urlParams = new URLSearchParams(window.location.search);
-    const statusArea = document.getElementById("status-area");
+    const statusArea = document.getElementById("status-area"); // Redeclared safely by use in functions
 
     if (urlParams.has('error') || urlParams.has('success')) {
         statusArea.style.display = "block";
         const err = urlParams.get('error');
-        statusArea.className = "animate-item msg-error";
+        statusArea.className = "msg-error";
         
         if (err === 'invalid') {
             statusArea.innerText = "Authentication failed. Invalid identifier or password.";
         } else if (err === 'invalid_pin') {
-            statusArea.innerText = "Access Denied: The 4-digit security PIN is incorrect.";
+            statusArea.innerText = "Access Denied: The security PIN is incorrect.";
         } else if (err === 'locked') {
-            statusArea.innerText = "Account Locked: Too many failed attempts. Access restricted temporarily.";
+            statusArea.innerText = "Account Locked: Too many failed attempts.";
         } else if (err === 'missing') {
             statusArea.innerText = "All fields (Identifier, Password, and PIN) are required.";
         } else if (err === 'unauthorized') {
-            statusArea.innerText = "Access Forbidden: Your account is currently inactive or suspended.";
+            statusArea.innerText = "Access Forbidden: Account inactive or suspended.";
         } else if (err === 'database') {
             statusArea.innerText = "System Error: Unable to reach authentication server. Try again later.";
         } else if (urlParams.get('success') === '1') {
