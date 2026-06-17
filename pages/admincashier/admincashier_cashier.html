@@ -1541,10 +1541,7 @@
         fragment.appendChild(empty);
       } else {
         paginatedResults.forEach(product => {
-          const cardHtml = createProductCard(product);
-          const div = document.createElement('div');
-          div.innerHTML = cardHtml.trim();
-          fragment.appendChild(div.firstChild);
+          fragment.appendChild(createProductCard(product));
         });
       }
 
@@ -1604,46 +1601,86 @@
     }
 
     /**
-     * Generates HTML for a product card using standardized metadata formatting.
+     * Refactored modular creation of product cards using DOM API for performance and scalability.
      */
     function createProductCard(product) {
+      const card = document.createElement('article');
+      card.className = 'product-card relative flex flex-col h-full';
+
+      card.appendChild(createProductImage(product));
+      card.appendChild(createProductInfo(product));
+      card.appendChild(createProductActions(product));
+
+      return card;
+    }
+
+    function createProductImage(product) {
+      const container = document.createElement('div');
+      container.className = 'product-image-container relative';
+
+      if (parseInt(product.is_featured) === 1) {
+        const badgeCont = document.createElement('div');
+        badgeCont.className = 'absolute top-2.5 right-2.5 z-10';
+        badgeCont.innerHTML = `<span class="bg-amber-400 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm border border-white/20">PROMOTED</span>`;
+        container.appendChild(badgeCont);
+      }
+
+      const img = document.createElement('img');
+      img.src = resolveImagePath(product.product_image);
+      img.alt = product.product_name;
+      img.loading = 'lazy';
+      img.className = 'w-full h-full object-cover';
+      img.onerror = () => { img.src = IMAGE_FALLBACK; };
+
+      container.appendChild(img);
+      return container;
+    }
+
+    function createProductInfo(product) {
+      const info = document.createElement('div');
+      info.className = 'product-body flex-1 flex flex-col p-3';
+
+      const title = document.createElement('h3');
+      title.className = 'text-sm font-bold text-gray-800 truncate-2-lines min-h-[2.5rem] mb-1';
+      title.title = product.product_name;
+      title.textContent = product.product_name;
+
+      const meta = document.createElement('div');
+      meta.className = 'product-metadata-section';
+      meta.innerHTML = renderProductInfo(product, true);
+
+      info.appendChild(title);
+      info.appendChild(meta);
+      return info;
+    }
+
+    function createProductActions(product) {
       const price = getProductPrice(product);
       const rentPrice = getProductRentPrice(product);
       const stock = getProductStock(product);
-      const imageSrc = resolveImagePath(product.product_image);
       const catLower = (product.product_category || '').toLowerCase();
-      
       const activePrice = (catLower === 'books' && state.transactionType === 'rent') ? rentPrice : price;
-      
-      let stockClass = stock > 10 ? 'stock-available' : stock > 0 ? 'stock-low' : 'stock-out';
-      let stockLabel = stock > 10 ? 'In Stock' : stock > 0 ? 'Low Stock' : 'Out of Stock';
-      let stockIcon = stock > 10 ? 'check-circle' : stock > 0 ? 'exclamation-triangle' : 'times-circle';
 
-      const featuredBadge = (parseInt(product.is_featured) === 1) ? 
-        `<div class="absolute top-2.5 right-2.5 z-10"><span class="bg-amber-400 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm border border-white/20">PROMOTED</span></div>` : ''; // Moved inside product-image-container
+      const actions = document.createElement('div');
+      actions.className = 'product-actions mt-auto flex items-center justify-between pt-2 border-t border-slate-50';
 
-      return `
-        <article class="product-card relative flex flex-col h-full">
-          <div class="product-image-container relative">
-            ${featuredBadge}
-            <img src="${imageSrc}" alt="${product.product_name}" loading="lazy" class="w-full h-full object-cover" onerror="this.src='${IMAGE_FALLBACK}'" />
-          </div>
-          <div class="product-body flex-1 flex flex-col p-3">
-            <h3 class="text-sm font-bold text-gray-800 truncate-2-lines min-h-[2.5rem] mb-1" title="${product.product_name}">${product.product_name}</h3>
-            <div class="product-metadata-section">
-               ${renderProductInfo(product, true)}
-            </div>
-            <div class="mt-auto flex items-center justify-between pt-2 border-t border-slate-50">
-              <div class="flex flex-col">
-                <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">${catLower === 'uniform fabrics' ? 'Per Yard' : 'Price'}</span>
-                <span class="product-price text-base font-black">${formatCurrency(activePrice)}</span>
-              </div>
-              <button class="btn btn-primary !p-3 !rounded-xl" type="button" ${stock <= 0 ? 'disabled' : ''} onclick="addProductToCart('${product.product_id}', event)">
-                <i class="fas fa-cart-plus"></i>
-              </button>
-            </div>
-          </div>
-        </article>`;
+      const priceInfo = document.createElement('div');
+      priceInfo.className = 'flex flex-col';
+      priceInfo.innerHTML = `
+        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">${catLower === 'uniform fabrics' ? 'Per Yard' : 'Price'}</span>
+        <span class="product-price text-base font-black">${formatCurrency(activePrice)}</span>
+      `;
+
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-primary !p-3 !rounded-xl';
+      btn.type = 'button';
+      if (stock <= 0) btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-cart-plus"></i>';
+      btn.onclick = (e) => addProductToCart(product.product_id, e);
+
+      actions.appendChild(priceInfo);
+      actions.appendChild(btn);
+      return actions;
     }
 
     // Centralized Debounced Render

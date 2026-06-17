@@ -30,10 +30,20 @@ $conn = Database::getConnection();
  * Fetches current queue statistics and status
  */
 function fetchQueueStatus($conn) {
-    // Using queue_tickets for system-wide consistency
-    $sql_serving = "SELECT queue_number FROM queue_tickets WHERE DATE(created_at) = CURDATE() AND status = 'serving' ORDER BY served_at DESC LIMIT 1";
+    // Serving tickets grouped by window
+    $sql_serving = "SELECT queue_number, window_number, student_name, queue_type 
+                    FROM queue_tickets 
+                    WHERE DATE(created_at) = CURDATE() AND status = 'serving' 
+                    ORDER BY window_number ASC";
     $result_serving = $conn->query($sql_serving);
-    $now_serving = ($result_serving && $result_serving->num_rows > 0) ? $result_serving->fetch_assoc()['queue_number'] : null;
+    $windows = [
+        1 => ['number' => 'None', 'name' => 'Available'],
+        2 => ['number' => 'None', 'name' => 'Available'],
+        3 => ['number' => 'None', 'name' => 'Available']
+    ];
+    while($row = $result_serving->fetch_assoc()) {
+        $windows[$row['window_number']] = ['number' => $row['queue_number'], 'name' => $row['student_name'], 'type' => $row['queue_type']];
+    }
 
     $sql_next = "SELECT queue_number FROM queue_tickets WHERE DATE(created_at) = CURDATE() AND status = 'waiting' ORDER BY created_at ASC LIMIT 1";
     $result_next = $conn->query($sql_next);
@@ -51,9 +61,19 @@ function fetchQueueStatus($conn) {
         }
     }
 
+    // Stats by category
+    $sql_stats = "SELECT queue_type, COUNT(*) as waiting FROM queue_tickets WHERE DATE(created_at) = CURDATE() AND status = 'waiting' GROUP BY queue_type";
+    $res_stats = $conn->query($sql_stats);
+    $type_stats = ['regular' => 0, 'priority' => 0];
+    while($s = $res_stats->fetch_assoc()) { $type_stats[$s['queue_type']] = (int)$s['waiting']; }
+
     return [
         'current_time' => date('H:i:s'),
-        'now_serving' => $now_serving,
+        'windows' => $windows,
+        'stats' => [
+            'regular_waiting' => $type_stats['regular'],
+            'priority_waiting' => $type_stats['priority']
+        ],
         'next_queue' => $next_queue,
         'counts' => $counts,
         'total_waiting' => $counts['waiting']

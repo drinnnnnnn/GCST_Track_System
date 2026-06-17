@@ -77,7 +77,8 @@ class QueueModel {
             SELECT 
                 COUNT(CASE WHEN status = 'waiting' THEN 1 END) as waiting,
                 COUNT(CASE WHEN status = 'serving' THEN 1 END) as serving,
-                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed
+                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
+                COUNT(CASE WHEN queue_type = 'priority' AND status = 'waiting' THEN 1 END) as priority_waiting
             FROM queue_tickets 
             WHERE DATE(created_at) = ?
         ");
@@ -88,11 +89,12 @@ class QueueModel {
     }
 
     public function getAllActive() {
+        // Fetch waiting/serving tickets plus today's completed tickets for real-time statistics
         $sql = "SELECT q.*, u.student_id as school_id 
                 FROM queue_tickets q 
                 LEFT JOIN users u ON q.user_id = u.id 
-                WHERE q.status IN ('waiting', 'serving') 
-                ORDER BY q.status ASC, q.created_at ASC";
+                WHERE q.status IN ('waiting', 'serving') OR (q.status = 'completed' AND DATE(q.created_at) = CURDATE())
+                ORDER BY FIELD(q.status, 'serving', 'waiting', 'completed'), q.created_at ASC";
         $result = $this->conn->query($sql);
         return $result->fetch_all(MYSQLI_ASSOC);
     }
@@ -185,27 +187,74 @@ class QueueModel {
         return $stmt->execute();
     }
 
-    public function updateStatus($id, $status) {
+    public function updateStatus($id, $status, $windowNumber = null) {
         $this->conn->begin_transaction();
         try {
             // Prevent processing tickets that have already expired or been completed
             $current = $this->getById($id);
-            if ($current && in_array($current['status'], ['cancelled', 'completed']) && in_array($status, ['serving', 'completed'])) {
+            if ($current && in_array($current['status'], ['cancelled', 'completed']) && $status === 'serving') {
                 throw new Exception("Ticket #{$current['queue_number']} is already {$current['status']} and cannot be modified.");
             }
 
-            // Logic: Only one ticket can be 'serving' at a time.
-            // If we start serving a new one, mark others as completed.
-            if ($status === 'serving') {
-                $this->conn->query("UPDATE queue_tickets SET status = 'completed', served_at = NOW() WHERE status = 'serving'");
+            // Logic: Only one ticket can be 'serving' per window at a time.
+            if ($status === 'serving' && $windowNumber !== null) {
+                $stmt_c = $this->conn->prepare("UPDATE queue_tickets SET status = 'completed', served_at = NOW() WHERE status = 'serving' AND window_number = ?");
+                $stmt_c->bind_param("i", $windowNumber);
+                $stmt_c->execute();
             }
 
             // Set served_at timestamp for processed tickets
             $servedAtPart = in_array($status, ['serving', 'completed', 'cancelled']) ? ", served_at = IFNULL(served_at, NOW())" : "";
+            
+            // Ensure windowNumber is an integer if provided
+            $winVal = ($windowNumber !== null) ? intval($windowNumber) : null;
+            $windowPart = ($winVal !== null) ? ", window_number = ?" : "";
 
-            $stmt = $this->conn->prepare("UPDATE queue_tickets SET status = ? $servedAtPart WHERE id = ?");
-            $stmt->bind_param("si", $status, $id);
+            $sql = "UPDATE queue_tickets SET status = ? $servedAtPart $windowPart WHERE id = ?";
+            $stmt = $this->conn->prepare($sql);
+            if ($winVal !== null) {
+                $stmt->bind_param("sii", $status, $winVal, $id);
+            } else {
+                $stmt->bind_param("si", $status, $id);
+            }
+
             $success = $stmt->execute();
+
+            $this->conn->commit();
+            return $success;
+        } catch (Exception $e) {
+            $this->conn->rollback();
+            throw $e;
+        }
+    }
+
+    /**
+     * Reassigns a currently serving ticket to a new window.
+     * Ensures that the new window is cleared of any other serving tickets before reassigning.
+     *
+     * @param int $ticketId The ID of the ticket to reassign.
+     * @param int $newWindowNumber The new window number to assign the ticket to.
+     * @throws Exception If the ticket is not found, not serving, or already in the target window.
+     * @return bool True on successful reassignment.
+     */
+    public function reassignTicket($ticketId, $newWindowNumber) {
+        $this->conn->begin_transaction();
+        try {
+            $currentTicket = $this->getById($ticketId);
+
+            if (!$currentTicket) {
+                throw new Exception("Ticket not found.");
+            }
+            if ($currentTicket['status'] !== 'serving') {
+                throw new Exception("Only serving tickets can be reassigned.");
+            }
+            if (intval($currentTicket['window_number']) === intval($newWindowNumber)) {
+                throw new Exception("Ticket is already assigned to Window " . $newWindowNumber . ".");
+            }
+
+            // Use the existing updateStatus logic which handles completing other tickets in the new window
+            // and updates the target ticket's window number.
+            $success = $this->updateStatus($ticketId, 'serving', $newWindowNumber);
 
             $this->conn->commit();
             return $success;
@@ -225,13 +274,13 @@ class QueueModel {
      * @param int|null $userId Numeric user ID
      * @param string|null $queueNumber Manual number or null for auto-gen
      */
-    public function create($userId, $queueNumber, $studentName, $purpose) {
+    public function create($userId, $queueNumber, $studentName, $purpose, $queueType = 'regular') {
         if ($queueNumber === null) {
-            $queueNumber = $this->generateQueueNumber();
+            $queueNumber = $this->generateQueueNumber($queueType);
         }
 
-        $stmt = $this->conn->prepare("INSERT INTO queue_tickets (user_id, queue_number, student_name, purpose, status, created_at) VALUES (?, ?, ?, ?, 'waiting', NOW())");
-        $stmt->bind_param("isss", $userId, $queueNumber, $studentName, $purpose);
+        $stmt = $this->conn->prepare("INSERT INTO queue_tickets (user_id, queue_number, student_name, purpose, status, queue_type, created_at) VALUES (?, ?, ?, ?, 'waiting', ?, NOW())");
+        $stmt->bind_param("issss", $userId, $queueNumber, $studentName, $purpose, $queueType);
         
         if ($stmt->execute()) {
             return ['id' => $this->conn->insert_id];
@@ -239,15 +288,16 @@ class QueueModel {
         return false;
     }
 
-    private function generateQueueNumber() {
+    private function generateQueueNumber($type = 'regular') {
+        $prefix = ($type === 'priority') ? 'PWD' : 'REG';
         $today = date('Y-m-d');
-        $stmt = $this->conn->prepare("SELECT COUNT(*) as total FROM queue_tickets WHERE DATE(created_at) = ?");
-        $stmt->bind_param("s", $today);
+        $stmt = $this->conn->prepare("SELECT COUNT(*) as total FROM queue_tickets WHERE DATE(created_at) = ? AND queue_type = ?");
+        $stmt->bind_param("ss", $today, $type);
         $stmt->execute();
         $res = $stmt->get_result()->fetch_assoc();
         $count = ($res['total'] ?? 0) + 1;
         
-        return "Q-" . str_pad($count, 3, '0', STR_PAD_LEFT);
+        return $prefix . "-" . str_pad($count, 3, '0', STR_PAD_LEFT);
     }
 }
 ?>

@@ -10,11 +10,13 @@ require_once __DIR__ . '/../database/models/QueueModel.php';
 // Support both POST (FormData) and JSON input
 $id = $_POST['id'] ?? $_POST['queue_id'] ?? null;
 $status = $_POST['status'] ?? null;
+$windowNumber = $_POST['window_number'] ?? null;
 
 if (!$id || !$status) {
     $data = json_decode(file_get_contents('php://input'), true);
     $id = $data['id'] ?? $data['queue_id'] ?? null;
     $status = $data['status'] ?? null;
+    $windowNumber = $windowNumber ?? $data['window_number'] ?? null;
 }
 
 if (!$id || !in_array($status, ['waiting', 'serving', 'completed', 'cancelled'])) {
@@ -24,18 +26,25 @@ if (!$id || !in_array($status, ['waiting', 'serving', 'completed', 'cancelled'])
 
 try {
     $model = new QueueModel();
-    $success = $model->updateStatus((int)$id, $status);
+    // Pass windowNumber to ensure serving logic correctly clears previous tickets in that window
+    $success = $model->updateStatus((int)$id, $status, $windowNumber);
 
-    // Trigger "Next in Line" alerts when a ticket is moved to 'serving'
-    if ($success && $status === 'serving') {
-        $nextTicket = $model->getNextToNotify();
-        if ($nextTicket) {
-            NotificationService::sendQueueAlert($nextTicket);
-            $model->markAlertSent($nextTicket['id']);
+    $updatedTicket = null;
+    if ($success) {
+        // Fetch the complete ticket object including joined user details (school_id, name)
+        $updatedTicket = $model->getByIdWithDetails((int)$id);
+
+        // Trigger "Next in Line" alerts when a ticket is moved to 'serving'
+        if ($status === 'serving') {
+            $nextTicket = $model->getNextToNotify();
+            if ($nextTicket) {
+                NotificationService::sendQueueAlert($nextTicket);
+                $model->markAlertSent($nextTicket['id']);
+            }
         }
     }
 
-    echo json_encode(['success' => $success]);
+    echo json_encode(['success' => $success, 'ticket' => $updatedTicket]);
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }

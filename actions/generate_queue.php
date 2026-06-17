@@ -9,6 +9,7 @@ require_once __DIR__ . '/../database/models/QueueModel.php';
 $data = json_decode(file_get_contents('php://input'), true);
 $school_id = isset($data['school_id']) ? trim($data['school_id']) : '';
 $student_name = isset($data['student_name']) ? trim($data['student_name']) : '';
+$queue_type = isset($data['queue_type']) ? $data['queue_type'] : 'regular';
 $purpose = trim($data['purpose'] ?? 'General Inquiry');
 
 if (empty($student_name)) {
@@ -42,7 +43,7 @@ elseif (!$userId && isset($_SESSION['student_id'])) {
 
 $model = new QueueModel();
 try {
-    $res = $model->create($userId, null, $student_name, $purpose);
+    $res = $model->create($userId, null, $student_name, $purpose, $queue_type);
     if ($res === false) {
         throw new Exception('Failed to create queue ticket');
     }
