@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -159,6 +159,76 @@
       padding: 24px;
       color: var(--muted);
       text-align: center;
+    }
+    .table-scroll-container {
+      max-height: 500px;
+      overflow-y: auto;
+      overflow-x: auto;
+      border: 1px solid #eef2f7;
+      border-radius: 16px;
+      background: #fff;
+    }
+    .table-scroll-container::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    .table-scroll-container::-webkit-scrollbar-track {
+      background: #f8fafc;
+    }
+    .table-scroll-container::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 999px;
+    }
+    .table-scroll-container::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .pagination-info {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin: 10px 0 8px;
+    }
+    .pagination-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .pagination-controls button {
+      min-width: 40px;
+      padding: 8px 10px;
+      border: 1px solid #dbe3f0;
+      background: #fff;
+      color: var(--text);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+    .pagination-controls button:hover:not(:disabled) {
+      background: var(--surface-soft);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .pagination-controls button.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .pagination-controls button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    @media (max-width: 768px) {
+      .pagination-controls button {
+        min-width: 40px;
+      }
+      .pagination-info {
+        justify-content: center;
+      }
     }
     /* Modal Styles */
     .modal {
@@ -351,7 +421,7 @@
 
       <!-- Inventory Table -->
       <div class="history-card">
-        <div style="overflow-x:auto;">
+        <div class="table-scroll-container">
           <table class="history-table">
             <thead>
               <tr>
@@ -368,6 +438,8 @@
             </tbody>
           </table>
         </div>
+        <div id="inventoryPaginationInfo" class="pagination-info"></div>
+        <div id="inventoryPaginationControls" class="pagination-controls"></div>
       </div>
     </section>
 
@@ -399,7 +471,7 @@
           <input type="text" id="historySearch" placeholder="Search transactions..." class="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm bg-gray-50">
         </div>
       </div>
-      <div style="overflow-x:auto;">
+      <div class="table-scroll-container">
         <table class="history-table">
           <thead>
             <tr>
@@ -416,6 +488,8 @@
           </tbody>
         </table>
       </div>
+      <div id="salesPaginationInfo" class="pagination-info"></div>
+      <div id="salesPaginationControls" class="pagination-controls"></div>
     </section>
 
     <!-- Receipt Modal -->
@@ -452,6 +526,10 @@
     let lastFetchedSalesHistory = [];
     let currentTopProduct = 'N/A';
     let currentAdminName = 'Unknown Admin'; // New: Global variable to store admin name
+    const INVENTORY_ROWS_PER_PAGE = 10;
+    const SALES_ROWS_PER_PAGE = 10;
+    let inventoryPaginationState = { page: 1, totalPages: 1, totalItems: 0 };
+    let salesPaginationState = { page: 1, totalPages: 1, totalItems: 0 };
 
     function formatDate(value) {
       const date = new Date(value);
@@ -462,6 +540,62 @@
       document.querySelectorAll('.period-button').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.period === period);
       });
+    }
+
+    function getPageBounds(items, page, perPage) {
+      const totalItems = Array.isArray(items) ? items.length : 0;
+      const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+      const safePage = Math.min(page || 1, totalPages);
+      const startIndex = (safePage - 1) * perPage;
+      const endIndex = Math.min(startIndex + perPage, totalItems);
+      return { totalItems, totalPages, safePage, startIndex, endIndex };
+    }
+
+    function updatePaginationInfo(infoId, bounds) {
+      const infoEl = document.getElementById(infoId);
+      if (!infoEl) return;
+      if (!bounds.totalItems) {
+        infoEl.textContent = 'Showing 0 records';
+        return;
+      }
+      const start = bounds.startIndex + 1;
+      const end = bounds.endIndex;
+      infoEl.textContent = `Showing ${start}–${end} of ${bounds.totalItems} records`;
+    }
+
+    function updatePaginationControls(containerId, state, onPageChange) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      container.innerHTML = '';
+      if (state.totalPages <= 1) return;
+
+      const createButton = (label, page, disabled = false, isActive = false) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = label;
+        button.disabled = disabled;
+        button.className = isActive ? 'active' : '';
+        button.addEventListener('click', () => {
+          if (!disabled && page >= 1 && page <= state.totalPages) {
+            onPageChange(page);
+          }
+        });
+        return button;
+      };
+
+      const maxVisible = 5;
+      let startPage = Math.max(1, state.page - 2);
+      let endPage = Math.min(state.totalPages, startPage + maxVisible - 1);
+      if (endPage - startPage + 1 < maxVisible) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+      }
+
+      container.appendChild(createButton('Previous', state.page - 1, state.page === 1));
+      for (let i = startPage; i <= endPage; i += 1) {
+        container.appendChild(createButton(String(i), i, false, i === state.page));
+      }
+      container.appendChild(createButton('Next', state.page + 1, state.page === state.totalPages));
     }
 
     async function loadSalesData(period) {
@@ -511,7 +645,7 @@
         }
 
         lastFetchedSalesHistory = Array.isArray(data.history) ? data.history : [];
-        renderSalesHistory(lastFetchedSalesHistory);
+        renderSalesHistory(lastFetchedSalesHistory, { resetPage: true });
 
         // Sales trend polling complete. Inventory is handled by loadInventoryData.
 
@@ -526,7 +660,7 @@
       try {
         const products = await fetchWithError(`../../actions/get_admincashier_products.php`);
         lastFetchedInventory = Array.isArray(products) ? products : [];
-        renderInventoryTable(lastFetchedInventory);
+        renderInventoryTable(lastFetchedInventory, { resetPage: true });
         updateInventorySummary(lastFetchedInventory);
         populateInventoryFilters(lastFetchedInventory);
       } catch (error) {
@@ -535,22 +669,39 @@
       }
     }
 
-    function renderInventoryTable(products) {
+    function renderInventoryTable(products, options = {}) {
       const body = document.getElementById('inventoryReportBody');
       if (!body) return;
-      body.innerHTML = '';
 
-      if (products.length === 0) {
+      const resetPage = options.resetPage !== false;
+      if (resetPage) {
+        inventoryPaginationState.page = 1;
+      }
+
+      const bounds = getPageBounds(products, inventoryPaginationState.page, INVENTORY_ROWS_PER_PAGE);
+      inventoryPaginationState = {
+        page: bounds.safePage,
+        totalPages: bounds.totalPages,
+        totalItems: bounds.totalItems
+      };
+      updatePaginationInfo('inventoryPaginationInfo', bounds);
+      updatePaginationControls('inventoryPaginationControls', inventoryPaginationState, (page) => {
+        inventoryPaginationState.page = page;
+        renderInventoryTable(lastFetchedInventory, { resetPage: false });
+      });
+
+      body.innerHTML = '';
+      if (bounds.totalItems === 0) {
         body.innerHTML = '<tr><td colspan="6" class="empty-state">No matching products found.</td></tr>';
         return;
       }
 
-      products.forEach(item => {
+      const pageItems = products.slice(bounds.startIndex, bounds.endIndex);
+      pageItems.forEach(item => {
         const stock = parseFloat(item.stock_count || 0);
         const status = getStockStatus(stock);
         const value = stock * parseFloat(item.buy_price || 0);
         
-        // Category-specific metadata for display
         let metadata = '';
         if (item.product_category === 'Books') {
           metadata = `<div class="text-xs text-gray-400">Author: ${item.book_author || 'N/A'}</div>`;
@@ -632,35 +783,55 @@
         courses.forEach(c => courseSelect.add(new Option(c, c)));
       }
     }
-    function renderSalesHistory(history) {
+    function renderSalesHistory(history, options = {}) {
       const historyBody = document.getElementById('historyBody');
       if (!historyBody) return;
-      historyBody.innerHTML = '';
-      if (history.length) {
-        history.forEach(entry => {
-          const items = entry.item ? entry.item.split(', ') : [];
-          const itemsHtml = items.map(i => `<span class="product-tag">${i}</span>`).join('');
-          const displayId = entry.transaction_id || entry.transaction_number || '—';
-          const internalId = entry.id || entry.transaction_id || entry.transaction_number;
-          
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${formatDate(entry.date)}</td>
-            <td>${displayId}</td>
-            <td><div class="product-tag-list">${itemsHtml}</div></td>
-            <td>${entry.quantity}</td>
-            <td>${formatCurrency(entry.amount)}</td>
-            <td style="text-align: center;">
-              <button onclick="window.viewReceiptDetails('${internalId}')" class="view-details-btn" title="View Details">
-                <i class="fas fa-eye"></i>
-              </button>
-            </td>
-          `;
-          historyBody.appendChild(row);
-        });
-      } else {
-        historyBody.innerHTML = '<tr><td colspan="6" class="empty-state">No sales history found.</td></tr>';
+
+      const resetPage = options.resetPage !== false;
+      if (resetPage) {
+        salesPaginationState.page = 1;
       }
+
+      const bounds = getPageBounds(history, salesPaginationState.page, SALES_ROWS_PER_PAGE);
+      salesPaginationState = {
+        page: bounds.safePage,
+        totalPages: bounds.totalPages,
+        totalItems: bounds.totalItems
+      };
+      updatePaginationInfo('salesPaginationInfo', bounds);
+      updatePaginationControls('salesPaginationControls', salesPaginationState, (page) => {
+        salesPaginationState.page = page;
+        renderSalesHistory(lastFetchedSalesHistory, { resetPage: false });
+      });
+
+      historyBody.innerHTML = '';
+      if (bounds.totalItems === 0) {
+        historyBody.innerHTML = '<tr><td colspan="6" class="empty-state">No sales history found.</td></tr>';
+        return;
+      }
+
+      const pageItems = history.slice(bounds.startIndex, bounds.endIndex);
+      pageItems.forEach(entry => {
+        const items = entry.item ? entry.item.split(', ') : [];
+        const itemsHtml = items.map(i => `<span class="product-tag">${i}</span>`).join('');
+        const displayId = entry.transaction_id || entry.transaction_number || '—';
+        const internalId = entry.id || entry.transaction_id || entry.transaction_number;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${formatDate(entry.date)}</td>
+          <td>${displayId}</td>
+          <td><div class="product-tag-list">${itemsHtml}</div></td>
+          <td>${entry.quantity}</td>
+          <td>${formatCurrency(entry.amount)}</td>
+          <td style="text-align: center;">
+            <button onclick="window.viewReceiptDetails('${internalId}')" class="view-details-btn" title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>
+          </td>
+        `;
+        historyBody.appendChild(row);
+      });
     }
 
     function handleInventoryFiltering() {
@@ -680,7 +851,7 @@
         
         return matchesCategory && matchesCourse && matchesStatus && matchesSearch;
       });
-      renderInventoryTable(filtered);
+      renderInventoryTable(filtered, { resetPage: true });
     }
 
     function createChart(elementId, type, labels, data, label, backgroundColor, borderColor) {
@@ -1008,62 +1179,185 @@
 
     window.exportInventoryToExcel = function() {
       if (!lastFetchedInventory.length) return alert('No inventory data to export.');
-      
+
       const headers = [
-        "Product Name", "Category", "Course/Program", "Metadata", 
-        "Unit Price", "Stock Count", "Inventory Value", "Stock Status"
+        'Product Name',
+        'Category',
+        'Course/Program',
+        'Metadata',
+        'Unit Price',
+        'Stock Count',
+        'Inventory Value',
+        'Stock Status'
       ];
-      
+
+      const reportDate = new Date().toLocaleString('en-PH', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+      const fileTimestamp = new Date().toISOString().split('T')[0];
+
       const rows = lastFetchedInventory.map(item => {
         const stock = parseFloat(item.stock_count || 0);
-        const metadata = item.product_category === 'Books' ? `Author: ${item.book_author}` : (item.uniform_type || 'N/A');
+        const unitPrice = parseFloat(item.buy_price || 0);
+        const inventoryValue = stock * unitPrice;
+        const metadata = item.product_category === 'Books'
+          ? `Author: ${item.book_author || 'N/A'}`
+          : (item.uniform_type || 'N/A');
+        let status = 'In Stock';
+        if (stock <= 0) {
+          status = 'Out of Stock';
+        } else if (stock < 10) {
+          status = 'Low Stock';
+        }
+
         return [
-          item.product_name,
-          item.product_category,
+          item.product_name || '',
+          item.product_category || '',
           item.course_program || item.book_course || 'General',
           metadata,
-          item.buy_price,
+          unitPrice,
           stock,
-          stock * item.buy_price,
-          getStockStatus(stock).label
+          inventoryValue,
+          status
         ];
       });
 
-      const wb = XLSX.utils.book_new();
+      const totalProducts = rows.length;
+      const totalQuantity = rows.reduce((sum, row) => sum + (parseFloat(row[5]) || 0), 0);
+      const lowStockItems = rows.filter(row => row[7] === 'Low Stock').length;
+      const outOfStockItems = rows.filter(row => row[7] === 'Out of Stock').length;
+
       const wsData = [
-        ["GRANBY COLLEGES - COMPREHENSIVE INVENTORY REPORT"],
-        ["Generated on:", new Date().toLocaleString()],
+        ['INVENTORY REPORT'],
+        ['Company Name', 'GRANBY COLLEGES OF SCIENCE AND TECHNOLOGY'],
+        ['Report Generated', reportDate],
+        ['Generated By', currentAdminName || 'System'],
+        ['Total Products', totalProducts],
+        ['Total Inventory Quantity', totalQuantity],
+        ['Low Stock Items', lowStockItems],
+        ['Out of Stock Items', outOfStockItems],
         [],
         headers,
         ...rows
       ];
 
+      const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-      // Styling
       const range = XLSX.utils.decode_range(ws['!ref']);
-      for (let R = 3; R <= range.e.r; ++R) {
-        for (let C = 0; C <= range.e.c; ++C) {
-          const cell = ws[XLSX.utils.encode_cell({r:R, c:C})];
-          if(!cell) continue;
+      const headerRow = 8;
+      const dataStartRow = headerRow + 1;
+      const statusCol = headers.length - 1;
 
-          if (R === 3) {
-            cell.s = { font: { bold: true, color: {rgb: "FFFFFF"} }, fill: { fgColor: {rgb: "4472C4"} } };
-          } else {
-            // Conditional formatting for Status column
-            if (C === 7) {
-              const val = cell.v;
-              if (val === 'Urgent Restock') cell.s = { font: { color: {rgb: "9C0006"}, bold: true }, fill: { fgColor: {rgb: "FFC7CE"} } };
-              if (val === 'Critical Stock') cell.s = { font: { color: {rgb: "9C0006"} }, fill: { fgColor: {rgb: "FFC7CE"} } };
-              if (val === 'Low Stock') cell.s = { font: { color: {rgb: "9C6500"} }, fill: { fgColor: {rgb: "FFEB9C"} } };
-              if (val === 'Healthy Stock') cell.s = { font: { color: {rgb: "006100"} }, fill: { fgColor: {rgb: "C6EFCE"} } };
+      const headerFill = { fgColor: { rgb: '1F4E78' } };
+      const summaryFill = { fgColor: { rgb: 'F5F7FA' } };
+      const alternateFill = { fgColor: { rgb: 'F9FAFB' } };
+      const inStockFill = { fgColor: { rgb: 'E8F5E9' } };
+      const lowStockFill = { fgColor: { rgb: 'FFF3E0' } };
+      const outOfStockFill = { fgColor: { rgb: 'FFEBEE' } };
+      const border = {
+        top: { style: 'thin', color: { rgb: 'D0D7DE' } },
+        right: { style: 'thin', color: { rgb: 'D0D7DE' } },
+        bottom: { style: 'thin', color: { rgb: 'D0D7DE' } },
+        left: { style: 'thin', color: { rgb: 'D0D7DE' } }
+      };
+
+      for (let R = range.s.r; R <= range.e.r; R += 1) {
+        for (let C = range.s.c; C <= range.e.c; C += 1) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          const cell = ws[cellRef];
+          if (!cell) continue;
+
+          const baseStyle = {
+            font: { name: 'Arial', sz: 10 },
+            alignment: { vertical: 'center', wrapText: true },
+            border
+          };
+
+          if (R === 0) {
+            cell.s = {
+              ...baseStyle,
+              font: { name: 'Arial', sz: 16, bold: true, color: { rgb: 'FFFFFF' } },
+              fill: { fgColor: { rgb: '1F4E78' } },
+              alignment: { horizontal: 'center', vertical: 'center' }
+            };
+          } else if (R >= 1 && R <= 7) {
+            cell.s = {
+              ...baseStyle,
+              font: { name: 'Arial', sz: 10 },
+              fill: summaryFill,
+              alignment: { vertical: 'center' }
+            };
+            if (C === 0) {
+              cell.s.font = { ...cell.s.font, bold: true };
+            }
+          } else if (R === headerRow) {
+            cell.s = {
+              ...baseStyle,
+              font: { name: 'Arial', sz: 10, bold: true, color: { rgb: 'FFFFFF' } },
+              fill: headerFill,
+              alignment: { horizontal: 'center', vertical: 'center' }
+            };
+          } else if (R >= dataStartRow) {
+            const isEvenRow = (R - dataStartRow) % 2 === 1;
+            cell.s = {
+              ...baseStyle,
+              fill: isEvenRow ? alternateFill : { fgColor: { rgb: 'FFFFFF' } },
+              alignment: { vertical: 'center' }
+            };
+
+            if (C === statusCol) {
+              const statusValue = String(cell.v || '');
+              if (statusValue === 'Out of Stock') {
+                cell.s.fill = outOfStockFill;
+                cell.s.font = { ...cell.s.font, bold: true, color: { rgb: '9A0007' } };
+              } else if (statusValue === 'Low Stock') {
+                cell.s.fill = lowStockFill;
+                cell.s.font = { ...cell.s.font, bold: true, color: { rgb: '9A5B00' } };
+              } else {
+                cell.s.fill = inStockFill;
+                cell.s.font = { ...cell.s.font, bold: true, color: { rgb: '166534' } };
+              }
+            } else if (C === 4) {
+              cell.s.numFmt = '#,##0.00';
+              cell.s.alignment = { ...cell.s.alignment, horizontal: 'right' };
+            } else if (C === 5) {
+              cell.s.numFmt = '#,##0';
+              cell.s.alignment = { ...cell.s.alignment, horizontal: 'center' };
+            } else if (C === 6) {
+              cell.s.numFmt = '#,##0.00';
+              cell.s.alignment = { ...cell.s.alignment, horizontal: 'right' };
             }
           }
         }
       }
 
-      XLSX.utils.book_append_sheet(wb, ws, "Inventory Summary");
-      XLSX.writeFile(wb, `Inventory_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+      ws['!cols'] = headers.map((header, index) => {
+        let maxLength = header.length;
+        for (let rowIndex = 0; rowIndex < wsData.length; rowIndex += 1) {
+          const value = wsData[rowIndex][index];
+          const text = value === undefined || value === null ? '' : String(value);
+          if (text.length > maxLength) {
+            maxLength = text.length;
+          }
+        }
+        return { width: Math.max(12, Math.min(40, maxLength + 2)) };
+      });
+
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }
+      ];
+      ws['!freeze'] = { xSplit: 0, ySplit: 9 };
+      ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: dataStartRow, c: 0 }, e: { r: range.e.r, c: headers.length - 1 } }) };
+      ws['!pageSetup'] = { orientation: 'landscape', paperSize: 9 };
+      ws['!margins'] = { left: 0.3, right: 0.3, top: 0.5, bottom: 0.5 };
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Inventory Report');
+      XLSX.writeFile(wb, `Inventory_Report_${fileTimestamp}.xlsx`);
     };
 
     window.initAdminCashierSalesPage = function(userData) {
@@ -1090,7 +1384,7 @@
           const text = `${entry.transaction_id || ''} ${entry.transaction_number || ''} ${entry.item || ''} ${entry.date || ''}`.toLowerCase();
           return text.includes(query);
         });
-        renderSalesHistory(filtered);
+        renderSalesHistory(filtered, { resetPage: true });
       });
 
       document.getElementById('inventoryFilterCategory')?.addEventListener('change', handleInventoryFiltering);

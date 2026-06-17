@@ -558,27 +558,18 @@
             <div id="kiosk-win-1-card" class="kiosk-window-card">
               <div class="kiosk-window-label">Window 1</div>
               <div id="kiosk-win-1-num" class="kiosk-window-number">---</div>
-              <div id="kiosk-win-1-name" class="kiosk-window-name">Available</div>
-              <div id="kiosk-win-1-status" class="kiosk-window-status status-idle">Idle</div>
-              <div class="absolute top-8 right-8 text-slate-100"><i class="fas fa-desktop fa-2x"></i></div>
             </div>
             
             <!-- Window 2 -->
             <div id="kiosk-win-2-card" class="kiosk-window-card">
               <div class="kiosk-window-label">Window 2</div>
               <div id="kiosk-win-2-num" class="kiosk-window-number">---</div>
-              <div id="kiosk-win-2-name" class="kiosk-window-name">Available</div>
-              <div id="kiosk-win-2-status" class="kiosk-window-status status-idle">Idle</div>
-              <div class="absolute top-8 right-8 text-slate-100"><i class="fas fa-desktop fa-2x"></i></div>
             </div>
             
             <!-- Window 3 (Priority) -->
             <div id="kiosk-win-3-card" class="kiosk-window-card priority-window">
               <div class="kiosk-window-label !text-purple-400">Priority Window</div>
               <div id="kiosk-win-3-num" class="kiosk-window-number !text-purple-700">---</div>
-              <div id="kiosk-win-3-name" class="kiosk-window-name !bg-purple-100 !text-purple-900">Available</div>
-              <div id="kiosk-win-3-status" class="kiosk-window-status status-idle">Idle</div>
-              <div class="absolute top-8 right-8 text-purple-200"><i class="fas fa-wheelchair fa-2x"></i></div>
             </div>
           </div>
         </div>
@@ -624,6 +615,14 @@
     let currentTicketData = null; // To track the last generated ticket for print/save
     let isFetching = false;
     const EXPIRATION_LIMIT_MS = 2 * 60 * 60 * 1000; // 2 Hours in ms
+
+    window.formatTicketDisplay = function(value) {
+      if (value === null || value === undefined) return '';
+      return String(value)
+        .replace(/^REG-?/i, '')
+        .replace(/^#/, '')
+        .trim();
+    };
 
     // Wrapper to keep logic clean
     async function refreshQueueData() {
@@ -717,7 +716,7 @@
             <div class="text-sm text-gray-600">
               <span class="opacity-70">Purpose:</span> ${t.purpose || 'General Inquiry'} 
               <span class="mx-2 opacity-30">|</span> 
-              <span class="text-indigo-600 font-medium">#${t.queue_number}</span>
+              <span class="text-indigo-600 font-medium">${formatTicketDisplay(t.queue_number)}</span>
             </div>
           </div>
           <div class="queue-actions">
@@ -760,7 +759,7 @@
       if (status === 'serving' && windowNumber) {
         const numEl = document.getElementById(`win-${windowNumber}-num`);
         if (numEl) {
-            const displayNum = queueNumber.includes('-') ? queueNumber : '#' + queueNumber;
+            const displayNum = formatTicketDisplay(queueNumber);
             numEl.textContent = displayNum;
             numEl.classList.add('animate-pulse'); // Visual feedback that it's updating
             setTimeout(() => numEl.classList.remove('animate-pulse'), 1000);
@@ -955,10 +954,11 @@
 
     window.showTicketPreview = function(ticket) {
       const panel = document.getElementById('ticket-preview-panel');
-      document.getElementById('preview-student-info').textContent = ticket.student_name || 'Walk-in';
-      document.getElementById('preview-queue-number').textContent = ticket.queue_number;
-      document.getElementById('preview-generated-at').textContent = new Date(ticket.created_at).toLocaleTimeString();
-      panel.style.display = 'block';
+      const queueEl = document.getElementById('preview-queue-number');
+      if (panel && queueEl && ticket?.queue_number) {
+        queueEl.textContent = formatTicketDisplay(ticket.queue_number);
+        panel.style.display = 'block';
+      }
     }
 
     /**
@@ -990,9 +990,7 @@
           const winId = (winIdRaw !== null && winIdRaw !== undefined) ? parseInt(winIdRaw) : null;
 
           if (winId && windowStates[winId]) {
-            // Format ticket number with prefix if not already present
-            const displayNum = t.queue_number.includes('-') ? t.queue_number : '#' + t.queue_number;
-            windowStates[winId].num = displayNum;
+            windowStates[winId].num = formatTicketDisplay(t.queue_number);
             windowStates[winId].name = t.student_name || 'Walk-in';
             windowStates[winId].cashier = t.cashier_name ? 'Served by ' + t.cashier_name : '';
           }
@@ -1038,7 +1036,7 @@
       // Identify Next in Line
       const nextTicket = tickets.find(t => t.status === 'waiting');
       const nextEl = document.getElementById('display-next-queue');
-      if (nextEl) nextEl.textContent = nextTicket ? '#' + nextTicket.queue_number : 'None';
+      if (nextEl) nextEl.textContent = nextTicket ? formatTicketDisplay(nextTicket.queue_number) : 'None';
     }
 
     window.startQueuePolling = function() {
@@ -1086,28 +1084,20 @@
         const ticket = windowsMap[w];
         const card = document.getElementById(`kiosk-win-${w}-card`);
         const numEl = document.getElementById(`kiosk-win-${w}-num`);
-        const nameEl = document.getElementById(`kiosk-win-${w}-name`);
-        const statusEl = document.getElementById(`kiosk-win-${w}-status`);
 
         if (ticket) {
           const oldNum = numEl.textContent;
-          const displayNum = ticket.queue_number.includes('-') ? ticket.queue_number : '#' + ticket.queue_number;
+          const displayNum = formatTicketDisplay(ticket.queue_number);
           numEl.textContent = displayNum;
-          nameEl.textContent = ticket.student_name || 'Walk-in';
-          statusEl.innerHTML = '<div class="status-dot-inner"></div> Serving';
-          statusEl.className = 'kiosk-window-status status-serving';
 
           // Trigger highlight animation if ticket changed
-          if (oldNum !== '#' + ticket.queue_number && oldNum !== '---') {
+          if (oldNum !== displayNum && oldNum !== '---') {
             card.style.animation = 'none';
             card.offsetHeight; // force reflow
             card.style.animation = w === 3 ? 'priorityPulse 2s infinite, highlightCall 1.5s ease' : 'highlightCall 1.5s ease';
           }
         } else {
           numEl.textContent = '---';
-          nameEl.textContent = 'Available';
-          statusEl.innerHTML = 'Idle';
-          statusEl.className = 'kiosk-window-status status-idle';
         }
       });
 
@@ -1115,8 +1105,7 @@
       const waiting = tickets.filter(t => t.status === 'waiting');
       listEl.innerHTML = waiting.slice(0, 4).map(t => `
         <div class="kiosk-next-item">
-          <div class="kiosk-next-number">#${t.queue_number}</div>
-          <div class="kiosk-next-name">${t.student_name || 'Walk-in'}</div>
+          <div class="kiosk-next-number">${formatTicketDisplay(t.queue_number)}</div>
         </div>
       `).join('') || '<div class="p-12 text-center text-gray-400 italic text-2xl">No upcoming tickets</div>';
     }
@@ -1124,7 +1113,8 @@
     window.printTicket = function() {
       if (!currentTicketData?.queue_number) return;
       const printWindow = window.open('', '_blank');
-      printWindow.document.write(`<html><head><title>Print Ticket</title></head><body><div style="text-align:center;border:2px dashed #000;padding:20px;font-family:sans-serif;"><h1>GCST QUEUE</h1><h2 style="font-size:3rem;">${currentTicketData.queue_number}</h2><p>Student: ${currentTicketData.student_name || 'Walk-in'}</p><p>${new Date(currentTicketData.created_at).toLocaleString()}</p></div></body></html>`);
+      const displayTicket = formatTicketDisplay(currentTicketData.queue_number);
+      printWindow.document.write(`<html><head><title>Print Ticket</title></head><body><div style="text-align:center;border:2px dashed #000;padding:20px;font-family:sans-serif;"><h1>GCST QUEUE</h1><h2 style="font-size:3rem;">${displayTicket}</h2><p>Student: ${currentTicketData.student_name || 'Walk-in'}</p><p>${new Date(currentTicketData.created_at).toLocaleString()}</p></div></body></html>`);
       printWindow.document.close();
       printWindow.print();
     }

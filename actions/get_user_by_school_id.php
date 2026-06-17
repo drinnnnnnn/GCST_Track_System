@@ -44,12 +44,15 @@ try {
     $stmt->close();
 
     if ($user) {
+        $course = !empty($user['course']) ? trim($user['course']) : 'Not Assigned';
+        $yearLevel = !empty($user['year_level']) ? trim($user['year_level']) : 'Not Assigned';
+
         echo json_encode([
             'success' => true,
             'user' => [
                 'full_name' => trim($user['first_name'] . ' ' . $user['last_name']),
-                'course' => $user['course'] ?: 'N/A',
-                'year_level' => $user['year_level'] ?: 'N/A',
+                'course' => $course,
+                'year_level' => $yearLevel,
                 'discount_rate' => 5.0 // Configured student discount percentage
             ]
         ]);
