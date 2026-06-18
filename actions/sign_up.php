@@ -23,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $year_level     = trim(filter_input(INPUT_POST, 'year_level', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '');
     $contact_number = trim(filter_input(INPUT_POST, 'contact_number', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '');
     $address        = trim(filter_input(INPUT_POST, 'address', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '');
+    $is_pwd         = isset($_POST['is_pwd']) && $_POST['is_pwd'] == '1' ? 1 : 0;
     $status         = 'pending';
 
     if ($student_id === '' || $last_name === '' || $first_name === '' || $email === '' || $password_raw === '' || $sex === '' || $course === '' || $department === '' || $year_level === '') {
@@ -53,44 +54,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $max_file_size = 5 * 1024 * 1024; // 5MB limit
     $allowed_extensions = ['pdf', 'jpg', 'jpeg', 'png'];
-    $allowed_mimes = ['application/pdf', 'image/jpeg', 'image/png'];
-    $proof_paths = ['school_id_pic' => '', 'reg_form' => '', 'payment_scheme' => ''];
-    foreach ($proof_paths as $key => &$path) {
-        if (isset($_FILES[$key]) && $_FILES[$key]['error'] === UPLOAD_ERR_OK) {
-            if ($_FILES[$key]['size'] > $max_file_size) {
-                header('Location: ../pages/superadmin/sign_up.html?status=too_large&show=register');
-                exit();
+    $allowed_mimes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/png'
+    ];
+    $proof_paths = [
+        'school_id_pic' => '',
+        'reg_form' => '',
+        'payment_scheme' => '',
+        'pwd_front' => '',
+        'pwd_back' => ''
+    ];
+
+    $upload_file = function ($key, $allowedExts, $allowedMimesList, $isRequired = true) use (&$proof_paths, &$student_id, &$upload_dir, &$max_file_size) {
+        if (!isset($_FILES[$key]) || $_FILES[$key]['error'] !== UPLOAD_ERR_OK) {
+            if ($isRequired) {
+                return false;
             }
+            return true;
+        }
 
-            $ext = strtolower(pathinfo($_FILES[$key]['name'], PATHINFO_EXTENSION));
-            if (!in_array($ext, $allowed_extensions)) {
-                header('Location: ../pages/superadmin/sign_up.html?status=invalid_file_type&show=register');
-                exit();
-            }
+        if ($_FILES[$key]['size'] > $max_file_size) {
+            return false;
+        }
 
-            // Verify actual file content (MIME type) for better security
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime_type = finfo_file($finfo, $_FILES[$key]['tmp_name']);
-            finfo_close($finfo);
+        $ext = strtolower(pathinfo($_FILES[$key]['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, $allowedExts, true)) {
+            return false;
+        }
 
-            if (!in_array($mime_type, $allowed_mimes)) {
-                header('Location: ../pages/superadmin/sign_up.html?status=invalid_file_type&show=register');
-                exit();
-            }
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime_type = finfo_file($finfo, $_FILES[$key]['tmp_name']);
+        finfo_close($finfo);
 
-            $new_filename = strtoupper($key) . '_' . $student_id . '_' . time() . '.' . $ext;
-            $destination = $upload_dir . $new_filename;
+        if (!in_array($mime_type, $allowedMimesList, true)) {
+            return false;
+        }
 
-            if (move_uploaded_file($_FILES[$key]['tmp_name'], $destination)) {
-                $path = 'uploads/proofs/' . $new_filename; // Store relative path
-            }
+        $new_filename = strtoupper($key) . '_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $student_id) . '_' . time() . '.' . $ext;
+        $destination = $upload_dir . $new_filename;
+
+        if (move_uploaded_file($_FILES[$key]['tmp_name'], $destination)) {
+            $proof_paths[$key] = 'uploads/proofs/' . $new_filename;
+            return true;
+        }
+
+        return false;
+    };
+
+    foreach (['school_id_pic', 'reg_form', 'payment_scheme'] as $key) {
+        if (!$upload_file($key, $allowed_extensions, $allowed_mimes, true)) {
+            header('Location: ../pages/superadmin/sign_up.html?status=upload_failed&show=register');
+            exit();
         }
     }
 
-    // Ensure all files were successfully uploaded
-    if ($proof_paths['school_id_pic'] === '' || $proof_paths['reg_form'] === '' || $proof_paths['payment_scheme'] === '') {
-        header('Location: ../pages/superadmin/sign_up.html?status=upload_failed&show=register');
-        exit();
+    if ($is_pwd) {
+        $pwd_allowed_ext = ['jpg', 'jpeg', 'png'];
+        $pwd_allowed_mimes = ['image/jpeg', 'image/png'];
+        foreach (['pwd_front', 'pwd_back'] as $key) {
+            if (!$upload_file($key, $pwd_allowed_ext, $pwd_allowed_mimes, true)) {
+                header('Location: ../pages/superadmin/sign_up.html?status=upload_failed&show=register');
+                exit();
+            }
+        }
     }
 
     $check_stmt = $conn->prepare('SELECT 1 FROM users WHERE student_id = ? OR email = ?');
@@ -116,9 +144,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'contact_number' => "VARCHAR(20) AFTER `year_level` ",
         'address'        => "TEXT AFTER `contact_number` ",
         'status'         => "VARCHAR(50) DEFAULT 'pending' AFTER `address` ",
-        'school_id_pic'  => "VARCHAR(255) AFTER `status` ",
+        'is_pwd'         => "TINYINT(1) DEFAULT 0 AFTER `status` ",
+        'school_id_pic'  => "VARCHAR(255) AFTER `is_pwd` ",
         'reg_form'       => "VARCHAR(255) AFTER `school_id_pic` ",
-        'payment_scheme' => "VARCHAR(255) AFTER `reg_form` "
+        'payment_scheme' => "VARCHAR(255) AFTER `reg_form` ",
+        'pwd_front'      => "VARCHAR(255) AFTER `payment_scheme` ",
+        'pwd_back'       => "VARCHAR(255) AFTER `pwd_front` "
     ];
 
     foreach ($required_columns as $col => $definition) {
@@ -131,11 +162,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $hashed_password = password_hash($password_raw, PASSWORD_DEFAULT);
     $stmt = $conn->prepare(
         'INSERT INTO users 
-         (student_id, last_name, first_name, middle_name, email, password_hash, sex, course, department, year_level, contact_number, address, status, school_id_pic, reg_form, payment_scheme) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+         (student_id, last_name, first_name, middle_name, email, password_hash, sex, course, department, year_level, contact_number, address, status, is_pwd, school_id_pic, reg_form, payment_scheme, pwd_front, pwd_back) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
+
+    $bind_types = str_repeat('s', 13) . 'i' . str_repeat('s', 5);
     $stmt->bind_param(
-        'ssssssssssssssss',
+        $bind_types,
         $student_id,
         $last_name,
         $first_name,
@@ -149,9 +182,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $contact_number,
         $address,
         $status,
+        $is_pwd,
         $proof_paths['school_id_pic'],
         $proof_paths['reg_form'],
-        $proof_paths['payment_scheme']
+        $proof_paths['payment_scheme'],
+        $proof_paths['pwd_front'],
+        $proof_paths['pwd_back']
     );
 
     if ($stmt->execute()) {

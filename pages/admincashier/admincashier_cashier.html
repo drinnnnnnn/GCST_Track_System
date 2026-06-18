@@ -56,6 +56,16 @@
       min-height: 240px;
       overflow: hidden; /* This panel contains cart content, which should scroll */
     }
+    @keyframes modalFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
     .management-section .panel {
       height: 600px;
       display: flex;
@@ -1121,31 +1131,21 @@
       align-items: center;
       gap: 6px;
       margin-top: 24px;
-      padding-top: 16px;
-      padding-bottom: 10px;
+      padding: 16px 6px 10px;
       border-top: 1px solid #f1f5f9;
       flex-wrap: wrap;
-      overflow-x: auto;
+      overflow: visible;
+      overflow-x: visible;
+      overflow-y: visible;
       max-width: 100%;
-      scroll-behavior: smooth;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: thin;
+      white-space: normal;
+      scrollbar-width: none;
     }
 
     .pagination-controls::-webkit-scrollbar {
-      height: 6px;
+      display: none;
     }
-    .pagination-controls::-webkit-scrollbar-track {
-      background: #f1f5f9;
-      border-radius: 10px;
-    }
-    .pagination-controls::-webkit-scrollbar-thumb {
-      background: #bdbdbd;
-      border-radius: 10px;
-    }
-    .pagination-controls::-webkit-scrollbar-thumb:hover {
-      background: #999;
-    }
+
     .pagination-btn {
       min-width: 40px;
       height: 40px;
@@ -1160,6 +1160,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      flex: 0 0 auto;
       cursor: pointer;
       white-space: nowrap;
       user-select: none;
@@ -1196,13 +1197,13 @@
     @media (max-width: 768px) {
       .pagination-controls {
         gap: 4px;
-        justify-content: flex-start;
+        justify-content: center;
       }
       .pagination-btn {
-        min-width: 36px;
-        height: 36px;
-        padding: 0 7px;
-        flex: 1 1 36px;
+        min-width: 34px;
+        height: 34px;
+        padding: 0 8px;
+        font-size: 0.85rem;
       }
     }
   </style>
@@ -1588,6 +1589,50 @@
               <div class="receipt-line" style="font-size: 1.1rem; color: #4f46e5;"><span>Total</span><strong id="receipt-total"></strong></div>
               <div class="receipt-line"><span>Paid</span><strong id="receipt-paid"></strong></div>
               <div class="receipt-line"><span>Change</span><strong id="receipt-change"></strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Finalize Transaction Confirmation Modal -->
+    <div id="confirm-finalize-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+      <div class="panel" style="width: min(460px, 92vw); border-radius: 22px; overflow: hidden; box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28); animation: modalFadeIn 0.2s ease-out;">
+        <div style="padding: 22px 24px 18px; border-bottom: 1px solid #e2e8f0; background: linear-gradient(90deg, #f8fafc 0%, #eef2ff 100%);">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <div>
+              <p style="margin: 0; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #4f46e5;">Transaction Review</p>
+              <h3 style="margin: 6px 0 0; font-size: 1.2rem; font-weight: 800; color: #0f172a;">Confirm Transaction</h3>
+            </div>
+            <button id="confirm-finalize-close" type="button" class="btn btn-sm" style="background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; border-radius: 12px; padding: 8px 12px;" aria-label="Close confirmation">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div style="padding: 22px 24px 24px; background: #fff;">
+          <p style="margin: 0 0 16px; color: #334155; font-size: 0.95rem; line-height: 1.5;">Are you sure you want to finalize this transaction?</p>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; color: #64748b;">
+              <span>Total Items</span>
+              <strong id="confirm-items-count" style="color: #0f172a;">0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; color: #64748b;">
+              <span>Customer</span>
+              <strong id="confirm-customer" style="color: #0f172a; text-align: right;">—</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; color: #64748b;">
+              <span>Total Amount</span>
+              <strong id="confirm-total" style="color: #0f172a;">₱0.00</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; color: #64748b;">
+              <span>Payment Method</span>
+              <strong id="confirm-payment-method" style="color: #0f172a;">Cash</strong>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+            <button id="confirm-finalize-cancel" type="button" class="btn btn-secondary">Cancel</button>
+            <button id="confirm-finalize-button" type="button" class="btn btn-primary">
+              <i class="fas fa-check-circle"></i> Finalize Transaction
+            </button>
           </div>
         </div>
       </div>
@@ -2670,6 +2715,15 @@
       const yearEl = document.getElementById('display-year-level');
       const courseEl = document.getElementById('display-course');
 
+      const normalizeDisplayValue = (value) => {
+        if (value === null || value === undefined) return '';
+        const text = String(value).trim();
+        if (!text || text === 'null' || text === 'undefined' || text === 'N/A' || text === 'Not Assigned') {
+          return '';
+        }
+        return text;
+      };
+
       if (id === 'GUEST') {
         nameText.textContent = 'Guest Customer';
         statusText.textContent = 'No Account Required';
@@ -2677,7 +2731,12 @@
         statusBadge.style.color = '#4338ca';
         avatarBox.style.color = '#4f46e5';
         avatarBox.style.borderColor = '#e2e8f0';
-        extraInfo?.classList.add('hidden');
+        if (extraInfo) {
+          extraInfo.classList.remove('hidden');
+          schoolIdEl.textContent = '—';
+          yearEl.textContent = '—';
+          courseEl.textContent = 'Guest Transaction';
+        }
         return;
       }
 
@@ -2694,6 +2753,7 @@
 
       // Find student in pre-loaded studentList by ID or Database ID
       const student = studentList.find(s => (s.student_id === id || s.id == id));
+      console.log('[checkout debug] student display payload:', student);
 
       if (student) {
         // Trigger subtle success animation
@@ -2714,9 +2774,23 @@
 
         if (extraInfo) {
             extraInfo.classList.remove('hidden');
-            schoolIdEl.textContent = student.student_id || student.id;
-            yearEl.textContent = student.year_level || student.year_section || 'Not Assigned';
-            courseEl.textContent = student.course || student.program || 'Not Assigned';
+            const studentIdValue = normalizeDisplayValue(student.student_id || student.id);
+            const yearValue = normalizeDisplayValue(
+              student.year_level ||
+              student.yearLevel ||
+              student.year_section ||
+              student.yearSection
+            );
+            const courseValue = normalizeDisplayValue(
+              student.course ||
+              student.program ||
+              student.course_program ||
+              student.courseProgram ||
+              student.department
+            );
+            schoolIdEl.textContent = studentIdValue || '—';
+            yearEl.textContent = yearValue || '—';
+            courseEl.textContent = courseValue || '—';
         }
       } else {
         nameText.textContent = 'Student Not Found';
@@ -2743,9 +2817,7 @@
 
       state.cashReceived = cashInput.value === '' ? 0 : (parseFloat(cashInput.value) || 0);
       
-      if (!state.isGuest) {
-        updateStudentDisplay(state.studentId);
-      }
+      updateStudentDisplay(state.isGuest ? 'GUEST' : state.studentId);
 
       updateCartSummary();
     }
@@ -2822,6 +2894,38 @@
      * Finalizes the transaction by sending cart data to the server.
      * Strictly user-triggered and protected against double-clicks.
      */
+    function openFinalizeConfirmationModal() {
+      const modal = document.getElementById('confirm-finalize-modal');
+      const confirmButton = document.getElementById('confirm-finalize-button');
+      if (!modal || !confirmButton) return;
+
+      const selectedItems = cart.filter(item => item.selected);
+      const itemCount = selectedItems.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
+      const currentSubtotal = selectedItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+      const financials = calculateFinancials(currentSubtotal);
+
+      document.getElementById('confirm-items-count').textContent = itemCount;
+      document.getElementById('confirm-total').textContent = formatCurrency(financials.total);
+      document.getElementById('confirm-payment-method').textContent = state.paymentStatus === 'paid' ? 'Cash' : 'Pending';
+
+      if (state.isGuest) {
+        const guestName = document.getElementById('guest-name')?.value.trim();
+        document.getElementById('confirm-customer').textContent = guestName || 'Guest Customer';
+      } else {
+        const student = studentList.find(s => (s.student_id === state.studentId || s.id == state.studentId));
+        document.getElementById('confirm-customer').textContent = student?.name || state.studentId || 'Student Customer';
+      }
+
+      modal.classList.remove('hidden');
+      confirmButton.disabled = false;
+      confirmButton.innerHTML = '<i class="fas fa-check-circle"></i> Finalize Transaction';
+    }
+
+    function closeFinalizeConfirmationModal() {
+      const modal = document.getElementById('confirm-finalize-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
     async function completeTransaction() {
       if (isProcessingTransaction) return;
 
@@ -2880,10 +2984,6 @@
         return;
       }
 
-      if (!confirm(`Confirm Finalization?\nTotal Payable: ${formatCurrency(financials.total)}`)) {
-        return;
-      }
-
       const payload = {
         student_id: state.studentId,
         is_guest: state.isGuest,
@@ -2910,6 +3010,7 @@
       };
 
       try {
+        closeFinalizeConfirmationModal();
         isProcessingTransaction = true;
         completeButton.disabled = true;
         const originalHTML = completeButton.innerHTML;
@@ -3561,7 +3662,23 @@
       });
 
       // Standardized User Triggered Event Binding
-      document.getElementById('complete-sale')?.addEventListener('click', completeTransaction);
+      document.getElementById('complete-sale')?.addEventListener('click', openFinalizeConfirmationModal);
+      document.getElementById('confirm-finalize-cancel')?.addEventListener('click', closeFinalizeConfirmationModal);
+      document.getElementById('confirm-finalize-close')?.addEventListener('click', closeFinalizeConfirmationModal);
+      document.getElementById('confirm-finalize-button')?.addEventListener('click', completeTransaction);
+
+      const finalizeModal = document.getElementById('confirm-finalize-modal');
+      if (finalizeModal) {
+        finalizeModal.addEventListener('click', (e) => {
+          if (e.target === finalizeModal) closeFinalizeConfirmationModal();
+        });
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && finalizeModal && !finalizeModal.classList.contains('hidden')) {
+          closeFinalizeConfirmationModal();
+        }
+      });
       
       // Safety: Prevent Enter key in specific fields from triggering unintended form behaviors
       ['discount-percent', 'cash-received', 'guest-name', 'guest-school-id', 'guest-email'].forEach(id => {
@@ -3662,14 +3779,17 @@
             
             if (data.success && data.user) {
               nameEl.value = data.user.full_name;
-              statusEl.innerHTML = `<i class="fas fa-check-circle mr-1"></i> Verified: ${data.user.course} (Yr ${data.user.year_level})<br><span style="color:#4f46e5; font-size:0.75rem; margin-top:2px; display:inline-block;"><i class="fas fa-tag"></i> ${data.user.discount_rate}% Student Discount Applied</span>`;
+              const isVerifiedStudent = !state.isGuest;
+              statusEl.innerHTML = `<i class="fas fa-check-circle mr-1"></i> Verified: ${data.user.course} (Yr ${data.user.year_level})${isVerifiedStudent ? `<br><span style="color:#4f46e5; font-size:0.75rem; margin-top:2px; display:inline-block;"><i class="fas fa-tag"></i> ${data.user.discount_rate}% Student Discount Applied</span>` : ''}`;
               statusEl.style.color = '#10b981';
               
-              // Automatically apply the student discount
-              const discInput = document.getElementById('discount-percent');
-              if (discInput) {
-                  discInput.value = data.user.discount_rate;
-                  updateTransactionSettings();
+              // Automatically apply the student discount only for verified student checkout flows
+              if (isVerifiedStudent) {
+                const discInput = document.getElementById('discount-percent');
+                if (discInput) {
+                    discInput.value = data.user.discount_rate;
+                    updateTransactionSettings();
+                }
               }
             } else {
               statusEl.innerHTML = '<i class="fas fa-info-circle mr-1"></i> Record not found. Standard rates apply.';

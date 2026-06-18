@@ -859,6 +859,144 @@
       padding: 20px;
       cursor: zoom-out;
     }
+
+    /* === DELETE CONFIRMATION MODAL === */
+    .delete-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 40000;
+    }
+
+    .delete-modal-panel {
+      width: min(520px, 100%);
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 30px 60px -18px rgba(15, 23, 42, 0.45);
+      animation: deleteModalFadeIn 0.24s ease-out;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @keyframes deleteModalFadeIn {
+      from { opacity: 0; transform: translateY(10px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .delete-modal-icon {
+      width: 62px;
+      height: 62px;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      background: #fef2f2;
+      color: #dc2626;
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+    }
+
+    .delete-modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .delete-modal-header h3 {
+      margin: 0;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+
+    .delete-modal-close {
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: #f8fafc;
+      color: #64748b;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .delete-modal-close:hover {
+      background: #eef2ff;
+      color: #4f46e5;
+    }
+
+    .delete-modal-message {
+      margin: 0;
+      color: #475569;
+      font-size: 0.98rem;
+      line-height: 1.65;
+      font-weight: 500;
+    }
+
+    .delete-modal-message strong {
+      display: block;
+      color: #0f172a;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .delete-modal-preview {
+      margin-top: 18px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .delete-modal-preview-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.9rem;
+    }
+
+    .delete-modal-preview-row span:first-child {
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .delete-modal-preview-row strong {
+      color: #0f172a;
+      font-weight: 700;
+      text-align: right;
+      max-width: 60%;
+      word-break: break-word;
+    }
+
+    .delete-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .delete-btn {
+      background: #dc2626;
+      color: #ffffff;
+      border: none;
+    }
+
+    .delete-btn:hover {
+      background: #b91c1c;
+      color: #ffffff;
+    }
   </style>
 </head>
 
@@ -1313,6 +1451,45 @@
     <!-- Toast Notification Container -->
     <div id="toast-container" class="toast-container"></div>
 
+    <!-- Delete Product Confirmation Modal -->
+    <div id="delete-product-modal" class="delete-modal-backdrop hidden" onclick="window.closeDeleteProductModal()">
+      <div class="delete-modal-panel" onclick="event.stopPropagation()">
+        <div class="delete-modal-icon">⚠</div>
+        <div class="delete-modal-header">
+          <h3 id="delete-product-modal-title">Confirm Product Deletion</h3>
+          <button type="button" class="delete-modal-close" onclick="window.closeDeleteProductModal()" aria-label="Close delete modal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <p class="delete-modal-message">
+          <strong>Are you sure you want to delete this product?</strong>
+          This action cannot be undone and the product will be permanently removed from the inventory.
+        </p>
+        <div class="delete-modal-preview">
+          <div class="delete-modal-preview-row">
+            <span>Product</span>
+            <strong id="delete-product-name">-</strong>
+          </div>
+          <div class="delete-modal-preview-row">
+            <span>SKU</span>
+            <strong id="delete-product-sku">-</strong>
+          </div>
+          <div class="delete-modal-preview-row">
+            <span>Category</span>
+            <strong id="delete-product-category">-</strong>
+          </div>
+          <div class="delete-modal-preview-row">
+            <span>Current Stock</span>
+            <strong id="delete-product-stock">-</strong>
+          </div>
+        </div>
+        <div class="delete-modal-actions">
+          <button id="delete-modal-cancel" type="button" class="btn btn-secondary" onclick="window.closeDeleteProductModal()">Cancel</button>
+          <button id="delete-modal-confirm" type="button" class="btn delete-btn" onclick="window.confirmDeleteProduct()">Delete Product</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Image Lightbox Modal -->
     <div id="image-lightbox" class="lightbox-backdrop hidden" onclick="closeImageLightbox()">
       <div class="relative max-w-5xl w-full flex flex-col items-center gap-6" onclick="event.stopPropagation()">
@@ -1440,6 +1617,8 @@
             products: [],
             filtered: [],
             selected: null,
+            pendingDeleteId: null,
+            pendingDeleteProduct: null,
             filter: { query: '', category: 'All', course: 'All' },
             isProcessing: false
         },
@@ -1488,6 +1667,13 @@
                     value: document.getElementById('summary-value')
                 },
                 toastContainer: document.getElementById('toast-container'),
+                deleteModal: document.getElementById('delete-product-modal'),
+                deleteConfirmButton: document.getElementById('delete-modal-confirm'),
+                deleteCancelButton: document.getElementById('delete-modal-cancel'),
+                deleteProductName: document.getElementById('delete-product-name'),
+                deleteProductSku: document.getElementById('delete-product-sku'),
+                deleteProductCategory: document.getElementById('delete-product-category'),
+                deleteProductStock: document.getElementById('delete-product-stock'),
                 lightbox: {
                     backdrop: document.getElementById('image-lightbox'),
                     img: document.getElementById('lightbox-img'),
@@ -1564,6 +1750,19 @@
 
             // Form Submission
             this.ui.addForm?.addEventListener('submit', (e) => this.handleCreateProduct(e));
+
+            // Delete confirmation modal close handlers
+            this.ui.deleteConfirmButton?.addEventListener('click', () => this.confirmDeleteProduct());
+            this.ui.deleteCancelButton?.addEventListener('click', () => this.closeDeleteProductModal());
+            this.ui.deleteModal?.addEventListener('click', (e) => {
+                if (e.target === this.ui.deleteModal) this.closeDeleteProductModal();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && this.ui.deleteModal && !this.ui.deleteModal.classList.contains('hidden')) {
+                    this.closeDeleteProductModal();
+                }
+            });
         },
 
         async refreshData() {
@@ -2111,20 +2310,72 @@
             }
         },
 
+        openDeleteProductModal(id) {
+            const product = this.state.products.find(p => Number(p.product_id) === Number(id));
+            if (!product) return;
+
+            this.state.pendingDeleteId = id;
+            this.state.pendingDeleteProduct = product;
+            this.updateDeleteModal();
+            this.ui.deleteModal?.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        },
+
+        closeDeleteProductModal() {
+            this.state.pendingDeleteId = null;
+            this.state.pendingDeleteProduct = null;
+            this.ui.deleteModal?.classList.add('hidden');
+            document.body.style.overflow = '';
+            if (this.ui.deleteConfirmButton) {
+                this.ui.deleteConfirmButton.disabled = false;
+                this.ui.deleteConfirmButton.innerHTML = 'Delete Product';
+            }
+        },
+
+        updateDeleteModal() {
+            const product = this.state.pendingDeleteProduct;
+            if (!product) return;
+
+            const stock = Number(product.stock_count || 0);
+            const unit = product.product_category === 'Uniform Fabrics' ? 'Yards' : 'pcs';
+            const sku = product.barcode || `PID-${product.product_id}`;
+
+            if (this.ui.deleteProductName) this.ui.deleteProductName.textContent = product.product_name || 'Unnamed Product';
+            if (this.ui.deleteProductSku) this.ui.deleteProductSku.textContent = sku;
+            if (this.ui.deleteProductCategory) this.ui.deleteProductCategory.textContent = product.product_category || 'General';
+            if (this.ui.deleteProductStock) this.ui.deleteProductStock.textContent = `${stock} ${unit}`;
+        },
+
+        async confirmDeleteProduct() {
+            if (!this.state.pendingDeleteId) return;
+            await this.handleDelete(this.state.pendingDeleteId);
+        },
+
         async handleDelete(id) {
-            if (!confirm('Confirm deletion of this product? This cannot be undone.')) return;
+            const btn = this.ui.deleteConfirmButton;
+            const originalText = btn?.innerHTML || 'Delete Product';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Deleting product...';
+            }
             try {
                 const result = await InventoryAPI.deleteProduct(id);
                 if (result && result.success) {
                     if (this.state.selected?.product_id === id) this.clearSelection();
                     await this.refreshData();
                     this.syncChannel.postMessage('refresh_inventory');
-                    showToast('Item removed from catalog.', 'success');
+                    this.closeDeleteProductModal();
+                    showToast('Product deleted successfully.', 'success');
                 } else {
-                    showToast(result.message || 'Deletion failed.', 'error');
+                    showToast(result?.message || 'Failed to delete product. Please try again.', 'error');
                 }
             } catch (err) {
-                showToast('Network error during deletion.', 'error');
+                showToast('Failed to delete product. Please try again.', 'error');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
             }
         },
 
@@ -2232,7 +2483,9 @@
     };
 
     window.selectInventoryProduct = (id) => InventoryApp.selectProduct(id);
-    window.deleteInventoryProduct = (id) => InventoryApp.handleDelete(id);
+    window.deleteInventoryProduct = (id) => InventoryApp.openDeleteProductModal(id);
+    window.confirmDeleteProduct = () => InventoryApp.confirmDeleteProduct();
+    window.closeDeleteProductModal = () => InventoryApp.closeDeleteProductModal();
     window.initAdminCashierInventoryPage = () => InventoryApp.init();
 
     initializeAdminCashierPage(window.initAdminCashierInventoryPage);

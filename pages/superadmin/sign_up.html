@@ -167,6 +167,48 @@
             box-shadow: 0 4px 10px var(--primary-glow);
         }
 
+        .pwd-upload-section {
+            display: none;
+            padding: 14px;
+            background: rgba(79, 70, 229, 0.05);
+            border-radius: 14px;
+            border: 1px dashed rgba(79, 70, 229, 0.25);
+        }
+
+        .pwd-upload-note {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            line-height: 1.45;
+        }
+
+        .pwd-upload-group {
+            margin-bottom: 12px;
+        }
+
+        .pwd-upload-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            margin-left: 5px;
+        }
+
+        .preview-box {
+            margin-top: 8px;
+            display: none;
+        }
+
+        .preview-box img {
+            width: 100%;
+            max-height: 220px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+        }
+
         .input-box i {
             position: absolute;
             right: 18px;
@@ -313,6 +355,31 @@
                     <i class='bx bxs-map'></i>
                 </div>
 
+                <div class="input-box" style="margin-bottom: 12px;">
+                    <label style="display:flex; align-items:center; gap:10px; color:var(--text-muted); font-size:14px; font-weight:600; cursor:pointer;">
+                        <input type="checkbox" id="pwdCheckbox" name="is_pwd" value="1" style="width:18px; height:18px; accent-color: var(--primary);">
+                        <span>Yes, I am a Person With Disability</span>
+                    </label>
+                </div>
+
+                <div id="pwdSection" class="input-box pwd-upload-section">
+                    <p class="pwd-upload-note">Please ensure your PWD ID is clear and valid for verification.</p>
+                    <div class="pwd-upload-group">
+                        <label for="pwd_front">PWD ID Card (Front)</label>
+                        <input type="file" id="pwd_front" name="pwd_front" accept=".jpg,.jpeg,.png" aria-label="PWD ID Card Front">
+                        <div class="preview-box" id="pwdFrontPreviewBox">
+                            <img id="pwdFrontPreview" alt="PWD front preview">
+                        </div>
+                    </div>
+                    <div class="pwd-upload-group">
+                        <label for="pwd_back">PWD ID Card (Back)</label>
+                        <input type="file" id="pwd_back" name="pwd_back" accept=".jpg,.jpeg,.png" aria-label="PWD ID Card Back">
+                        <div class="preview-box" id="pwdBackPreviewBox">
+                            <img id="pwdBackPreview" alt="PWD back preview">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="input-box">
                     <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px; margin-left: 5px;">Proof: School ID (Picture)</p>
                     <input type="file" name="school_id_pic" accept=".jpg,.jpeg,.png,.pdf" required>
@@ -357,12 +424,35 @@
 
     <script>
         const floatingMessage = document.getElementById("floating-message");
+        const maxSizeBytes = 5 * 1024 * 1024;
 
         function showToast(message, isError = false) {
             floatingMessage.textContent = message;
             floatingMessage.classList.toggle("error", isError);
             floatingMessage.classList.add("show");
             setTimeout(() => floatingMessage.classList.remove("show"), 4000);
+        }
+
+        function bindImagePreview(inputId, previewId, previewBoxId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            const previewBox = document.getElementById(previewBoxId);
+            if (!input || !preview || !previewBox) return;
+
+            let objectUrl = null;
+            input.addEventListener('change', function () {
+                if (objectUrl) URL.revokeObjectURL(objectUrl);
+                const file = this.files && this.files[0];
+                if (!file) {
+                    previewBox.style.display = 'none';
+                    preview.removeAttribute('src');
+                    return;
+                }
+
+                objectUrl = URL.createObjectURL(file);
+                preview.src = objectUrl;
+                previewBox.style.display = 'block';
+            });
         }
 
         // URL Status Handling
@@ -377,6 +467,18 @@
             else if (status === "invalid_file_type") showToast("Invalid file type. Only PDF, JPG, and PNG are allowed.", true);
             else if (status === "upload_failed") showToast("Document upload failed. Please try again.", true);
             else if (status === "invalid") showToast("Please check your form inputs.", true);
+
+            const pwdCheckbox = document.getElementById('pwdCheckbox');
+            const pwdSection = document.getElementById('pwdSection');
+            if (pwdCheckbox && pwdSection) {
+                pwdSection.style.display = pwdCheckbox.checked ? 'block' : 'none';
+                pwdCheckbox.addEventListener('change', function () {
+                    pwdSection.style.display = this.checked ? 'block' : 'none';
+                });
+            }
+
+            bindImagePreview('pwd_front', 'pwdFrontPreview', 'pwdFrontPreviewBox');
+            bindImagePreview('pwd_back', 'pwdBackPreview', 'pwdBackPreviewBox');
         });
 
         // Form Validation
@@ -388,8 +490,31 @@
                 return false;
             }
 
-            // Client-side file validation (Size & Type)
-            const maxSizeBytes = 5 * 1024 * 1024;
+            const pwdChecked = form.querySelector('#pwdCheckbox')?.checked;
+            if (pwdChecked) {
+                const pwdInputs = ['pwd_front', 'pwd_back'];
+                for (const inputName of pwdInputs) {
+                    const input = form.elements[inputName];
+                    if (!input.files || !input.files[0]) {
+                        showToast("PWD ID card front and back are required when PWD option is selected.", true);
+                        return false;
+                    }
+
+                    const file = input.files[0];
+                    const fileExt = file.name.split('.').pop().toLowerCase();
+                    const allowedImageExt = ['jpg', 'jpeg', 'png'];
+
+                    if (file.size > maxSizeBytes) {
+                        showToast(`"${file.name}" exceeds the 5MB limit.`, true);
+                        return false;
+                    }
+                    if (!allowedImageExt.includes(fileExt)) {
+                        showToast(`"${file.name}" is not a valid format (JPG, PNG only).`, true);
+                        return false;
+                    }
+                }
+            }
+
             const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
             const fileInputs = form.querySelectorAll('input[type="file"]');
 

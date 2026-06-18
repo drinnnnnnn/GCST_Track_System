@@ -36,47 +36,73 @@ export function getSidebarHTML() {
         setTimeout(window.initSidebarGestures, 200);
     }
 
-    if (!window.logoutUser) {
-        window.logoutUser = function() {
+    if (!window.openLogoutModal) {
+        window.openLogoutModal = function() {
             const modal = document.getElementById('sidebar-logout-modal');
-            if (modal) {
-                modal.style.display = 'flex';
-                setTimeout(() => modal.classList.add('active'), 10);
-                document.body.style.overflow = 'hidden';
-            }
+            if (!modal) return;
+            if (modal.classList.contains('active')) return;
+
+            modal.style.display = 'flex';
+            requestAnimationFrame(() => {
+                modal.classList.add('active');
+            });
+            document.body.style.overflow = 'hidden';
+            const cancelButton = modal.querySelector('.btn-modal-cancel');
+            if (cancelButton) cancelButton.focus();
         };
 
         window.closeLogoutModal = function() {
             const modal = document.getElementById('sidebar-logout-modal');
-            if (modal) {
-                modal.classList.remove('active');
-                setTimeout(() => modal.style.display = 'none', 200);
-                document.body.style.overflow = 'auto';
+            if (!modal) return;
+            if (!modal.classList.contains('active')) {
+                modal.style.display = 'none';
+                return;
             }
+
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }, 220);
         };
 
         window.performLogout = function() {
-            // Trigger storage event for other tabs to sync logout
+            if (typeof window.closeLogoutModal === 'function') {
+                window.closeLogoutModal();
+            }
             localStorage.setItem('gcst_superadmin_logout_event', Date.now());
             localStorage.removeItem('sidebar-minimized');
-            sessionStorage.clear(); 
+            sessionStorage.clear();
             window.location.replace('/GCST_Track_System/actions/log_out_superadmin.php');
         };
 
-        // Global listener to close modal on Escape key
-        window.addEventListener('keydown', (e) => { 
-            if(e.key === 'Escape') window.closeLogoutModal(); 
-        });
+        window.logoutUser = function() {
+            window.performLogout();
+        };
+
+        window.__logoutKeydownBound = false;
+        if (!window.__logoutKeydownBound) {
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('sidebar-logout-modal');
+                    if (modal && modal.classList.contains('active')) {
+                        window.closeLogoutModal();
+                    }
+                }
+            });
+            window.__logoutKeydownBound = true;
+        }
 
         window.attemptUnlock = async function() {
             const pinInput = document.getElementById('lock-screen-pin');
-            const pin = pinInput.value;
+            const pin = pinInput?.value;
             
             if (!pin) return;
 
             const success = await window.verifyPinOnly(pin);
             if (success) {
-                document.getElementById('lock-screen-overlay').classList.remove('active');
+                const overlay = document.getElementById('lock-screen-overlay');
+                overlay?.classList.remove('active');
                 pinInput.value = '';
             } else {
                 pinInput.classList.add('shake');
@@ -98,14 +124,19 @@ export function getSidebarHTML() {
     // Ensure the logout modal exists in the body
     if (!document.getElementById('sidebar-logout-modal')) {
         const modalHTML = `
-        <div id="sidebar-logout-modal" class="logout-modal-overlay" style="display:none;">
+        <div id="sidebar-logout-modal" class="logout-modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="sidebar-logout-title" aria-describedby="sidebar-logout-message" onclick="if (event.target === this) closeLogoutModal()">
             <div class="logout-modal-card">
-                <div class="logout-modal-icon"><i class="fas fa-sign-out-alt"></i></div>
-                <h2 class="logout-modal-title">Confirm Logout</h2>
-                <p class="logout-modal-text">Are you sure you want to end your session? Make sure all transaction data has been saved.</p>
+                <div class="logout-modal-icon" aria-hidden="true">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+                <h2 id="sidebar-logout-title" class="logout-modal-title">Confirm Sign Out</h2>
+                <p id="sidebar-logout-message" class="logout-modal-text">
+                    Are you sure you want to sign out of the system?
+                    <span>You will need to log in again to access the dashboard.</span>
+                </p>
                 <div class="logout-modal-actions">
-                    <button onclick="closeLogoutModal()" class="btn-modal btn-modal-cancel">Stay</button>
-                    <button onclick="performLogout()" class="btn-modal btn-modal-confirm">Log Out</button>
+                    <button type="button" onclick="closeLogoutModal()" class="btn-modal btn-modal-cancel">Cancel</button>
+                    <button type="button" onclick="logoutUser()" class="btn-modal btn-modal-confirm">Sign Out</button>
                 </div>
             </div>
         </div>`;
@@ -280,6 +311,134 @@ export function getSidebarHTML() {
         right: -13px;
         transform: translateY(-50%) rotate(180deg);
     }
+
+    .logout-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.68);
+        backdrop-filter: blur(8px);
+        z-index: 1200;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        opacity: 0;
+        transition: opacity 0.22s ease;
+    }
+
+    .logout-modal-overlay.active {
+        display: flex;
+        opacity: 1;
+    }
+
+    .logout-modal-card {
+        width: min(420px, 100%);
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border-radius: 1.25rem;
+        box-shadow: 0 24px 50px rgba(15, 23, 42, 0.18);
+        padding: 2rem 1.5rem;
+        text-align: center;
+        transform: translateY(10px) scale(0.96);
+        transition: transform 0.22s ease;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .logout-modal-overlay.active .logout-modal-card {
+        transform: translateY(0) scale(1);
+    }
+
+    .logout-modal-icon {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: rgba(220, 38, 38, 0.1);
+        color: #dc2626;
+        font-size: 1.8rem;
+    }
+
+    .logout-modal-title {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: var(--text, #0f172a);
+    }
+
+    .logout-modal-text {
+        margin: 0.8rem 0 1.5rem;
+        color: var(--muted, #64748b);
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .logout-modal-text span {
+        display: block;
+        margin-top: 0.3rem;
+        color: #64748b;
+    }
+
+    .logout-modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+    }
+
+    .btn-modal {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding: 0.9rem 1rem;
+        border-radius: 0.9rem;
+        transition: all 0.18s ease;
+    }
+
+    .btn-modal-cancel {
+        background: #eef2ff;
+        color: #1e293b;
+    }
+
+    .btn-modal-cancel:hover {
+        background: #e2e8f0;
+        transform: translateY(-1px);
+    }
+
+    .btn-modal-confirm {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        color: #ffffff;
+        box-shadow: 0 10px 18px rgba(220, 38, 38, 0.22);
+    }
+
+    .btn-modal-confirm:hover {
+        background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 14px 22px rgba(220, 38, 38, 0.28);
+    }
+
+    @media (max-width: 480px) {
+        .logout-modal-card {
+            padding: 1.75rem 1rem;
+            border-radius: 1rem;
+        }
+
+        .logout-modal-title {
+            font-size: 1.2rem;
+        }
+
+        .logout-modal-text {
+            font-size: 0.9rem;
+        }
+
+        .logout-modal-actions {
+            flex-direction: column;
+        }
+    }
 </style>
 
 <aside id="main-sidebar" class="sidebar" aria-label="Main Sidebar">
@@ -316,7 +475,7 @@ export function getSidebarHTML() {
     </nav>
 
     <div class="sidebar-footer">
-        <a href="javascript:void(0)" onclick="logoutUser()" id="sidebar-logout" class="sidebar-link btn-logout">
+        <a href="javascript:void(0)" onclick="openLogoutModal()" id="sidebar-logout" class="sidebar-link btn-logout">
             <i class="fas fa-sign-out-alt"></i> <span>Sign Out</span>
         </a>
     </div>

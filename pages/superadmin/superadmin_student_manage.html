@@ -26,9 +26,88 @@
             }
         }
     </script>
+    <style>
+        #toastContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: min(360px, calc(100vw - 24px));
+            pointer-events: none;
+        }
+
+        .toast {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            color: #fff;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+            animation: toastSlideIn 0.3s ease;
+            overflow: hidden;
+            pointer-events: auto;
+        }
+
+        .toast.success { background: #16a34a; }
+        .toast.error { background: #dc2626; }
+        .toast.warning { background: #f59e0b; }
+        .toast.info { background: #2563eb; }
+
+        .toast-icon {
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.18);
+            flex-shrink: 0;
+        }
+
+        .toast-message {
+            font-size: 0.9rem;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .toast.is-removing {
+            animation: toastFadeOut 0.25s ease forwards;
+        }
+
+        @keyframes toastSlideIn {
+            from { opacity: 0; transform: translateX(18px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes toastFadeOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(18px); }
+        }
+
+        .logout-modal-overlay {
+            z-index: 1000;
+        }
+
+        .logout-modal-overlay.active {
+            z-index: 3000;
+        }
+
+        #confirm-modal.logout-modal-overlay.active {
+            z-index: 4000;
+        }
+
+        body.modal-open {
+            overflow: hidden;
+        }
+    </style>
 </head>
 
 <body class="antialiased font-sans">
+    <div id="toastContainer" aria-live="polite" aria-atomic="true"></div>
     <div id="sidebar-container"></div>
     <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
@@ -110,11 +189,49 @@
         </main>
     </div>
 
+    <!-- Generic Confirmation Modal -->
+    <div id="confirm-modal" class="logout-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+        <div class="logout-modal-card max-w-lg relative">
+            <button type="button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600" aria-label="Close confirmation modal" onclick="closeModal('confirm-modal')">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="confirm-modal-icon" class="logout-modal-icon"><i class="fas fa-circle-question"></i></div>
+            <h2 id="confirm-modal-title" class="logout-modal-title">Confirm Action</h2>
+            <p id="confirm-modal-message" class="text-muted mb-3">Are you sure you want to continue?</p>
+            <div id="confirm-modal-details" class="mb-4"></div>
+            <div class="logout-modal-actions pt-4">
+                <button type="button" onclick="closeModal('confirm-modal')" class="btn-modal flex-1 btn-modal-cancel">Cancel</button>
+                <button type="button" id="confirm-modal-action" onclick="confirmPendingAction()" class="btn-modal flex-1 btn-modal-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-student-modal" class="logout-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-student-title">
+        <div class="logout-modal-card max-w-lg relative">
+            <button type="button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600" aria-label="Close delete modal" onclick="closeModal('delete-student-modal')">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="logout-modal-icon"><i class="fas fa-trash-can"></i></div>
+            <h2 id="delete-student-title" class="logout-modal-title">Confirm Student Deletion</h2>
+            <p class="text-muted mb-4">Are you sure you want to delete this student record?</p>
+            <p class="text-xs text-slate-500 mb-4">This action cannot be undone and will permanently remove all associated data.</p>
+            <div id="delete-student-preview" class="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-left space-y-2"></div>
+            <div class="logout-modal-actions pt-4">
+                <button type="button" onclick="closeModal('delete-student-modal')" class="btn-modal flex-1 btn-modal-cancel">Cancel</button>
+                <button type="button" onclick="confirmDeleteStudent()" class="btn-modal flex-1 bg-rose-500 hover:bg-rose-600 text-white font-semibold">Confirm Delete</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modern Review & Approval Modal -->
-    <div id="review-modal" class="logout-modal-overlay">
-        <div class="logout-modal-card max-w-2xl">
+    <div id="review-modal" class="logout-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
+        <div class="logout-modal-card max-w-2xl relative">
+            <button type="button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600" aria-label="Close review modal" onclick="closeModal('review-modal')">
+                <i class="fas fa-times"></i>
+            </button>
             <div class="logout-modal-icon"><i class="fas fa-file-shield"></i></div>
-            <h2 class="logout-modal-title">Review Registration</h2>
+            <h2 id="review-modal-title" class="logout-modal-title">Review Registration</h2>
             <p class="text-muted mb-6">Inspect student identity and verification documents for security compliance.</p>
 
             <div id="review-content" class="text-left space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
@@ -122,23 +239,26 @@
             </div>
 
             <div class="logout-modal-actions pt-6 border-t border-slate-100 mt-6">
-                <button type="button" onclick="closeReviewModal()" class="btn-modal flex-1 btn-modal-cancel">Close</button>
+                <button type="button" onclick="closeModal('review-modal')" class="btn-modal flex-1 btn-modal-cancel">Close</button>
                 <div id="review-actions-container" class="flex gap-2 flex-1"></div>
             </div>
         </div>
     </div>
 
     <!-- Modern Student Profile Edit Modal -->
-    <div id="student-modal" class="logout-modal-overlay">
-        <div class="logout-modal-card">
+    <div id="student-modal" class="logout-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="student-modal-title">
+        <div class="logout-modal-card relative">
+            <button type="button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600" aria-label="Close edit modal" onclick="closeModal('student-modal')">
+                <i class="fas fa-times"></i>
+            </button>
             <div class="logout-modal-icon"><i class="fas fa-user-edit"></i></div>
-            <h2 class="logout-modal-title">Edit Profile</h2>
+            <h2 id="student-modal-title" class="logout-modal-title">Edit Profile</h2>
             <p class="text-muted mb-6">Update academic profile and portal access status.</p>
 
             <form id="student-form" class="space-y-4 text-left">
                 <input type="hidden" id="form-id">
                 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-1">
                         <label class="text-[10px] font-bold uppercase text-slate-500">First Name</label>
                         <input type="text" id="form-first-name" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
@@ -154,7 +274,7 @@
                     <input type="email" id="form-email" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-1">
                         <label class="text-[10px] font-bold uppercase text-slate-500">Course</label>
                         <select id="form-course" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary font-semibold">
@@ -176,7 +296,7 @@
                 </div>
 
                 <div class="logout-modal-actions pt-4">
-                    <button type="button" onclick="closeModal()" class="btn-modal flex-1 btn-modal-cancel">Cancel</button>
+                    <button type="button" onclick="closeModal('student-modal')" class="btn-modal flex-1 btn-modal-cancel">Cancel</button>
                     <button type="submit" class="btn-modal flex-1 btn-modal-confirm">Update Profile</button>
                 </div>
             </form>
@@ -187,19 +307,150 @@
     <script src="../../assets/js/superadmin.js"></script>
     <script>
         let allStudents = [];
-        const apiPath = '../../actions/process_student.php'; // Corrected endpoint for students
+        let pendingConfirmAction = null;
+        let pendingDeleteStudentId = null;
+        const apiPath = '../../actions/process_student.php';
 
         window.initializeSuperAdminPage(() => {
             loadStudents();
             setupEvents();
         });
 
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = {
+                success: 'fa-check',
+                error: 'fa-xmark',
+                warning: 'fa-triangle-exclamation',
+                info: 'fa-circle-info'
+            };
+            toast.innerHTML = `
+                <div class="toast-icon"><i class="fas ${icons[type] || 'fa-circle-info'}"></i></div>
+                <div class="toast-message">${message}</div>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('is-removing');
+                setTimeout(() => toast.remove(), 250);
+            }, 4000);
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+
+            closeAllModals();
+            modal.classList.add('active');
+            document.body.classList.add('modal-open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+
+            modal.classList.remove('active');
+            if (!document.querySelector('.logout-modal-overlay.active')) {
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function closeAllModals() {
+            document.querySelectorAll('.logout-modal-overlay').forEach(modal => {
+                modal.classList.remove('active');
+            });
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+        }
+
+        function openConfirmModal({ title, message, iconClass = 'fa-circle-question', confirmText = 'Confirm', confirmType = 'btn-modal-confirm', onConfirm }) {
+            const confirmTitle = document.getElementById('confirm-modal-title');
+            const confirmMessage = document.getElementById('confirm-modal-message');
+            const confirmIcon = document.getElementById('confirm-modal-icon');
+            const confirmAction = document.getElementById('confirm-modal-action');
+
+            if (confirmTitle) confirmTitle.textContent = title;
+            if (confirmMessage) confirmMessage.textContent = message;
+            if (confirmIcon) confirmIcon.innerHTML = `<i class="fas ${iconClass}"></i>`;
+            if (confirmAction) {
+                confirmAction.textContent = confirmText;
+                confirmAction.className = `btn-modal flex-1 ${confirmType}`;
+            }
+            pendingConfirmAction = typeof onConfirm === 'function' ? onConfirm : null;
+            openModal('confirm-modal');
+        }
+
+        function closeConfirmModal() {
+            closeModal('confirm-modal');
+            pendingConfirmAction = null;
+        }
+
+        function confirmPendingAction() {
+            if (typeof pendingConfirmAction === 'function') {
+                const action = pendingConfirmAction;
+                pendingConfirmAction = null;
+                closeConfirmModal();
+                action();
+            }
+        }
+
+        function openDeleteStudentModal(id) {
+            const s = allStudents.find(x => Number(x.id) === Number(id));
+            if (!s) {
+                showToast('Student details could not be loaded.', 'error');
+                return;
+            }
+
+            pendingDeleteStudentId = id;
+            const studentName = `${s.first_name || ''} ${s.last_name || ''}`.trim() || 'Unknown Student';
+            document.getElementById('delete-student-preview').innerHTML = `
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Student Name</span>
+                    <span class="font-semibold text-slate-800">${studentName}</span>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Student ID</span>
+                    <span class="font-semibold text-slate-800">${s.student_id || 'N/A'}</span>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Course / Program</span>
+                    <span class="font-semibold text-slate-800">${s.course || 'N/A'}</span>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Year Level</span>
+                    <span class="font-semibold text-slate-800">${s.year_level || '1'}</span>
+                </div>
+            `;
+            openModal('delete-student-modal');
+        }
+
+        function closeDeleteStudentModal() {
+            closeModal('delete-student-modal');
+            pendingDeleteStudentId = null;
+        }
+
+        function confirmDeleteStudent() {
+            if (!pendingDeleteStudentId) {
+                showToast('Please select a student first.', 'warning');
+                return;
+            }
+            closeDeleteStudentModal();
+            deleteStudent(pendingDeleteStudentId);
+        }
+
         async function loadStudents() {
+            showToast('Loading student data...', 'info');
             try {
                 const res = await fetch(`${apiPath}?action=list`);
                 const data = await res.json();
 
-                // Update Stats
                 if (Array.isArray(data)) {
                     allStudents = data;
                     document.getElementById('stat-total').textContent = allStudents.length;
@@ -207,7 +458,10 @@
                     document.getElementById('stat-pending').textContent = allStudents.filter(s => s.status === 'pending').length;
                 }
                 applyFilters();
-            } catch (err) { console.error('Load Error:', err); }
+            } catch (err) {
+                console.error('Load Error:', err);
+                showToast('Unable to load student data.', 'error');
+            }
         }
 
         function applyFilters() {
@@ -297,7 +551,7 @@
                                         title="${isActive ? 'Deactivate Account' : 'Activate Account'}">
                                     <i class="fas ${isActive ? 'fa-user-slash' : 'fa-user-check'} text-xs"></i>
                                 </button>
-                                <button onclick="deleteStudent(${s.id})" 
+                                <button onclick="openDeleteStudentModal(${s.id})" 
                                         class="w-8 h-8 rounded-lg flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white transition-all" 
                                         title="Permanently Delete">
                                     <i class="fas fa-trash-alt text-xs"></i>
@@ -309,35 +563,89 @@
         }
 
         function setupEvents() {
-            document.getElementById('search-bar').oninput = applyFilters;
-            document.getElementById('filter-course').onchange = applyFilters;
-            document.getElementById('student-form').onsubmit = handleFormSubmit;
+            const searchInput = document.getElementById('search-bar');
+            const filterCourse = document.getElementById('filter-course');
+            const studentForm = document.getElementById('student-form');
+
+            if (searchInput) searchInput.oninput = applyFilters;
+            if (filterCourse) filterCourse.onchange = applyFilters;
+            if (studentForm) studentForm.onsubmit = handleFormSubmit;
+
+            document.querySelectorAll('.logout-modal-overlay').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        closeModal(modal.id);
+                    }
+                });
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeAllModals();
+                }
+            });
         }
 
         async function updateStatus(id, status) {
-            let actionText = 'update';
-            if (status === 'active') actionText = 'approve/activate';
-            if (status === 'suspended') actionText = 'deactivate';
-            if (status === 'rejected') actionText = 'reject';
-            
             const s = allStudents.find(x => x.id == id);
             const name = s ? `${s.first_name} ${s.last_name}` : 'this student';
-            
-            if (!confirm(`Are you sure you want to ${actionText} ${name}'s account?`)) return;
+            let actionText = 'update';
+            let title = 'Confirm Student Update';
+            let message = `Are you sure you want to update ${name}'s account?`;
+            let iconClass = 'fa-circle-exclamation';
+            let confirmText = 'Confirm';
+            let confirmType = 'btn-modal-confirm';
 
-            try {
-                const res = await fetch(apiPath, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'update_status', student_id: id, status })
-                });
-                const result = await res.json();
-                if (result.success) {
-                    loadStudents();
-                } else {
-                    alert('Failed to update status: ' + (result.message || 'Unknown error'));
+            if (status === 'active') {
+                actionText = 'approve/activate';
+                title = 'Confirm Account Activation';
+                message = `Are you sure you want to activate ${name}'s account?`;
+                iconClass = 'fa-user-check';
+                confirmText = 'Activate Account';
+                confirmType = 'bg-emerald-500 hover:bg-emerald-600 text-white';
+            } else if (status === 'suspended') {
+                actionText = 'deactivate';
+                title = 'Confirm Account Deactivation';
+                message = `Are you sure you want to deactivate ${name}'s account?`;
+                iconClass = 'fa-user-slash';
+                confirmText = 'Deactivate Account';
+                confirmType = 'bg-amber-500 hover:bg-amber-600 text-white';
+            } else if (status === 'rejected') {
+                actionText = 'reject';
+                title = 'Confirm Account Rejection';
+                message = `Are you sure you want to reject ${name}'s account request?`;
+                iconClass = 'fa-ban';
+                confirmText = 'Reject Request';
+                confirmType = 'bg-rose-500 hover:bg-rose-600 text-white';
+            }
+
+            openConfirmModal({
+                title,
+                message,
+                iconClass,
+                confirmText,
+                confirmType,
+                onConfirm: async () => {
+                    try {
+                        const res = await fetch(apiPath, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'update_status', student_id: id, status })
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            await loadStudents();
+                            showToast(`Student ${actionText}d successfully.`, 'success');
+                            closeReviewModal();
+                        } else {
+                            showToast(result.message || `Failed to ${actionText} student.`, 'error');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        showToast('Operation failed. Please try again.', 'error');
+                    }
                 }
-            } catch (err) { console.error(err); alert('Network error occurred.'); }
+            });
         }
 
         function viewRegistration(id) {
@@ -380,14 +688,14 @@
             actions.innerHTML = '';
             if (s.status === 'pending') {
                 actions.innerHTML = `
-                    <button onclick="updateStatus(${s.id}, 'active'); closeReviewModal();" class="btn-modal flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs py-2 rounded-lg transition-colors">Approve Account</button>
-                    <button onclick="updateStatus(${s.id}, 'rejected'); closeReviewModal();" class="btn-modal flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs py-2 rounded-lg transition-colors">Reject Request</button>
+                    <button onclick="updateStatus(${s.id}, 'active')" class="btn-modal flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs py-2 rounded-lg transition-colors">Approve Account</button>
+                    <button onclick="updateStatus(${s.id}, 'rejected')" class="btn-modal flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs py-2 rounded-lg transition-colors">Reject Request</button>
                 `;
             } else {
-                actions.innerHTML = `<button onclick="updateStatus(${s.id}, 'active'); closeReviewModal();" class="btn-modal flex-1 bg-slate-800 hover:bg-black text-white font-bold text-xs py-2 rounded-lg transition-colors">Force Reactivate</button>`;
+                actions.innerHTML = `<button onclick="updateStatus(${s.id}, 'active')" class="btn-modal flex-1 bg-slate-800 hover:bg-black text-white font-bold text-xs py-2 rounded-lg transition-colors">Force Reactivate</button>`;
             }
 
-            document.getElementById('review-modal').classList.add('active');
+            openModal('review-modal');
         }
 
         function renderDoc(path, label) {
@@ -412,56 +720,85 @@
         }
 
         function closeReviewModal() {
-            document.getElementById('review-modal').classList.remove('active');
+            closeModal('review-modal');
         }
 
         function openEditModal(id) {
-            const s = allStudents.find(x => x.id == id);
-            if (!s) return;
-            document.getElementById('form-id').value = s.id;
-            document.getElementById('form-first-name').value = s.first_name;
-            document.getElementById('form-last-name').value = s.last_name;
-            document.getElementById('form-email').value = s.email;
-            document.getElementById('form-course').value = s.course || 'BSIT';
-            document.getElementById('form-year').value = s.year_level || '1';
-            document.getElementById('student-modal').classList.add('active');
-        }
+            const s = allStudents.find(x => Number(x.id) === Number(id));
+            if (!s) {
+                showToast('Student details could not be loaded.', 'error');
+                return;
+            }
+            const formId = document.getElementById('form-id');
+            const formFirstName = document.getElementById('form-first-name');
+            const formLastName = document.getElementById('form-last-name');
+            const formEmail = document.getElementById('form-email');
+            const formCourse = document.getElementById('form-course');
+            const formYear = document.getElementById('form-year');
 
-        function closeModal() {
-            document.getElementById('student-modal').classList.remove('active');
+            if (formId) formId.value = s.id || '';
+            if (formFirstName) formFirstName.value = s.first_name || '';
+            if (formLastName) formLastName.value = s.last_name || '';
+            if (formEmail) formEmail.value = s.email || '';
+            if (formCourse) formCourse.value = s.course || 'BSIT';
+            if (formYear) formYear.value = String(s.year_level || '1');
+            openModal('student-modal');
         }
 
         async function handleFormSubmit(e) {
             e.preventDefault();
+            const id = document.getElementById('form-id')?.value;
+            const firstName = document.getElementById('form-first-name')?.value.trim();
+            const lastName = document.getElementById('form-last-name')?.value.trim();
+            const email = document.getElementById('form-email')?.value.trim();
+            const course = document.getElementById('form-course')?.value;
+            const year = document.getElementById('form-year')?.value;
+
+            if (!id || !firstName || !lastName || !email || !course || !year) {
+                showToast('Please fill out all required fields.', 'warning');
+                return;
+            }
+
             const data = {
                 action: 'update_profile',
-                id: document.getElementById('form-id').value,
-                first_name: document.getElementById('form-first-name').value,
-                last_name: document.getElementById('form-last-name').value,
-                email: document.getElementById('form-email').value,
-                course: document.getElementById('form-course').value,
-                year: document.getElementById('form-year').value
+                id,
+                first_name: firstName,
+                last_name: lastName,
+                email,
+                course,
+                year
             };
-            
-            try {
-                const res = await fetch(apiPath, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const result = await res.json();
-                if (result.success) { 
-                    closeModal(); 
-                    loadStudents(); 
-                    alert('Profile updated successfully.');
-                } else {
-                    alert('Update failed: ' + (result.message || 'Check inputs'));
+
+            openConfirmModal({
+                title: 'Confirm Student Update',
+                message: 'Are you sure you want to update this student information?',
+                iconClass: 'fa-user-pen',
+                confirmText: 'Update Student',
+                confirmType: 'bg-primary hover:bg-red-700 text-white',
+                onConfirm: async () => {
+                    try {
+                        const res = await fetch(apiPath, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            closeModal('student-modal');
+                            await loadStudents();
+                            showToast('Student updated successfully.', 'success');
+                        } else {
+                            showToast(result.message || 'Update failed.', 'error');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        showToast('Operation failed. Please try again.', 'error');
+                    }
                 }
-            } catch (err) { alert('Operation failed due to a network error'); }
+            });
         }
 
         async function deleteStudent(id) {
-            if (!confirm('Are you sure you want to permanently remove this student profile?')) return;
             try {
                 const res = await fetch(apiPath, {
                     method: 'POST',
@@ -470,11 +807,15 @@
                 });
                 const result = await res.json();
                 if (result.success) {
-                    loadStudents();
+                    await loadStudents();
+                    showToast('Student deleted successfully.', 'success');
                 } else {
-                    alert('Delete failed: ' + (result.message || 'Unauthorized'));
+                    showToast(result.message || 'Failed to delete student.', 'error');
                 }
-            } catch (err) { console.error(err); alert('Delete request failed.'); }
+            } catch (err) {
+                console.error(err);
+                showToast('Operation failed. Please try again.', 'error');
+            }
         }
     </script>
 </body>

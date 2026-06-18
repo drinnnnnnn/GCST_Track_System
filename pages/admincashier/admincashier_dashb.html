@@ -69,6 +69,114 @@
     .top-selling-list-wrapper::-webkit-scrollbar-track { background: #f8fafc; }
     .top-selling-list-wrapper::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
 
+    .low-stock-summary-card {
+      border: 1px solid #fecaca;
+      background: linear-gradient(135deg, #fff7ed 0%, #fff1f2 100%);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .low-stock-summary-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 18px -8px rgba(239, 68, 68, 0.18);
+    }
+
+    .low-stock-alert-panel {
+      background: linear-gradient(90deg, #fff7ed 0%, #fff8f8 100%);
+      border: 1px solid #fecaca;
+      border-left: 6px solid #dc2626;
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+
+    .low-stock-alert-panel .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .low-stock-alert-panel .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #b45309;
+      margin: 0;
+    }
+
+    .low-stock-alert-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .low-stock-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px 16px;
+      border: 1px solid #fde2e2;
+    }
+
+    .low-stock-item:hover {
+      background: #fffaf5;
+    }
+
+    .low-stock-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 62px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .low-stock-pill.critical {
+      background: #dc2626;
+    }
+
+    .low-stock-pill.warning {
+      background: #f59e0b;
+    }
+
+    .low-stock-empty {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ecfdf3;
+      color: #166534;
+      border: 1px solid #a7f3d0;
+      padding: 16px;
+      border-radius: 14px;
+      font-weight: 600;
+    }
+
+    .low-stock-toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 9999;
+      background: #fff7ed;
+      color: #9a5b00;
+      border: 1px solid #fdba74;
+      border-left: 5px solid #f97316;
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: 0 18px 40px -18px rgba(15, 23, 42, 0.5);
+      max-width: 340px;
+      display: none;
+      font-weight: 600;
+    }
+
     @media (max-width: 1024px) {
       .charts-grid { grid-template-columns: 1fr; }
     }
@@ -98,7 +206,11 @@
         <div class="balance-card">
           <h3>Items in Inventory</h3>
           <p class="amount" id="totalInventory">0</p>
-        </div> 
+        </div>
+        <div class="balance-card low-stock-summary-card" id="lowStockSummaryCard" role="button" tabindex="0" aria-label="View low stock products">
+          <h3>Low Stock Products</h3>
+          <p class="amount" id="lowStockCount">0</p>
+        </div>
         <div class="balance-card">
           <h3>Pending Queue</h3>
           <p class="amount" id="pendingQueue">0</p>
@@ -107,6 +219,19 @@
           <h3>Total Sales (Today)</h3>
           <p class="amount" id="totalSalesToday">₱0.00</p>
         </div>
+      </div>
+    </section>
+
+    <!-- Low Stock Alert Section -->
+    <section class="activity-section" id="lowStockAlertSection" style="display: none;">
+      <div class="low-stock-alert-panel">
+        <div class="panel-header">
+          <h2 class="panel-title"><i class="fas fa-triangle-exclamation"></i> Low Stock Alerts</h2>
+          <button id="viewInventoryBtn" class="px-4 py-2 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition-colors">
+            Open Inventory
+          </button>
+        </div>
+        <div id="lowStockAlertList" class="low-stock-alert-list"></div>
       </div>
     </section>
 
@@ -165,7 +290,9 @@
         topProducts: null
       },
       pollInterval: null,
-      isRefreshing: false
+      isRefreshing: false,
+      lowStockToastShown: false,
+      toastTimeout: null
     };
 
     /**
@@ -220,6 +347,103 @@
       } catch (error) {
         console.error('Error fetching top products table:', error);
         container.innerHTML = '<div class="text-xs text-rose-500 text-center py-8">Error loading monthly sales data</div>';
+      }
+    }
+
+    function getLowStockThreshold(product) {
+      const explicitThreshold = Number(product?.reorder_level ?? product?.reorderLevel ?? product?.alert_level ?? 0);
+      return explicitThreshold > 0 ? explicitThreshold : 10;
+    }
+
+    function isLowStockProduct(product) {
+      const stock = Number(product?.stock_count ?? product?.stock_quantity ?? product?.quantity ?? 0);
+      const threshold = getLowStockThreshold(product);
+      return stock <= threshold;
+    }
+
+    function getLowStockSeverity(stock) {
+      return stock === 0 ? 'critical' : 'warning';
+    }
+
+    function renderLowStockAlerts(products) {
+      const container = document.getElementById('lowStockAlertList');
+      const alertSection = document.getElementById('lowStockAlertSection');
+      const countEl = document.getElementById('lowStockCount');
+      const summaryCard = document.getElementById('lowStockSummaryCard');
+
+      if (!container || !alertSection || !countEl || !summaryCard) return;
+
+      const lowStockProducts = products
+        .filter(product => isLowStockProduct(product))
+        .sort((a, b) => (Number(a.stock_count ?? 0) - Number(b.stock_count ?? 0)) || String(a.product_name || '').localeCompare(String(b.product_name || '')));
+
+      const lowStockCount = lowStockProducts.length;
+      countEl.textContent = lowStockCount;
+      summaryCard.title = lowStockCount > 0 ? `${lowStockCount} product(s) need restocking` : 'All products are sufficiently stocked';
+
+      if (lowStockCount === 0) {
+        container.innerHTML = `
+          <div class="low-stock-empty">
+            <i class="fas fa-circle-check"></i>
+            <span>All products are sufficiently stocked.</span>
+          </div>`;
+        alertSection.style.display = 'block';
+        return;
+      }
+
+      alertSection.style.display = 'block';
+      container.innerHTML = '';
+
+      lowStockProducts.forEach(product => {
+        const stock = Number(product.stock_count ?? product.stock_quantity ?? 0);
+        const threshold = getLowStockThreshold(product);
+        const severity = getLowStockSeverity(stock, threshold);
+
+        const item = document.createElement('div');
+        item.className = 'low-stock-item';
+        item.innerHTML = `
+          <div>
+            <div class="font-semibold text-slate-800">${escapeHtml(product.product_name || 'Unnamed Product')}</div>
+            <div class="text-xs text-slate-500 mt-1">
+              <span class="font-medium">Stock:</span> ${stock} &nbsp;•&nbsp;
+              <span class="font-medium">Reorder Level:</span> ${threshold}
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="low-stock-pill ${severity}" title="${stock === 0 ? 'Out of stock' : 'Running low'}">${stock === 0 ? 'Out' : stock} left</span>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function showLowStockToast(count) {
+      const toast = document.getElementById('lowStockToast');
+      if (!toast || count <= 0 || dashState.lowStockToastShown) return;
+
+      toast.textContent = `⚠ ${count} product${count === 1 ? '' : 's'} are running low on stock.`;
+      toast.style.display = 'block';
+      dashState.lowStockToastShown = true;
+
+      clearTimeout(dashState.toastTimeout);
+      dashState.toastTimeout = setTimeout(() => {
+        toast.style.display = 'none';
+      }, 6000);
+    }
+
+    /**
+     * Fetches low stock items from products API.
+     */
+    async function fetchLowStockProducts() {
+      try {
+        const rawData = await fetchWithError('../../actions/get_admincashier_products.php');
+        const products = Array.isArray(rawData) ? rawData : (rawData.data || []);
+        renderLowStockAlerts(products);
+        showLowStockToast((products || []).filter(product => isLowStockProduct(product)).length);
+        return products;
+      } catch (error) {
+        console.error('Error fetching low stock products:', error);
+        return [];
       }
     }
 
@@ -320,7 +544,8 @@
         await Promise.allSettled([
           fetchSummaryMetrics(),
           fetchAnalyticsCharts(),
-          fetchTopSellingTable()
+          fetchTopSellingTable(),
+          fetchLowStockProducts()
         ]);
       } finally {
         dashState.isRefreshing = false;
@@ -333,15 +558,45 @@
       return div.innerHTML;
     }
 
+    function initLowStockInteractions() {
+      const card = document.getElementById('lowStockSummaryCard');
+      const inventoryBtn = document.getElementById('viewInventoryBtn');
+      const toast = document.getElementById('lowStockToast');
+
+      if (!toast) {
+        const toastNode = document.createElement('div');
+        toastNode.id = 'lowStockToast';
+        toastNode.className = 'low-stock-toast';
+        document.body.appendChild(toastNode);
+      }
+
+      card?.addEventListener('click', () => {
+        window.location.href = 'admincashier_inventorys.html';
+      });
+
+      card?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          window.location.href = 'admincashier_inventorys.html';
+        }
+      });
+
+      inventoryBtn?.addEventListener('click', () => {
+        window.location.href = 'admincashier_inventorys.html';
+      });
+    }
+
     /**
      * Main initialization function for the Dashboard.
      */
     function initAdminCashierDashboardPage(userData) {
+      initLowStockInteractions();
       refreshAllDashboardData();
       dashState.pollInterval = setInterval(refreshAllDashboardData, 30000); // 30s auto-refresh
       
       window.addEventListener('beforeunload', () => {
         if (dashState.pollInterval) clearInterval(dashState.pollInterval);
+        if (dashState.toastTimeout) clearTimeout(dashState.toastTimeout);
       });
     }
 

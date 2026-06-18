@@ -129,6 +129,63 @@
       color: var(--muted);
       text-align: center;
     }
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: min(360px, calc(100% - 24px));
+      pointer-events: none;
+    }
+    .toast {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      color: #fff;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+      animation: slideInRight 0.25s ease;
+      pointer-events: auto;
+      overflow: hidden;
+    }
+    .toast.success { background: #16a34a; }
+    .toast.error { background: #dc2626; }
+    .toast.warning { background: #f59e0b; }
+    .toast.info { background: #2563eb; }
+    .toast-icon {
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-top: 2px;
+    }
+    .toast-message {
+      font-size: 0.92rem;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+    .toast.hide {
+      animation: fadeOut 0.2s ease forwards;
+    }
+    @keyframes overlayFade {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes modalFade {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(18px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; transform: translateX(0); }
+      to { opacity: 0; transform: translateX(18px); }
+    }
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -138,6 +195,7 @@
       justify-content: center;
       padding: 24px;
       z-index: 100;
+      animation: overlayFade 0.18s ease;
     }
     .modal-overlay.open {
       display: flex;
@@ -149,10 +207,62 @@
       padding: 28px;
       box-shadow: 0 32px 80px rgba(15, 23, 42, 0.18);
       position: relative;
+      animation: modalFade 0.18s ease;
     }
     .modal-card h3 {
       margin: 0 0 18px;
       font-size: 1.35rem;
+    }
+    .delete-modal-card {
+      max-width: 520px;
+      border-top: 6px solid #dc2626;
+      text-align: center;
+    }
+    .delete-warning-icon {
+      width: 64px;
+      height: 64px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: rgba(239, 68, 68, 0.12);
+      color: #dc2626;
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+    }
+    .delete-modal-message {
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.6;
+      margin: 0 0 18px;
+    }
+    .delete-modal-message strong {
+      display: block;
+      margin-top: 6px;
+      color: var(--text);
+    }
+    .delete-modal-details {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 14px 16px;
+      text-align: left;
+      margin-bottom: 18px;
+    }
+    .delete-modal-details div {
+      display: grid;
+      grid-template-columns: 90px 1fr;
+      gap: 10px;
+      font-size: 0.92rem;
+      margin: 6px 0;
+    }
+    .delete-modal-details span {
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .delete-modal-details strong {
+      color: var(--text);
+      word-break: break-word;
     }
     .modal-row {
       display: grid;
@@ -205,6 +315,13 @@
       background: #f8fafc;
       border-color: #e2e8f0;
       color: #64748b;
+    }
+    .delete-btn {
+      background: #dc2626;
+      color: white;
+    }
+    .delete-btn:hover {
+      background: #b91c1c;
     }
     .modal-close {
       position: absolute;
@@ -344,6 +461,8 @@
     </section>
   </main>
 
+  <div class="toast-container" id="toastContainer"></div>
+
   <div class="modal-overlay" id="emailModal">
     <div class="modal-card">
       <button class="modal-close" id="modalCloseBtn" aria-label="Close modal">×</button>
@@ -393,12 +512,130 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="deleteLogModal">
+    <div class="modal-card delete-modal-card">
+      <button class="modal-close" id="deleteModalCloseBtn" aria-label="Close delete modal">×</button>
+      <div class="delete-warning-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <h3>Delete Notification Log</h3>
+      <p class="delete-modal-message">
+        Are you sure you want to delete this notification log?
+        <strong>This action cannot be undone.</strong>
+      </p>
+      <div class="delete-modal-details" id="deleteLogDetails">
+        <div><span>Email:</span><strong id="deleteLogRecipient">-</strong></div>
+        <div><span>Subject:</span><strong id="deleteLogSubject">-</strong></div>
+        <div><span>Sent:</span><strong id="deleteLogSentAt">-</strong></div>
+      </div>
+      <div class="modal-actions">
+        <button class="toolbar-button secondary" id="deleteModalCancelBtn">Cancel</button>
+        <button class="toolbar-button delete-btn" id="deleteModalConfirmBtn">
+          <i class="fas fa-trash"></i> Delete Log
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script src="../../assets/js/admincashier.js"></script>
   <script>
     // --- Gmail Notification Logic (Local) ---
     const GMAIL_API_URL = '../../actions/get_admincashier_gmail_notifications.php';
     let emailLogs = [];
     let gmailPollInterval = null;
+    let selectedDeleteLogId = null;
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      if (!container || !message) return;
+
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      const icons = {
+        success: '✓',
+        error: '✕',
+        warning: '⚠',
+        info: 'ℹ'
+      };
+      toast.innerHTML = `
+        <div class="toast-icon">${icons[type] || icons.info}</div>
+        <div class="toast-message">${escapeHtml(message)}</div>
+      `;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('hide');
+        setTimeout(() => toast.remove(), 200);
+      }, 4000);
+    }
+
+    window.openDeleteLogModal = function(logIdOrObj) {
+      const log = typeof logIdOrObj === 'object' ? logIdOrObj : emailLogs.find(e => e.id === logIdOrObj);
+      if (!log) return;
+
+      selectedDeleteLogId = log.id;
+      document.getElementById('deleteLogRecipient').textContent = log.recipient || 'N/A';
+      document.getElementById('deleteLogSubject').textContent = log.subject || '(No Subject)';
+      document.getElementById('deleteLogSentAt').textContent = log.created_at ? new Date(log.created_at).toLocaleString() : 'N/A';
+
+      const deleteBtn = document.getElementById('deleteModalConfirmBtn');
+      if (deleteBtn) {
+        deleteBtn.disabled = false;
+        deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete Log';
+      }
+
+      const modal = document.getElementById('deleteLogModal');
+      if (modal) modal.classList.add('open');
+    };
+
+    window.closeDeleteModal = function() {
+      const modal = document.getElementById('deleteLogModal');
+      if (modal) modal.classList.remove('open');
+      selectedDeleteLogId = null;
+
+      const deleteBtn = document.getElementById('deleteModalConfirmBtn');
+      if (deleteBtn) {
+        deleteBtn.disabled = false;
+        deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete Log';
+      }
+    };
+
+    window.deleteLog = async function(logId) {
+      const id = logId ?? selectedDeleteLogId;
+      if (!id) return;
+
+      const deleteBtn = document.getElementById('deleteModalConfirmBtn');
+      if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Deleting...';
+      }
+
+      try {
+        const response = await fetch(GMAIL_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete_log', id })
+        });
+        const result = await response.json();
+
+        if (!result.success) {
+          showToast(result.error || 'Failed to delete log.', 'error');
+          return;
+        }
+
+        showToast('Notification log deleted.', 'success');
+        window.closeDeleteModal();
+        window.loadGmailData();
+      } catch (error) {
+        console.error('Delete log error:', error);
+        showToast('Unable to delete log. Please try again.', 'error');
+      } finally {
+        if (deleteBtn) {
+          deleteBtn.disabled = false;
+          deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete Log';
+        }
+      }
+    };
 
     window.loadGmailData = function() {
       const params = new URLSearchParams();
@@ -431,6 +668,7 @@
           console.error('Gmail data error:', err);
           const body = document.getElementById('emailLogsBody');
           if (body) body.innerHTML = '<tr><td colspan="7" class="empty-state">Unable to load logs.</td></tr>';
+          showToast('Unable to load notification logs.', 'error');
         });
     };
 
@@ -458,7 +696,7 @@
             <div class="action-buttons">
               <button class="btn-icon view" onclick="window.openEmailModal('view', ${log.id})"><i class="fas fa-eye"></i></button>
               <button class="btn-icon retry" onclick="window.handleEmailRowAction('retry', ${log.id})"><i class="fas fa-redo"></i></button>
-              <button class="btn-icon delete" onclick="window.handleEmailRowAction('delete', ${log.id})"><i class="fas fa-trash"></i></button>
+              <button class="btn-icon delete" onclick="window.openDeleteLogModal(${log.id})"><i class="fas fa-trash"></i></button>
             </div>
           </td>`;
         body.appendChild(row);
@@ -532,15 +770,17 @@
           .then(res => res.json())
           .then(res => {
             if (res.success) {
-              alert("Email Details Sent: Retry initiated successfully.");
+              showToast('Retry initiated successfully.', 'success');
               window.loadGmailData();
             } else {
-              alert("Retry failed: " + (res.error || "Unknown error"));
+              showToast(res.error || 'Retry failed.', 'error');
             }
+          })
+          .catch(() => {
+            showToast('Unable to retry email.', 'error');
           });
-      } else if (action === 'delete' && confirm('Delete this log?')) {
-        fetch(GMAIL_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete_log', id }) })
-          .then(res => res.json()).then(res => res.success ? window.loadGmailData() : alert(res.error));
+      } else if (action === 'delete') {
+        window.openDeleteLogModal(id);
       }
     };
 
@@ -563,10 +803,36 @@
       ['searchInput', 'statusFilter', 'typeFilter', 'fromDate', 'toDate'].forEach(id => {
         document.getElementById(id)?.addEventListener('change', window.loadGmailData);
       });
-      document.getElementById('refreshLogsBtn')?.addEventListener('click', window.loadGmailData);
+      document.getElementById('refreshLogsBtn')?.addEventListener('click', () => {
+        window.loadGmailData();
+        showToast('Logs refreshed.', 'info');
+      });
       document.getElementById('sendEmailBtn')?.addEventListener('click', () => window.openEmailModal('send'));
       document.getElementById('modalCloseBtn')?.addEventListener('click', () => document.getElementById('emailModal').classList.remove('open'));
       document.getElementById('modalCancelBtn')?.addEventListener('click', () => document.getElementById('emailModal').classList.remove('open'));
+      document.getElementById('deleteModalCloseBtn')?.addEventListener('click', window.closeDeleteModal);
+      document.getElementById('deleteModalCancelBtn')?.addEventListener('click', window.closeDeleteModal);
+      document.getElementById('deleteModalConfirmBtn')?.addEventListener('click', () => window.deleteLog(selectedDeleteLogId));
+      document.getElementById('deleteLogModal')?.addEventListener('click', (event) => {
+        if (event.target.id === 'deleteLogModal') {
+          window.closeDeleteModal();
+        }
+      });
+      document.getElementById('emailModal')?.addEventListener('click', (event) => {
+        if (event.target.id === 'emailModal') {
+          event.target.classList.remove('open');
+        }
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        const deleteModal = document.getElementById('deleteLogModal');
+        const emailModal = document.getElementById('emailModal');
+        if (deleteModal?.classList.contains('open')) {
+          window.closeDeleteModal();
+        } else if (emailModal?.classList.contains('open')) {
+          emailModal.classList.remove('open');
+        }
+      });
 
       // --- New Attachment UI Logic ---
       window.updateAttachmentUI = function() {
@@ -581,11 +847,11 @@
         Array.from(input.files).forEach((file) => {
           const ext = file.name.split('.').pop().toLowerCase();
           if (!allowedExts.includes(ext)) {
-            alert(`File type not allowed: ${file.name}\nPlease use JPG, PNG, PDF, DOCX, ZIP, or CSV.`);
+            showToast(`File type not allowed: ${file.name}`, 'warning');
             return;
           }
           if (file.size > maxSize) {
-            alert(`File too large: ${file.name} (Max 5MB)`);
+            showToast(`File too large: ${file.name} (Max 5MB).`, 'warning');
             return;
           }
           
@@ -629,12 +895,12 @@
           const fileInput = document.getElementById('modalAttachments'); // Existing
 
           if (!recipient) {
-            alert("Recipient Email is required.");
+            showToast('Recipient email is required.', 'warning');
             return;
           }
 
           if (!subject || !message) { // Existing validation for subject and message
-            alert("Subject and Message are required.");
+            showToast('Subject and message are required.', 'warning');
             return;
           }
 
@@ -674,17 +940,15 @@
             const result = await response.json();
             
             if (result.success) {
-              // Handle successful email transmission
-              alert("Email Details Sent successfully!");
+              showToast('Email sent successfully.', 'success');
               document.getElementById('emailModal').classList.remove('open');
-              // Refresh log table
               if (window.loadGmailData) window.loadGmailData();
             } else {
-              alert("Failed to send email: " + (result.message || 'Unknown error'));
+              showToast(result.message || 'Failed to send email.', 'error');
             }
           } catch (error) {
             console.error("Manual send error:", error);
-            alert("Communication Error: " + error.message);
+            showToast(error.message || 'Communication error while sending email.', 'error');
           } finally {
             modalSendBtn.disabled = false;
             modalSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Email';

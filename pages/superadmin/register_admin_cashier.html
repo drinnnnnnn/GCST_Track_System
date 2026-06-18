@@ -178,6 +178,74 @@
             text-decoration: none;
         }
 
+        #toastContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: min(340px, calc(100vw - 24px));
+            pointer-events: none;
+        }
+
+        .toast {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            color: #fff;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+            opacity: 0;
+            transform: translateX(18px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            pointer-events: auto;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .toast.hide {
+            opacity: 0;
+            transform: translateX(18px);
+        }
+
+        .toast.success { background: #16a34a; }
+        .toast.error { background: #dc2626; }
+        .toast.warning { background: #f59e0b; }
+        .toast.info { background: #2563eb; }
+
+        .toast-icon {
+            flex-shrink: 0;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .toast-message {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            background: transparent;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            opacity: 0.8;
+        }
+
+        .toast-close:hover {
+            opacity: 1;
+        }
+
         /* Staggered Entrance Animations */
         .animate-item {
             opacity: 0;
@@ -197,6 +265,8 @@
 </head>
 
 <body>
+    <div id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
     <div class="container">
         <div class="header-anim animate-item">
             <div class="header-icon"><i class='bx bx-user-plus'></i></div>
@@ -243,6 +313,43 @@
     </div>
 
     <script>
+        const toastContainer = document.getElementById('toastContainer');
+
+        function showToast(message, type = 'success') {
+            const validTypes = ['success', 'error', 'warning', 'info'];
+            const toastType = validTypes.includes(type) ? type : 'info';
+            const toast = document.createElement('div');
+            toast.className = `toast ${toastType}`;
+
+            const icons = {
+                success: 'bx bx-check-circle',
+                error: 'bx bx-x-circle',
+                warning: 'bx bx-error-circle',
+                info: 'bx bx-info-circle'
+            };
+
+            toast.innerHTML = `
+                <div class="toast-icon"><i class="${icons[toastType]}"></i></div>
+                <div class="toast-message">${message}</div>
+                <button type="button" class="toast-close" aria-label="Close notification">&times;</button>
+            `;
+
+            toastContainer.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.add('show');
+            });
+
+            const closeToast = () => {
+                toast.classList.remove('show');
+                toast.classList.add('hide');
+                setTimeout(() => toast.remove(), 300);
+            };
+
+            toast.querySelector('.toast-close').addEventListener('click', closeToast);
+            setTimeout(closeToast, 4000);
+        }
+
         // Toggle password visibility
         const setupToggle = (btnId, inputId) => {
             const btn = document.getElementById(btnId);
@@ -260,22 +367,44 @@
 
         // Form validation
         function validateForm(form) {
+            if (!form.checkValidity()) {
+                showToast('Please fill in all required fields', 'warning');
+                return false;
+            }
+
             if (form.password.value !== form.confirm_password.value) {
-                alert("Passwords do not match!");
+                showToast('Passwords do not match. Please try again.', 'warning');
                 form.password.focus();
                 return false;
             }
+
+            showToast('Validating data...', 'info');
             return true;
         }
 
-        // Success handling
+        // Success / error handling from backend redirect responses
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('success') === '1') {
-                alert("Account successfully created!");
+            const errorType = urlParams.get('error');
+            const successType = urlParams.get('success');
+
+            if (successType === '1') {
+                showToast('Account registered successfully', 'success');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (errorType === 'missing') {
+                showToast('Please fill in all required fields', 'warning');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (errorType === 'nomatch') {
+                showToast('Passwords do not match. Please try again.', 'warning');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (errorType === 'weak_password') {
+                showToast('Password is too weak. Use at least 8 characters.', 'warning');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (errorType === 'exists') {
+                showToast('Email already exists. Please choose another one.', 'error');
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
-        }
+        };
     </script>
 </body>
 </html>

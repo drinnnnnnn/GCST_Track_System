@@ -6,6 +6,22 @@ require_once __DIR__ . '/../config/config.php';
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+function normalizeEmailBody(string $body): string {
+    $decodedBody = html_entity_decode($body, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $decodedBody = preg_replace('/\r\n|\r/', "\n", $decodedBody) ?? $body;
+    $decodedBody = trim($decodedBody);
+
+    // If the content already looks like HTML, keep it as-is so styles render correctly.
+    if (preg_match('/<[^>]+>/', $decodedBody)) {
+        return $decodedBody;
+    }
+
+    // For plain text content, preserve readability while preventing raw markup from leaking.
+    return '<div style="font-family: Arial, Helvetica, sans-serif; line-height: 1.6; color: #0f172a;">'
+        . nl2br(htmlspecialchars($decodedBody, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), false)
+        . '</div>';
+}
+
 /**
  * Sends an email and logs it to the email_notifications table.
  */
@@ -19,7 +35,7 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
     $toEmail     = (string)($toEmail ?? '');
     $subject     = (string)($subject ?? '(No Subject)');
     $type        = (string)($type ?? 'Manual Notification');
-    $body        = (string)($body ?? '');
+    $body        = normalizeEmailBody((string)($body ?? ''));
 
     $mail = new PHPMailer(true);
     $mail->CharSet = 'UTF-8';
@@ -69,7 +85,7 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
             $mail->Body    = $body;
             
             // Generate a plain-text version for better compatibility and lower spam scores
-            $mail->AltBody = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $body));
+            $mail->AltBody = strip_tags(preg_replace('/<br\s*\/?>/i', "\n", $body));
 
             // Process attachments (QR codes, etc.)
             foreach ($attachments as $att) {

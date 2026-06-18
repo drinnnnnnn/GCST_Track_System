@@ -112,6 +112,15 @@
     background: #dc3545;
     color: white;
   }
+
+  .remove-btn {
+    background: #dc2626;
+    color: white;
+  }
+
+  .remove-btn:hover {
+    background: #b91c1c;
+  }
   
   .ticket-preview-panel {
     background: white;
@@ -363,6 +372,59 @@
   }
   .live-dot { width: 10px; height: 10px; background: #4ade80; border-radius: 50%; animation: pulse 2s infinite; }
   @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.5; } 70% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.5; } }
+
+  #toastContainer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(360px, calc(100vw - 24px));
+    pointer-events: none;
+  }
+
+  .toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    color: #fff;
+    box-shadow: 0 18px 38px -18px rgba(15, 23, 42, 0.7);
+    animation: slideInRight 0.3s ease;
+    overflow: hidden;
+  }
+
+  .toast.success { background: #16a34a; }
+  .toast.error { background: #dc2626; }
+  .toast.warning { background: #f59e0b; }
+  .toast.info { background: #2563eb; }
+
+  .toast-icon {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-top: 2px;
+  }
+
+  .toast-message {
+    font-size: 0.92rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(18px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes fadeOut {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(18px); }
+  }
 </style>
 </head>
 
@@ -586,6 +648,8 @@
     </div>
   </main>
 
+  <div id="toastContainer"></div>
+
   <!-- Scripts -->
   <script src="../../assets/js/admincashier.js"></script>
   <script>
@@ -615,6 +679,34 @@
     let currentTicketData = null; // To track the last generated ticket for print/save
     let isFetching = false;
     const EXPIRATION_LIMIT_MS = 2 * 60 * 60 * 1000; // 2 Hours in ms
+
+    window.showToast = function(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      if (!container || !message) return;
+
+      const icons = {
+        success: '✓',
+        error: '✕',
+        warning: '⚠',
+        info: 'ℹ'
+      };
+
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <span class="toast-icon">${icons[type] || icons.info}</span>
+        <span class="toast-message">${message}</span>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.25s ease forwards';
+        setTimeout(() => toast.remove(), 250);
+      }, 4000);
+    };
+
+    window.showNotification = window.showToast;
 
     window.formatTicketDisplay = function(value) {
       if (value === null || value === undefined) return '';
@@ -739,17 +831,13 @@
                 </button>
               </div>`
             }
-            <button class="queue-btn btn-remove" onclick="updateStatus(${t.id}, 'cancelled')">Remove</button>
+            <button class="queue-btn btn-remove" onclick="openRemoveTicketModal(${t.id}, '${t.queue_number}', '${t.queue_type || 'regular'}', '${t.status || 'waiting'}', ${t.window_number || 'null'}, '${(t.student_name || '').replace(/'/g, "\\'")}', '${(t.purpose || '').replace(/'/g, "\\'")}', '${t.created_at || ''}')">Remove</button>
           </div>
         </div>
       `).join('');
     }
 
     window.updateStatus = function(id, status, windowNumber = null, queueNumber = null, isPriority = false) {
-      if (status === 'cancelled' && !confirm('Remove this ticket from the active queue?')) {
-        return;
-      }
-
       // Trigger voice announcement if serving a ticket
       if (status === 'serving' && queueNumber && windowNumber) {
         announceQueue(queueNumber, windowNumber, isPriority);
@@ -778,13 +866,125 @@
       .then(res => res.json())
       .then(data => {
         if (!data.success) {
-          alert('Error: ' + (data.error || 'Failed to update ticket status.'));
+          showToast(data.error || 'Failed to update queue status.', 'error');
+          return;
         }
+
+        if (status === 'serving') {
+          showToast('Ticket served successfully.', 'success');
+        } else if (status === 'completed') {
+          showToast('Ticket completed successfully.', 'success');
+        } else if (status === 'cancelled') {
+          showToast('Ticket removed successfully.', 'success');
+        } else {
+          showToast('Queue updated successfully.', 'success');
+        }
+
         loadActiveQueues();
       })
       .catch(err => {
         console.error('Update failed:', err);
+        showToast('Unable to update queue status.', 'error');
       });
+    }
+
+    // Remove Ticket Confirmation Modal Logic
+    let currentRemoveTicket = null;
+
+    window.openRemoveTicketModal = function(ticketId, queueNumber, queueType, ticketStatus, windowNumber, studentName, purpose, createdAt) {
+      currentRemoveTicket = {
+        id: ticketId,
+        queueNumber,
+        queueType: queueType || 'regular',
+        ticketStatus: ticketStatus || 'waiting',
+        windowNumber: windowNumber || null,
+        studentName: studentName || 'Walk-in',
+        purpose: purpose || 'General Inquiry',
+        createdAt: createdAt || null
+      };
+
+      const modal = document.getElementById('remove-ticket-modal');
+      const infoEl = document.getElementById('remove-ticket-info');
+      const queueTypeEl = document.getElementById('remove-ticket-queue-type');
+      const statusEl = document.getElementById('remove-ticket-status');
+      const windowEl = document.getElementById('remove-ticket-window');
+      const createdEl = document.getElementById('remove-ticket-created');
+      const messageEl = document.getElementById('remove-ticket-message');
+      const removeButton = document.getElementById('confirm-remove-ticket');
+
+      if (!modal || !infoEl || !queueTypeEl || !statusEl || !windowEl || !createdEl || !messageEl || !removeButton) {
+        return;
+      }
+
+      const formattedNumber = formatTicketDisplay(queueNumber);
+      infoEl.textContent = formattedNumber;
+      queueTypeEl.textContent = currentRemoveTicket.queueType === 'priority' ? 'Priority' : 'Regular';
+      statusEl.textContent = currentRemoveTicket.ticketStatus.charAt(0).toUpperCase() + currentRemoveTicket.ticketStatus.slice(1);
+      windowEl.textContent = currentRemoveTicket.windowNumber ? `Window ${currentRemoveTicket.windowNumber}` : 'Not assigned';
+      createdEl.textContent = currentRemoveTicket.createdAt ? new Date(currentRemoveTicket.createdAt).toLocaleString() : 'Not available';
+      messageEl.textContent = 'Are you sure you want to remove this ticket from the active queue?';
+      removeButton.disabled = false;
+      removeButton.innerHTML = 'Remove Ticket';
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    window.closeRemoveTicketModal = function() {
+      const modal = document.getElementById('remove-ticket-modal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      const removeButton = document.getElementById('confirm-remove-ticket');
+      if (removeButton) {
+        removeButton.disabled = false;
+        removeButton.innerHTML = 'Remove Ticket';
+      }
+      const messageEl = document.getElementById('remove-ticket-message');
+      if (messageEl) messageEl.textContent = 'Are you sure you want to remove this ticket from the active queue?';
+    }
+
+    window.removeTicket = async function() {
+      if (!currentRemoveTicket || !currentRemoveTicket.id) return;
+
+      const removeButton = document.getElementById('confirm-remove-ticket');
+      const messageEl = document.getElementById('remove-ticket-message');
+      if (!removeButton || !messageEl) return;
+
+      removeButton.disabled = true;
+      removeButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Removing ticket...';
+      messageEl.textContent = 'Removing ticket...';
+      messageEl.className = 'text-sm text-amber-600 font-medium';
+
+      try {
+        const formData = new FormData();
+        formData.append('id', currentRemoveTicket.id);
+        formData.append('status', 'cancelled');
+
+        const response = await fetch('../../actions/update_queue_status.php', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to remove ticket.');
+        }
+
+        messageEl.textContent = 'Ticket removed successfully.';
+        messageEl.className = 'text-sm text-emerald-600 font-medium';
+        closeRemoveTicketModal();
+        await loadActiveQueues();
+        updateDisplayPanel(JSON.parse(lastQueueState || '[]'));
+        if (window.showNotification) {
+          window.showNotification('Ticket removed successfully.');
+        }
+      } catch (error) {
+        messageEl.textContent = 'Failed to remove ticket. Please try again.';
+        messageEl.className = 'text-sm text-red-600 font-medium';
+        removeButton.disabled = false;
+        removeButton.innerHTML = 'Remove Ticket';
+      }
     }
 
     // Reassign Modal Logic
@@ -850,14 +1050,15 @@
 
         if (data.success) {
           closeReassignModal();
+          showToast(`Ticket reassigned successfully.`, 'success');
           announceQueueReassignment(queueNumber, newWindowNumber);
           loadActiveQueues(); // Refresh all displays
         } else {
-          alert('Reassignment failed: ' + (data.message || 'Unknown error.'));
+          showToast(data.message || 'Failed to assign ticket.', 'error');
         }
       } catch (error) {
         console.error('Reassignment error:', error);
-        alert('Operation Failed: ' + error.message);
+        showToast('Unable to reassign ticket. Please try again.', 'error');
       }
     }
 
@@ -911,7 +1112,7 @@
       const type = document.querySelector('input[name="queue_type"]:checked').value;
 
       if (!studentName) {
-        alert('Required Field: Please enter the student\'s full name.');
+        showToast('Please enter the student name before generating a ticket.', 'warning');
         return;
       }
 
@@ -938,13 +1139,14 @@
           // Reset form on success
           document.getElementById('manual-queue-form').reset();
           showTicketPreview(data.ticket);
+          showToast('Ticket generated successfully.', 'success');
           await loadActiveQueues();
         } else {
           throw new Error(data.error || 'The system encountered an error issuing the ticket.');
         }
       } catch (err) {
         console.error('Queue generation failed:', err);
-        alert('Queue Error: ' + err.message);
+        showToast(err.message || 'Unable to generate ticket.', 'error');
       } finally {
         // Restore button state
         btn.disabled = false;
@@ -1160,8 +1362,67 @@
             </div>
           </div>
         </div>
+
+        <div id="remove-ticket-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[10001]">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-[fadeIn_0.2s_ease]">
+            <div class="bg-red-50 px-6 py-5 border-b border-red-100 flex items-center gap-3">
+              <div class="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+                <i class="fas fa-exclamation-triangle text-xl"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold text-gray-900">Remove Ticket From Active Queue</h3>
+                <p class="text-sm text-gray-500">This action cannot be undone.</p>
+              </div>
+            </div>
+            <div class="p-6">
+              <p id="remove-ticket-message" class="text-sm text-gray-700 mb-5">Are you sure you want to remove this ticket from the active queue?</p>
+              <div class="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-100 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Ticket Number:</span>
+                  <span id="remove-ticket-info" class="font-semibold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Queue Type:</span>
+                  <span id="remove-ticket-queue-type" class="font-semibold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Current Status:</span>
+                  <span id="remove-ticket-status" class="font-semibold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Assigned Window:</span>
+                  <span id="remove-ticket-window" class="font-semibold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Created Time:</span>
+                  <span id="remove-ticket-created" class="font-semibold text-gray-900"></span>
+                </div>
+              </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <button type="button" onclick="closeRemoveTicketModal()" class="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">Cancel</button>
+              <button id="confirm-remove-ticket" type="button" onclick="removeTicket()" class="remove-btn px-5 py-2.5 rounded-lg font-medium">Remove Ticket</button>
+            </div>
+          </div>
+        </div>
       `;
       document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      const removeModal = document.getElementById('remove-ticket-modal');
+      if (removeModal) {
+        removeModal.addEventListener('click', (event) => {
+          if (event.target === removeModal) {
+            closeRemoveTicketModal();
+          }
+        });
+      }
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeRemoveTicketModal();
+          closeReassignModal();
+        }
+      });
     });
   </script>
 </body>

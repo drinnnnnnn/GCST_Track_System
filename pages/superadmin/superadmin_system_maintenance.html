@@ -25,6 +25,123 @@
             }
         }
     </script>
+    <style>
+        #toastContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
+        }
+        .toast {
+            min-width: 280px;
+            max-width: 360px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            color: #fff;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+            opacity: 0;
+            transform: translateX(24px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: auto;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .toast.success { background: #16a34a; }
+        .toast.error { background: #dc2626; }
+        .toast.warning { background: #f59e0b; }
+        .toast.info { background: #2563eb; }
+        .toast-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.15);
+            flex-shrink: 0;
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.62);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 1rem;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .maintenance-modal {
+            width: min(100%, 460px);
+            background: #fff;
+            border-radius: 24px;
+            padding: 1.75rem;
+            box-shadow: 0 28px 50px rgba(15, 23, 42, 0.18);
+            animation: modalSlideIn 0.2s ease;
+        }
+        .maintenance-modal h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 0.65rem;
+        }
+        .maintenance-modal p {
+            color: #64748b;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        .action-preview {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 0.9rem 1rem;
+            margin-bottom: 1rem;
+        }
+        .action-preview strong {
+            display: block;
+            font-size: 0.8rem;
+            color: #334155;
+            margin-bottom: 0.3rem;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+        .modal-btn {
+            padding: 0.75rem 1rem;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 0.92rem;
+            transition: all 0.2s ease;
+        }
+        .modal-btn.cancel {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        .modal-btn.cancel:hover { background: #cbd5e1; }
+        .modal-btn.confirm {
+            background: #dc2626;
+            color: #fff;
+        }
+        .modal-btn.confirm:hover { background: #b91c1c; }
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(8px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    </style>
 </head>
 <body class="antialiased font-sans">
   <!-- Sidebar Component -->
@@ -197,6 +314,23 @@
     </main>
   </div>
 
+  <div id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+  <div id="maintenanceModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="maintenanceModalTitle">
+    <div class="maintenance-modal">
+      <h2 id="maintenanceModalTitle">Confirm System Action</h2>
+      <p id="maintenanceModalMessage">Are you sure you want to proceed with this system action?</p>
+      <div class="action-preview">
+        <strong>Action Type</strong>
+        <span id="maintenanceModalAction">System Action</span>
+        <div class="mt-2 text-xs text-slate-500" id="maintenanceModalImpact">Impact Level: Medium</div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="maintenanceCancelBtn">Cancel</button>
+        <button class="modal-btn confirm" id="maintenanceConfirmBtn">Proceed</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="../../assets/js/superadmin.js"></script>
   <script>
@@ -204,7 +338,94 @@
         loadSystemMetrics();
         loadRecentBackups();
         setupMaintenanceHandlers();
+        showToast('Loading system status...', 'info');
     });
+
+    const maintenanceActionConfig = {
+      clearCache: {
+        label: 'Clear Cache',
+        endpoint: 'clear_cache.php',
+        buttonId: 'clearCacheBtn',
+        impact: 'Low',
+        message: 'This will clear temporary system data and refresh cached states.'
+      },
+      backupDatabase: {
+        label: 'Backup Data',
+        endpoint: 'backup_database.php',
+        buttonId: 'backupDatabaseBtn',
+        impact: 'High',
+        message: 'This creates a new database snapshot and may take a few moments.'
+      },
+      testEmail: {
+        label: 'Test SMTP',
+        endpoint: 'test_email.php',
+        buttonId: 'testEmailBtn',
+        impact: 'Medium',
+        message: 'This will verify the current email configuration and delivery settings.'
+      },
+      optimizeDatabase: {
+        label: 'Optimize Database',
+        endpoint: 'optimize_database.php',
+        buttonId: 'optimizeDatabaseBtn',
+        impact: 'Medium',
+        message: 'This will repair and optimize database tables for better performance.'
+      }
+    };
+
+    let pendingMaintenanceAction = null;
+
+    function openMaintenanceConfirmModal(actionKey) {
+      const config = maintenanceActionConfig[actionKey];
+      if (!config) return;
+
+      pendingMaintenanceAction = actionKey;
+      document.getElementById('maintenanceModalAction').textContent = config.label;
+      document.getElementById('maintenanceModalImpact').textContent = `Impact Level: ${config.impact}`;
+      document.getElementById('maintenanceModalMessage').textContent = config.message;
+      document.getElementById('maintenanceModal').classList.add('active');
+      document.getElementById('maintenanceConfirmBtn').focus();
+    }
+
+    function closeMaintenanceModal() {
+      document.getElementById('maintenanceModal').classList.remove('active');
+      pendingMaintenanceAction = null;
+    }
+
+    function executeMaintenanceAction(actionKey) {
+      const config = maintenanceActionConfig[actionKey];
+      if (!config) return;
+      closeMaintenanceModal();
+      performMaintenance(
+        config.endpoint,
+        config.buttonId,
+        actionKey === 'backupDatabase' ? () => loadRecentBackups() : null,
+        config.label
+      );
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-circle-xmark',
+        warning: 'fa-triangle-exclamation',
+        info: 'fa-circle-info'
+      };
+      toast.innerHTML = `
+        <div class="toast-icon"><i class="fas ${icons[type] || icons.info}"></i></div>
+        <div>
+          <div class="font-semibold">${message}</div>
+        </div>
+      `;
+      container.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add('show'));
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
 
     // Load system metrics
     function loadSystemMetrics() {
@@ -215,8 +436,12 @@
           document.getElementById('storageUsed').textContent = data.storage_used;
           document.getElementById('activeConnections').textContent = data.active_connections;
           document.getElementById('serverLoad').textContent = data.server_load;
+          showToast('System metrics refreshed', 'info');
         })
-        .catch(err => console.error('Error loading metrics:', err));
+        .catch(err => {
+          console.error('Error loading metrics:', err);
+          showToast('Unable to load system metrics', 'error');
+        });
     }
 
     // Load recent backups
@@ -238,46 +463,69 @@
             `;
           });
         })
-        .catch(err => console.error('Error loading backups:', err));
+        .catch(err => {
+          console.error('Error loading backups:', err);
+          showToast('Unable to load recent backups', 'error');
+        });
     }
 
     function setupMaintenanceHandlers() {
-        document.getElementById('clearCacheBtn').addEventListener('click', () => {
-          performMaintenance('clear_cache.php', 'clearCacheBtn');
-        });
+      document.getElementById('clearCacheBtn').addEventListener('click', () => {
+        openMaintenanceConfirmModal('clearCache');
+      });
 
-        document.getElementById('backupDatabaseBtn').addEventListener('click', () => {
-          performMaintenance('backup_database.php', 'backupDatabaseBtn', () => {
-            loadRecentBackups(); 
-          });
-        });
+      document.getElementById('backupDatabaseBtn').addEventListener('click', () => {
+        openMaintenanceConfirmModal('backupDatabase');
+      });
 
-        document.getElementById('testEmailBtn').addEventListener('click', () => {
-          performMaintenance('test_email.php', 'testEmailBtn');
-        });
+      document.getElementById('testEmailBtn').addEventListener('click', () => {
+        openMaintenanceConfirmModal('testEmail');
+      });
 
-        document.getElementById('optimizeDatabaseBtn').addEventListener('click', () => {
-          performMaintenance('optimize_database.php', 'optimizeDatabaseBtn');
-        });
+      document.getElementById('optimizeDatabaseBtn').addEventListener('click', () => {
+        openMaintenanceConfirmModal('optimizeDatabase');
+      });
+
+      document.getElementById('maintenanceCancelBtn').addEventListener('click', closeMaintenanceModal);
+      document.getElementById('maintenanceConfirmBtn').addEventListener('click', () => {
+        if (pendingMaintenanceAction) {
+          executeMaintenanceAction(pendingMaintenanceAction);
+        }
+      });
+
+      document.getElementById('maintenanceModal').addEventListener('click', (e) => {
+        if (e.target.id === 'maintenanceModal') closeMaintenanceModal();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeMaintenanceModal();
+      });
     }
 
     // Perform maintenance task
-    function performMaintenance(endpoint, btnId, callback) {
+    function performMaintenance(endpoint, btnId, callback, actionLabel) {
       const btn = document.getElementById(btnId);
       const originalHTML = btn.innerHTML;
       
       btn.disabled = true;
       btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Processing...`;
+      showToast(`Executing ${actionLabel || 'maintenance task'}...`, 'info');
 
       fetch(`../../actions/${endpoint}`)
-        .then(res => res.json())
+        .then(async res => {
+          const data = await res.json();
+          if (!res.ok || data.success === false) {
+            throw new Error(data.message || 'Operation failed');
+          }
+          return data;
+        })
         .then(data => {
-          alert(data.message);
-          if (data.success && callback) callback();
+          showToast(data.message || `${actionLabel || 'Maintenance'} completed successfully`, 'success');
+          if (callback) callback();
         })
         .catch(err => {
           console.error('Error:', err);
-          alert('An error occurred');
+          showToast(err.message || 'Operation failed. Please try again.', 'error');
         })
         .finally(() => {
           btn.disabled = false;
@@ -287,7 +535,7 @@
 
     // Restore backup (placeholder)
     function restoreBackup(backupId) {
-      alert('Restore functionality not implemented yet');
+      showToast('Restore functionality is not implemented yet', 'warning');
     }
 
   </script>

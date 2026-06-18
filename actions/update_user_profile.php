@@ -15,10 +15,11 @@ if (!$userId) {
 }
 
 $payload = json_decode(file_get_contents('php://input'), true);
-$firstName = $payload['first_name'] ?? null;
-$lastName = $payload['last_name'] ?? null;
-$email = $payload['email'] ?? null;
-$contactNumber = $payload['contact_number'] ?? null;
+$firstName = trim($payload['first_name'] ?? '');
+$lastName = trim($payload['last_name'] ?? '');
+$email = trim($payload['email'] ?? '');
+$contactNumber = trim($payload['contact_number'] ?? '');
+$address = trim($payload['address'] ?? '');
 
 if (empty($firstName) || empty($lastName) || empty($email) || empty($contactNumber)) {
     echo json_encode(['success' => false, 'message' => 'All fields are required.']);
@@ -46,8 +47,8 @@ try {
     }
 
     // Update user profile
-    $stmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, contact_number = ? WHERE id = ?");
-    $stmt->bind_param('ssssi', $firstName, $lastName, $email, $contactNumber, $userId);
+    $stmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, contact_number = ?, address = ? WHERE id = ?");
+    $stmt->bind_param('sssssi', $firstName, $lastName, $email, $contactNumber, $address, $userId);
     if (!$stmt->execute()) {
         throw new Exception('Failed to update profile: ' . $stmt->error);
     }
@@ -69,6 +70,7 @@ try {
                      "<li><strong>Student ID:</strong> {$studentId}</li>" .
                      "<li><strong>Old Email:</strong> {$currentUser['email']} -> <strong>New Email:</strong> {$email}</li>" .
                      "<li><strong>Old Contact:</strong> {$currentUser['contact_number']} -> <strong>New Contact:</strong> {$contactNumber}</li>" .
+                     "<li><strong>Address:</strong> {$address}</li>" .
                      "</ul>" .
                      "<p>Please review these changes in the system if necessary.</p>" .
                      "<p>GCST Tracking System Notification.</p>";

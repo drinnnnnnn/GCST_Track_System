@@ -333,6 +333,113 @@
       color: var(--primary);
     }
 
+    #toastContainer {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      min-width: 280px;
+      max-width: 360px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      box-shadow: 0 18px 35px -18px rgba(15, 23, 42, 0.5);
+      opacity: 0;
+      transform: translateX(18px);
+      transition: all 0.3s ease;
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .toast.success { background: #16a34a; }
+    .toast.error { background: #dc2626; }
+    .toast.warning { background: #f59e0b; }
+    .toast.info { background: #2563eb; }
+
+    .save-profile-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(8px);
+      z-index: 1100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .save-profile-modal.show {
+      display: flex;
+    }
+
+    .save-profile-modal-card {
+      background: #fff;
+      width: min(520px, 100%);
+      border-radius: 1.75rem;
+      box-shadow: 0 30px 50px -24px rgba(15, 23, 42, 0.45);
+      overflow: hidden;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .save-profile-modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .save-profile-modal-body {
+      padding: 1.5rem;
+    }
+
+    .save-profile-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      padding: 1rem 1.5rem 1.5rem;
+    }
+
+    .save-profile-modal-preview {
+      display: grid;
+      gap: 0.75rem;
+      background: #f8fafc;
+      border-radius: 1rem;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+
+    .save-profile-preview-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .save-profile-preview-item span:first-child {
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .save-profile-preview-item span:last-child {
+      color: #0f172a;
+      text-align: right;
+      word-break: break-word;
+    }
+
     .hidden { display: none !important; }
 
     @media (max-width: 640px) {
@@ -342,6 +449,15 @@
       }
       .tab-buttons {
         margin-bottom: 1.25rem;
+      }
+      #toastContainer {
+        left: 12px;
+        right: 12px;
+        top: 12px;
+      }
+      .toast {
+        max-width: none;
+        width: 100%;
       }
     }
 
@@ -376,10 +492,10 @@
     <!-- Tabs -->
     <section>
       <div class="tab-buttons">
-        <button class="tab-btn active" onclick="switchTab('personal')">
+        <button class="tab-btn active" onclick="switchTab('personal', event)">
           <i class="fas fa-id-badge"></i> Personal Info
         </button>
-        <button class="tab-btn" onclick="switchTab('account')">
+        <button class="tab-btn" onclick="switchTab('account', event)">
           <i class="fas fa-user-shield"></i> Account
         </button>
       </div>
@@ -412,9 +528,15 @@
           </div>
           <div class="form-row">
             <div class="form-group">
+              <label>Address</label>
+              <input type="text" id="address" placeholder="Address">
+            </div>
+            <div class="form-group">
               <label>Grade Level</label>
               <input type="text" id="grade-level" placeholder="Grade level">
             </div>
+          </div>
+          <div class="form-row">
             <div class="form-group">
               <label>Student ID</label>
               <input type="text" id="student-id" placeholder="Student ID" readonly>
@@ -499,6 +621,42 @@
   </main>
   </div>
 
+  <div id="toastContainer"></div>
+
+  <div id="save-profile-modal" class="save-profile-modal">
+    <div class="save-profile-modal-card">
+      <div class="save-profile-modal-header">
+        <h3 class="text-2xl font-bold text-slate-900">Confirm Save Changes</h3>
+      </div>
+      <div class="save-profile-modal-body">
+        <p class="text-slate-600">Are you sure you want to save new information?</p>
+        <p class="text-sm text-slate-500 mt-1">Please review your updated profile details before confirming.</p>
+        <div class="save-profile-modal-preview">
+          <div class="save-profile-preview-item">
+            <span>Name</span>
+            <span id="confirm-name">-</span>
+          </div>
+          <div class="save-profile-preview-item">
+            <span>Email</span>
+            <span id="confirm-email">-</span>
+          </div>
+          <div class="save-profile-preview-item">
+            <span>Contact Number</span>
+            <span id="confirm-contact">-</span>
+          </div>
+          <div class="save-profile-preview-item">
+            <span>Address</span>
+            <span id="confirm-address">-</span>
+          </div>
+        </div>
+      </div>
+      <div class="save-profile-modal-footer">
+        <button type="button" onclick="closeSaveProfileModal()" class="px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-all">Cancel</button>
+        <button type="button" onclick="saveProfile()" class="px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Verification OTP Modal -->
   <div id="verification-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
     <div class="bg-white rounded-[2.5rem] shadow-2xl max-w-md w-full overflow-hidden transform transition-all animate-in zoom-in">
@@ -536,6 +694,25 @@
     let cooldownTimer = 0;
     let cooldownInterval = null;
 
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <span><i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i></span>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => toast.classList.add('show'));
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
     function togglePasswordVisibility(button) {
       const input = button.parentElement.querySelector('input');
       const icon = button.querySelector('i');
@@ -548,11 +725,30 @@
       }
     }
 
-    function switchTab(tab) {
+    function switchTab(tab, event) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('tab-' + tab).classList.add('active');
       event.target.classList.add('active');
+    }
+
+    function openSaveProfileModal() {
+      const modal = document.getElementById('save-profile-modal');
+      const firstName = document.getElementById('first-name').value.trim();
+      const lastName = document.getElementById('last-name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const address = document.getElementById('address')?.value.trim() || '';
+
+      document.getElementById('confirm-name').textContent = `${firstName} ${lastName}`.trim() || 'N/A';
+      document.getElementById('confirm-email').textContent = email || 'N/A';
+      document.getElementById('confirm-contact').textContent = phone || 'N/A';
+      document.getElementById('confirm-address').textContent = address || 'N/A';
+      modal.classList.add('show');
+    }
+
+    function closeSaveProfileModal() {
+      document.getElementById('save-profile-modal').classList.remove('show');
     }
 
     function openVerificationModal() {
@@ -582,11 +778,12 @@
         if (response.success) {
           openVerificationModal();
           startResendCooldown(60);
+          showToast('Verification code sent successfully', 'info');
         } else {
           throw new Error(response.message || 'Failed to send code.');
         }
       } catch (err) {
-        alert(err.message);
+        showToast(err.message || 'Unable to send verification code', 'error');
       } finally {
         btn.disabled = false;
         btn.innerHTML = originalHtml;
@@ -616,7 +813,7 @@
     async function verifyOtpCode(e) {
       const code = document.getElementById('otp-code').value.trim();
       if (code.length !== 6) {
-        alert('Please enter the 6-digit code.');
+        showToast('Please enter the 6-digit code.', 'warning');
         return;
       }
 
@@ -637,68 +834,83 @@
           closeVerificationModal();
           document.getElementById('password-verification-trigger').classList.add('hidden');
           document.getElementById('password-change-form').classList.remove('hidden');
+          showToast('Email verified successfully', 'success');
         } else {
           throw new Error(response.message || 'Invalid verification code.');
         }
       } catch (err) {
-        alert(err.message);
+        showToast(err.message || 'Invalid verification code.', 'error');
       } finally {
         btn.disabled = false;
         btn.innerHTML = originalHtml;
       }
     }
 
-    async function saveChanges(event) {
-      event.preventDefault();
-      if (!confirm('Are you sure you want to save new information?')) {
-        return;
-      }
-
-      const payload = {
+    function getProfilePayload() {
+      return {
         first_name: document.getElementById('first-name').value.trim(),
         last_name: document.getElementById('last-name').value.trim(),
         email: document.getElementById('email').value.trim(),
-        contact_number: document.getElementById('phone').value.trim()
+        contact_number: document.getElementById('phone').value.trim(),
+        address: document.getElementById('address')?.value.trim() || ''
       };
+    }
+
+    async function saveProfile() {
+      closeSaveProfileModal();
+
+      const payload = getProfilePayload();
+      const requiredFields = [payload.first_name, payload.last_name, payload.email, payload.contact_number];
+      if (requiredFields.some(value => !value)) {
+        showToast('Please complete required fields', 'warning');
+        return;
+      }
 
       try {
-        const result = await fetchWithError('../../actions/update_user_profile.php', { // Now points to the new PHP file
+        const result = await fetchWithError('../../actions/update_user_profile.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
         if (result.success) {
-          alert('Profile updated successfully.');
+          showToast('Profile updated successfully', 'success');
         } else {
           throw new Error(result.message || 'Unable to update profile.');
         }
       } catch (error) {
-        alert(error.message || 'Unable to update profile.');
+        showToast(error.message || 'Unable to update profile.', 'error');
       }
+    }
+
+    async function saveChanges(event) {
+      event.preventDefault();
+      const payload = getProfilePayload();
+      const requiredFields = [payload.first_name, payload.last_name, payload.email, payload.contact_number];
+      if (requiredFields.some(value => !value)) {
+        showToast('Please complete required fields', 'warning');
+        return;
+      }
+      openSaveProfileModal();
     }
 
     async function changePassword(event) {
       event.preventDefault();
-
-      if (!confirm('Are you sure you want to save new information?')) {
-        return;
-      }
 
       const currentPassword = document.getElementById('current-password').value.trim();
       const newPassword = document.getElementById('new-password').value.trim();
       const confirmPassword = document.getElementById('confirm-password').value.trim();
 
       if (!currentPassword || !newPassword || !confirmPassword) {
-        alert('Please fill all password fields.');
+        showToast('Please fill all password fields.', 'warning');
         return;
       }
       if (newPassword !== confirmPassword) {
-        alert('New password and confirmation do not match.');
+        showToast('New password and confirmation do not match.', 'warning');
         return;
       }
       if (newPassword.length < 8) {
-        alert('New password must be at least 8 characters long.');
+        showToast('New password must be at least 8 characters long.', 'warning');
         return;
       }
 
@@ -713,20 +925,16 @@
           document.getElementById('current-password').value = '';
           document.getElementById('new-password').value = '';
           document.getElementById('confirm-password').value = '';
-          alert('Password changed successfully.');
+          showToast('Password changed successfully', 'success');
         } else {
           throw new Error(result.message || 'Unable to change password.');
         }
       } catch (error) {
-        alert(error.message || 'Unable to change password.');
+        showToast(error.message || 'Unable to change password.', 'error');
       }
     }
 
     async function saveNotifications() {
-      if (!confirm('Are you sure you want to save new information?')) {
-        return;
-      }
-
       const payload = {
         email_notifications: document.getElementById('email-notif').checked,
         rental_reminders: document.getElementById('rental-notif').checked,
@@ -746,9 +954,9 @@
           throw new Error(result.message || 'Unable to save notification preferences.');
         }
 
-        alert('Notification preferences saved successfully.');
+        showToast('Notification preferences saved successfully', 'success');
       } catch (error) {
-        alert(error.message || 'Unable to save notification preferences.');
+        showToast(error.message || 'Unable to save notification preferences.', 'error');
       }
     }
 
@@ -764,6 +972,11 @@
         document.getElementById('phone').value = user.contact_number || '';
         document.getElementById('grade-level').value = user.year_section || user.course || '';
         document.getElementById('student-id').value = user.student_id || '';
+
+        const addressField = document.getElementById('address');
+        if (addressField) {
+          addressField.value = user.address || '';
+        }
 
         // Account info
         const formatDate = (dateStr, showTime = false) => {
@@ -789,11 +1002,10 @@
         document.getElementById('queue-notif').checked = prefs.queue_notifications ?? true;
         document.getElementById('system-notif').checked = prefs.system_updates ?? true;
 
-        document.getElementById('history-table').innerHTML = historyHtml || `
-          <tr><td colspan="5" style="text-align: center;">No transaction history available</td></tr>
-        `;
+        showToast('Profile loaded successfully', 'info');
       } catch (error) {
         console.error('Error fetching user data:', error);
+        showToast('Unable to load profile data', 'error');
       }
     });
   </script> 

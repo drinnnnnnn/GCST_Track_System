@@ -26,6 +26,48 @@
             }
         }
     </script>
+    <style>
+        #toastContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            pointer-events: none;
+        }
+
+        .toast {
+            min-width: 280px;
+            max-width: 360px;
+            padding: 0.9rem 1rem;
+            border-radius: 0.9rem;
+            color: #fff;
+            font-size: 0.92rem;
+            font-weight: 600;
+            box-shadow: 0 16px 35px -12px rgba(15, 23, 42, 0.35);
+            opacity: 0;
+            transform: translateX(18px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            pointer-events: auto;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .toast.hide {
+            opacity: 0;
+            transform: translateX(18px);
+        }
+
+        .toast-success { background: #16a34a; }
+        .toast-error { background: #dc2626; }
+        .toast-warning { background: #f59e0b; }
+        .toast-info { background: #2563eb; }
+    </style>
 </head>
 
 <body class="antialiased font-sans">
@@ -95,6 +137,21 @@
         </main>
     </div>
 
+    <div id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="logout-modal-overlay">
+        <div class="logout-modal-card max-w-md">
+            <div id="confirm-modal-icon" class="logout-modal-icon"><i class="fas fa-circle-question"></i></div>
+            <h2 id="confirm-modal-title" class="logout-modal-title">Confirm Action</h2>
+            <p id="confirm-modal-message" class="text-muted mb-6">Are you sure you want to continue?</p>
+            <div class="logout-modal-actions pt-4">
+                <button type="button" onclick="closeConfirmModal()" class="btn-modal flex-1 btn-modal-cancel">Cancel</button>
+                <button type="button" id="confirm-modal-action" onclick="confirmPendingAction()" class="btn-modal flex-1 btn-modal-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modern Account Edit Modal -->
     <div id="admin-modal" class="logout-modal-overlay">
         <div class="logout-modal-card">
@@ -161,9 +218,14 @@
     <script src="../../assets/js/superadmin.js"></script>
     <script>
         let allAdmins = [];
+        let pendingAction = null;
+        let pendingActionBtn = null;
+        let pendingActionId = null;
+        let pendingStatus = null;
         const apiPath = '../../actions/process_admin_cashier.php';
 
         window.initializeSuperAdminPage(() => {
+            showToast('Loading admin data...', 'info');
             loadAdmins();
             setupEvents();
         });
@@ -179,14 +241,20 @@
                     applyFilters();
                 } else if (data && data.success === false) {
                     console.error('Server Error:', data.message);
-                    alert('System Error: ' + data.message);
+                    showToast(data.message || 'System error while loading admins.', 'error');
                     allAdmins = [];
                     renderTable([]);
                 } else {
                     allAdmins = [];
                     renderTable([]);
+                    showToast('No admin data was returned.', 'warning');
                 }
-            } catch (err) { console.error('Load Error:', err); alert('Failed to connect to account database.'); }
+            } catch (err) {
+                console.error('Load Error:', err);
+                showToast('Failed to connect to the account database.', 'error');
+                allAdmins = [];
+                renderTable([]);
+            }
         }
 
         function applyFilters() {
@@ -246,7 +314,7 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-end gap-1.5">
-                                <button onclick="updateStatus(this, ${a.id}, '${isActive ? 'inactive' : 'active'}')" 
+                                <button onclick="openStatusConfirmModal(this, ${a.id}, '${isActive ? 'inactive' : 'active'}')" 
                                         class="w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isActive ? 'text-orange-500 bg-orange-50 hover:bg-orange-500 hover:text-white' : 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white'}" 
                                         title="${isActive ? 'Suspend Account' : 'Activate Account'}">
                                     <i class="fas ${isActive ? 'fa-user-slash' : 'fa-user-check'} text-xs"></i>
@@ -261,7 +329,7 @@
                                         title="Reset Password">
                                     <i class="fas fa-key text-xs"></i>
                                 </button>
-                                <button onclick="deleteAdmin(this, ${a.id})" 
+                                <button onclick="openDeleteAdminModal(${a.id}, this)" 
                                         class="w-8 h-8 rounded-lg flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white transition-all" 
                                         title="Delete Account">
                                     <i class="fas fa-trash-can text-xs"></i>
@@ -276,12 +344,85 @@
             document.getElementById('search-bar').oninput = applyFilters;
             document.getElementById('admin-form').onsubmit = handleFormSubmit;
             document.getElementById('password-form').onsubmit = handlePasswordSubmit;
+            document.getElementById('confirm-modal').addEventListener('click', function (e) {
+                if (e.target === this) closeConfirmModal();
+            });
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.setAttribute('role', 'alert');
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => toast.classList.add('show'));
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.classList.add('hide');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function openConfirmModal(title, message, iconClass = 'fa-circle-question', confirmText = 'Confirm', confirmType = 'btn-modal-confirm') {
+            document.getElementById('confirm-modal-title').textContent = title;
+            document.getElementById('confirm-modal-message').textContent = message;
+            document.getElementById('confirm-modal-action').textContent = confirmText;
+            document.getElementById('confirm-modal-action').className = `btn-modal flex-1 ${confirmType}`;
+            document.getElementById('confirm-modal-icon').innerHTML = `<i class="fas ${iconClass}"></i>`;
+            document.getElementById('confirm-modal').classList.add('active');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.remove('active');
+        }
+
+        function openDeleteAdminModal(id, btn) {
+            pendingAction = 'delete';
+            pendingActionId = id;
+            pendingActionBtn = btn;
+            pendingStatus = null;
+            openConfirmModal(
+                'Confirm Admin Deletion',
+                'Are you sure you want to delete this admin account? This action cannot be undone and will permanently remove the admin user.',
+                'fa-triangle-exclamation',
+                'Delete Admin',
+                'btn-modal-confirm'
+            );
+        }
+
+        function openStatusConfirmModal(btn, id, status) {
+            pendingAction = 'status';
+            pendingActionBtn = btn;
+            pendingActionId = id;
+            pendingStatus = status;
+            const actionText = status === 'active' ? 'activate' : 'suspend';
+            openConfirmModal(
+                'Confirm Status Update',
+                `Are you sure you want to ${actionText} this admin account?`,
+                'fa-user-shield',
+                `${actionText.charAt(0).toUpperCase() + actionText.slice(1)} Admin`,
+                'btn-modal-confirm'
+            );
+        }
+
+        function confirmPendingAction() {
+            if (!pendingAction) return;
+            closeConfirmModal();
+
+            if (pendingAction === 'delete') {
+                deleteAdmin(pendingActionBtn, pendingActionId);
+            } else if (pendingAction === 'status' && pendingStatus) {
+                updateStatus(pendingActionBtn, pendingActionId, pendingStatus);
+            }
         }
 
         async function updateStatus(btn, id, status) {
             const actionText = status === 'active' ? 'activate' : 'suspend';
-            if (!confirm(`Are you sure you want to ${actionText} this staff account?`)) return;
-
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
@@ -294,15 +435,16 @@
                 });
                 const result = await res.json();
                 if (result.success) {
+                    showToast(`Admin ${actionText}d successfully.`, 'success');
                     loadAdmins();
                 } else {
-                    alert('Failed: ' + result.message);
+                    showToast(result.message || `Failed to ${actionText} admin.`, 'error');
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
                 }
-            } catch (err) { 
-                console.error(err); 
-                alert('Network error occurred.');
+            } catch (err) {
+                console.error(err);
+                showToast('Network error while updating admin status.', 'error');
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
             }
@@ -339,7 +481,7 @@
             const confirm_password = document.getElementById('confirm-password').value;
 
             if (new_password !== confirm_password) {
-                alert('Passwords do not match. Please try again.');
+                showToast('Passwords do not match. Please try again.', 'warning');
                 return;
             }
 
@@ -350,9 +492,15 @@
                     body: JSON.stringify({ action: 'update_password', id, new_password, confirm_password })
                 });
                 const result = await res.json();
-                if (result.success) { alert('Password updated successfully.'); closePasswordModal(); }
-                else alert(result.message || 'Operation failed');
-            } catch (err) { alert('Request error'); }
+                if (result.success) {
+                    showToast('Password updated successfully.', 'success');
+                    closePasswordModal();
+                } else {
+                    showToast(result.message || 'Password update failed.', 'error');
+                }
+            } catch (err) {
+                showToast('Request error while updating password.', 'error');
+            }
         }
 
         async function handleFormSubmit(e) {
@@ -372,14 +520,19 @@
                     body: JSON.stringify(data)
                 });
                 const result = await res.json();
-                if (result.success) { closeModal(); loadAdmins(); }
-                else alert(result.message || 'Operation failed');
-            } catch (err) { alert('Request error'); }
+                if (result.success) {
+                    closeModal();
+                    showToast('Admin updated successfully.', 'success');
+                    loadAdmins();
+                } else {
+                    showToast(result.message || 'Admin update failed.', 'error');
+                }
+            } catch (err) {
+                showToast('Request error while updating admin.', 'error');
+            }
         }
 
         async function deleteAdmin(btn, id) {
-            if (!confirm('Are you sure you want to permanently remove this account?')) return;
-            
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
@@ -392,14 +545,16 @@
                 });
                 const result = await res.json();
                 if (result.success) {
+                    showToast('Admin deleted successfully.', 'success');
                     loadAdmins();
                 } else {
-                    alert('Delete failed: ' + result.message);
+                    showToast(result.message || 'Failed to delete admin.', 'error');
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
                 }
-            } catch (err) { 
-                console.error(err); 
+            } catch (err) {
+                console.error(err);
+                showToast('Network error while deleting admin.', 'error');
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
             }
