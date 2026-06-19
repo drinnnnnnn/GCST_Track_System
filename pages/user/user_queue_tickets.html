@@ -180,6 +180,22 @@
       color: #b91c1c;
     }
 
+    .pwd-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: #fff;
+      padding: 0.35rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.2);
+    }
+
     .muted-text {
       color: var(--muted);
       margin: 6px 0 0;
@@ -400,11 +416,17 @@
               <h2 class="text-xl font-semibold text-slate-900 tracking-tight">Latest Ticket</h2>
               <p class="text-sm text-slate-500 font-medium italic">Your most recent queue ticket is shown here.</p>
             </div>
-            <span class="ticket-status waiting" id="latest-ticket-status">Waiting</span>
+            <div class="flex items-center gap-2">
+              <span class="pwd-badge hidden" id="latest-ticket-pwd-badge" title="PWD Priority User">♿ PWD</span>
+              <span class="ticket-status waiting" id="latest-ticket-status">Waiting</span>
+            </div>
           </div>
 
           <div class="border-t border-b border-slate-100 py-6 my-6">
-            <p class="text-5xl font-semibold text-blue-600 text-center mb-4" id="latest-ticket-number">-</p>
+            <div class="flex items-center justify-center gap-3 mb-4">
+              <p class="text-5xl font-semibold text-blue-600 text-center" id="latest-ticket-number">-</p>
+              <span class="pwd-badge hidden" id="latest-ticket-number-pwd" title="PWD Priority User">♿</span>
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
               <div>
                 <p class="text-xs font-semibold text-slate-400 uppercase tracking-[0.15em] mb-1">Student Name</p>
@@ -644,6 +666,7 @@
         const isServing = statusClass(ticket.status) === 'serving';
         const sClass = statusClass(ticket.status);
         const statusLabel = mapStatus(ticket.status);
+        const isPwd = Number(ticket.is_pwd || 0) === 1;
         
         let badgeColors = "bg-slate-100 text-slate-700";
         if (sClass === 'serving') badgeColors = "bg-green-100 text-green-700";
@@ -651,12 +674,15 @@
         if (sClass === 'expired') badgeColors = "bg-red-100 text-red-700";
 
         return `
-          <div class="group bg-white rounded-[2rem] p-7 shadow-lg border border-slate-100 hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col ${isServing ? 'ring-2 ring-green-500 ring-offset-2' : ''}">
+          <div class="group bg-white rounded-[2rem] p-7 shadow-lg border border-slate-100 hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col ${isServing ? 'ring-2 ring-green-500 ring-offset-2' : ''} ${isPwd ? 'ring-2 ring-violet-200 bg-violet-50/20' : ''}">
             ${isServing ? '<div class="absolute top-0 right-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-12 -mt-12 pointer-events-none"></div>' : ''}
             
             <div class="relative z-10">
-              <div class="flex items-start justify-between mb-6">
-                <div class="text-3xl font-semibold text-blue-600 tracking-tighter">${ticket.queue_number}</div>
+              <div class="flex items-start justify-between mb-6 gap-3">
+                <div class="flex items-center gap-2">
+                  <div class="text-3xl font-semibold text-blue-600 tracking-tighter">${ticket.queue_number}</div>
+                  ${isPwd ? '<span class="pwd-badge" title="PWD Priority User">♿ PWD</span>' : ''}
+                </div>
                 <span class="text-[10px] px-3 py-1 rounded-full uppercase tracking-[0.1em] font-semibold ${badgeColors}">
                   ${statusLabel}
                 </span>
@@ -790,16 +816,20 @@
       currentTicketId = ticket ? ticket.id : null;
       
       const numberEl = document.getElementById('latest-ticket-number');
+      const numberPwdEl = document.getElementById('latest-ticket-number-pwd');
       const createdEl = document.getElementById('latest-ticket-created');
       const waitEl = document.getElementById('latest-ticket-wait');
       const nameEl = document.getElementById('latest-ticket-name');
       const purposeEl = document.getElementById('latest-ticket-purpose');
       const statusEl = document.getElementById('latest-ticket-status');
+      const pwdBadgeEl = document.getElementById('latest-ticket-pwd-badge');
       const actionsEl = document.getElementById('latest-ticket-actions');
       const cancelButton = actionsEl?.querySelector('.btn-danger');
 
       if (!ticket) {
         if (numberEl) numberEl.textContent = '-';
+        if (numberPwdEl) numberPwdEl.classList.add('hidden');
+        if (pwdBadgeEl) pwdBadgeEl.classList.add('hidden');
         if (createdEl) createdEl.textContent = 'Generated: -';
         if (waitEl) waitEl.textContent = 'Waiting time: -';
         if (nameEl) nameEl.textContent = '';
@@ -812,7 +842,15 @@
         return;
       }
 
+      const isPwd = Number(ticket.is_pwd || 0) === 1;
+
       if (numberEl) numberEl.textContent = ticket.queue_number || '-';
+      if (numberPwdEl) {
+        numberPwdEl.classList.toggle('hidden', !isPwd);
+      }
+      if (pwdBadgeEl) {
+        pwdBadgeEl.classList.toggle('hidden', !isPwd);
+      }
       if (nameEl) nameEl.textContent = `Name: ${ticket.student_name || 'N/A'}`;
       if (purposeEl) purposeEl.textContent = `Purpose: ${ticket.purpose || 'General'}`;
       if (createdEl) createdEl.textContent = `Generated: ${formatDateTime(ticket.created_at)}`;

@@ -73,6 +73,7 @@ try {
             'display_status' => ucfirst($displayStatus),
             'window_number' => $row['window_number'],
             'queue_type' => $row['queue_type'],
+            'is_pwd' => (int)($row['is_pwd'] ?? 0),
             'cashier_name' => $row['cashier_name'] ?? 'Assigning...',
             'created_at' => $row['created_at'],
             'served_at' => $row['served_at'],

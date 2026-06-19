@@ -9,13 +9,42 @@ class QueueModel {
         $this->conn = Database::getConnection();
         $this->conn->query("SET time_zone = '+08:00'"); // Synchronize with Asia/Manila
         (new MigrationManager())->run();
+        $this->ensureQueueTicketColumns();
     }
 
     public function getConnection() {
         return $this->conn;
     }
 
-    private function ensureTableExists() {
+    private function ensureQueueTicketColumns() {
+        $requiredColumns = ['is_pwd'];
+        foreach ($requiredColumns as $column) {
+            $check = $this->conn->query("SHOW COLUMNS FROM `queue_tickets` LIKE '$column'");
+            if ($check && $check->num_rows === 0) {
+                $this->conn->query(
+                    "ALTER TABLE `queue_tickets` ADD COLUMN `$column` TINYINT(1) NOT NULL DEFAULT 0 AFTER `queue_type`"
+                );
+            }
+        }
+    }
+
+    private function isUserPwd($userId) {
+        if (!$userId) {
+            return false;
+        }
+
+        $stmt = $this->conn->prepare('SELECT is_pwd FROM users WHERE id = ? LIMIT 1');
+        if (!$stmt) {
+            return false;
+        }
+
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result ? $result->fetch_assoc() : null;
+        $stmt->close();
+
+        return !empty($row['is_pwd']) && (int)$row['is_pwd'] === 1;
     }
 
     public function getTicketsByUserId($userId) {
@@ -99,7 +128,7 @@ class QueueModel {
                 LEFT JOIN users u ON q.user_id = u.id 
                 LEFT JOIN admincashier_acc a ON q.served_by = a.id
                 WHERE q.status IN ('waiting', 'serving') OR (q.status = 'completed' AND DATE(q.created_at) = CURDATE())
-                ORDER BY FIELD(q.status, 'serving', 'waiting', 'completed'), q.created_at ASC";
+                ORDER BY FIELD(q.status, 'serving', 'waiting', 'completed'), q.is_pwd DESC, q.created_at ASC";
         $result = $this->conn->query($sql);
         return $result->fetch_all(MYSQLI_ASSOC);
     }
@@ -293,12 +322,18 @@ class QueueModel {
      * @param string|null $queueNumber Manual number or null for auto-gen
      */
     public function create($userId, $queueNumber, $studentName, $purpose, $queueType = 'regular') {
+        $isPwd = $this->isUserPwd($userId) ? 1 : 0;
+        $finalQueueType = ($queueType === 'priority' || $isPwd) ? 'priority' : 'regular';
+
         if ($queueNumber === null) {
-            $queueNumber = $this->generateQueueNumber($queueType);
+            $queueNumber = $this->generateQueueNumber($finalQueueType);
         }
 
-        $stmt = $this->conn->prepare("INSERT INTO queue_tickets (user_id, queue_number, student_name, purpose, status, queue_type, created_at) VALUES (?, ?, ?, ?, 'waiting', ?, NOW())");
-        $stmt->bind_param("issss", $userId, $queueNumber, $studentName, $purpose, $queueType);
+        $stmt = $this->conn->prepare(
+            "INSERT INTO queue_tickets (user_id, queue_number, student_name, purpose, status, queue_type, is_pwd, created_at) 
+             VALUES (?, ?, ?, ?, 'waiting', ?, ?, NOW())"
+        );
+        $stmt->bind_param("issssi", $userId, $queueNumber, $studentName, $purpose, $finalQueueType, $isPwd);
         
         if ($stmt->execute()) {
             return ['id' => $this->conn->insert_id];
