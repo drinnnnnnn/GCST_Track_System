@@ -711,7 +711,7 @@
     window.formatTicketDisplay = function(value) {
       if (value === null || value === undefined) return '';
       return String(value)
-        .replace(/^REG-?/i, '')
+        .replace(/^(REG|PWD)-?/i, '')
         .replace(/^#/, '')
         .trim();
     };

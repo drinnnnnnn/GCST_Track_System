@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['student']); // Only students can update their own profile
+requireAuth(['student', 'user']); // Allow student/user roles to update their own profile
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/db_connect.php';
 require_once __DIR__ . '/email_helpers.php'; // Include the new email helper

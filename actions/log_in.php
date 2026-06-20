@@ -48,10 +48,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($hashed_password && password_verify($password_input, $hashed_password)) {
             $full_name = $first_name . ' ' . ($middle_name ? $middle_name . ' ' : '') . $last_name;
 
+            session_regenerate_id(true);
+            $_SESSION = [];
             $_SESSION['user_id'] = $user_id;
             $_SESSION['user_name'] = $full_name;
             $_SESSION['student_id'] = $student_id;
+            $_SESSION['student_role'] = 'student';
             $_SESSION['role'] = 'student';
+            $_SESSION['login_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
+            $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
             header("Location: http://localhost/GCST_Track_System/pages/user/InUser_home.html");
             exit();
         } else {

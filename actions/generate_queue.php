@@ -28,7 +28,26 @@ if ($student_name === '') {
 }
 
 $conn = Database::getConnection();
-$userId = $_SESSION['user_id'] ?? null;
+$sessionRole = $_SESSION['role'] ?? '';
+$hasValidSession = !empty($sessionRole)
+    || !empty($_SESSION['admin_id'])
+    || !empty($_SESSION['user_id'])
+    || !empty($_SESSION['student_id']);
+
+if (!$hasValidSession) {
+    http_response_code(401);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Your session is invalid. Please sign in again.'
+    ]);
+    exit;
+}
+
+$userId = null;
+$sessionUserId = $_SESSION['user_id'] ?? null;
+if (is_numeric($sessionUserId)) {
+    $userId = (int)$sessionUserId;
+}
 
 if ($school_id !== '') {
     $stmt = $conn->prepare("SELECT id FROM users WHERE student_id = ? LIMIT 1");
@@ -53,7 +72,11 @@ if (!$userId && !empty($_SESSION['student_id'])) {
     $stmt->close();
 }
 
-if (!$userId || !is_numeric($userId)) {
+$resolvedUserId = ($userId !== null && is_numeric($userId)) ? (int)$userId : null;
+$isAdminQueueContext = in_array($sessionRole, ['admin', 'cashier', 'admincashier', 'superadmin'], true)
+    || !empty($_SESSION['admin_id']);
+
+if (!$resolvedUserId && !$isAdminQueueContext) {
     http_response_code(401);
     echo json_encode([
         'success' => false,
@@ -64,7 +87,7 @@ if (!$userId || !is_numeric($userId)) {
 
 $model = new QueueModel();
 try {
-    $res = $model->create((int)$userId, null, $student_name, $purpose, $queue_type);
+    $res = $model->create($resolvedUserId, null, $student_name, $purpose, $queue_type);
     if (!is_array($res) || empty($res['id'])) {
         throw new Exception('Failed to create queue ticket.');
     }

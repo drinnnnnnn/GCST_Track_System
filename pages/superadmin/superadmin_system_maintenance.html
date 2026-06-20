@@ -25,6 +25,7 @@
             }
         }
     </script>
+    
     <style>
         #toastContainer {
             position: fixed;
@@ -156,11 +157,6 @@
           <h1>Maintenance & Health</h1>
           <p>Monitor health metrics, manage secure database backups, and optimize system performance.</p>
         </div>
-        <div class="greeting-actions hidden sm:block">
-          <button onclick="location.reload()" class="btn-secondary" title="Refresh Metrics">
-            <i class="fas fa-arrows-rotate"></i>
-          </button>
-        </div>
       </section>
 
       <!-- System Metrics -->
@@ -261,54 +257,6 @@
           </table>
         </div>
       </section>
-
-      <!-- Activity Logs / System Health Warnings -->
-      <section class="activity-section">
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">System Events & Health Activity</h2>
-        </div>
-        <div class="space-y-4">
-          <!-- Event Item -->
-          <div class="flex items-start gap-4 p-5 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-md transition-all group">
-            <div class="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500 flex-shrink-0 group-hover:bg-amber-500 group-hover:text-white transition-colors">
-                <i class="fas fa-triangle-exclamation"></i>
-            </div>
-            <div class="flex-grow pt-1">
-                <div class="flex items-center justify-between mb-1">
-                    <h3 class="font-bold text-slate-900">QR Scanner Service Latency</h3>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-lg">12 mins ago</span>
-                </div>
-                <p class="text-xs text-slate-500 leading-relaxed">Service performance decreased by 5% in the last 24 hours. Latency spikes detected during peak hours.</p>
-            </div>
-          </div>
-
-          <!-- Event Item -->
-          <div class="flex items-start gap-4 p-5 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-md transition-all group">
-            <div class="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-500 flex-shrink-0 group-hover:bg-red-500 group-hover:text-white transition-colors">
-                <i class="fas fa-server"></i>
-            </div>
-            <div class="flex-grow pt-1">
-                <div class="flex items-center justify-between mb-1">
-                    <h3 class="font-bold text-slate-900">Storage Capacity Warning</h3>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-lg">2 hours ago</span>
-                </div>
-                <p class="text-xs text-slate-500 leading-relaxed">Usage is currently above 80% (1.8GB / 2.0GB). We suggest archiving old logs or upgrading the storage plan.</p>
-            </div>
-          </div>
-
-          <!-- Event Item -->
-          <div class="flex items-start gap-4 p-5 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-md transition-all group">
-            <div class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-500 flex-shrink-0 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                <i class="fas fa-circle-check"></i>
-            </div>
-            <div class="flex-grow pt-1">
-                <div class="flex items-center justify-between mb-1">
-                    <h3 class="font-bold text-slate-900">Platform Global Status</h3>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-lg">Healthy</span>
-                </div>
-                <p class="text-xs text-slate-500 leading-relaxed">All primary systems, including Database, SMTP, and POS API, are currently fully operational with no detected issues.</p>
-            </div>
-          </div>
         </div>
       </section>
     </main>

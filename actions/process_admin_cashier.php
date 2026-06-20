@@ -160,13 +160,18 @@ try {
                     }
 
                     session_regenerate_id(true);
+                    $_SESSION = [];
                     $updateLogin = $conn->prepare("UPDATE admincashier_acc SET last_login = NOW(), login_attempts = 0 WHERE id = ?");
                     $updateLogin->bind_param("i", $user['id']);
                     $updateLogin->execute();
 
                     $_SESSION['admin_id'] = $user['id'];
+                    $_SESSION['admincashier_id'] = $user['id'];
                     $_SESSION['admin_name'] = trim($user['first_name'] . ' ' . $user['last_name']);
                     $_SESSION['role'] = 'admincashier';
+                    $_SESSION['admincashier_role'] = 'admincashier';
+                    $_SESSION['login_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
+                    $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
                     
                     logAudit($conn, 'admincashier', $user['id'], 'login', 'Admin Cashier logged in.');
 

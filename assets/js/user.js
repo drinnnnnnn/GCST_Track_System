@@ -56,8 +56,9 @@ function checkAuthentication() {
   return fetch('../../actions/get_user.php')
     .then(res => res.json())
     .then(data => {
-      const currentId = data.student_id || data.user_id || data.admin_id;
-      if (!currentId) {
+      const allowedRoles = ['student', 'user'];
+      const currentId = data.student_id || data.user_id;
+      if (!currentId || !allowedRoles.includes(data.role)) {
         window.location.href = "../../pages/sign_in.html";
         return null;
       }
@@ -281,9 +282,18 @@ function fetchWithError(url, options = {}) {
   return fetch(url, options)
     .then(async res => {
       const rawText = await res.text();
+      let parsed = null;
+
+      if (rawText) {
+        try {
+          parsed = JSON.parse(rawText);
+        } catch (err) {
+          parsed = null;
+        }
+      }
 
       if (!res.ok) {
-        const message = rawText ? rawText.trim() : `HTTP error! status: ${res.status}`;
+        const message = parsed?.message || parsed?.error || rawText.trim() || `HTTP error! status: ${res.status}`;
         throw new Error(message);
       }
 
@@ -291,12 +301,12 @@ function fetchWithError(url, options = {}) {
         throw new Error('Empty response received from server.');
       }
 
-      try {
-        return JSON.parse(rawText);
-      } catch (err) {
-        console.error('Failed to parse JSON response:', rawText);
-        throw new Error('Server returned an invalid response format.');
+      if (parsed !== null) {
+        return parsed;
       }
+
+      console.error('Failed to parse JSON response:', rawText);
+      throw new Error('Server returned an invalid response format.');
     })
     .catch(err => {
       console.error('Fetch error:', err);

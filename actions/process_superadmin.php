@@ -70,13 +70,19 @@ try {
     }
 
     // Set Session Variables
-    $_SESSION['admin_id']   = $result['id'];
-    $_SESSION['username']   = $result['username'];
-    $_SESSION['role']       = 'superadmin';
-    $_SESSION['admin_name'] = $result['first_name'] . ' ' . $result['last_name'];
-    $_SESSION['last_login'] = $result['last_login_at'];
-    $_SESSION['login_ip']   = $ip;
-    $_SESSION['user_agent'] = $ua;
+    session_regenerate_id(true);
+    $_SESSION = [];
+    $_SESSION['admin_id']         = $result['id'];
+    $_SESSION['admincashier_id']   = $result['id'];
+    $_SESSION['superadmin_id']     = $result['id'];
+    $_SESSION['username']          = $result['username'];
+    $_SESSION['role']              = 'superadmin';
+    $_SESSION['admincashier_role'] = 'admincashier';
+    $_SESSION['superadmin_role']   = 'superadmin';
+    $_SESSION['admin_name']        = $result['first_name'] . ' ' . $result['last_name'];
+    $_SESSION['last_login']        = $result['last_login_at'];
+    $_SESSION['login_ip']          = $ip;
+    $_SESSION['user_agent']        = $ua;
 
     // Log Success
     $model->logEvent($result['id'], 'login_success', $identifier, $ip, $ua);

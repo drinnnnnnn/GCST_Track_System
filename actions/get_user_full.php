@@ -5,11 +5,13 @@ require_once __DIR__ . '/../config/db_connect.php';
 secureSessionStart();
 header('Content-Type: application/json');
 
+$sessionRole = $_SESSION['role'] ?? null;
 $sessionStudentId = $_SESSION['student_id'] ?? null;
 $sessionUserId = $_SESSION['user_id'] ?? null;
+$sessionAdminCashierId = $_SESSION['admincashier_id'] ?? $_SESSION['admin_id'] ?? null;
 
-if (!$sessionStudentId && !$sessionUserId) {
-    jsonResponse(['success' => false, 'message' => 'Session expired'], 401);
+if (!$sessionStudentId && !$sessionUserId && !$sessionAdminCashierId) {
+    jsonResponse(['success' => false, 'message' => 'Session expired. Please sign in again.'], 401);
 }
 
 // Allow student/user profiles to load for the intended pages while keeping
@@ -19,8 +21,8 @@ requireAuth(['student', 'user', 'admincashier', 'superadmin']);
 $studentId = $_GET['student_id'] ?? $sessionStudentId;
 $userId = $_GET['user_id'] ?? $sessionUserId;
 
-if (!$studentId && !$userId) {
-    jsonResponse(['success' => false, 'message' => 'Session expired'], 401);
+if (!$studentId && !$userId && !in_array($sessionRole, ['admincashier', 'superadmin'], true)) {
+    jsonResponse(['success' => false, 'message' => 'Session expired. Please sign in again.'], 401);
 }
 
 try {
@@ -39,7 +41,11 @@ try {
     $stmt->close();
 
     if (!$user) {
-        jsonResponse(['success' => false, 'message' => 'User not found.'], 404);
+        jsonResponse(['success' => false, 'message' => 'User not found for the current session.'], 404);
+    }
+
+    if (empty($user['contact_number']) && !empty($user['phone'])) {
+        $user['contact_number'] = $user['phone'];
     }
 
     $user['full_name'] = trim($user['first_name'] . ' ' . ($user['middle_name'] ? $user['middle_name'] . ' ' : '') . $user['last_name']);
@@ -112,7 +118,7 @@ try {
     jsonResponse(['success' => true, 'user' => $user]);
 } catch (Exception $e) {
     error_log('get_user_full.php error: ' . $e->getMessage());
-    jsonResponse(['success' => false, 'message' => 'Unable to load profile data.'], 500);
+    jsonResponse(['success' => false, 'message' => $e->getMessage()], 500);
 }
 
 function tableExists(mysqli $conn, string $tableName): bool {

@@ -33,17 +33,19 @@
 
     .inventory-search {
       display: flex;
+      align-items: center;
       gap: 12px;
+      flex-wrap: wrap;
+      width: 100%;
       background: var(--surface);
       border-radius: 20px;
       padding: 12px;
       box-shadow: var(--shadow);
-      align-items: center;
       border: 1px solid var(--border-soft);
     }
 
     .inventory-search input {
-      flex: 1;
+      flex: 1 1 280px;
       min-width: 0;
       border: none;
       background: var(--surface-soft);
@@ -52,6 +54,33 @@
       font-size: 0.9rem;
       outline: none;
       transition: all 0.2s ease;
+      max-width: 100%;
+    }
+
+    .inventory-search-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-left: auto;
+    }
+
+    .inventory-search-actions > * {
+      flex: 0 0 auto;
+    }
+
+    #course-filter {
+      flex: 0 0 180px;
+      min-width: 160px;
+      height: 48px;
+      padding: 0 16px;
+      border-radius: 12px;
+      border: none;
+      background: var(--surface-soft);
+      font-size: 0.9rem;
+      outline: none;
+      color: var(--text);
+      font-weight: 500;
     }
 
     .inventory-search input:focus {
@@ -60,19 +89,22 @@
     }
 
     .inventory-search button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
       background: var(--primary);
       color: white;
       border: none;
       border-radius: 12px;
       padding: 12px 20px;
-      border-radius: var(--radius);
-      padding: 12px 24px;
       cursor: pointer;
       transition: all 0.2s ease;
       white-space: nowrap;
       flex-shrink: 0;
       font-weight: 600;
       font-size: 0.9rem;
+      min-height: 48px;
     }
 
     .inventory-search button:hover {
@@ -738,6 +770,18 @@
     @media screen and (max-width: 760px) {
       .inventory-search {
         flex-direction: column;
+        align-items: stretch;
+      }
+      .inventory-search input,
+      .inventory-search-actions,
+      .inventory-search-actions > * {
+        width: 100%;
+      }
+      .inventory-search-actions {
+        margin-left: 0;
+      }
+      .inventory-search-actions > * {
+        flex: 1 1 100%;
       }
       .inventory-search button {
         width: 100%;
@@ -752,8 +796,6 @@
         grid-template-columns: 1fr;
       }
       .add-product-panel { margin-top: 0; }
-      .inventory-search { flex-direction: column; align-items: stretch; }
-      .inventory-search button, .inventory-search input { width: 100%; }
       .filter-pills { justify-content: flex-start; }
       .detail-actions .action-row, .summary-cards { grid-template-columns: 1fr; }
     }
@@ -1018,19 +1060,20 @@
       <div class="inventory-toolbar">
         <div class="inventory-search">
           <input id="inventory-search" type="search" placeholder="Search products by name, category..." />
-          
-          <button id="btn-open-add-product" type="button" class="btn btn-secondary">Add New Product</button>
-          <button id="refresh-button" type="button" class="btn btn-secondary">
-            <i class="fas fa-sync-alt"></i>
-            <span>Refresh</span>
-          </button>
-          <button id="btn-print-stock-sheet" type="button" class="btn btn-secondary" title="Print blank stock-taking sheet for manual audit">
-            <i class="fas fa-print"></i>
-            <span>Print Inventory</span>
-          </button>
-        <select id="course-filter" style="padding: 0 16px; border-radius: 12px; border: none; background: var(--surface-soft); font-size: 0.9rem; outline: none; height: 48px; min-width: 160px; color: var(--text); font-weight: 500;">
-            <option value="All">All Courses</option>
-          </select>
+          <div class="inventory-search-actions">
+            <button id="btn-open-add-product" type="button" class="btn btn-secondary">Add New Product</button>
+            <button id="refresh-button" type="button" class="btn btn-secondary">
+              <i class="fas fa-sync-alt"></i>
+              <span>Refresh</span>
+            </button>
+            <button id="btn-print-stock-sheet" type="button" class="btn btn-secondary" title="Print blank stock-taking sheet for manual audit">
+              <i class="fas fa-print"></i>
+              <span>Print Inventory</span>
+            </button>
+            <select id="course-filter">
+              <option value="All">All Courses</option>
+            </select>
+          </div>
         </div>
         <div class="filter-pills" id="category-filters"></div>
       </div>

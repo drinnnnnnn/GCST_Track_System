@@ -5,7 +5,18 @@ secureSessionStart();
 
 $role = $_SESSION['role'] ?? null;
 $name = $_SESSION['user_name'] ?? $_SESSION['admin_name'] ?? null;
-$isLoggedIn = isset($_SESSION['student_id']) || isset($_SESSION['admin_id']) || isset($_SESSION['user_id']);
+$studentId = $_SESSION['student_id'] ?? null;
+$userId = $_SESSION['user_id'] ?? null;
+$adminId = $_SESSION['admin_id'] ?? $_SESSION['admincashier_id'] ?? null;
+$isLoggedIn = false;
+
+if (($role === 'student' || $role === 'user') && !empty($studentId)) {
+    $isLoggedIn = true;
+} elseif (($role === 'admincashier' || $role === 'superadmin') && !empty($adminId)) {
+    $isLoggedIn = true;
+} elseif (!empty($studentId) || !empty($userId) || !empty($adminId)) {
+    $isLoggedIn = true;
+}
 
 // Enhanced Session Integrity Check
 if ($isLoggedIn) {
@@ -19,6 +30,9 @@ if ($isLoggedIn) {
         $isLoggedIn = false;
         $role = null;
         $name = null;
+        $studentId = null;
+        $userId = null;
+        $adminId = null;
     }
 }
 
@@ -26,7 +40,12 @@ jsonResponse([
     'logged_in' => $isLoggedIn,
     'role' => $role,
     'name' => $name,
-    'student_id' => $_SESSION['student_id'] ?? null,
-    'user_id' => $_SESSION['user_id'] ?? null,
-    'admin_id' => $_SESSION['admin_id'] ?? null
+    'student_id' => $studentId,
+    'student_role' => $_SESSION['student_role'] ?? null,
+    'user_id' => $userId,
+    'admin_id' => $adminId,
+    'admincashier_id' => $_SESSION['admincashier_id'] ?? null,
+    'admincashier_role' => $_SESSION['admincashier_role'] ?? null,
+    'superadmin_id' => $_SESSION['superadmin_id'] ?? null,
+    'superadmin_role' => $_SESSION['superadmin_role'] ?? null
 ]);

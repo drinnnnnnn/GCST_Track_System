@@ -982,13 +982,14 @@
         }
 
         const user = response.user || {};
+        const contactNumber = user.contact_number || user.phone || '';
 
         // Fill form fields
         document.getElementById('first-name').value = user.first_name || '';
         document.getElementById('last-name').value = user.last_name || '';
         document.getElementById('email').value = user.email || '';
-        document.getElementById('phone').value = user.contact_number || '';
-        document.getElementById('grade-level').value = user.year_section || user.course || '';
+        document.getElementById('phone').value = contactNumber;
+        document.getElementById('grade-level').value = user.year_section || user.year_level || user.course || '';
         document.getElementById('student-id').value = user.student_id || '';
 
         const addressField = document.getElementById('address');
@@ -1023,7 +1024,7 @@
         showToast('Profile loaded successfully', 'info');
       } catch (error) {
         console.error('Error fetching user data:', error);
-        showToast('Unable to load profile data', 'error');
+        showToast(error?.message || 'Unable to load profile data.', 'error');
       }
     });
   </script> 
