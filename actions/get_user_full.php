@@ -3,17 +3,24 @@ require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/../config/db_connect.php';
 
 secureSessionStart();
+header('Content-Type: application/json');
+
+$sessionStudentId = $_SESSION['student_id'] ?? null;
+$sessionUserId = $_SESSION['user_id'] ?? null;
+
+if (!$sessionStudentId && !$sessionUserId) {
+    jsonResponse(['success' => false, 'message' => 'Session expired'], 401);
+}
 
 // Allow student/user profiles to load for the intended pages while keeping
 // the existing administrative access intact.
 requireAuth(['student', 'user', 'admincashier', 'superadmin']);
-header('Content-Type: application/json');
 
-$studentId = $_GET['student_id'] ?? $_SESSION['student_id'] ?? null;
-$userId = $_SESSION['user_id'] ?? null;
+$studentId = $_GET['student_id'] ?? $sessionStudentId;
+$userId = $_GET['user_id'] ?? $sessionUserId;
 
 if (!$studentId && !$userId) {
-    jsonResponse(['success' => false, 'message' => 'Authentication required.'], 401);
+    jsonResponse(['success' => false, 'message' => 'Session expired'], 401);
 }
 
 try {

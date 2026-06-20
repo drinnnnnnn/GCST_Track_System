@@ -529,7 +529,7 @@
           <div class="form-row">
             <div class="form-group">
               <label>Address</label>
-              <input type="text" id="address" placeholder="Address">
+              <input type="text" id="address" placeholder="Address" readonly  >
             </div>
             <div class="form-group">
               <label>Grade Level</label>
@@ -962,7 +962,19 @@
 
     initializeAdminCashierPage(async (userData) => {
       try {
-        const response = await fetchWithError('../../actions/get_user_full.php?t=' + Date.now(), {
+        const params = new URLSearchParams({
+          t: Date.now()
+        });
+
+        if (userData?.student_id) {
+          params.set('student_id', userData.student_id);
+        }
+
+        if (userData?.user_id) {
+          params.set('user_id', userData.user_id);
+        }
+
+        const response = await fetchWithError(`../../actions/get_user_full.php?${params.toString()}`, {
           cache: 'no-store'
         });
         if (!response || response.success !== true) {

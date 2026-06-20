@@ -5,7 +5,7 @@ secureSessionStart();
 
 $role = $_SESSION['role'] ?? null;
 $name = $_SESSION['user_name'] ?? $_SESSION['admin_name'] ?? null;
-$isLoggedIn = isset($_SESSION['student_id']) || isset($_SESSION['admin_id']);
+$isLoggedIn = isset($_SESSION['student_id']) || isset($_SESSION['admin_id']) || isset($_SESSION['user_id']);
 
 // Enhanced Session Integrity Check
 if ($isLoggedIn) {
@@ -27,5 +27,6 @@ jsonResponse([
     'role' => $role,
     'name' => $name,
     'student_id' => $_SESSION['student_id'] ?? null,
+    'user_id' => $_SESSION['user_id'] ?? null,
     'admin_id' => $_SESSION['admin_id'] ?? null
 ]);

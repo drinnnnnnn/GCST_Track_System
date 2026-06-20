@@ -56,7 +56,7 @@ function checkAuthentication() {
   return fetch('../../actions/get_user.php')
     .then(res => res.json())
     .then(data => {
-      const currentId = data.student_id || data.admin_id;
+      const currentId = data.student_id || data.user_id || data.admin_id;
       if (!currentId) {
         window.location.href = "../../pages/sign_in.html";
         return null;
