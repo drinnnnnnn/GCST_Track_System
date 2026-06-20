@@ -279,11 +279,24 @@ function initializeAdminCashierPage(pageCallback) {
  */
 function fetchWithError(url, options = {}) {
   return fetch(url, options)
-    .then(res => {
+    .then(async res => {
+      const rawText = await res.text();
+
       if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const message = rawText ? rawText.trim() : `HTTP error! status: ${res.status}`;
+        throw new Error(message);
       }
-      return res.json();
+
+      if (!rawText) {
+        throw new Error('Empty response received from server.');
+      }
+
+      try {
+        return JSON.parse(rawText);
+      } catch (err) {
+        console.error('Failed to parse JSON response:', rawText);
+        throw new Error('Server returned an invalid response format.');
+      }
     })
     .catch(err => {
       console.error('Fetch error:', err);

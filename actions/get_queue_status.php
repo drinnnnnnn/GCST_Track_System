@@ -45,7 +45,7 @@ function fetchQueueStatus($conn) {
         $windows[$row['window_number']] = ['number' => $row['queue_number'], 'name' => $row['student_name'], 'type' => $row['queue_type']];
     }
 
-    $sql_next = "SELECT queue_number FROM queue_tickets WHERE DATE(created_at) = CURDATE() AND status = 'waiting' ORDER BY is_pwd DESC, created_at ASC LIMIT 1";
+    $sql_next = "SELECT queue_number FROM queue_tickets WHERE DATE(created_at) = CURDATE() AND status = 'waiting' ORDER BY CASE WHEN queue_type = 'priority' THEN 1 ELSE 0 END DESC, created_at ASC LIMIT 1";
     $result_next = $conn->query($sql_next);
     $next_queue = ($result_next && $result_next->num_rows > 0) ? $result_next->fetch_assoc()['queue_number'] : null;
 

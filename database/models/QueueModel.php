@@ -9,11 +9,24 @@ class QueueModel {
         $this->conn = Database::getConnection();
         $this->conn->query("SET time_zone = '+08:00'"); // Synchronize with Asia/Manila
         (new MigrationManager())->run();
+        $this->ensureUserColumns();
         $this->ensureQueueTicketColumns();
     }
 
     public function getConnection() {
         return $this->conn;
+    }
+
+    private function ensureUserColumns() {
+        $requiredColumns = ['is_pwd'];
+        foreach ($requiredColumns as $column) {
+            $check = $this->conn->query("SHOW COLUMNS FROM `users` LIKE '$column'");
+            if ($check && $check->num_rows === 0) {
+                $this->conn->query(
+                    "ALTER TABLE `users` ADD COLUMN `$column` TINYINT(1) NOT NULL DEFAULT 0"
+                );
+            }
+        }
     }
 
     private function ensureQueueTicketColumns() {
@@ -128,7 +141,7 @@ class QueueModel {
                 LEFT JOIN users u ON q.user_id = u.id 
                 LEFT JOIN admincashier_acc a ON q.served_by = a.id
                 WHERE q.status IN ('waiting', 'serving') OR (q.status = 'completed' AND DATE(q.created_at) = CURDATE())
-                ORDER BY FIELD(q.status, 'serving', 'waiting', 'completed'), q.is_pwd DESC, q.created_at ASC";
+                ORDER BY FIELD(q.status, 'serving', 'waiting', 'completed'), CASE WHEN q.queue_type = 'priority' THEN 1 ELSE 0 END DESC, q.created_at ASC";
         $result = $this->conn->query($sql);
         return $result->fetch_all(MYSQLI_ASSOC);
     }

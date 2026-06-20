@@ -986,7 +986,7 @@
           </div>
           <div class="checkout-summary-row">
             <span>Payment Method</span>
-            <strong id="checkout-modal-payment">Cash / COD</strong>
+            <strong id="checkout-modal-payment">Cash</strong>
           </div>
         </div>
 
@@ -1677,7 +1677,7 @@
       document.getElementById('checkout-modal-item-count').textContent = itemCount;
       document.getElementById('checkout-modal-quantity').textContent = quantity;
       document.getElementById('checkout-modal-total').textContent = formatCurrency(totalAmount);
-      document.getElementById('checkout-modal-payment').textContent = 'Cash / COD';
+      document.getElementById('checkout-modal-payment').textContent = 'Cash';
       document.getElementById('checkout-modal-items').innerHTML = selectedItems.map(item => {
         const unitLabel = item.unitName === 'yard/s'
           ? `${item.quantity.toFixed(2)} yd`

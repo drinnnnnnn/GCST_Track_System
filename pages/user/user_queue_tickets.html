@@ -932,22 +932,36 @@
       button.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Generating...';
 
       try {
-        const response = await fetchWithError('../../actions/generate_queue.php', {
+        const response = await fetch('../../actions/generate_queue.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ student_name: studentName, purpose: purpose })
+          body: JSON.stringify({
+            student_name: studentName,
+            purpose: purpose,
+            queue_type: 'regular'
+          })
         });
-        if (!response.success) {
-          showToast(response.error || 'Failed to generate ticket.', 'error');
-          return;
+
+        const rawText = await response.text();
+        let payload = {};
+
+        try {
+          payload = rawText ? JSON.parse(rawText) : {};
+        } catch (parseError) {
+          throw new Error(rawText || `Server returned an invalid response (${response.status}).`);
         }
+
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.error || payload.message || 'Failed to generate ticket.');
+        }
+
         await refreshQueueStatus();
-        showToast(`Queue ticket ${response.queue_number} generated successfully.`, 'success');
+        showToast(`Queue ticket ${payload.queue_number || payload.ticket?.queue_number || 'Ticket'} generated successfully.`, 'success');
         startCooldown(120); // Start 2-minute cooldown
         openQueueModal();
       } catch (error) {
         console.error('Error generating ticket:', error);
-        showToast('Unable to generate ticket. Please try again.', 'error');
+        showToast(error.message || 'Unable to generate ticket. Please try again.', 'error');
       } finally {
         const cooldownEnd = localStorage.getItem('queue_ticket_cooldown');
         if (cooldownEnd && parseInt(cooldownEnd) > Date.now()) {

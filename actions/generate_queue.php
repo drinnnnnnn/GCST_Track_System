@@ -7,54 +7,84 @@ require_once __DIR__ . '/../database/connection.php';
 require_once __DIR__ . '/../database/models/QueueModel.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
-$school_id = isset($data['school_id']) ? trim($data['school_id']) : '';
-$student_name = isset($data['student_name']) ? trim($data['student_name']) : '';
-$queue_type = isset($data['queue_type']) ? $data['queue_type'] : 'regular';
-$purpose = trim($data['purpose'] ?? 'General Inquiry');
+if (!is_array($data)) {
+    $data = [];
+}
 
-if (empty($student_name)) {
-    die(json_encode(['success' => false, 'error' => 'Student name is required for manual entry.']));
+$school_id = isset($data['school_id']) ? trim((string)$data['school_id']) : '';
+$student_name = isset($data['student_name']) ? trim((string)$data['student_name']) : '';
+$queue_type = isset($data['queue_type']) && in_array($data['queue_type'], ['regular', 'priority'], true)
+    ? $data['queue_type']
+    : 'regular';
+$purpose = isset($data['purpose']) ? trim((string)$data['purpose']) : '';
+if ($purpose === '') {
+    $purpose = 'General Inquiry';
+}
+
+if ($student_name === '') {
+    http_response_code(422);
+    echo json_encode(['success' => false, 'error' => 'Student name is required.']);
+    exit;
 }
 
 $conn = Database::getConnection();
 $userId = $_SESSION['user_id'] ?? null;
 
-// Priority: Resolve user_id if school_id is provided via manual form entry
-if ($school_id) {
+if ($school_id !== '') {
     $stmt = $conn->prepare("SELECT id FROM users WHERE student_id = ? LIMIT 1");
-    $stmt->bind_param("s", $school_id);
-    $stmt->execute();
-    $stmt->bind_result($resolvedId);
-    if ($stmt->fetch()) $userId = $resolvedId;
-    $stmt->close();
-}
-// Fallback: Ensure user_id is resolved from student_id if missing in session
-elseif (!$userId && isset($_SESSION['student_id'])) {
-    $stmt = $conn->prepare("SELECT id FROM users WHERE student_id = ? LIMIT 1");
-    $stmt->bind_param("s", $_SESSION['student_id']);
+    $stmt->bind_param('s', $school_id);
     $stmt->execute();
     $stmt->bind_result($resolvedId);
     if ($stmt->fetch()) {
         $userId = $resolvedId;
-        $_SESSION['user_id'] = $userId; // Cache for performance
     }
     $stmt->close();
 }
 
+if (!$userId && !empty($_SESSION['student_id'])) {
+    $stmt = $conn->prepare("SELECT id FROM users WHERE student_id = ? LIMIT 1");
+    $stmt->bind_param('s', $_SESSION['student_id']);
+    $stmt->execute();
+    $stmt->bind_result($resolvedId);
+    if ($stmt->fetch()) {
+        $userId = $resolvedId;
+        $_SESSION['user_id'] = $userId;
+    }
+    $stmt->close();
+}
+
+if (!$userId || !is_numeric($userId)) {
+    http_response_code(401);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Your session is invalid. Please sign in again.'
+    ]);
+    exit;
+}
+
 $model = new QueueModel();
 try {
-    $res = $model->create($userId, null, $student_name, $purpose, $queue_type);
-    if ($res === false) {
-        throw new Exception('Failed to create queue ticket');
+    $res = $model->create((int)$userId, null, $student_name, $purpose, $queue_type);
+    if (!is_array($res) || empty($res['id'])) {
+        throw new Exception('Failed to create queue ticket.');
     }
 
-    // Fetch with joined user details (school_id)
     $ticket = $model->getByIdWithDetails((int)$res['id']);
-    if (!$ticket) throw new Exception('Unable to fetch created ticket');
+    if (!$ticket || empty($ticket['queue_number'])) {
+        throw new Exception('Unable to fetch the created ticket details.');
+    }
 
-    echo json_encode(['success' => true, 'ticket' => $ticket, 'queue_number' => $ticket['queue_number']]);
-} catch (Exception $e) {
+    echo json_encode([
+        'success' => true,
+        'ticket' => $ticket,
+        'queue_number' => $ticket['queue_number']
+    ]);
+} catch (Throwable $e) {
+    error_log('generate_queue.php error: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
 }
 ?>

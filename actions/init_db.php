@@ -119,6 +119,7 @@ $mysqli->query(
         `purpose` VARCHAR(255) DEFAULT NULL,
         `status` ENUM('waiting', 'serving', 'completed', 'cancelled') NOT NULL DEFAULT 'waiting',
         `queue_type` ENUM('regular', 'priority') NOT NULL DEFAULT 'regular',
+        `is_pwd` TINYINT(1) NOT NULL DEFAULT 0,
         `window_number` INT(11) DEFAULT NULL,
         `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `served_at` TIMESTAMP NULL DEFAULT NULL,
@@ -236,6 +237,7 @@ $mysqli->query(
 // Add missing columns or alter column types in existing schemas.
 addColumnIfNotExists($mysqli, 'users', 'role', "ENUM('user','admin','cashier','admincashier','superadmin') NOT NULL DEFAULT 'user'");
 addColumnIfNotExists($mysqli, 'users', 'phone', "VARCHAR(25) DEFAULT NULL");
+addColumnIfNotExists($mysqli, 'users', 'is_pwd', "TINYINT(1) NOT NULL DEFAULT 0 AFTER `status` ");
 addColumnIfNotExists($mysqli, 'users', 'created_at', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
 addColumnIfNotExists($mysqli, 'users', 'updated_at', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'role', "ENUM('admincashier','cashier','superadmin') NOT NULL DEFAULT 'admincashier'");
@@ -259,6 +261,7 @@ addColumnIfNotExists($mysqli, 'queue', 'window_number', "INT(11) DEFAULT NULL AF
 addColumnIfNotExists($mysqli, 'queue', 'served_by', "INT(11) DEFAULT NULL AFTER `window_number` ");
 addColumnIfNotExists($mysqli, 'queue_tickets', 'alert_sent', "TINYINT(1) DEFAULT 0 AFTER `served_at` ");
 addColumnIfNotExists($mysqli, 'queue_tickets', 'queue_type', "ENUM('regular', 'priority') NOT NULL DEFAULT 'regular' AFTER `status` ");
+addColumnIfNotExists($mysqli, 'queue_tickets', 'is_pwd', "TINYINT(1) NOT NULL DEFAULT 0 AFTER `queue_type` ");
 addColumnIfNotExists($mysqli, 'queue_tickets', 'window_number', "INT(11) DEFAULT NULL AFTER `queue_type` ");
 addColumnIfNotExists($mysqli, 'queue_tickets', 'served_by', "INT(11) DEFAULT NULL AFTER `window_number` ");
 

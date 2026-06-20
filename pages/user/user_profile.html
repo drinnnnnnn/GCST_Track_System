@@ -962,7 +962,13 @@
 
     initializeAdminCashierPage(async (userData) => {
       try {
-        const response = await fetchWithError('../../actions/get_user_full.php');
+        const response = await fetchWithError('../../actions/get_user_full.php?t=' + Date.now(), {
+          cache: 'no-store'
+        });
+        if (!response || response.success !== true) {
+          throw new Error(response?.message || 'Unable to load profile data.');
+        }
+
         const user = response.user || {};
 
         // Fill form fields
