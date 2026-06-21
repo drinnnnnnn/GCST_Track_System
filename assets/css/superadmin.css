@@ -42,9 +42,11 @@ body {
   font-family: 'Poppins', 'Segoe UI', system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
+  width: 100%;
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: stretch;
   overflow-x: hidden;
   line-height: 1.6;
 }
@@ -292,12 +294,26 @@ header {
 }
 
 /* ===== MAIN CONTENT ===== */
-main {
-  flex: 1;
-  max-width: 1400px;
+#sidebar-container {
+  flex-shrink: 0;
+}
+
+.content-wrapper {
+  flex: 1 1 auto;
   width: 100%;
-  margin: 24px auto;
-  padding: 0 20px 40px;
+  min-width: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+main,
+.main-content {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 24px 16px 40px;
+  box-sizing: border-box;
 }
 
 /* ===== GREETING SECTION ===== */
@@ -347,20 +363,21 @@ main {
 }
 
 .action-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 16px;
 }
 
 .action-card {
+  flex: 1 1 220px;
   display: flex;
   align-items: center;
-  gap: 12px; 
+  gap: 12px;
   background: var(--surface);
   backdrop-filter: var(--glass-filter);
   border-radius: var(--radius);
   padding: 1.25rem;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08); /* Adjusted shadow */
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
   text-decoration: none;
   color: var(--text);
   border: 1px solid var(--border-soft);
@@ -430,12 +447,13 @@ main {
 }
 
 .balance-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
 }
  
 .balance-card {
+  flex: 1 1 280px;
   background: var(--surface);
   backdrop-filter: var(--glass-filter);
   border-radius: var(--radius-lg);
@@ -492,13 +510,14 @@ main {
 }
 
 .charts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
-.chart-container, 
-.chart-card { 
+.chart-container,
+.chart-card {
+  flex: 1 1 360px;
   background: var(--surface);
   backdrop-filter: var(--glass-filter);
   border-radius: var(--radius-lg);
@@ -530,6 +549,8 @@ main {
 
 /* ===== FORMS & INPUTS ===== */
 .search-filters {
+  width: 100%;
+  box-sizing: border-box;
   background: rgba(var(--surface-rgb), 0.7); /* Transparent white */
   backdrop-filter: var(--glass-filter);
   border-radius: var(--radius-lg);
@@ -617,18 +638,23 @@ main {
 
 /* ===== PRODUCTS SECTION ===== */
 .products-section {
-  background: rgba(var(--surface-rgb), 0.7); /* Transparent white */
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(var(--surface-rgb), 0.7);
   backdrop-filter: var(--glass-filter);
   border-radius: var(--radius-lg);
   padding: 20px;
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--border-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .product-card {
@@ -731,6 +757,7 @@ main {
 
 /* ===== TABLES ===== */
 .table-responsive {
+  width: 100%;
   overflow-x: auto;
   border-radius: var(--radius);
   background: var(--surface);
@@ -743,7 +770,8 @@ main {
 .queue-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 700px;
+  min-width: 100%;
+  table-layout: auto;
   font-size: 0.95rem;
 }
 
@@ -906,17 +934,22 @@ button:focus-visible { box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.3); }
  
 /* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 1024px) {
-  /* Reset desktop sidebar-related layout for mobile */
-  .content-wrapper { margin-left: 0 !important; }
-  header { left: 0 !important; width: 100% !important; }
+  body {
+    flex-direction: column;
+  }
+
+  .content-wrapper {
+    min-height: auto;
+  }
 
   header {
+    left: 0 !important;
+    width: 100% !important;
     padding: 12px 16px;
     gap: 12px;
   }
   .menu-icon { display: inline-flex; }
 
-  /* Sidebar mobile specific drawer styling */
   .sidebar {
     width: 300px;
     background: #ffffff;
@@ -928,17 +961,25 @@ button:focus-visible { box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.3); }
   }
   .sidebar.active {
     transform: translateX(0);
-  } 
-  .charts-grid, .balance-cards, .action-grid { grid-template-columns: 1fr; }
-  main { 
-    padding: 0 15px 30px;
+  }
+
+  .charts-grid,
+  .balance-cards,
+  .action-grid {
+    display: flex;
+    flex-direction: column;
+  }
+
+  main,
+  .main-content {
+    padding: 0 14px 32px;
   }
 }
 
 @media (max-width: 768px) {
   header {
     padding: 10px 14px;
-    flex-wrap: nowrap; /* Keep items in one line */
+    flex-wrap: nowrap;
     justify-content: flex-start;
   }
 
@@ -956,24 +997,29 @@ button:focus-visible { box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.3); }
   }
  
   .greeting-content h1 { font-size: 1.75rem; }
-  .balance-cards { grid-template-columns: 1fr; }
 
   .search-bar {
     flex-direction: column;
   }
 
   .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    display: flex;
+    flex-direction: column;
   }
 
-  main {
-    padding: 0 12px 20px;
+  main,
+  .main-content {
+    padding: 0 12px 24px;
   }
  
-  .notification-dropdown, .dropdown-menu { width: 92vw; right: 4vw; }
+  .notification-dropdown,
+  .dropdown-menu {
+    width: 92vw;
+    right: 4vw;
+  }
 }
 
-@media (max-width: 480px) { 
+@media (max-width: 480px) {
   header {
     justify-content: space-between;
   }
@@ -981,18 +1027,30 @@ button:focus-visible { box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.3); }
   .logo strong {
     display: none;
   }
+
   .greeting-content h1 {
     font-size: 1.5rem;
   }
 
-  main {
-    padding: 0 10px 15px;
+  main,
+  .main-content {
+    padding: 0 10px 16px;
   }
 
   .balance-card {
     padding: 16px;
   }
-  .balance-card p { font-size: 1.6rem; }
+
+  .balance-card p {
+    font-size: 1.6rem;
+  }
+
+  .content-wrapper,
+  .main-content,
+  .products-section {
+    width: 100%;
+    overflow-x: hidden;
+  }
 }
 
 /* ===== SCANNER MODAL UI/UX IMPROVEMENTS ===== */

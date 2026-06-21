@@ -11,7 +11,8 @@ $result = $conn->query($sql);
 $students = [];
 if ($result) {
     while ($row = $result->fetch_assoc()) {
-        $studentId = !empty($row['student_id']) ? $row['student_id'] : $row['id'];
+        $dbId = isset($row['id']) ? (int) $row['id'] : 0;
+        $studentId = trim((string)($row['student_id'] ?? ''));
         $firstName = trim((string)($row['first_name'] ?? ''));
         $lastName = trim((string)($row['last_name'] ?? ''));
         $course = trim((string)($row['course'] ?? ''));
@@ -19,8 +20,8 @@ if ($result) {
         $yearSection = trim((string)($row['year_section'] ?? ''));
 
         $students[] = [
-            'id' => $studentId,
-            'student_id' => $studentId,
+            'id' => $dbId,
+            'student_id' => $studentId !== '' ? $studentId : (string) $dbId,
             'name' => trim($firstName . ' ' . $lastName),
             'course' => $course !== '' ? $course : null,
             'year_level' => $yearLevel !== '' ? $yearLevel : null,

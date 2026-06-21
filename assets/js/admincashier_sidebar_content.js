@@ -76,48 +76,71 @@ export function getSidebarHTML() {
         --sidebar-width: 280px;
         --sidebar-min-width: 88px;
         --primary-blue: #2563eb;
-        --bg-sidebar: rgba(255, 255, 255, 0.85);
+        --bg-sidebar: rgba(255, 255, 255, 0.88);
         --text-main: #0f172a;
         --text-muted: #64748b;
-        --border-color: rgba(226, 232, 240, 0.6);
-        --nav-transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        --border-color: rgba(226, 232, 240, 0.75);
+        --nav-transition: all 0.3s ease;
+        --surface-hover: #f8fafc;
+        --shadow-soft: 0 18px 45px -24px rgba(15, 23, 42, 0.35);
     }
 
     #main-sidebar.sidebar {
         position: fixed;
         top: 0; left: 0; bottom: 0;
         width: var(--sidebar-width);
-        background: var(--bg-sidebar);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.9));
         backdrop-filter: blur(16px) saturate(180%);
         -webkit-backdrop-filter: blur(16px) saturate(180%);
         border-right: 1px solid var(--border-color);
+        box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.2), var(--shadow-soft);
         z-index: 1000;
         display: flex;
         flex-direction: column;
-        padding: 1.5rem 1rem;
+        padding: 1rem 0.85rem;
         transition: var(--nav-transition);
+        overflow-y: auto;
         overflow-x: hidden;
+    }
+
+    #main-sidebar.sidebar::-webkit-scrollbar {
+        width: 7px;
+    }
+    #main-sidebar.sidebar::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.35);
+        border-radius: 999px;
     }
 
     @media (min-width: 1025px) {
         #main-sidebar.sidebar.minimized {
             width: var(--sidebar-min-width);
-            padding: 1.5rem 0.75rem;
+            padding: 1rem 0.6rem;
         }
         #main-sidebar.sidebar.minimized .brand-text,
         #main-sidebar.sidebar.minimized .nav-section-label,
         #main-sidebar.sidebar.minimized .sidebar-link span {
             opacity: 0; pointer-events: none; width: 0; margin: 0; display: none;
         }
-        #main-sidebar.sidebar.minimized .sidebar-brand { justify-content: center; padding: 0; margin-bottom: 2.5rem; }
-        #main-sidebar.sidebar.minimized .sidebar-link { justify-content: center; padding: 0.85rem; border-radius: 1rem; }
-        #main-sidebar.sidebar.minimized .sidebar-link i { margin: 0; font-size: 1.25rem; }
+        #main-sidebar.sidebar.minimized .sidebar-brand {
+            justify-content: center;
+            padding: 0.5rem 0 1rem;
+            margin-bottom: 1rem;
+        }
+        #main-sidebar.sidebar.minimized .sidebar-link {
+            justify-content: center;
+            padding: 0.9rem;
+            border-radius: 1rem;
+        }
+        #main-sidebar.sidebar.minimized .sidebar-link i {
+            margin: 0;
+            font-size: 1.1rem;
+        }
         #main-sidebar.sidebar.minimized .sidebar-minimize-btn { 
-            right: -14px; 
-            transform: translateY(-50%) rotate(180deg); 
+            right: -12px;
+            transform: translateY(-50%) rotate(180deg);
         }
         #main-sidebar.sidebar.minimized .sidebar-minimize-btn:hover {
-            transform: translateY(-50%) rotate(180deg) scale(1.1);
+            transform: translateY(-50%) rotate(180deg) scale(1.05);
         }
     }
 
@@ -126,108 +149,262 @@ export function getSidebarHTML() {
             transform: translateX(-110%);
             background: #ffffff;
             border-radius: 0 1.5rem 1.5rem 0;
-            box-shadow: 20px 0 50px rgba(0,0,0,0.1);
+            box-shadow: 18px 0 40px rgba(0,0,0,0.08);
         }
         #main-sidebar.sidebar.active { transform: translateX(0); }
         .sidebar-minimize-btn { display: none; }
     }
 
     .sidebar-brand {
-        display: flex; align-items: center; gap: 0.85rem; margin-bottom: 2.5rem; padding: 0 0.5rem; position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.9rem;
+        margin-bottom: 1rem;
+        padding: 0.7rem 0.65rem 1rem;
+        position: relative;
+        border-radius: 1rem;
+        transition: background 0.2s ease;
     }
-    .sidebar-brand img { width: 44px; height: 44px; object-fit: contain; }
+    .sidebar-brand:hover {
+        background: rgba(248, 250, 252, 0.75);
+    }
+    .sidebar-brand img {
+        width: 46px;
+        height: 46px;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
     
+    .brand-text {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.18rem;
+    }
     .brand-text h1 {
-        font-size: 1.2rem; font-weight: 600; color: var(--text-main); margin: 0; letter-spacing: -0.015em;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
     }
     .brand-text span {
-        font-size: 0.75rem; font-weight: 600; color: var(--primary-blue); text-transform: uppercase; letter-spacing: 0.05em;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--primary-blue);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        line-height: 1.1;
     }
 
     .sidebar-minimize-btn {
         position: absolute; 
         top: 50%; 
-        right: -14px; 
+        right: -12px; 
         transform: translateY(-50%);
         background: #ffffff; 
         color: var(--primary-blue); 
         border: 1px solid var(--border-color);
-        border-radius: 50%; 
-        width: 28px; 
-        height: 28px; 
+        border-radius: 999px; 
+        width: 30px; 
+        height: 30px; 
         display: flex; 
         align-items: center; 
         justify-content: center;
         cursor: pointer; 
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        box-shadow: 0 6px 14px -8px rgba(15, 23, 42, 0.5);
+        transition: all 0.25s ease;
         z-index: 1001;
         font-size: 0.8rem;
     }
     .sidebar-minimize-btn:hover {
         background: var(--primary-blue);
         color: #ffffff;
-        transform: translateY(-50%) scale(1.1);
-        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        transform: translateY(-50%) scale(1.06);
+        box-shadow: 0 10px 18px -10px rgba(37, 99, 235, 0.45);
     }
     .sidebar-minimize-btn:active {
-        transform: translateY(-50%) scale(0.95);
+        transform: translateY(-50%) scale(0.96);
     }
 
     .nav-section-label {
-        font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted);
-        margin: 1.5rem 0 0.5rem 0.85rem; letter-spacing: 0.08em; opacity: 0.8;
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 0.9rem 0 0.45rem 0.95rem;
+        letter-spacing: 0.1em;
+        opacity: 0.82;
     }
 
-    .sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 0.25rem; }
+    .sidebar-nav {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
 
     .sidebar-link {
-        display: flex; align-items: center; gap: 1rem; padding: 0.85rem 1rem; border-radius: 0.85rem;
-        color: var(--text-muted); font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: all 0.25s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.95rem;
+        padding: 0.9rem 0.95rem;
+        border-radius: 0.95rem;
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+        white-space: nowrap;
     }
-    .sidebar-link i { width: 1.25rem; text-align: center; font-size: 1.1rem; }
-    .sidebar-link:hover { background: #f1f5f9; color: var(--primary-blue); }
+    .sidebar-link i {
+        width: 1.2rem;
+        text-align: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    .sidebar-link:hover {
+        background: var(--surface-hover);
+        color: var(--primary-blue);
+        transform: translateX(2px);
+    }
+    .sidebar-link:focus-visible {
+        outline: none;
+        box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.12);
+    }
     .sidebar-link.active {
-        background: var(--primary-blue); color: white; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.25);
+        background: var(--primary-blue);
+        color: #ffffff;
+        box-shadow: 0 10px 18px -12px rgba(37, 99, 235, 0.45);
+    }
+    .sidebar-link.active::before {
+        content: '';
+        position: absolute;
+        left: 0.4rem;
+        top: 50%;
+        width: 0.25rem;
+        height: 1.25rem;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 999px;
+        transform: translateY(-50%);
     }
 
     .sidebar-badge {
-        margin-left: auto; background: #ef4444; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 20px; font-weight: 600;
+        margin-left: auto;
+        background: #ef4444;
+        color: white;
+        font-size: 0.68rem;
+        padding: 0.18rem 0.42rem;
+        border-radius: 999px;
+        font-weight: 700;
+        line-height: 1.2;
     }
     .sidebar-badge.hidden { display: none; }
 
-    .sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); }
-    .btn-logout { color: #ef4444; font-weight: 600; }
-    .btn-logout:hover { background: #fef2f2; color: #dc2626; }
+    .sidebar-footer {
+        margin-top: auto;
+        padding-top: 0.8rem;
+        border-top: 1px solid var(--border-color);
+    }
+    .btn-logout {
+        color: #ef4444;
+        font-weight: 700;
+    }
+    .btn-logout:hover {
+        background: #fef2f2;
+        color: #dc2626;
+        transform: translateX(2px);
+    }
 
     .logout-modal-overlay {
-        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px);
-        z-index: 10000; display: none; align-items: center; justify-content: center;
-        opacity: 0; transition: opacity 0.3s ease;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(8px);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.25s ease;
     }
     .logout-modal-overlay.active { display: flex; opacity: 1; }
 
     .logout-modal-card {
-        background: #ffffff; width: 90%; max-width: 400px; padding: 2.5rem 2rem; border-radius: 1.5rem;
-        text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        transform: translateY(20px); transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        background: #ffffff;
+        width: min(92%, 420px);
+        padding: 2rem 1.75rem;
+        border-radius: 1.25rem;
+        text-align: center;
+        box-shadow: 0 24px 50px -18px rgba(15, 23, 42, 0.4);
+        transform: translateY(14px);
+        transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .logout-modal-overlay.active .logout-modal-card { transform: translateY(0); }
 
     .logout-modal-icon {
-        width: 64px; height: 64px; background: #fff1f2; color: #e11d48; font-size: 1.5rem;
-        display: flex; align-items: center; justify-content: center; border-radius: 1.25rem; margin: 0 auto 1.5rem;
+        width: 64px;
+        height: 64px;
+        background: #fff1f2;
+        color: #e11d48;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 1rem;
+        margin: 0 auto 1.15rem;
     }
 
-    .logout-modal-title { font-weight: 600; font-size: 1.5rem; color: var(--text-main); margin-bottom: 0.75rem; }
-    .logout-modal-text { font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 2rem; }
+    .logout-modal-title {
+        font-weight: 700;
+        font-size: 1.4rem;
+        color: var(--text-main);
+        margin-bottom: 0.65rem;
+    }
+    .logout-modal-text {
+        font-size: 0.95rem;
+        color: var(--text-muted);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
 
-    .logout-modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .btn-modal { padding: 0.85rem; border-radius: 0.85rem; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; }
-    .btn-modal-cancel { background: #f1f5f9; color: #475569; }
-    .btn-modal-confirm { background: #e11d48; color: #ffffff; }
+    .logout-modal-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.85rem;
+    }
+    .btn-modal {
+        padding: 0.85rem;
+        border-radius: 0.9rem;
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-modal:hover {
+        transform: translateY(-1px);
+    }
+    .btn-modal-cancel {
+        background: #f1f5f9;
+        color: #475569;
+    }
+    .btn-modal-confirm {
+        background: #e11d48;
+        color: #ffffff;
+    }
 
-    #sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); z-index: 999; display: none; }
+    #sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.18);
+        z-index: 999;
+        display: none;
+        transition: opacity 0.2s ease;
+    }
     #sidebar-overlay.active { display: block; }
 </style>
 
@@ -244,7 +421,7 @@ export function getSidebarHTML() {
                 Science & Technologies
             </h1>
             <span class="text-[11px] font-semibold text-primary mt-0.5 leading-none">
-                Admin / Cashier Portal
+                Admin / Cashier
             </span>
         </div>
     </div>

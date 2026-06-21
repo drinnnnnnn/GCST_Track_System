@@ -83,17 +83,35 @@ switch ($action) {
         break;
 
     case 'delete':
-        $id = filter_var($input['student_id'] ?? 0, FILTER_VALIDATE_INT);
-        if (!$id) {
-            echo json_encode(['success' => false, 'message' => 'Invalid ID provided.']);
+        $providedId = $input['id'] ?? $input['student_id'] ?? $input['studentId'] ?? null;
+        $providedId = trim((string) $providedId);
+
+        if ($providedId === '') {
+            echo json_encode(['success' => false, 'message' => 'Student ID missing.']);
             exit;
         }
-        $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
-        $stmt->bind_param("i", $id);
-        if ($stmt->execute()) {
+
+        $isNumericId = is_numeric($providedId) && (string)(int)$providedId === (string)$providedId;
+
+        if ($isNumericId) {
+            $id = (int) $providedId;
+            $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
+            $stmt->bind_param('i', $id);
+        } else {
+            $studentCode = $providedId;
+            $stmt = $conn->prepare("DELETE FROM users WHERE student_id = ?");
+            $stmt->bind_param('s', $studentCode);
+        }
+
+        if (!$stmt->execute()) {
+            echo json_encode(['success' => false, 'message' => 'Delete operation failed.']);
+            exit;
+        }
+
+        if ($stmt->affected_rows > 0) {
             echo json_encode(['success' => true, 'message' => 'Student record permanently removed.']);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Delete operation failed.']);
+            echo json_encode(['success' => false, 'message' => 'Student not found.']);
         }
         break;
 

@@ -7,6 +7,7 @@
     <title>Student Sign Up</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
         :root {
@@ -321,33 +322,71 @@
                 </div>
 
                 <div class="input-box">
-                    <input type="text" name="middle_name" placeholder="Middle Name" required>
+                    <input type="text" name="middle_name" placeholder="Middle Name" optional>
                     <i class='bx bxs-user'></i>
                 </div>
 
-                <div class="input-box">
-                    <input type="text" name="sex" placeholder="Male or Female" required pattern="Male|Female">
-                    <i class='bx bx-male-female'></i>
+                <div class="relative w-full mb-6">
+                    <select name="sex" required 
+                        class="w-full h-12 pl-4 pr-12 bg-white border-0 ring-1 ring-gray-200 rounded-xl appearance-none outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-500 cursor-pointer shadow-sm">
+                        <option value="" disabled selected class="text-gray-500">Select Gender</option>
+                        <option value="Male" class="text-gray-500">Male</option>
+                        <option value="Female" class="text-gray-500">Female</option>
+                    </select>
+                    <i class='bx bx-male-female absolute right-4 top-1/2 -translate-y-1/2 text-lg text-gray-400 pointer-events-none'></i>
                 </div>
 
-                <div class="input-box">
-                    <input type="text" name="course" placeholder="Course" required>
-                    <i class='bx bxs-graduation'></i>
+                <div class="relative w-full mb-6">
+                    <select 
+                        name="course" 
+                        required 
+                        class="w-full h-12 pl-4 pr-12 bg-white border-0 ring-1 ring-gray-200 rounded-xl appearance-none outline-none focus:ring-2 focus:ring-blue-500 transition-all text-gray-500 cursor-pointer shadow-sm">
+                        <option value="" disabled selected class="text-gray-500">Select Course/Program</option>
+                        <option value="BS Information Technology">BS Information Technology</option>
+                        <option value="BS Computer Science">BS Computer Science</option>
+                        <option value="BS Tourism Management">BS Tourism Management</option>
+                        <option value="BS Business Administration">BS Business Administration</option>
+                        <option value="B Elementary Education">B Elementary Education</option>
+                        <option value="B Secondary Education">B Secondary Education</option>
+                        <option value="BS Criminology">BS Criminology</option>
+                        <option value="BS Accountancy">BS Accountancy</option>
+                    </select>
+                    <i class='bx bxs-graduation absolute right-4 top-1/2 -translate-y-1/2 text-lg text-gray-400 pointer-events-none'></i>
                 </div>
 
-                <div class="input-box">
-                    <input type="text" name="department" placeholder="Department" required>
-                    <i class='bx bxs-buildings'></i>
+                <div class="relative w-full mb-6">
+                    <select name="department" required 
+                        class="w-full h-12 pl-4 pr-12 bg-white border-0 ring-1 ring-gray-200 rounded-xl appearance-none outline-none focus:ring-2 focus:ring-blue-500 transition-all text-gray-500 cursor-pointer shadow-sm invalid:text-gray-400">
+                        <option value="" disabled selected class="text-gray-500">Select Department</option>
+                        <option value="Information Technology">Information Technology</option>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Tourism Management">Tourism Management</option>
+                        <option value="Business Administration">Business Administration</option>
+                        <option value="Elementary Education">Elementary Education</option>
+                        <option value="Secondary Education">Secondary Education</option>
+                        <option value="Criminology">Criminology</option>
+                        <option value="Accountancy">Accountancy</option>
+                    </select>
+                    <i class='bx bxs-buildings absolute right-4 top-1/2 -translate-y-1/2 text-lg text-gray-400 pointer-events-none'></i>
                 </div>
 
-                <div class="input-box">
-                    <input type="text" name="year_level" placeholder="Year Level (1-4)" required pattern="[1-4]">
-                    <i class='bx bxs-layer'></i>
+                <div class="relative w-full mb-6">
+                    <select name="year_level" required 
+                        class="w-full h-12 pl-4 pr-12 bg-white border-0 ring-1 ring-gray-200 rounded-xl appearance-none outline-none focus:ring-2 focus:ring-blue-500 transition-all text-gray-500 cursor-pointer shadow-sm invalid:text-gray-400">
+                        <option value="" disabled selected class="text-gray-400">Select Year Level</option>
+                        <option value="1" class="text-gray-500">1st Year</option>
+                        <option value="2" class="text-gray-500">2nd Year</option>
+                        <option value="3" class="text-gray-500">3rd Year</option>
+                        <option value="4" class="text-gray-500">4th Year</option>
+                    </select>
+                    <i class='bx bxs-layer absolute right-4 top-1/2 -translate-y-1/2 text-lg text-gray-400 pointer-events-none'></i>
                 </div>
 
-                <div class="input-box">
-                    <input type="text" name="contact_number" placeholder="Contact Number (11 digits)" required pattern="\d{11}">
-                    <i class='bx bxs-phone'></i>
+                <div class="relative w-full mb-6">
+                    <input type="text" name="contact_number" placeholder="Contact Number (e.g. 09123456789)" required pattern="\d{11}" maxlength="11"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                        class="w-full h-12 pl-4 pr-12 bg-white border-0 ring-1 ring-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-gray-500 placeholder-gray-400 shadow-sm"> 
+                    <i class='bx bxs-phone absolute right-4 top-1/2 -translate-y-1/2 text-lg text-gray-400 pointer-events-none'></i>
                 </div>
 
                 <div class="input-box">
@@ -460,7 +499,7 @@
             const params = new URLSearchParams(window.location.search);
             const status = params.get("status");
 
-            if (status === "success") showToast("Successfully Registered!");
+            if (status === "success") showToast("Successfully Registered! Please wait for account verification. You will receive an email notification once your account is verified.");
             else if (status === "exists") showToast("Account already exists.", true);
             else if (status === "nomatch") showToast("Passwords do not match.", true);
             else if (status === "too_large") showToast("One or more files exceed the 5MB limit.", true);

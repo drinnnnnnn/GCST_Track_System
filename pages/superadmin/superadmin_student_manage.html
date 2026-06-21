@@ -467,12 +467,14 @@
         }
 
         function confirmDeleteStudent() {
-            if (!pendingDeleteStudentId) {
+            const studentId = pendingDeleteStudentId;
+            if (!studentId) {
                 showToast('Please select a student first.', 'warning');
                 return;
             }
+
             closeDeleteStudentModal();
-            deleteStudent(pendingDeleteStudentId);
+            deleteStudent(studentId);
         }
 
         async function loadStudents() {
@@ -829,11 +831,18 @@
         }
 
         async function deleteStudent(id) {
+            const numericId = Number(id);
+            const payload = {
+                action: 'delete',
+                id: Number.isFinite(numericId) ? numericId : id,
+                student_id: id
+            };
+
             try {
                 const res = await fetch(apiPath, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'delete', student_id: id })
+                    body: JSON.stringify(payload)
                 });
                 const result = await res.json();
                 if (result.success) {
