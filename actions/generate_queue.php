@@ -73,7 +73,7 @@ if (!$userId && !empty($_SESSION['student_id'])) {
 }
 
 $resolvedUserId = ($userId !== null && is_numeric($userId)) ? (int)$userId : null;
-$isAdminQueueContext = in_array($sessionRole, ['admin', 'cashier', 'admincashier', 'superadmin'], true)
+$isAdminQueueContext = in_array($sessionRole, ['admincashier', 'superadmin'], true)
     || !empty($_SESSION['admin_id']);
 
 if (!$resolvedUserId && !$isAdminQueueContext) {

@@ -232,16 +232,32 @@ export function getSidebarHTML() {
 </style>
 
 <aside id="main-sidebar" class="sidebar" aria-label="Main Sidebar">
-    <div class="sidebar-brand" id="sidebar-brand-area">
-        <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="GCST Logo">
-        <div class="brand-text">
-            <h1>GCST TRACK</h1>
-            <span>Admin / Cashier</span>
+    <div class="sidebar-brand p-5 border-b border-slate-100 flex items-center justify-between gap-3 relative w-full" id="sidebar-brand-area">
+    <div class="flex items-center gap-3">
+        <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Granby Colleges Logo" class="w-10 h-10 object-contain shrink-0">
+        
+        <div class="brand-text flex flex-col justify-center font-sans">
+            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-0.5">
+                Granby Colleges of
+            </span>
+            <h1 class="text-sm font-extrabold text-slate-800 tracking-tight leading-tight">
+                Science & Technologies
+            </h1>
+            <span class="text-[11px] font-semibold text-primary mt-0.5 leading-none">
+                Admin / Cashier Portal
+            </span>
         </div>
-        <button onclick="typeof window.toggleMinimizeSidebar === 'function' ? window.toggleMinimizeSidebar() : null" id="sidebar-minimize-btn" class="sidebar-minimize-btn" title="Toggle Sidebar">
-            <i class="fas fa-chevron-left" id="minimize-icon"></i>
-        </button>
     </div>
+    
+    <button 
+        onclick="typeof window.toggleMinimizeSidebar === 'function' ? window.toggleMinimizeSidebar() : null" 
+        id="sidebar-minimize-btn" 
+        class="sidebar-minimize-btn w-7 h-7 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-slate-600 hover:bg-slate-50 shadow-sm flex items-center justify-center transition-all duration-150 absolute -right-3 top-1/2 -translate-y-1/2 z-30" 
+        title="Toggle Sidebar"
+    >
+        <i class="fas fa-chevron-left text-[10px]" id="minimize-icon"></i>
+    </button>
+</div>
 
     <p class="nav-section-label">Main Menu</p>
     <nav class="sidebar-nav">

@@ -2,9 +2,9 @@
 require_once __DIR__ . '/../database/models/SuperAdminModel.php';
 require_once __DIR__ . '/../database/connection.php';
 
-$username = 'aldrin0416';
+$username = 'aldrinnn';
 $email = 'aldrinaprao@gmail.com';
-$password = 'Aldrin0416'; 
+$password = 'aldrin0416'; 
 $pin = '0425';
 $first_name = 'Aldrin';
 $last_name = 'Aprao';
@@ -23,6 +23,7 @@ $tableSql = "CREATE TABLE IF NOT EXISTS `superadmins` (
     `security_pin_hash` VARCHAR(255) NOT NULL,
     `first_name` VARCHAR(50) NOT NULL,
     `last_name` VARCHAR(50) NOT NULL,
+    `role` VARCHAR(20) NOT NULL DEFAULT 'superadmin',
     `status` ENUM('active', 'suspended', 'locked') DEFAULT 'active',
     `failed_login_attempts` TINYINT UNSIGNED DEFAULT 0,
     `lockout_until` DATETIME NULL,

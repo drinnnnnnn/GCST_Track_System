@@ -12,7 +12,7 @@ export function getSidebarHTML() {
             backdrop?.classList.toggle('active');
             
             if (hamburger) {
-                hamburger.className = isOpen ? 'fas fa-times' : 'fas fa-bars';
+                hamburger.className = isOpen ? 'fas f   a-times' : 'fas fa-bars';
             }
             
             document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -62,7 +62,7 @@ export function getSidebarHTML() {
         window.performLogout = function() {
             sessionStorage.clear();
             localStorage.clear();
-            window.location.replace('/GCST_Track_System/actions/log_out.php');
+            window.location.replace('/GCST_Track_System/actions/sign_out.php');
         };
 
         window.addEventListener('keydown', (e) => { 

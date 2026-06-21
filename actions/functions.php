@@ -3,14 +3,14 @@ require_once __DIR__ . '/../config/db_connect.php';
 
 /**
  * Universal helper to retrieve the active student ID.
- * Allows admins/cashiers to override via GET parameter when viewing student portals.
+ * Allows admincashier_acc/cashiers to override via GET parameter when viewing student portals.
  * @return string|null
  */
 function get_student_id() {
     $role = $_SESSION['role'] ?? '';
     
     // If staff is logged in, allow them to view a specific student via GET
-    if (in_array($role, ['admin', 'admincashier', 'superadmin'])) {
+    if (in_array($role, ['admincashier', 'superadmin'])) {
         if (!empty($_GET['student_id'])) {
             return $_GET['student_id'];
         }
@@ -23,21 +23,21 @@ function get_student_id() {
 // Function to get all admin accounts
 function getAdminAccounts() {
     global $conn;
-    $stmt = $conn->prepare("SELECT id, name, email, status, created_at, last_login, login_attempts FROM admins ORDER BY created_at DESC");
+    $stmt = $conn->prepare("SELECT id, name, email, status, created_at, last_login, login_attempts FROM admincashier_acc ORDER BY created_at DESC");
     $stmt->execute();
     $result = $stmt->get_result();
-    $admins = [];
+    $admincashier_acc = [];
     while ($row = $result->fetch_assoc()) {
-        $admins[] = $row;
+        $admincashier_acc[] = $row;
     }
     $stmt->close();
-    return $admins;
+    return $admincashier_acc;
 }
 
 // Function to update admin status
-function updateAdminStatus($adminId, $status) {
+function updateadmincashier_acctatus($adminId, $status) {
     global $conn;
-    $stmt = $conn->prepare("UPDATE admins SET status = ? WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE admincashier_acc SET status = ? WHERE id = ?");
     $stmt->bind_param("si", $status, $adminId);
     $success = $stmt->execute();
     $stmt->close();
@@ -47,7 +47,7 @@ function updateAdminStatus($adminId, $status) {
 // Function to delete admin
 function deleteAdmin($adminId) {
     global $conn;
-    $stmt = $conn->prepare("DELETE FROM admins WHERE id = ?");
+    $stmt = $conn->prepare("DELETE FROM admincashier_acc WHERE id = ?");
     $stmt->bind_param("i", $adminId);
     $success = $stmt->execute();
     $stmt->close();
@@ -129,7 +129,7 @@ function testEmailService() {
 // Function to optimize database
 function optimizeDatabase() {
     global $conn;
-    $tables = ['admins', 'products', 'sales', 'system_backups']; // Add more tables as needed
+    $tables = ['admincashier_acc', 'products', 'sales', 'system_backups']; // Add more tables as needed
     foreach ($tables as $table) {
         $conn->query("OPTIMIZE TABLE $table");
     }

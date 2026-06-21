@@ -40,8 +40,8 @@ try {
     }
 
     // Security: Verify ownership unless the requester is an administrator
-    $role = $_SESSION['role'] ?? 'student';
-    $isAdmin = in_array($role, ['admin', 'admincashier', 'superadmin']);
+    $role = $_SESSION['role'] ?? 'users';
+    $isAdmin = in_array($role, ['admincashier', 'superadmin']);
     
     if (!$isAdmin) {
         $sessionStudentId = $_SESSION['student_id'] ?? null;

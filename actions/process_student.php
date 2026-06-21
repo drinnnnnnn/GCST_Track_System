@@ -28,11 +28,11 @@ switch ($action) {
     case 'list':
         $query = "SELECT id, student_id, first_name, last_name, middle_name, email, sex, course, department, year_level, contact_number, address, status, school_id_pic, reg_form, payment_scheme, created_at FROM users ORDER BY created_at DESC";
         $result = $conn->query($query);
-        $students = [];
+        $user = [];
         while ($row = $result->fetch_assoc()) {
-            $students[] = $row;
+            $user[] = $row;
         }
-        echo json_encode($students);
+        echo json_encode($user);
         break;
 
     case 'update_status':

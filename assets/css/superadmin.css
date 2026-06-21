@@ -136,8 +136,6 @@ header {
   z-index: 2;
 }
 
-#notif-badge { @extend .notif-badge; } /* Legacy support */
-
 /* Menu Icon */
 .menu-icon {
   width: 46px;

@@ -4,23 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Admin Sign In</title>
-    <!-- Premium Fonts and Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
     <style>
         :root {
             --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --primary-light: #60a5fa;
-            --text-main: #1e293b;
+            --primary-hover: #1d4ed8;
+            --text-main: #0f172a;
             --text-muted: #64748b;
             --white: #ffffff;
-            --error: #ef4444;
-            --error-bg: #fee2e2;
-            --success: #166534;
-            --success-bg: #dcfce7;
-            --border-color: #d1d5db;
+            --error: #dc2626;
+            --error-bg: #fef2f2;
+            --error-border: #fee2e2;
+            --success: #15803d;
+            --success-bg: #f0fdf4;
+            --success-border: #dcfce7;
+            --border-color: #e2e8f0;
+            --input-bg: #f8fafc;
         }
 
         * {
@@ -35,32 +36,26 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(-45deg, #c9d6ff, #e2e2e2, #aec0ff, #f0f2f5);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            overflow: hidden;
+            background-color: #f4f7fc; /* Minimal clean background with a slight touch of professional blue */
             padding: 20px;
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+        @keyframes cardReveal {
+            from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         .login-card {
             width: 100%;
-            max-width: 420px;
-            padding: 2.5rem;
+            max-width: 440px;
+            padding: 3.5rem 2.5rem;
             background: var(--white);
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            animation: fadeIn 0.4s ease;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 
+                0 1px 3px rgba(15, 23, 42, 0.02),
+                0 10px 30px -5px rgba(15, 23, 42, 0.04);
+            animation: cardReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         .logo-container {
@@ -69,21 +64,22 @@
         }
 
         .header-icon {
-            width: 64px;
-            height: 64px;
+            width: 56px;
+            height: 56px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
             border-radius: 14px;
             color: var(--white);
-            font-size: 32px;
-            margin: 0 auto 24px;
-            box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
+            font-size: 26px;
+            margin: 0 auto;
+            transition: transform 0.2s ease;
         }
 
         .login-card h1 {
-            font-size: 1.8rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
             font-weight: 700;
             color: var(--text-main);
             margin-bottom: 8px;
@@ -93,61 +89,78 @@
 
         .login-card p.subtitle {
             color: var(--text-muted);
-            font-size: 0.95rem;
-            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            margin-bottom: 2.5rem;
             text-align: center;
             font-weight: 500;
+            line-height: 1.4;
         }
         
         .input-box {
             position: relative;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.5rem;
             text-align: left;
         }
 
         .input-box label {
-            font-size: 0.85rem;
-            font-weight: 600;
+            font-size: 0.75rem;
+            font-weight: 700;
             color: var(--text-main);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
         }
 
         .input-box input {
             width: 100%;
-            padding: 12px 14px 12px 42px;
-            background: #f9fafb;
+            padding: 14px 16px 14px 44px;
+            background: var(--input-bg);
             border: 1px solid var(--border-color);
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 0.95rem;
             color: var(--text-main);
             outline: none;
             transition: all 0.2s ease;
         }
 
+        .input-box input::placeholder {
+            color: #94a3b8;
+        }
+
         .input-box input:focus {
             background: var(--white);
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .input-box i.input-icon {
             position: absolute;
             left: 14px;
-            top: 36px;
-            font-size: 1.2rem;
-            color: var(--text-muted);
+            font-size: 1.25rem;
+            color: #94a3b8;
             pointer-events: none;
+            transition: color 0.2s ease;
+        }
+
+        .input-box input:focus ~ i.input-icon {
+            color: var(--primary);
         }
 
         .input-box #toggleBtn {
             position: absolute;
             right: 14px;
-            top: 36px;
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             color: var(--text-muted);
             cursor: pointer;
-            transition: color 0.2s;
+            transition: color 0.2s ease;
+            padding: 4px;
         }
 
         .input-box #toggleBtn:hover {
@@ -155,52 +168,57 @@
         }
 
         .pin-input {
-            letter-spacing: 0.8rem;
+            letter-spacing: 0.9rem;
             text-align: center;
             font-weight: 700;
-            padding-left: 14px !important;
+            padding-left: 24px !important;
         }
 
         .submit-btn {
-            margin-top: 1rem;
+            margin-top: 0.5rem;
             width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            padding: 14px;
+            background: var(--text-main);
             color: var(--white);
             border: none;
-            border-radius: 10px;
-            font-size: 1rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+            background: var(--primary);
+            box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.25);
         }
 
         .submit-btn:active {
-            transform: translateY(0);
+            transform: scale(0.99);
         }
 
         #status-area {
             display: none;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 14px;
+            border-radius: 10px;
             font-size: 0.85rem;
             margin-bottom: 1.5rem;
             font-weight: 600;
             line-height: 1.5;
+            animation: cardReveal 0.2s ease;
         }
-        .msg-error { background: var(--error-bg); color: var(--error); border: 1px solid #fecaca; }
-        .msg-success { background: var(--success-bg); color: var(--success); border: 1px solid #bbf7d0; }
+        .msg-error { background: var(--error-bg); color: var(--error); border: 1px solid var(--error-border); }
+        .msg-success { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
 
         @media (max-width: 480px) {
             .login-card {
-                padding: 1.5rem;
+                padding: 2.5rem 1.5rem;
                 margin: 1rem;
+                border: none;
+                box-shadow: none;
             }
         }
     </style>
@@ -220,21 +238,27 @@
         <form action="http://localhost/GCST_Track_System/actions/process_superadmin.php" method="POST" id="authForm" onsubmit="return validateLogin()">
             <div class="input-box">
                 <label for="email">Account Identifier</label>
-                <input type="text" name="email" id="email" placeholder="Username or Email" required autocomplete="username">
-                <i class='bx bxs-user-pin input-icon'></i>
+                <div class="input-wrapper">
+                    <input type="text" name="email" id="email" placeholder="Username or Email" required autocomplete="username">
+                    <i class='bx bxs-user-pin input-icon'></i>
+                </div>
             </div>
 
             <div class="input-box">
                 <label for="password">Master Password</label>
-                <input type="password" name="password" id="password" placeholder="••••••••" required autocomplete="current-password">
-                <i class='bx bxs-lock-open-alt input-icon'></i>
-                <i class='bx bx-show' id="toggleBtn"></i>
+                <div class="input-wrapper">
+                    <input type="password" name="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+                    <i class='bx bxs-lock-open-alt input-icon'></i>
+                    <i class='bx bx-show' id="toggleBtn"></i>
+                </div>
             </div>
 
             <div class="input-box">
                 <label for="pin">Security PIN (4 Digits)</label>
-                <input type="password" name="pin" id="pin" class="pin-input" placeholder="••••" maxlength="4" required pattern="\d{4}" inputmode="numeric" autocomplete="one-time-code">
-                <i class='bx bxs-key input-icon'></i>
+                <div class="input-wrapper">
+                    <input type="password" name="pin" id="pin" class="pin-input" placeholder="••••" maxlength="4" required pattern="\d{4}" inputmode="numeric" autocomplete="one-time-code">
+                    <i class='bx bxs-key input-icon'></i>
+                </div>
             </div>
 
             <div class="btn-group">
@@ -247,10 +271,12 @@
 </div>
 
 <script>
-    // Password visibility toggle
+    const statusArea = document.getElementById("status-area");
     const toggleBtn = document.getElementById("toggleBtn");
     const passwordField = document.getElementById("password");
+    const pinInput = document.getElementById("pin");
 
+    // Password visibility handler
     toggleBtn.addEventListener("click", () => {
         const isPass = passwordField.type === "password";
         passwordField.type = isPass ? "text" : "password";
@@ -258,9 +284,7 @@
         toggleBtn.classList.toggle("bx-hide");
     });
 
-
-    // PIN Input Masking/Validation
-    const pinInput = document.getElementById("pin");
+    // Enforce numeric only on PIN
     pinInput.addEventListener("input", (e) => {
         e.target.value = e.target.value.replace(/[^0-9]/g, '');
     });
@@ -272,7 +296,7 @@
             return false;
         }
         btn.disabled = true;
-        btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Authenticating...";
+        btn.innerHTML = "<i class='bx bx-loader-alt bx-spin' style='margin-right: 8px;'></i> Authenticating...";
         return true;
     }
 
@@ -282,9 +306,8 @@
         statusArea.innerText = msg;
     }
 
-    // Handle status messages from URL
+    // Handle incoming URL notification parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const statusArea = document.getElementById("status-area"); // Redeclared safely by use in functions
 
     if (urlParams.has('error') || urlParams.has('success')) {
         statusArea.style.display = "block";
@@ -304,7 +327,7 @@
         } else if (err === 'database') {
             statusArea.innerText = "System Error: Unable to reach authentication server. Try again later.";
         } else if (urlParams.get('success') === '1') {
-            statusArea.className = "animate-item msg-success";
+            statusArea.className = "msg-success";
             statusArea.innerText = "Profile verified. Please login.";
         }
     }

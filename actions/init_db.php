@@ -221,6 +221,7 @@ $mysqli->query(
         `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         `first_name` VARCHAR(50) NOT NULL,
         `last_name` VARCHAR(50) NOT NULL,
+        `role` VARCHAR(20) NOT NULL DEFAULT 'superadmin',
         `username` VARCHAR(50) NOT NULL UNIQUE,
         `email` VARCHAR(100) NOT NULL UNIQUE,
         `password_hash` VARCHAR(255) NOT NULL,
@@ -235,12 +236,12 @@ $mysqli->query(
 );
 
 // Add missing columns or alter column types in existing schemas.
-addColumnIfNotExists($mysqli, 'users', 'role', "ENUM('user','admin','cashier','admincashier','superadmin') NOT NULL DEFAULT 'user'");
+addColumnIfNotExists($mysqli, 'users', 'role', "ENUM('user', 'admincashier','superadmin') NOT NULL DEFAULT 'user'");
 addColumnIfNotExists($mysqli, 'users', 'phone', "VARCHAR(25) DEFAULT NULL");
 addColumnIfNotExists($mysqli, 'users', 'is_pwd', "TINYINT(1) NOT NULL DEFAULT 0 AFTER `status` ");
 addColumnIfNotExists($mysqli, 'users', 'created_at', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
 addColumnIfNotExists($mysqli, 'users', 'updated_at', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
-addColumnIfNotExists($mysqli, 'admincashier_acc', 'role', "ENUM('admincashier','cashier','superadmin') NOT NULL DEFAULT 'admincashier'");
+addColumnIfNotExists($mysqli, 'admincashier_acc', 'role', "ENUM('admincashier','superadmin') NOT NULL DEFAULT 'admincashier'");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'pin', "VARCHAR(10) DEFAULT NULL AFTER `password` ");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'status', "ENUM('active','inactive') NOT NULL DEFAULT 'active'");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'login_attempts', "INT DEFAULT 0 AFTER `status` ");

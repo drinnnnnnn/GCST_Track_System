@@ -73,7 +73,7 @@ export function getSidebarHTML() {
             localStorage.setItem('gcst_superadmin_logout_event', Date.now());
             localStorage.removeItem('sidebar-minimized');
             sessionStorage.clear();
-            window.location.replace('/GCST_Track_System/actions/log_out_superadmin.php');
+            window.location.replace('/GCST_Track_System/actions/sign_out.php');
         };
 
         window.logoutUser = function() {
@@ -167,6 +167,7 @@ export function getSidebarHTML() {
 
     return `
 <style>
+    /* Main Sidebar */
     .sidebar {
         position: fixed;
         top: 0; left: 0; bottom: 0;
@@ -174,34 +175,85 @@ export function getSidebarHTML() {
         z-index: 1000;
         display: flex;
         flex-direction: column;
-        padding: 1.5rem 1rem; /* Consistent padding */
+        padding: 1.5rem 1rem;
         border-right: 1px solid rgba(var(--border-rgb), 0.2);
         background: rgba(255, 255, 255, 0.75);
         backdrop-filter: blur(20px) saturate(180%);
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        box-sizing: border-box;
-        overflow-x: hidden;
+        overflow: visible !important; /* Pinapayagan ang button na lumampas sa border */
     }
 
+    /* Container ng Brand: Dito nakalagay ang button */
+    .sidebar-brand {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 2.5rem;
+        padding: 0 0.75rem 0 0.5rem;
+        position: relative;
+        overflow: visible !important; /* Kritikal ito para lumitaw ang button sa labas */
+    }
+
+    /* Minimize Button */
+    .sidebar-minimize-btn {
+        position: absolute;
+        top: 50%;
+        right: -32px; /* Inilabas natin nang malayo sa border */
+        transform: translateY(-50%);
+        background: #ffffff;
+        color: var(--primary);
+        border: 1px solid rgba(102, 126, 234, 0.25);
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        z-index: 2000; /* Mas mataas kaysa sa sidebar */
+        transition: none !important;
+    }
+
+    .sidebar-minimize-btn:hover {
+        background: var(--primary);
+        color: white;
+    }
+
+    /* Responsive adjustments */
     @media (min-width: 1025px) {
-        .sidebar.minimized { width: 88px; padding: 1.5rem 0.75rem; }
-        
-        .sidebar.minimized .sidebar-brand div,
+        .sidebar.minimized { width: 88px; }
+        .sidebar.minimized .brand-text,
         .sidebar.minimized .nav-section-label,
         .sidebar.minimized .sidebar-link span {
-            opacity: 0;
-            pointer-events: none;
-            width: 0;
-            margin: 0;
+            display: none !important;
+        }
+    }
+        
+        /* FIX: Agarang tinatago ang text wrapper para hindi maabutan o maharangan ng minimize button */
+        .sidebar.minimized .sidebar-brand .brand-text,
+        .sidebar.minimized .nav-section-label,
+        .sidebar.minimized .sidebar-link span {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: none !important; /* Siguradong burado sa espasyo kapag maliit */
         }
 
-        .sidebar.minimized .sidebar-brand { justify-content: center; padding: 0; margin-bottom: 2.5rem; }
+        /* SPECIFIC LOGO FIX: Pinapagitna ang logo container kapag naka-minimize ang sidebar */
+        .sidebar.minimized .sidebar-brand { justify-content: center !important; padding: 0 !important; margin-bottom: 2.5rem; }
+        .sidebar.minimized .brand-logo-wrapper { margin: 0 auto !important; display: flex !important; }
+        
         .sidebar.minimized .sidebar-link { justify-content: center; padding: 0.8rem; border-radius: 1rem; }
         .sidebar.minimized .sidebar-link i { margin: 0; font-size: 1.25rem; }
         
         .sidebar.minimized .sidebar-footer { padding: 1rem 0; display: flex; justify-content: center; }
     }
 
+    /* --- RESPONSIVE MOBILE VIEWPORTS --- */
     @media (max-width: 1024px) {
         .sidebar { 
             width: 280px; 
@@ -216,10 +268,20 @@ export function getSidebarHTML() {
     .sidebar-brand {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: 0.75rem;
         margin-bottom: 2.5rem;
-        padding: 0 0.5rem;
+        padding: 0 0.75rem 0 0.5rem; /* Dinagdagan ang kanang padding para lumayo sa button */
         position: relative;
+        transition: all 0.3s ease;
+    }
+
+    /* BRAND LOGO WRAPPER STYLE */
+    .brand-logo-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
         transition: all 0.3s ease;
     }
 
@@ -275,43 +337,36 @@ export function getSidebarHTML() {
     }
     .sidebar.minimized .sidebar-link:hover { transform: scale(1.05); }
 
-    .sidebar-minimize-btn {
-        position: absolute;
-        top: 50%;
-        right: -13px;
-        transform: translateY(-50%);
-        background: #ffffff;
-        color: var(--primary);
-        border: 1px solid rgba(102, 126, 234, 0.2);
-        border-radius: 50%;
-        width: 26px;
-        height: 26px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        z-index: 1001;
-        font-size: 0.8rem;
-    }
+    /* --- SIDEBAR MINIMIZE BUTTON (FIXED POSITION & NO ANIMATIONS) --- */
+.sidebar-minimize-btn {
+    position: absolute;
+    top: 50%;
+    right: -20px; /* Dito natin inusog pa lalo sa labas (mula -14px) */
+    transform: translateY(-50%) !important;
+    background: #ffffff;
+    color: var(--primary);
+    border: 1px solid rgba(102, 126, 234, 0.25);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    z-index: 1005;
+    font-size: 0.8rem;
+    transition: none !important;
+    animation: none !important;
+}
 
-    .sidebar-minimize-btn:hover {
-        background: var(--primary);
-        color: white;
-        transform: translateY(-50%) scale(1.1);
-        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
-    }
+/* Siguraduhing kahit naka-minimized, naka-lock siya sa posisyong ito */
+.sidebar.minimized .sidebar-minimize-btn {
+    right: -20px; 
+    transform: translateY(-50%) !important;
+}
 
-    .sidebar-minimize-btn:active {
-        transform: translateY(-50%) scale(0.95);
-    }
-
-    .sidebar.minimized .sidebar-minimize-btn {
-        right: -13px;
-        transform: translateY(-50%) rotate(180deg);
-    }
-
+    /* --- MODALS AND OVERLAYS --- */
     .logout-modal-overlay {
         position: fixed;
         inset: 0;
@@ -326,10 +381,7 @@ export function getSidebarHTML() {
         transition: opacity 0.22s ease;
     }
 
-    .logout-modal-overlay.active {
-        display: flex;
-        opacity: 1;
-    }
+    .logout-modal-overlay.active { display: flex; opacity: 1; }
 
     .logout-modal-card {
         width: min(420px, 100%);
@@ -343,9 +395,7 @@ export function getSidebarHTML() {
         border: 1px solid rgba(148, 163, 184, 0.18);
     }
 
-    .logout-modal-overlay.active .logout-modal-card {
-        transform: translateY(0) scale(1);
-    }
+    .logout-modal-overlay.active .logout-modal-card { transform: translateY(0) scale(1); }
 
     .logout-modal-icon {
         width: 72px;
@@ -360,31 +410,11 @@ export function getSidebarHTML() {
         font-size: 1.8rem;
     }
 
-    .logout-modal-title {
-        margin: 0;
-        font-size: 1.4rem;
-        font-weight: 800;
-        color: var(--text, #0f172a);
-    }
+    .logout-modal-title { margin: 0; font-size: 1.4rem; font-weight: 800; color: var(--text, #0f172a); }
+    .logout-modal-text { margin: 0.8rem 0 1.5rem; color: var(--muted, #64748b); font-size: 0.95rem; line-height: 1.6; }
+    .logout-modal-text span { display: block; margin-top: 0.3rem; color: #64748b; }
 
-    .logout-modal-text {
-        margin: 0.8rem 0 1.5rem;
-        color: var(--muted, #64748b);
-        font-size: 0.95rem;
-        line-height: 1.6;
-    }
-
-    .logout-modal-text span {
-        display: block;
-        margin-top: 0.3rem;
-        color: #64748b;
-    }
-
-    .logout-modal-actions {
-        display: flex;
-        gap: 0.75rem;
-        justify-content: center;
-    }
+    .logout-modal-actions { display: flex; gap: 0.75rem; justify-content: center; }
 
     .btn-modal {
         flex: 1;
@@ -399,15 +429,8 @@ export function getSidebarHTML() {
         transition: all 0.18s ease;
     }
 
-    .btn-modal-cancel {
-        background: #eef2ff;
-        color: #1e293b;
-    }
-
-    .btn-modal-cancel:hover {
-        background: #e2e8f0;
-        transform: translateY(-1px);
-    }
+    .btn-modal-cancel { background: #eef2ff; color: #1e293b; }
+    .btn-modal-cancel:hover { background: #e2e8f0; transform: translateY(-1px); }
 
     .btn-modal-confirm {
         background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
@@ -422,37 +445,37 @@ export function getSidebarHTML() {
     }
 
     @media (max-width: 480px) {
-        .logout-modal-card {
-            padding: 1.75rem 1rem;
-            border-radius: 1rem;
-        }
-
-        .logout-modal-title {
-            font-size: 1.2rem;
-        }
-
-        .logout-modal-text {
-            font-size: 0.9rem;
-        }
-
-        .logout-modal-actions {
-            flex-direction: column;
-        }
+        .logout-modal-card { padding: 1.75rem 1rem; border-radius: 1rem; }
+        .logout-modal-title { font-size: 1.2rem; }
+        .logout-modal-text { font-size: 0.9rem; }
+        .logout-modal-actions { flex-direction: column; }
     }
 </style>
 
 <aside id="main-sidebar" class="sidebar" aria-label="Main Sidebar">
-    <div class="sidebar-brand">
-        <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Logo" style="width: 40px; height: 40px;">
-        <div>
-            <h1>GCST TRACK</h1>
-            <span>System Super Admin</span>
+    <div class="sidebar-brand p-5 border-b border-slate-100 flex items-center justify-between gap-3 relative w-full" id="sidebar-brand-area">
+    <div class="flex items-center gap-2.5 min-w-0">
+        <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Granby Colleges Logo" class="w-10 h-10 object-contain shrink-0">
+        
+        <div class="brand-text flex flex-col justify-center font-sans min-w-0">
+            <span class="text-[8px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-0.5">
+                Granby Colleges of
+            </span>
+            <h1 class="text-[10px] font-extrabold text-slate-100 tracking-tight leading-none">
+                Science & Technologies
+            </h1>
+            <span class="text-[8px] font-bold text-amber-600 mt-1 leading-none tracking-wide uppercase">
+                System Super Admin
+            </span>
         </div>
-        <button onclick="toggleMinimizeSidebar()" id="sidebar-minimize-btn" class="sidebar-minimize-btn" title="Toggle Sidebar">
-            <i class="fas fa-chevron-left"></i>
-        </button>
+    </div>
+        
+    <button onclick="toggleMinimizeSidebar()" id="sidebar-minimize-btn" class="sidebar-minimize-btn" title="Toggle Sidebar">
+        <i class="fas fa-bars"></i>
+    </button>
     </div>
 
+</div>
     <p class="nav-section-label">Main Menu</p>
     <nav class="flex-1 overflow-y-auto pr-1">
         <a href="superadmin_dashb.html" class="sidebar-link">

@@ -138,21 +138,37 @@
             </section>
 
             <!-- Search and Filters -->
-            <section class="search-filters">
-                <div class="search-bar">
-                    <div class="relative flex-grow">
-                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="search-bar" placeholder="Search by name, ID, or email...">
-                    </div>
-                    <select id="filter-course" class="max-w-xs">
-                        <option value="all">All Courses</option>
-                        <option value="BSIT">BSIT</option>
-                        <option value="BSHM">BSHM</option>
-                        <option value="BSCrim">BSCrim</option>
-                        <option value="BSED">BSED</option>
-                    </select>
+<section class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="search-bar flex flex-col sm:flex-row items-center gap-4 w-full">
+        <div class="relative w-full max-w-md">
+                    <input 
+                        type="text" 
+                        id="search-bar" 
+                        placeholder="Search by name or email..." 
+                        class="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 shadow-sm transition-all text-slate-800 placeholder-slate-400">
                 </div>
-            </section>
+
+        <div class="relative w-full max-w-xs md:max-w-md">
+            <select 
+                id="filter-course" 
+                class="w-full pl-4 pr-11 py-2.5 bg-white border border-slate-200 rounded-xl outline-none transition-all duration-200 text-slate-700 text-sm font-semibold appearance-none cursor-pointer font-sans shadow-sm focus:border-primary focus:ring-4 focus:ring-primary/5">
+                <option value="all">All Courses</option>
+                <option value="BS Information Technology">BS Information Technology</option>
+                <option value="BS Computer Science">BS Computer Science</option>
+                <option value="BS Tourism Management">BS Tourism Management</option>
+                <option value="BS Business Administration">BS Business Administration</option>
+                <option value="B Elementary Education">B Elementary Education</option>
+                <option value="B Secondary Education">B Secondary Education</option>
+                <option value="BS Criminology">BS Criminology</option>
+                <option value="BS Accountancy">BS Accountancy</option>
+            </select>
+            
+            <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400 text-xs">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+    </div>
+</section>
 
             <!-- Data Table -->
             <section class="products-section">
@@ -267,25 +283,47 @@
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold uppercase text-slate-500">Course</label>
-                        <select id="form-course" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary font-semibold">
-                            <option value="BSIT">BSIT</option>
-                            <option value="BSHM">BSHM</option>
-                            <option value="BSCrim">BSCrim</option>
-                            <option value="BSED">BSED</option>
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-sans">Course</label>
+                    <div class="relative w-full">
+                        <select 
+                            id="form-course" 
+                            class="w-full pl-4 pr-11 py-2.5 bg-slate-50 border border-slate-200/70 rounded-xl outline-none transition-all duration-200 text-slate-700 text-sm font-semibold appearance-none cursor-pointer font-sans shadow-sm focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5"
+                        >
+                            <option value="all">All Courses</option>
+                            <option value="BS Information Technology">BS Information Technology</option>
+                            <option value="BS Computer Science">BS Computer Science</option>
+                            <option value="BS Tourism Management">BS Tourism Management</option>
+                            <option value="BS Business Administration">BS Business Administration</option>
+                            <option value="B Elementary Education">B Elementary Education</option>
+                            <option value="B Secondary Education">B Secondary Education</option>
+                            <option value="BS Criminology">BS Criminology</option>
+                            <option value="BS Accountancy">BS Accountancy</option>
                         </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400 text-xs">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold uppercase text-slate-500">Year Level</label>
-                        <select id="form-year" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary font-semibold">
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-sans">Year Level</label>
+                    <div class="relative w-full">
+                        <select 
+                            id="form-year" 
+                            class="w-full pl-4 pr-11 py-2.5 bg-slate-50 border border-slate-200/70 rounded-xl outline-none transition-all duration-200 text-slate-700 text-sm font-semibold appearance-none cursor-pointer font-sans shadow-sm focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5"
+                        >
                             <option value="1">1st Year</option>
                             <option value="2">2nd Year</option>
                             <option value="3">3rd Year</option>
                             <option value="4">4th Year</option>
                         </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400 text-xs">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
+            </div>
 
                 <div class="logout-modal-actions pt-4">
                     <button type="button" onclick="closeModal('student-modal')" class="btn-modal flex-1 btn-modal-cancel">Cancel</button>

@@ -64,12 +64,12 @@ try {
                 throw new Exception("Failed to retrieve accounts: " . $conn->error);
             }
 
-            $admins = [];
+            $admincashier = [];
             while ($row = $result->fetch_assoc()) {
                 $row['name'] = trim($row['first_name'] . ' ' . $row['last_name']);
-                $admins[] = $row;
+                $admincashier[] = $row;
             }
-            sendJsonResponse($admins);
+            sendJsonResponse($admincashier);
         }
         sendJsonResponse(['success' => false, 'message' => 'Invalid GET action'], 400);
     }

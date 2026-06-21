@@ -50,7 +50,7 @@ try {
         FROM
             cashier_transactions ct
         LEFT JOIN
-            admins aa ON ct.cashier_id = aa.id
+            admincashier_acc aa ON ct.cashier_id = aa.id
         WHERE
             ct.transaction_number = ? OR ct.id = ?
         LIMIT 1";
