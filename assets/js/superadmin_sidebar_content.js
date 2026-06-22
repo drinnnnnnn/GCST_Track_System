@@ -205,6 +205,7 @@ export function getSidebarHTML() {
         gap: 0.8rem;
         min-width: 0;
         flex: 1;
+        padding-top: 1rem;
     }
 
     .brand-logo {
@@ -213,6 +214,9 @@ export function getSidebarHTML() {
         object-fit: contain;
         flex-shrink: 0;
         border-radius: 0.75rem;
+        
+        /* Pushes the logo down from the top */
+        margin-top: 1rem; 
     }
 
     .brand-text {
@@ -220,7 +224,20 @@ export function getSidebarHTML() {
         flex-direction: column;
         justify-content: center;
         min-width: 0;
-        gap: 0.2rem;
+        gap: 0.1rem;
+        overflow: hidden;
+        
+        /* Adds space from the top of the container */
+        padding-top: 1rem; 
+    }
+
+    /* Enhances how text behaves inside the brand container */
+    .brand-text > * {
+        margin: 0;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .brand-subtitle,
@@ -242,11 +259,15 @@ export function getSidebarHTML() {
     }
 
     .brand-title {
-        font-size: 0.78rem;
-        font-weight: 800;
-        color: var(--text);
-        letter-spacing: -0.02em;
-        line-height: 1.1;
+    font-size: clamp(0.7rem, 0.8vw, 0.85rem);
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.01em; 
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: font-size 0.2s ease;
     }
 
     .brand-role {
@@ -257,31 +278,46 @@ export function getSidebarHTML() {
         color: var(--primary);
         line-height: 1;
     }
-
+    /* The button container */
     .sidebar-minimize-btn {
         position: absolute;
-        top: 50%;
-        right: -15px;
-        transform: translateY(-50%);
-        width: 32px;
-        height: 32px;
+        top: 20px;
+        right: -14px;
+        width: 28px;
+        height: 28px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 1px solid rgba(var(--primary-rgb), 0.18);
-        border-radius: 999px;
-        background: #fff;
-        color: var(--primary);
+        background: #ffffff;
+        border: 1px solid #dadce0;
+        border-radius: 50%;
+        color: #5f6368;
         cursor: pointer;
-        box-shadow: 0 6px 14px rgba(15, 23, 42, 0.1);
         z-index: 1005;
-        transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+        /* Ensure no box-shadow is present */
+        box-shadow: none; 
+        transition: none;
     }
 
     .sidebar-minimize-btn:hover {
-        background: var(--primary);
-        color: #fff;
-        transform: translateY(-50%) scale(1.04);
+        background: #f8f9fa;
+        border-color: #d1d5da;
+        color: #202124;
+        box-shadow: none; 
+        transition: none;
+    }
+
+    /* Icon refinement */
+    .sidebar-minimize-btn i {
+        font-size: 12px;
+        /* This pushes it slightly to the right to visually balance the chevron */
+        margin-left: 1px; 
+        transition: none;
+    }
+
+    /* Instant rotation for Open/Close state */
+    .sidebar.minimized .sidebar-minimize-btn i {
+        transform: rotate(180deg);
     }
 
     .sidebar-nav-wrap {
@@ -321,38 +357,52 @@ export function getSidebarHTML() {
         border-radius: 999px;
     }
 
+    /* Base Style */
     .sidebar-link {
-        position: relative;
         display: flex;
         align-items: center;
-        gap: 0.9rem;
-        padding: 0.88rem 0.95rem;
+        gap: 0.95rem;
+        padding: 0.9rem 0.95rem;
         border-radius: 0.95rem;
-        color: var(--muted);
-        font-weight: 700;
-        font-size: 0.92rem;
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 0.95rem;
         text-decoration: none;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
         white-space: nowrap;
-        transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
     }
-
     .sidebar-link i {
-        width: 1.1rem;
+        width: 1.2rem;
         text-align: center;
         font-size: 1rem;
         flex-shrink: 0;
     }
-
     .sidebar-link:hover {
-        background: rgba(var(--primary-rgb), 0.06);
-        color: var(--primary);
-        transform: translateX(3px);
+        background: var(--surface-hover);
+        color: var(--primary-blue);
+        transform: translateX(2px);
     }
-
+    .sidebar-link:focus-visible {
+        outline: none;
+        box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.12);
+    }
     .sidebar-link.active {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
-        color: #fff !important;
-        box-shadow: 0 10px 18px rgba(var(--primary-rgb), 0.22);
+        background: var(--primary-blue);
+        color: #ffffff;
+        box-shadow: 0 10px 18px -12px rgba(37, 99, 235, 0.45);
+    }
+    .sidebar-link.active::before {
+        content: '';
+        position: absolute;
+        left: 0.4rem;
+        top: 50%;
+        width: 0.25rem;
+        height: 1.25rem;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 999px;
+        transform: translateY(-50%);
     }
 
     .sidebar-footer {
@@ -545,7 +595,7 @@ export function getSidebarHTML() {
             <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Granby Colleges Logo" class="brand-logo">
             <div class="brand-text">
                 <span class="brand-subtitle">Granby Colleges of</span>
-                <h1 class="brand-title">Science & Technologies</h1>
+                <h2 class="brand-title">Science & Technologies</h2>
                 <span class="brand-role">System Super Admin</span>
             </div>
         </div>
@@ -558,21 +608,21 @@ export function getSidebarHTML() {
     <div class="sidebar-nav-wrap">
         <p class="nav-section-label">Main Menu</p>
         <nav class="sidebar-nav">
-            <a href="superadmin_dashb.html" class="sidebar-link">
+            <a href="superadmin_dashb.html" class="sidebar-link" title="Dashboard" onclick="handleSidebarLinkClick()">
                 <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
             </a>
-            <a href="superadmin_admin_manage.html" class="sidebar-link">
+            <a href="superadmin_admin_manage.html" class="sidebar-link" title="Manage Admins" onclick="handleSidebarLinkClick()">
                 <i class="fas fa-user-shield"></i> <span>Manage Admins</span>
             </a>
-            <a href="superadmin_student_manage.html" class="sidebar-link">
+            <a href="superadmin_student_manage.html" class="sidebar-link" title="Manage Students" onclick="handleSidebarLinkClick()">
                 <i class="fas fa-user-graduate"></i> <span>Manage Students</span>
             </a>
 
             <p class="nav-section-label">System Control</p>
-            <a href="register_admin_cashier.html" class="sidebar-link">
+            <a href="register_admin_cashier.html" class="sidebar-link" title="Register Staff" onclick="handleSidebarLinkClick()">
                 <i class="fas fa-user-plus"></i> <span>Register Staff</span>
             </a>
-            <a href="superadmin_system_maintenance.html" class="sidebar-link">
+            <a href="superadmin_system_maintenance.html" class="sidebar-link" title="System Maintenance" onclick="handleSidebarLinkClick()">
                 <i class="fas fa-tools"></i> <span>System Maintenance</span>
             </a>
         </nav>

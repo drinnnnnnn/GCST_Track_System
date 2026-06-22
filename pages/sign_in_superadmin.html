@@ -6,22 +6,25 @@
     <title>Super Admin Sign In</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-
+    <script src="https://cdn.tailwindcss.com"></script>
+    
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
+            --primary: #dc2626;         
+            --primary-hover: #b91c1c;   
+            --primary-subtle: #fef2f2; 
+            --text-main: #0f172a;      
+            --text-muted: #64748b;      
             --white: #ffffff;
             --error: #dc2626;
             --error-bg: #fef2f2;
-            --error-border: #fee2e2;
+            --error-border: #fecaca;   
             --success: #15803d;
             --success-bg: #f0fdf4;
             --success-border: #dcfce7;
-            --border-color: #e2e8f0;
+            --border-color: #cbd5e1;  
             --input-bg: #f8fafc;
+            --accent-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
         }
 
         * {
@@ -36,7 +39,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #f4f7fc; /* Minimal clean background with a slight touch of professional blue */
+            background-color: #f8f7f7; 
+            background: radial-gradient(circle at center, #ffffff 0%, #f1f1f1 100%);
             padding: 20px;
         }
 
@@ -52,9 +56,10 @@
             background: var(--white);
             border-radius: 20px;
             border: 1px solid #e2e8f0;
+            border-top: 4px solid #dc2626; 
             box-shadow: 
                 0 1px 3px rgba(15, 23, 42, 0.02),
-                0 10px 30px -5px rgba(15, 23, 42, 0.04);
+                0 10px 30px -5px rgba(220, 38, 38, 0.1);
             animation: cardReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
@@ -69,12 +74,17 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            background: linear-gradient(135deg, #ef4444, #b91c1c); 
             border-radius: 14px;
             color: var(--white);
             font-size: 26px;
-            margin: 0 auto;
+            margin: 0 auto 1.5rem;
             transition: transform 0.2s ease;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+
+        .header-icon:hover {
+            transform: translateY(-2px);
         }
 
         .login-card h1 {
@@ -100,16 +110,24 @@
             position: relative;
             margin-bottom: 1.5rem;
             text-align: left;
+            transition: transform 0.2s ease;
         }
 
         .input-box label {
-            font-size: 0.75rem;
+            font-size: 0.70rem; /* Slightly smaller for a modern look */
             font-weight: 700;
-            color: var(--text-main);
-            margin-bottom: 8px;
+            color: #475569; /* Slightly softer text for better contrast */
+            margin-bottom: 10px;
             display: block;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px; /* Slightly wider spacing for authority */
+            transition: color 0.2s ease;
+        }
+
+        /* Red Accent Trigger: When input is focused, the label turns red */
+        .input-box input:focus + label,
+        .input-box:focus-within label {
+            color: #dc2626;
         }
 
         .input-wrapper {
@@ -230,14 +248,14 @@
         <div class="header-icon"><i class='bx bx-shield-quarter'></i></div>
     </div>
     <h1>Super Admin Login</h1>
-    <p class="subtitle">Enter your master credentials to authorize access.</p>
+    <p class="subtitle">Enter your account credentials to authorize access.</p>
     
     <div id="status-area"></div>
 
     <div class="form-group">
         <form action="http://localhost/GCST_Track_System/actions/process_superadmin.php" method="POST" id="authForm" onsubmit="return validateLogin()">
             <div class="input-box">
-                <label for="email">Account Identifier</label>
+                <label for="email">Account</label>
                 <div class="input-wrapper">
                     <input type="text" name="email" id="email" placeholder="Username or Email" required autocomplete="username">
                     <i class='bx bxs-user-pin input-icon'></i>
@@ -245,7 +263,7 @@
             </div>
 
             <div class="input-box">
-                <label for="password">Master Password</label>
+                <label for="password">Password</label>
                 <div class="input-wrapper">
                     <input type="password" name="password" id="password" placeholder="••••••••" required autocomplete="current-password">
                     <i class='bx bxs-lock-open-alt input-icon'></i>

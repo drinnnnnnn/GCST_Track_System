@@ -356,8 +356,8 @@
       gap: 8px;
     }
     
-    .btn-buy { background: #059669; color: white; }
-    .btn-buy:hover:not(:disabled) { background: #047857; transform: scale(1.02); }
+    .btn-buy { background: #2563eb; color: white; }
+    .btn-buy:hover:not(:disabled) { background: #1d4ed8; transform: scale(1.02); }
     .btn-rent { background: #2563eb; color: white; }
     .btn-rent:hover:not(:disabled) { background: #1d4ed8; transform: scale(1.02); }
     .btn-action:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
@@ -1199,7 +1199,7 @@
         actionContainer.innerHTML = '';
         if (product.buy_price > 0) {
           actionContainer.innerHTML += `
-            <button class="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-500/20 active:scale-95" 
+            <button class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl blue-500/20 active:scale-95" 
               onclick="handleModalAddToCart(${product.product_id}, 'buy', ${isFabric}, event)">
               Add to Cart
             </button>

@@ -126,6 +126,9 @@ export function getSidebarHTML() {
             padding: 0.5rem 0 1rem;
             margin-bottom: 1rem;
         }
+        .sidebar.minimized .brand-content {
+            justify-content: center;
+        }
         #main-sidebar.sidebar.minimized .sidebar-link {
             justify-content: center;
             padding: 0.9rem;
@@ -166,6 +169,27 @@ export function getSidebarHTML() {
         border-radius: 1rem;
         transition: background 0.2s ease;
     }
+    
+    .brand-content {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        min-width: 0;
+        flex: 1;
+        padding-top: 1rem;
+    }
+    
+    .brand-logo {
+        width: 46px;
+        height: 46px;
+        object-fit: contain;
+        flex-shrink: 0;
+        border-radius: 0.75rem;
+        
+        /* Pushes the logo down from the top */
+        margin-top: 1rem; 
+    }
+
     .sidebar-brand:hover {
         background: rgba(248, 250, 252, 0.75);
     }
@@ -176,58 +200,101 @@ export function getSidebarHTML() {
         flex-shrink: 0;
     }
     
-    .brand-text {
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.18rem;
-    }
-    .brand-text h1 {
-        font-size: 1rem;
-        font-weight: 700;
-        color: var(--text-main);
-        margin: 0;
-        letter-spacing: -0.02em;
-        line-height: 1.2;
-    }
-    .brand-text span {
-        font-size: 0.72rem;
-        font-weight: 700;
-        color: var(--primary-blue);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        line-height: 1.1;
+    /* Shared layout logic for all brand text elements */
+    .brand-subtitle,
+    .brand-title,
+    .brand-role {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        /* Added line-height to ensure text doesn't 'touch' when stacked */
+        line-height: 1.3; 
     }
 
-    .sidebar-minimize-btn {
-        position: absolute; 
-        top: 50%; 
-        right: -12px; 
-        transform: translateY(-50%);
-        background: #ffffff; 
-        color: var(--primary-blue); 
-        border: 1px solid var(--border-color);
-        border-radius: 999px; 
-        width: 30px; 
-        height: 30px; 
-        display: flex; 
-        align-items: center; 
+    /* Brand Subtitle - High contrast, small and clean */
+    .brand-subtitle {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.15em; /* Slightly wider for better readability at small sizes */
+        text-transform: uppercase;
+        color: var(--text-muted, #94a3b8);
+        margin-bottom: 2px;
+    }
+
+    /* Brand Title - The primary focus */
+    .brand-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-main, #0f172a);
+        letter-spacing: -0.02em;
+        line-height: 1; /* Tightens the box around the text */
+    }
+
+    .brand-role {
+        font-size: 0.7rem;
+        font-weight: 600;
+        line-height: 1; /* Aligns with title line-height */
+        margin-top: -2px; /* Pulls the role text closer to the title */
+    }
+    
+    .brand-text {
+        display: flex;
+        flex-direction: column;
         justify-content: center;
-        cursor: pointer; 
-        box-shadow: 0 6px 14px -8px rgba(15, 23, 42, 0.5);
-        transition: all 0.25s ease;
-        z-index: 1001;
-        font-size: 0.8rem;
+        min-width: 0;
+        gap: 0.1rem;
+        overflow: hidden;
+        
+        /* Adds space from the top of the container */
+        padding-top: 1rem; 
     }
-    .sidebar-minimize-btn:hover {
-        background: var(--primary-blue);
-        color: #ffffff;
-        transform: translateY(-50%) scale(1.06);
-        box-shadow: 0 10px 18px -10px rgba(37, 99, 235, 0.45);
+
+    /* Enhances how text behaves inside the brand container */
+    .brand-text > * {
+        margin: 0;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
-    .sidebar-minimize-btn:active {
-        transform: translateY(-50%) scale(0.96);
-    }
+
+
+    .sidebar-minimize-btn {
+    position: absolute;
+    top: 20px;
+    right: -14px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border: 1px solid #dadce0;
+    border-radius: 50%;
+    color: #5f6368;
+    cursor: pointer;
+    z-index: 1005;
+    /* Ensure no box-shadow is present */
+    box-shadow: none; 
+    transition: none;
+}
+
+.sidebar-minimize-btn:hover {
+    background: #f8f9fa;
+    border-color: #d1d5da;
+    color: #202124;
+}
+
+.sidebar-minimize-btn i {
+    font-size: 12px;
+    margin-left: 1px; 
+    transition: none;
+}
+
+.sidebar.minimized .sidebar-minimize-btn i {
+    transform: rotate(180deg);
+}
 
     .nav-section-label {
         font-size: 0.68rem;
@@ -293,16 +360,6 @@ export function getSidebarHTML() {
         transform: translateY(-50%);
     }
 
-    .sidebar-badge {
-        margin-left: auto;
-        background: #ef4444;
-        color: white;
-        font-size: 0.68rem;
-        padding: 0.18rem 0.42rem;
-        border-radius: 999px;
-        font-weight: 700;
-        line-height: 1.2;
-    }
     .sidebar-badge.hidden { display: none; }
 
     .sidebar-footer {
@@ -409,32 +466,20 @@ export function getSidebarHTML() {
 </style>
 
 <aside id="main-sidebar" class="sidebar" aria-label="Main Sidebar">
-    <div class="sidebar-brand p-5 border-b border-slate-100 flex items-center justify-between gap-3 relative w-full" id="sidebar-brand-area">
-    <div class="flex items-center gap-3">
-        <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Granby Colleges Logo" class="w-10 h-10 object-contain shrink-0">
-        
-        <div class="brand-text flex flex-col justify-center font-sans">
-            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-0.5">
-                Granby Colleges of
-            </span>
-            <h1 class="text-sm font-extrabold text-slate-800 tracking-tight leading-tight">
-                Science & Technologies
-            </h1>
-            <span class="text-[11px] font-semibold text-primary mt-0.5 leading-none">
-                Admin / Cashier
-            </span>
+    <div class="sidebar-brand" id="sidebar-brand-area">
+        <div class="brand-content">
+            <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Granby Colleges Logo" class="brand-logo">
+            <div class="brand-text">
+                <span class="brand-subtitle">Granby Colleges of</span>
+                <h2 class="brand-title">Science & Technologies</h2>
+                <span class="brand-role">System Super Admin</span>
+            </div>
         </div>
+
+        <button onclick="toggleMinimizeSidebar()" id="sidebar-minimize-btn" class="sidebar-minimize-btn" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
     </div>
-    
-    <button 
-        onclick="typeof window.toggleMinimizeSidebar === 'function' ? window.toggleMinimizeSidebar() : null" 
-        id="sidebar-minimize-btn" 
-        class="sidebar-minimize-btn w-7 h-7 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-slate-600 hover:bg-slate-50 shadow-sm flex items-center justify-center transition-all duration-150 absolute -right-3 top-1/2 -translate-y-1/2 z-30" 
-        title="Toggle Sidebar"
-    >
-        <i class="fas fa-chevron-left text-[10px]" id="minimize-icon"></i>
-    </button>
-</div>
 
     <p class="nav-section-label">Main Menu</p>
     <nav class="sidebar-nav">
@@ -457,7 +502,6 @@ export function getSidebarHTML() {
         </a>
         <a href="/GCST_Track_System/pages/admincashier/admincashier_gmail_notification.html" id="sidebar-gmail-link" class="sidebar-link" title="Gmail Notification" onclick="handleSidebarLinkClick()">
             <i class="fas fa-envelope"></i> <span>Gmail Notification</span>
-            <span id="sidebar-gmail-badge" class="sidebar-badge hidden">0</span>
         </a>
         
         <p class="nav-section-label">Account</p>

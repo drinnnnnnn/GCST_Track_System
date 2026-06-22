@@ -1861,9 +1861,9 @@
             
             // Generate standard empty rows for manual entry
             let tableRows = '';
-            for(let i = 0; i < 26; i++) {
+            for(let i = 0; i < 40; i++) {
                 tableRows += `<tr>
-                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    <td></td><td></td><td></td><td></td><td></td>
                 </tr>`;
             }
 
@@ -1916,13 +1916,11 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 28%;">Product Name / Description</th>
+                                <th style="width: 50%;">Product Name / Description</th>
                                 <th style="width: 14%;">Category</th>
-                                <th style="width: 10%;">SKU / ID</th>
-                                <th style="width: 10%;">System Stock</th>
-                                <th style="width: 10%;">Physical Count</th>
-                                <th style="width: 10%;">Variance</th>
-                                <th style="width: 18%;">Remarks / Condition</th>
+                                <th style="width: 10%;">Price</th>
+                                <th style="width: 10%;">Available Stock</th>
+                                <th style="width: 16%;">Remarks / Condition</th>
                             </tr>
                         </thead>
                         <tbody>${tableRows}</tbody>
