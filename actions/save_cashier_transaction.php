@@ -49,7 +49,10 @@ try {
     if (!$checkQR['success']) throw new Exception($checkQR['message']);
 
     $adminId = $_SESSION['admin_id'] ?? null;
-    $cashierName = $_SESSION['name'] ?? 'Admin Cashier';
+    $cashierName = trim((string)($_SESSION['admin_name'] ?? $_SESSION['admincashier_name'] ?? $_SESSION['admincashier'] ?? ''));
+    if ($cashierName === '') {
+        $cashierName = 'Admin Cashier';
+    }
     $payload = json_decode(file_get_contents('php://input'), true);
     $isGuest = $payload['is_guest'] ?? false;
     $guestName = $payload['guest_name'] ?? null;
@@ -427,37 +430,84 @@ try {
                         </tr>";
                     }
                     $emailBody = "
-                    <div style='font-family: \"Outfit\", \"Segoe UI\", Helvetica, Arial, sans-serif; max-width: 600px; margin: 20px auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'>
-                        <div style='background-color: #4f46e5; padding: 30px 20px; text-align: center; color: #ffffff;'>
-                            <h1 style='margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em;'>GCST Tracking System</h1>
+                    <style>
+    @media only screen and (max-width: 600px) {
+        .receipt-shell { width: 100% !important; }
+        
+        .receipt-header { padding: 24px 16px !important; }
+        .receipt-body { padding: 20px 14px !important; }
+        
+        /* Typography refinements */
+        .receipt-meta td, .receipt-meta th { font-size: 12px !important; }
+        .receipt-totals td { font-size: 14px !important; font-weight: 600; }
+        
+        /* Mobile Table Stacking Strategy */
+        .receipt-items-table thead { display: none !important; }
+        
+        .receipt-items-table, 
+        .receipt-items-table tbody, 
+        .receipt-items-table tr, 
+        .receipt-items-table td { 
+            display: block !important; 
+            width: 100% !important; 
+            box-sizing: border-box; 
+        }
+        
+        .receipt-items-table tr { 
+            margin-bottom: 12px; 
+            border-bottom: 1px solid #e2e8f0; 
+            padding-bottom: 8px; 
+        }
+        
+        .receipt-items-table td { 
+            display: flex !important; 
+            justify-content: space-between !important; 
+            padding: 4px 0 !important; 
+        }
+        
+        /* Adds the label before the data for context */
+        .receipt-items-table td::before {
+            content: attr(data-label);
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            font-size: 10px;
+        }
+
+        .receipt-footer { padding: 18px 12px !important; }
+    }
+</style>
+                    <div class='receipt-shell' style='font-family: \"Outfit\", \"Segoe UI\", Helvetica, Arial, sans-serif; width: 100%; max-width: 600px; margin: 20px auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'>
+                        <div class='receipt-header' style='background-color: #4f46e5; padding: 24px 16px; text-align: center; color: #ffffff;'>
+                            <h1 style='margin: 0; font-size: 14px; font-weight: 700; letter-spacing: -0.02em;'>GRANBY COLLEGES SCIENCE AND TECHNOLOGY Tracking System</h1>
                             <p style='margin: 5px 0 0; opacity: 0.9; font-size: 14px;'>Official Transaction Receipt</p>
                         </div>
-                        <div style='padding: 30px;'>
+                        <div class='receipt-body' style='padding: 24px 20px;'>
                             <p style='color: #1e293b; font-size: 16px; line-height: 1.5;'>Dear " . htmlspecialchars($studentFullName) . ",</p>
                             <p style='color: #475569; font-size: 15px; line-height: 1.5;'>Thank you for your transaction. Your payment has been successfully processed. Please find the details of your receipt below:</p>
 
-                            <div style='background-color: #f8fafc; padding: 20px; border-radius: 12px; margin: 25px 0; border: 1px solid #e2e8f0;'>
-                                <table style='width: 100%; font-size: 14px; border-collapse: collapse;'>
+                            <div style='background-color: #f8fafc; padding: 16px; border-radius: 12px; margin: 22px 0; border: 1px solid #e2e8f0;'>
+                                <table class='receipt-meta' style='width: 100%; font-size: 14px; border-collapse: collapse;'>
                                     <tr><td style='color: #64748b; padding-bottom: 8px;'>Transaction Reference:</td><td style='text-align: right; color: #0f172a; font-weight: 600; padding-bottom: 8px;'>$transactionNumber</td></tr>
                                     <tr><td style='color: #64748b; padding-bottom: 8px;'>Processed By:</td><td style='text-align: right; color: #0f172a; padding-bottom: 8px;'>" . htmlspecialchars($cashierName) . "</td></tr>
                                     <tr><td style='color: #64748b;'>Date & Time:</td><td style='text-align: right; color: #0f172a;'>" . date('F d, Y h:i A') . "</td></tr>
                                 </table>
                             </div>
 
-                            <table style='width: 100%; border-collapse: collapse; margin-bottom: 25px;'>
+                            <table class='receipt-items-table' style='width: 100%; border-collapse: collapse; margin-bottom: 22px;'>
                                 <thead>
                                     <tr style='border-bottom: 2px solid #e2e8f0;'>
-                                        <th style='padding: 12px 8px; text-align: left; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;'>Description</th>
-                                        <th style='padding: 12px 8px; text-align: center; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;'>Qty</th>
-                                        <th style='padding: 12px 8px; text-align: right; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;'>Price</th>
-                                        <th style='padding: 12px 8px; text-align: right; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;'>Amount</th>
+                                        <th style='padding: 12px 8px; text-align: left; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;'>Description</th>
+                                        <th style='padding: 12px 8px; text-align: center; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;'>Qty</th>
+                                        <th style='padding: 12px 8px; text-align: right; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;'>Price</th>
+                                        <th style='padding: 12px 8px; text-align: right; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;'>Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody>$itemsHtml</tbody>
                             </table>
 
-                            <div style='background-color: #ffffff; border-top: 1px solid #e2e8f0; padding-top: 15px;'>
-                                <table style='width: 100%; font-size: 14px;'>
+                            <div style='background-color: #ffffff; border-top: 1px solid #e2e8f0; padding-top: 12px;'>
+                                <table class='receipt-totals' style='width: 100%; font-size: 14px;'>
                                     <tr><td style='padding: 4px 0; color: #64748b;'>Subtotal:</td><td style='text-align: right; color: #0f172a;'>₱" . number_format($subtotal, 2) . "</td></tr>
                                     <tr><td style='padding: 4px 0; color: #ef4444;'>Discount (" . number_format($discountPercent, 0) . "%):</td><td style='text-align: right; color: #ef4444;'>-₱" . number_format($discountAmount, 2) . "</td></tr>
                                     <tr><td style='padding: 15px 0 4px; color: #4f46e5; font-size: 18px; font-weight: 700;'>Total Amount Paid:</td><td style='text-align: right; color: #4f46e5; font-size: 18px; font-weight: 700;'>₱" . number_format($totalAmount, 2) . "</td></tr>
@@ -466,11 +516,11 @@ try {
                                 </table>
                             </div>
 
-                            <div style='margin-top: 40px; padding: 20px; background-color: #eff6ff; border-radius: 12px; text-align: center;'>
+                            <div style='margin-top: 32px; padding: 18px 14px; background-color: #eff6ff; border-radius: 12px; text-align: center;'>
                                 <p style='margin: 0; color: #1e40af; font-size: 14px; font-weight: 500;'>Thank you for choosing Granby College of Science and Technology!</p>
                             </div>
                         </div>
-                        <div style='background-color: #f8fafc; padding: 25px; text-align: center; border-top: 1px solid #e2e8f0;'>
+                        <div class='receipt-footer' style='background-color: #f8fafc; padding: 22px 18px; text-align: center; border-top: 1px solid #e2e8f0;'>
                             <p style='margin: 0; color: #64748b; font-size: 12px;'>&copy; " . date('Y') . " Granby College of Science and Technology. All rights reserved.</p>
                             <p style='margin: 8px 0 0; color: #94a3b8; font-size: 11px; line-height: 1.4;'>This is an automated system notification regarding your recent transaction. Please do not reply directly to this email.</p>
                         </div>
@@ -488,7 +538,7 @@ try {
                     $emailBody = "
                     <div style='font-family: \"Outfit\", \"Segoe UI\", Helvetica, Arial, sans-serif; max-width: 600px; margin: 20px auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'>
                         <div style='background-color: #4f46e5; padding: 30px 20px; text-align: center; color: #ffffff;'>
-                            <h1 style='margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em;'>GCST Tracking System</h1>
+                            <h1 style='margin: 0; font-size: 14px; font-weight: 700; letter-spacing: -0.02em;'>GRANBY COLLEGES OF SCIENCE AND TECHNOLOGY Tracking System</h1>
                             <p style='margin: 5px 0 0; opacity: 0.9; font-size: 14px;'>Order Confirmation & QR Code</p>
                         </div>
                         <div style='padding: 30px;'>

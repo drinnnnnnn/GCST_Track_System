@@ -21,7 +21,7 @@ try {
                      <p>Dear {$ticket['student_name']},</p>
                      <p>Your queue ticket <strong>#{$ticket['queue_number']}</strong> is set to expire in approximately 10 minutes.</p>
                      <p>If you still require service, please make yourself known at the cashier counter immediately.</p>
-                     <p>Thank you for using the GCST Tracking System.</p>";
+                     <p>Thank you for using the GRANBY COLLEGES OF SCIENCE AND TECHNOLOGY Tracking System.</p>";
             
             $emailResult = sendEmailWithLog($model->getConnection(), $ticket['email'], $subject, $body, 'Queue Expiry Warning');
             if ($emailResult['success']) {

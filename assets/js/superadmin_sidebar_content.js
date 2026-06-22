@@ -595,7 +595,7 @@ export function getSidebarHTML() {
             <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Granby Colleges Logo" class="brand-logo">
             <div class="brand-text">
                 <span class="brand-subtitle">Granby Colleges of</span>
-                <h2 class="brand-title">Science & Technologies</h2>
+                <h2 class="brand-title">Science & Technology</h2>
                 <span class="brand-role">System Super Admin</span>
             </div>
         </div>

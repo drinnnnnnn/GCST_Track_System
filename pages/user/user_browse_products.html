@@ -1757,7 +1757,7 @@
 
         let successMessage = 'Checkout successful!';
         if (result.email_status === 'sent') {
-          successMessage += ' Your order confirmation and QR code have been sent to your registered Gmail account.';
+          successMessage += ' Your order confirmation and QR code have been sent to your Gmail account.';
         } else if (result.email_status === 'failed') {
           successMessage += ' Order placed, but we could not send the confirmation email. Please check your Dashboard for your Order ID.';
         }

@@ -213,50 +213,47 @@ export function getSidebarHTML() {
     }
 
     /* Brand Subtitle - High contrast, small and clean */
-    .brand-subtitle {
-        font-size: 0.65rem;
-        font-weight: 700;
-        letter-spacing: 0.15em; /* Slightly wider for better readability at small sizes */
-        text-transform: uppercase;
-        color: var(--text-muted, #94a3b8);
-        margin-bottom: 2px;
+    /* Container: Manages layout and spacing */
+    .brand-text {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.15rem; /* Slightly increased for better breathing room */
+        padding-top: 1rem;
+        min-width: 0;
+        overflow: hidden;
     }
 
-    /* Brand Title - The primary focus */
+    /* Base styles for all text elements inside the container */
+    .brand-text > * {
+        margin: 0;
+        line-height: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Typography Hierarchy */
+    .brand-subtitle {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted, #64748b);
+    }
+
     .brand-title {
         font-size: 0.85rem;
         font-weight: 600;
         color: var(--text-main, #0f172a);
         letter-spacing: -0.02em;
-        line-height: 1; /* Tightens the box around the text */
     }
 
     .brand-role {
         font-size: 0.7rem;
         font-weight: 600;
-        line-height: 1; /* Aligns with title line-height */
-        margin-top: -2px; /* Pulls the role text closer to the title */
-    }
-    
-    .brand-text {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        min-width: 0;
-        gap: 0.1rem;
-        overflow: hidden;
-        
-        /* Adds space from the top of the container */
-        padding-top: 1rem; 
-    }
-
-    /* Enhances how text behaves inside the brand container */
-    .brand-text > * {
-        margin: 0;
-        line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        color: var(--muted, #64748b); /* Added color consistency */
+        opacity: 0.8; /* Subtle visual separation */
     }
 
 
@@ -471,7 +468,7 @@ export function getSidebarHTML() {
             <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Granby Colleges Logo" class="brand-logo">
             <div class="brand-text">
                 <span class="brand-subtitle">Granby Colleges of</span>
-                <h2 class="brand-title">Science & Technologies</h2>
+                <h2 class="brand-title">Science & Technology</h2>
                 <span class="brand-role">System Super Admin</span>
             </div>
         </div>

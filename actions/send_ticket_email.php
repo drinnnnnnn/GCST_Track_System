@@ -54,10 +54,10 @@ try {
                 <p style='margin: 5px 0 0;'><strong>Generated:</strong> $createdAt</p>
             </div>
             <p>Please present this information or have your ticket ready when your number is called.</p>
-            <p style='font-size: 14px; color: #64748b; font-style: italic;'>Note: Tickets are valid for 2 hours from the time of generation.</p>
+            <p style='font-size: 14px; color: #64748b; font-style: italic;'>Note: Tickets are valid for 1 hour from the time of generation.</p>
         </div>
         <div style='background: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;'>
-            © " . date('Y') . " Granby College of Science and Technology
+            © " . date('Y') . " Granby Colleges of Science and Technology
         </div>
     </div>";
 
