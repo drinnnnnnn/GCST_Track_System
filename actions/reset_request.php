@@ -61,7 +61,34 @@ $ins->bind_param("sss", $email, $code, $expires_at);
 
 if ($ins->execute()) {
     $subject = 'Password Recovery Code';
-    $body = "Hello {$user['first_name']},<br><br>Use the following code to verify your password reset: <br><h2 style='letter-spacing:5px;'>$code</h2><br>This code expires in 15 minutes.";
+
+$body = "
+<div style='font-family: sans-serif; max-width: 500px; margin: 20px auto; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'>
+    
+    <!-- Top Blue Accent -->
+    <div style='background-color: #2563eb; height: 6px;'></div>
+
+    <div style='padding: 30px;'>
+        <h2 style='color: #1f2937; margin-top: 0;'>Password Recovery</h2>
+        <p style='color: #4b5563; font-size: 16px; line-height: 1.5;'>Hello <strong>{$user['first_name']}</strong>,</p>
+        <p style='color: #4b5563; line-height: 1.5;'>We received a request to reset your password. Use the code below to verify your request:</p>
+        
+        <!-- Code Display -->
+        <div style='background-color: #f8fafc; border: 1px solid #dbeafe; padding: 20px; text-align: center; border-radius: 8px; margin: 25px 0;'>
+            <span style='letter-spacing: 8px; color: #2563eb; font-size: 36px; font-weight: bold;'>{$code}</span>
+        </div>
+
+        <p style='color: #6b7280; font-size: 14px; margin-bottom: 0;'>
+            This code expires in <strong>10 minutes</strong>. 
+            If you did not request a password reset, please ignore this email.
+        </p>
+    </div>
+
+    <!-- Footer -->
+    <div style='background-color: #f9fafb; padding: 15px; text-align: center; border-top: 1px solid #f3f4f6;'>
+        <p style='color: #9ca3af; font-size: 12px; margin: 0;'>GCST Tracking System</p>
+    </div>
+</div>";
 
     // Use the unified helper which handles config loading and database logging
     $result = sendEmailWithLog($conn, $email, $subject, $body, 'Password Reset');

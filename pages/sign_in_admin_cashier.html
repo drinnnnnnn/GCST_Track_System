@@ -143,10 +143,19 @@
             font-size: 1.3rem;
             color: #94a3b8;
             cursor: pointer;
-            transition: 0.2s;
+            transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+            transform-origin: center center;
         }
 
-        .input-box i:hover { color: var(--primary); }
+        .input-box i:hover {
+            color: var(--primary);
+            transform: scale(1.08) translateY(-1px);
+            opacity: 0.95;
+        }
+
+        .input-box i:active {
+            transform: scale(0.96) translateY(0);
+        }
 
         .submit-btn {
             width: 100%;
@@ -200,9 +209,17 @@
         </div>
 
         <div class="input-box animate-item">
-            <label>Password</label>
-            <input type="password" name="password" id="password" placeholder="••••••••" required>
-            <i class='bx bx-show' id="toggleBtn"></i>
+            <div style="position: relative;">
+                <label>Password</label>
+                <input type="password" name="password" id="password" placeholder="••••••••" required>
+                <i class='bx bx-hide' id="toggleBtn" style="cursor: pointer; position: absolute; right: 10px; top: 38px;"></i>
+            </div>
+
+            <div style="position: relative; margin-top: 15px;">
+                <label>Pin</label>
+                <input type="password" name="pin" id="pin" placeholder="••••" maxlength="4" pattern="\d{4}" inputmode="numeric" required>
+                <i class='bx bx-hide' id="togglePinBtn" style="cursor: pointer; position: absolute; right: 10px; top: 38px;"></i>
+            </div>
         </div>
 
         <button type="submit" class="submit-btn animate-item" id="loginBtn">
@@ -212,17 +229,22 @@
 </div>
 
 <script>
-    // Password visibility toggle
-    const toggleBtn = document.getElementById("toggleBtn");
-    const passwordField = document.getElementById("password");
+    // Visibility toggle helper
+    const setupVisibilityToggle = (buttonId, fieldId) => {
+        const button = document.getElementById(buttonId);
+        const field = document.getElementById(fieldId);
+        if (!button || !field) return;
 
-    toggleBtn.addEventListener("click", () => {
-        const isPass = passwordField.type === "password";
-        passwordField.type = isPass ? "text" : "password";
-        toggleBtn.classList.toggle("bx-show");
-        toggleBtn.classList.toggle("bx-hide");
-    });
+        button.addEventListener("click", () => {
+            const isHidden = field.type === "password";
+            field.type = isHidden ? "text" : "password";
+            button.classList.toggle("bx-show", !isHidden);
+            button.classList.toggle("bx-hide", isHidden);
+        });
+    };
 
+    setupVisibilityToggle("toggleBtn", "password");
+    setupVisibilityToggle("togglePinBtn", "pin");
     // Handle status messages from URL
     const urlParams = new URLSearchParams(window.location.search);
     const statusArea = document.getElementById("status-area");

@@ -26,7 +26,7 @@ if ($input && isset($input['action'])) {
 
 switch ($action) {
     case 'list':
-        $query = "SELECT id, student_id, first_name, last_name, middle_name, email, sex, course, department, year_level, contact_number, address, status, school_id_pic, reg_form, payment_scheme, created_at FROM users ORDER BY created_at DESC";
+        $query = "SELECT id, student_id, first_name, last_name, middle_name, email, sex, course, department, year_level, contact_number, address, status, is_pwd, school_id_pic, reg_form, payment_scheme, pwd_front, pwd_back, created_at FROM users ORDER BY created_at DESC";
         $result = $conn->query($query);
         $user = [];
         while ($row = $result->fetch_assoc()) {
@@ -54,10 +54,12 @@ switch ($action) {
     case 'update_profile':
         $id = filter_var($input['id'] ?? 0, FILTER_VALIDATE_INT);
         $fname = trim($input['first_name'] ?? '');
+        $middle = trim($input['middle_name'] ?? '');
         $lname = trim($input['last_name'] ?? '');
         $email = trim($input['email'] ?? '');
         $course = trim($input['course'] ?? '');
         $year = filter_var($input['year'] ?? 1, FILTER_VALIDATE_INT);
+        $contact_number = trim ($input['contact_number'] ?? '');
         $status = $input['status'] ?? 'pending';
 
         if (!$id || empty($fname) || empty($lname) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -72,8 +74,8 @@ switch ($action) {
             exit;
         }
 
-        $stmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, course = ?, year_level = ?, status = ? WHERE id = ?");
-        $stmt->bind_param("ssssisi", $fname, $lname, $email, $course, $year, $status, $id);
+        $stmt = $conn->prepare("UPDATE users SET first_name = ?, middle_name = ?, last_name = ?, email = ?, course = ?, year_level = ?, status = ?, contact_number = ? WHERE id = ?");
+        $stmt->bind_param("sssssissi", $fname, $middle, $lname, $email, $course, $year, $status, $contact_number, $id);
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'message' => 'Student profile updated successfully.']);
         } else {

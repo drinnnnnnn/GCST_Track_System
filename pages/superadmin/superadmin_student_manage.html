@@ -167,6 +167,18 @@
                 <i class="fas fa-chevron-down"></i>
             </div>
         </div>
+        <div class="relative w-full max-w-xs md:max-w-md">
+            <select
+                id="filter-pwd"
+                class="w-full pl-4 pr-11 py-2.5 bg-white border border-slate-200 rounded-xl outline-none transition-all duration-200 text-slate-700 text-sm font-semibold appearance-none cursor-pointer font-sans shadow-sm focus:border-primary focus:ring-4 focus:ring-primary/5">
+                <option value="all">All Students</option>
+                <option value="yes">PWD Only</option>
+                <option value="no">Non-PWD Only</option>
+            </select>
+            <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400 text-xs">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -178,6 +190,7 @@
                             <tr>
                                 <th>Student Info</th>
                                 <th>School ID</th>
+                                <th>PWD</th>
                                 <th>Course & Year</th>
                                 <th>Status</th>
                                 <th class="text-right">Actions</th>
@@ -267,13 +280,21 @@
                 <input type="hidden" id="form-id">
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="space-y-1">
+                    <div class="space-y-0.5">
                         <label class="text-[10px] font-bold uppercase text-slate-500">First Name</label>
                         <input type="text" id="form-first-name" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
                     </div>
-                    <div class="space-y-1">
+                    <div class="space-y-0.5">
+                        <label class="text-[10px] font-bold uppercase text-slate-500">Middle Name</label>
+                        <input type="text" id="form-middle-name" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
+                    </div>
+                    <div class="space-y-0.5 ">
                         <label class="text-[10px] font-bold uppercase text-slate-500">Last Name</label>
                         <input type="text" id="form-last-name" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
+                    </div>
+                    <div class="space-y-0.5">
+                        <label class="text-[10px] font-bold uppercase text-slate-500">Contact Number</label>
+                        <input type="text" id="form-contact-number" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
                     </div>
                 </div>
 
@@ -439,7 +460,7 @@
             }
 
             pendingDeleteStudentId = id;
-            const studentName = `${s.first_name || ''} ${s.last_name || ''}`.trim() || 'Unknown Student';
+            const studentName = `${s.first_name || ''} ${s.middle_name ? s.middle_name + ' ' : ''}${s.last_name || ''}`.trim() || 'Unknown Student';
             document.getElementById('delete-student-preview').innerHTML = `
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Student Name</span>
@@ -502,6 +523,7 @@
             
             const query = queryInput.value.toLowerCase();
             const course = document.getElementById('filter-course').value;
+            const pwdFilter = document.getElementById('filter-pwd')?.value || 'all';
             
             const filtered = allStudents.filter(s => {
                 const fullName = `${s.first_name || ''} ${s.last_name || ''}`.toLowerCase();
@@ -509,7 +531,9 @@
                 const email = (s.email || '').toLowerCase();
                 const matchQuery = fullName.includes(query) || studentId.includes(query) || email.includes(query);
                 const matchCourse = course === 'all' || s.course === course;
-                return matchQuery && matchCourse;
+                const isPwd = Number(s.is_pwd || 0) === 1;
+                const matchPwd = pwdFilter === 'all' || (pwdFilter === 'yes' && isPwd) || (pwdFilter === 'no' && !isPwd);
+                return matchQuery && matchCourse && matchPwd;
             });
             
             renderTable(filtered);
@@ -531,6 +555,7 @@
                 const isActive = status === 'active';
                 const isSuspended = status === 'suspended';
                 const isPending = status === 'pending';
+                const isPwd = Number(s.is_pwd || 0) === 1;
                 
                 let statusBadge = '';
                 if (isActive) {
@@ -551,13 +576,16 @@
                                     ${(s.last_name || 'U').charAt(0).toUpperCase()}
                                 </div>
                                 <div>
-                                    <div class="font-bold text-slate-900">${s.first_name} ${s.last_name}</div>
+                                    <div class="font-bold text-slate-900">${s.first_name} ${s.last_name} ${isPwd ? '<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 text-violet-600 border border-violet-100">♿ PWD</span>' : ''}</div>
                                     <div class="text-xs text-slate-500 font-semibold">${s.email}</div>
                                 </div>
                             </div>
                         </td>
                         <td class="px-6 py-4">
                             <span class="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded">${s.student_id}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold ${isPwd ? 'bg-violet-50 text-violet-600 border border-violet-100' : 'bg-slate-100 text-slate-500'}">${isPwd ? 'Yes' : 'No'}</span>
                         </td>
                         <td class="px-6 py-4">
                             <div class="text-sm font-bold text-slate-700">${s.course || 'N/A'}</div>
@@ -601,6 +629,8 @@
 
             if (searchInput) searchInput.oninput = applyFilters;
             if (filterCourse) filterCourse.onchange = applyFilters;
+            const filterPwd = document.getElementById('filter-pwd');
+            if (filterPwd) filterPwd.onchange = applyFilters;
             if (studentForm) studentForm.onsubmit = handleFormSubmit;
 
             document.querySelectorAll('.logout-modal-overlay').forEach(modal => {
@@ -686,6 +716,7 @@
 
             const content = document.getElementById('review-content');
             const actions = document.getElementById('review-actions-container');
+            const isPwd = Number(s.is_pwd || 0) === 1;
             const regDate = s.created_at ? new Date(s.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A';
 
             content.innerHTML = `
@@ -697,6 +728,7 @@
                         <div class="mt-3 space-y-1">
                             <p class="text-[11px] text-slate-600"><i class="fas fa-envelope w-4"></i> ${s.email}</p>
                             <p class="text-[11px] text-slate-600"><i class="fas fa-phone w-4 text-[10px]"></i> ${s.contact_number || 'N/A'}</p>
+                            <p class="text-[11px] text-slate-600"><strong>PWD:</strong> ${isPwd ? 'Yes' : 'No'}</p>
                         </div>
                     </div>
                     <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
@@ -713,6 +745,7 @@
                         ${renderDoc(s.school_id_pic, 'School ID Pic')}
                         ${renderDoc(s.reg_form, 'Registration Form')}
                         ${renderDoc(s.payment_scheme, 'Payment Scheme')}
+                        ${isPwd ? `${renderDoc(s.pwd_front, 'PWD ID Card (Front)')}${renderDoc(s.pwd_back, 'PWD ID Card (Back)')}` : '<div class="p-3 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-[10px] text-slate-400 italic">PWD proof not required for non-PWD students.</div>'}
                     </div>
                 </div>
             `;
@@ -763,14 +796,18 @@
             }
             const formId = document.getElementById('form-id');
             const formFirstName = document.getElementById('form-first-name');
+            const formMiddleName = document.getElementById('form-middle-name');
             const formLastName = document.getElementById('form-last-name');
+            const formContactNumber = document.getElementById('form-contact-number');
             const formEmail = document.getElementById('form-email');
             const formCourse = document.getElementById('form-course');
             const formYear = document.getElementById('form-year');
 
             if (formId) formId.value = s.id || '';
             if (formFirstName) formFirstName.value = s.first_name || '';
+            if (formMiddleName) formMiddleName.value = s.middle_name || '';
             if (formLastName) formLastName.value = s.last_name || '';
+            if (formContactNumber) formContactNumber.value = s.contact_number || '';
             if (formEmail) formEmail.value = s.email || '';
             if (formCourse) formCourse.value = s.course || 'BSIT';
             if (formYear) formYear.value = String(s.year_level || '1');
@@ -781,7 +818,9 @@
             e.preventDefault();
             const id = document.getElementById('form-id')?.value;
             const firstName = document.getElementById('form-first-name')?.value.trim();
+            const middleName = document.getElementById('form-middle-name')?.value.trim();
             const lastName = document.getElementById('form-last-name')?.value.trim();
+            const contactNumber = document.getElementById('form-contact-number')?.value.trim();
             const email = document.getElementById('form-email')?.value.trim();
             const course = document.getElementById('form-course')?.value;
             const year = document.getElementById('form-year')?.value;
@@ -795,7 +834,9 @@
                 action: 'update_profile',
                 id,
                 first_name: firstName,
+                middle_name: middleName,
                 last_name: lastName,
+                contact_number: contactNumber,
                 email,
                 course,
                 year

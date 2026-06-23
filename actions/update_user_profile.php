@@ -65,20 +65,37 @@ try {
         $studentFullName = trim($currentUser['first_name'] . ' ' . ($currentUser['middle_name'] ? $currentUser['middle_name'] . ' ' : '') . $currentUser['last_name']);
         $studentId = $currentUser['student_id'];
 
-        $emailSubject = "Student Profile Update Notification: {$studentFullName} ({$studentId})";
-        $emailBody = "<p>Dear Admin,</p>" .
-                     "<p>The following student has updated their profile information:</p>" .
-                     "<ul>" .
-                     "<li><strong>Student Name:</strong> {$studentFullName}</li>" .
-                     "<li><strong>Student ID:</strong> {$studentId}</li>" .
-                     "<li><strong>Old Email:</strong> {$currentUser['email']} -> <strong>New Email:</strong> {$email}</li>" .
-                     "<li><strong>Old Contact:</strong> {$currentUser['contact_number']} -> <strong>New Contact:</strong> {$contactNumber}</li>" .
-                     "<li><strong>Old Course:</strong> {$currentUser['course']} -> <strong>New Course:</strong> {$course}</li>" .
-                     "<li><strong>Old Grade Level:</strong> {$currentUser['year_section']} -> <strong>New Grade Level:</strong> {$gradeLevel}</li>" .
-                     "<li><strong>Address:</strong> {$address}</li>" .
-                     "</ul>" .
-                     "<p>Please review these changes in the system if necessary.</p>" .
-                     "<p>GCST Tracking System Notification.</p>";
+ $emailSubject = "Student Profile Update Notification: {$studentFullName} ({$studentId})";
+
+$emailBody = "
+<div style='font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border-top: 4px solid #2563eb; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; border-radius: 8px;'>
+    <h2 style='color: #2563eb; font-size: 22px; margin-bottom: 16px; margin-top: 0;'>Profile Updated</h2>
+    <p style='color: #374151; line-height: 1.5;'>Dear Admin,</p>
+    <p style='color: #374151; line-height: 1.5;'>The following student has updated their profile information in the GCST Tracking System:</p>
+    
+    <ul style='list-style-type: none; padding: 0;'>
+        <li style='margin-bottom: 10px;'><strong>Student Name:</strong> {$studentFullName}</li>
+        <li style='margin-bottom: 10px;'><strong>Student ID:</strong> {$studentId}</li>
+        <li style='margin-bottom: 10px; padding: 8px; background-color: #eff6ff; border-left: 4px solid #2563eb;'>
+            <strong>Email:</strong> <span style='color: #6b7280; text-decoration: line-through;'>{$currentUser['email']}</span> &rarr; <strong>{$email}</strong>
+        </li>
+        <li style='margin-bottom: 10px; padding: 8px; background-color: #eff6ff; border-left: 4px solid #2563eb;'>
+            <strong>Contact:</strong> <span style='color: #6b7280; text-decoration: line-through;'>{$currentUser['contact_number']}</span> &rarr; <strong>{$contactNumber}</strong>
+        </li>
+        <li style='margin-bottom: 10px; padding: 8px; background-color: #eff6ff; border-left: 4px solid #2563eb;'>
+            <strong>Course:</strong> <span style='color: #6b7280; text-decoration: line-through;'>{$currentUser['course']}</span> &rarr; <strong>{$course}</strong>
+        </li>
+        <li style='margin-bottom: 10px; padding: 8px; background-color: #eff6ff; border-left: 4px solid #2563eb;'>
+            <strong>Grade Level:</strong> <span style='color: #6b7280; text-decoration: line-through;'>{$currentUser['year_section']}</span> &rarr; <strong>{$gradeLevel}</strong>
+        </li>
+        <li style='margin-top: 15px;'><strong>Address:</strong> {$address}</li>
+    </ul>
+
+    <div style='margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;'>
+        <p style='color: #374151;'>Please review these changes in the system if necessary.</p>
+        <p style='font-size: 12px; color: #9ca3af;'>GCST Tracking System Notification.</p>
+    </div>
+</div>";
 
         sendEmailWithLog($conn, $adminEmail, $emailSubject, $emailBody, 'Admin Notification - Profile Update');
     } else {

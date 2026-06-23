@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<?php
+﻿﻿﻿﻿﻿﻿﻿﻿﻿<?php
 /**
  * process_admin_cashier.php
  * Centralized controller for Admin/Cashier account management.
@@ -57,7 +57,7 @@ try {
         requireAuth(['superadmin']);
         
         if ($action === 'list') {
-            $query = "SELECT id, first_name, last_name, middle_name, email, role, status, last_login, login_attempts FROM admincashier_acc ORDER BY created_at DESC";
+            $query = "SELECT id, username, first_name, last_name, middle_name, email, contact_number, role, status, last_login, login_attempts FROM admincashier_acc ORDER BY created_at DESC";
             $result = $conn->query($query);
             
             if (!$result) {
@@ -66,7 +66,7 @@ try {
 
             $admincashier = [];
             while ($row = $result->fetch_assoc()) {
-                $row['name'] = trim($row['first_name'] . ' ' . $row['last_name']);
+                $row['name'] = trim($row['first_name'] . ' ' . ($row['middle_name'] ? $row['middle_name'] . ' ' : '') . $row['last_name']);
                 $admincashier[] = $row;
             }
             sendJsonResponse($admincashier);
@@ -79,16 +79,31 @@ try {
         // 1. Handling Registration (Form or AJAX)
         if (isset($inputData['last_name']) && !isset($inputData['action'])) {
             requireAuth(['superadmin']);
+            $username = trim($inputData['username'] ?? '');
             $last_name = trim($inputData['last_name'] ?? '');
             $first_name = trim($inputData['first_name'] ?? '');
             $middle_name = trim($inputData['middle_name'] ?? '');
             $email = trim(filter_var($inputData['email'] ?? '', FILTER_VALIDATE_EMAIL));
+            $contact_number = trim($inputData['contact_number'] ?? '');
+            $pin = trim($inputData['pin'] ?? '');
             $password = $inputData['password'] ?? '';
             $confirm_password = $inputData['confirm_password'] ?? '';
 
-            if (!$last_name || !$first_name || !$email || !$password) {
+            if (!$username || !$last_name || !$first_name || !$email || !$contact_number || !$pin || !$password) {
                 if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Missing fields'], 400);
                 header('Location: ../pages/superadmin/register_admin_cashier.html?error=missing');
+                exit();
+            }
+
+            if (!preg_match('/^\d{11}$/', $contact_number)) {
+                if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Contact number must be 11 digits'], 400);
+                header('Location: ../pages/superadmin/register_admin_cashier.html?error=invalid_contact');
+                exit();
+            }
+
+            if (!preg_match('/^\d{4}$/', $pin)) {
+                if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'PIN must be 4 digits'], 400);
+                header('Location: ../pages/superadmin/register_admin_cashier.html?error=invalid_pin');
                 exit();
             }
 
@@ -104,21 +119,36 @@ try {
                 exit();
             }
 
-            $stmt = $conn->prepare('SELECT id FROM admincashier_acc WHERE email = ?');
-            $stmt->bind_param('s', $email);
+            $stmt = $conn->prepare('SELECT id FROM admincashier_acc WHERE email = ? OR username = ?');
+            $stmt->bind_param('ss', $email, $username);
             $stmt->execute();
             if ($stmt->get_result()->num_rows > 0) {
                 $stmt->close();
-                if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Email already exists'], 409);
+                if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Email or username already exists'], 409);
                 header('Location: ../pages/superadmin/register_admin_cashier.html?error=exists');
                 exit();
             }
             $stmt->close();
 
+            $pinCheck = $conn->prepare('SELECT id, pin FROM admincashier_acc WHERE pin IS NOT NULL AND pin <> ""');
+            $pinCheck->execute();
+            $pinResult = $pinCheck->get_result();
+            while ($pinRow = $pinResult->fetch_assoc()) {
+                $existingPin = $pinRow['pin'];
+                if ($existingPin !== '' && (password_verify($pin, $existingPin) || $existingPin === $pin)) {
+                    $pinCheck->close();
+                    if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'PIN already in use'], 409);
+                    header('Location: ../pages/superadmin/register_admin_cashier.html?error=pin_duplicate');
+                    exit();
+                }
+            }
+            $pinCheck->close();
+
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $hashed_pin = password_hash($pin, PASSWORD_DEFAULT);
             $role = 'admincashier';
-            $stmt = $conn->prepare('INSERT INTO admincashier_acc (last_name, first_name, middle_name, email, password, role, status) VALUES (?, ?, ?, ?, ?, ?, "active")');
-            $stmt->bind_param('ssssss', $last_name, $first_name, $middle_name, $email, $hashed_password, $role);
+            $stmt = $conn->prepare('INSERT INTO admincashier_acc (username, last_name, first_name, middle_name, email, contact_number, pin, password, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, "active")');
+            $stmt->bind_param('sssssssss', $username, $last_name, $first_name, $middle_name, $email, $contact_number, $hashed_pin, $hashed_password, $role);
 
             if ($stmt->execute()) {
                 $superModel = new SuperAdminModel();
@@ -135,17 +165,18 @@ try {
         }
 
         // 2. Handling Login (Form or AJAX)
-        if (isset($inputData['email']) && isset($inputData['password'])) {
+        if (isset($inputData['email']) && isset($inputData['password']) && isset($inputData['pin'])) {
             $email = trim($inputData['email']);
             $password = $inputData['password'];
+            $pin = trim($inputData['pin']);
 
-            if (empty($email) || empty($password)) {
-                if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Email and password required'], 400);
+            if (empty($email) || empty($password) || empty($pin)) {
+                if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Email, password, and PIN are required'], 400);
                 header('Location: ../pages/sign_in_admin_cashier.html?error=invalid');
                 exit();
             }
 
-            $stmt = $conn->prepare('SELECT id, last_name, first_name, middle_name, password, status FROM admincashier_acc WHERE email = ?');
+            $stmt = $conn->prepare('SELECT id, last_name, first_name, middle_name, password, pin, status FROM admincashier_acc WHERE email = ?');
             $stmt->bind_param('s', $email);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -153,31 +184,51 @@ try {
             if ($result->num_rows === 1) {
                 $user = $result->fetch_assoc();
                 if (password_verify($password, $user['password'])) {
-                    if ($user['status'] !== 'active') {
-                        if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Account suspended'], 403);
-                        header('Location: ../pages/sign_in_admin_cashier.html?error=suspended');
-                        exit();
+                    $pinValid = false;
+                    if (!empty($user['pin']) && password_verify($pin, $user['pin'])) {
+                        $pinValid = true;
+                    } elseif ($user['pin'] === $pin) {
+                        $pinValid = true;
+                        $rehashPin = password_hash($pin, PASSWORD_DEFAULT);
+                        $rehashStmt = $conn->prepare('UPDATE admincashier_acc SET pin = ? WHERE id = ?');
+                        $rehashStmt->bind_param('si', $rehashPin, $user['id']);
+                        $rehashStmt->execute();
+                        $rehashStmt->close();
                     }
 
-                    session_regenerate_id(true);
-                    $_SESSION = [];
-                    $updateLogin = $conn->prepare("UPDATE admincashier_acc SET last_login = NOW(), login_attempts = 0 WHERE id = ?");
-                    $updateLogin->bind_param("i", $user['id']);
-                    $updateLogin->execute();
+                    if ($pinValid) {
+                        if ($user['status'] !== 'active') {
+                            if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Account suspended'], 403);
+                            header('Location: ../pages/sign_in_admin_cashier.html?error=suspended');
+                            exit();
+                        }
 
-                    $_SESSION['admin_id'] = $user['id'];
-                    $_SESSION['admincashier_id'] = $user['id'];
-                    $_SESSION['admin_name'] = trim($user['first_name'] . ' ' . $user['last_name']);
-                    $_SESSION['role'] = 'admincashier';
-                    $_SESSION['admincashier_role'] = 'admincashier';
-                    $_SESSION['login_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
-                    $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
-                    
-                    logAudit($conn, 'admincashier', $user['id'], 'login', 'Admin Cashier logged in.');
+                        session_regenerate_id(true);
+                        $_SESSION = [];
+                        $updateLogin = $conn->prepare("UPDATE admincashier_acc SET last_login = NOW(), login_attempts = 0 WHERE id = ?");
+                        $updateLogin->bind_param("i", $user['id']);
+                        $updateLogin->execute();
 
-                    if (isAjax()) sendJsonResponse(['success' => true, 'redirect' => '../pages/admincashier/admincashier_dashb.html']);
-                    header('Location: ../pages/admincashier/admincashier_dashb.html');
-                    exit();
+                        $_SESSION['admin_id'] = $user['id'];
+                        $_SESSION['admincashier_id'] = $user['id'];
+                        $_SESSION['admin_name'] = trim(implode(' ', array_filter([
+                            $user['first_name'], 
+                            $user['middle_name'], 
+                            $user['last_name']
+                        ])));
+                        $_SESSION['contact_number'] = $user['contact_number'] ?? '';
+                        $_SESSION['username'] = $user['username'] ?? '';
+                        $_SESSION['role'] = 'admincashier';
+                        $_SESSION['admincashier_role'] = 'admincashier';
+                        $_SESSION['login_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
+                        $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
+                        
+                        logAudit($conn, 'admincashier', $user['id'], 'login', 'Admin Cashier logged in.');
+
+                        if (isAjax()) sendJsonResponse(['success' => true, 'redirect' => '../pages/admincashier/admincashier_dashb.html']);
+                        header('Location: ../pages/admincashier/admincashier_dashb.html');
+                        exit();
+                    }
                 }
             }
             if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Invalid credentials'], 401);
@@ -209,12 +260,49 @@ try {
 
                 case 'update_account':
                     $id = filter_var($inputData['id'] ?? 0, FILTER_VALIDATE_INT);
+                    $username = trim($inputData['username'] ?? '');
                     $fname = trim($inputData['first_name'] ?? '');
+                    $mname = trim($inputData['middle_name'] ?? '');
                     $lname = trim($inputData['last_name'] ?? '');
+                    $contactNumber = trim($inputData['contact_number'] ?? '');
+                    $pin = trim($inputData['pin'] ?? '');
                     $email = trim(filter_var($inputData['email'] ?? '', FILTER_VALIDATE_EMAIL));
-                    if (!$id || !$fname || !$lname || !$email) throw new Exception("Invalid fields");
-                    $stmt = $conn->prepare("UPDATE admincashier_acc SET first_name = ?, last_name = ?, email = ? WHERE id = ?");
-                    $stmt->bind_param("sssi", $fname, $lname, $email, $id);
+                    if (!$id || !$username || !$fname || !$lname || !$email) throw new Exception("Invalid fields");
+
+                    if ($pin !== '' && !preg_match('/^\d{4}$/', $pin)) {
+                        throw new Exception('Security PIN must be exactly 4 digits.');
+                    }
+
+                    $check = $conn->prepare('SELECT id FROM admincashier_acc WHERE (username = ? OR email = ?) AND id <> ? LIMIT 1');
+                    $check->bind_param('ssi', $username, $email, $id);
+                    $check->execute();
+                    $result = $check->get_result();
+                    if ($result && $result->num_rows > 0) {
+                        throw new Exception('Username or email already in use by another account.');
+                    }
+                    $check->close();
+
+                    if ($pin !== '') {
+                        $pinCheck = $conn->prepare('SELECT id, pin FROM admincashier_acc WHERE pin IS NOT NULL AND pin <> "" AND id <> ?');
+                        $pinCheck->bind_param('i', $id);
+                        $pinCheck->execute();
+                        $pinResult = $pinCheck->get_result();
+                        while ($pinRow = $pinResult->fetch_assoc()) {
+                            $existingPin = $pinRow['pin'];
+                            if ($existingPin !== '' && (password_verify($pin, $existingPin) || $existingPin === $pin)) {
+                                $pinCheck->close();
+                                throw new Exception('Security PIN is already used by another account.');
+                            }
+                        }
+                        $pinCheck->close();
+                        $pin = password_hash($pin, PASSWORD_DEFAULT);
+
+                        $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ?, pin = ? WHERE id = ?");
+                        $stmt->bind_param("sssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $pin, $id);
+                    } else {
+                        $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ? WHERE id = ?");
+                        $stmt->bind_param("ssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $id);
+                    }
                     if ($stmt->execute()) sendJsonResponse(['success' => true, 'message' => 'Account updated']);
                     throw new Exception("Update failed: " . $stmt->error);
 

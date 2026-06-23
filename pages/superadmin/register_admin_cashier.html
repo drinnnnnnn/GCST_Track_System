@@ -134,18 +134,34 @@
             transform: translateY(-2px);
         }
 
-        .show-password {
+        .password-toggle {
             position: absolute;
-            right: 15px;
+            right: 12px;
             top: 50%;
             transform: translateY(-50%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.08);
+            color: #64748b;
             cursor: pointer;
-            color: #94a3b8;
-            font-size: 20px;
-            transition: 0.2s;
+            transition: background 0.2s ease, color 0.2s ease;
+            padding: 0;
         }
 
-        .show-password:hover { color: var(--primary); }
+        .password-toggle:hover {
+            color: var(--primary);
+            background: rgba(59, 130, 246, 0.12);
+        }
+
+        .password-toggle i {
+            font-size: 18px;
+            line-height: 1;
+        }
 
         /* Button Styling */
         button {
@@ -279,6 +295,9 @@
         <form action="../../actions/process_admin_cashier.php" method="POST" onsubmit="return validateForm(this)">
             <div class="form-fields form-anim animate-item">
                 <div class="input-group">
+                    <input type="text" name="username" placeholder="Username" required>
+                </div>
+                <div class="input-group">
                     <input type="text" name="last_name" placeholder="Last Name" required>
                 </div>
                 <div class="input-group">
@@ -291,12 +310,25 @@
                     <input type="email" name="email" placeholder="staff@gmail.com" required>
                 </div>
                 <div class="input-group">
+                    <input type="tel" name="contact_number" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);" placeholder="Contact Number" required>
+                </div>
+                <div class="input-group">
                     <input type="password" name="password" id="password" placeholder="Password" required>
-                    <i class='bx bx-show show-password' id="togglePassword"></i>
+                    <button type="button" class="password-toggle" id="togglePassword" aria-label="Show password">
+                        <i class="bx bx-show"></i>
+                    </button>
                 </div>
                 <div class="input-group">
                     <input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm Password" required>
-                    <i class='bx bx-show show-password' id="toggleConfirm"></i>
+                    <button type="button" class="password-toggle" id="toggleConfirm" aria-label="Show confirmation password">
+                        <i class="bx bx-show"></i>
+                    </button>
+                </div>
+                <div class="input-group">
+                    <input type="password" name="pin" id="pin" placeholder="Security PIN" maxlength="4" pattern="\d{4}" inputmode="numeric" required>
+                    <button type="button" class="password-toggle" id="togglePin" aria-label="Show PIN">
+                        <i class="bx bx-show"></i>
+                    </button>
                 </div>
             </div>
 
@@ -348,20 +380,26 @@
             setTimeout(closeToast, 4000);
         }
 
-        // Toggle password visibility
-        const setupToggle = (btnId, inputId) => {
-            const btn = document.getElementById(btnId);
-            const input = document.getElementById(inputId);
-            btn.addEventListener('click', () => {
-                const isPass = input.type === 'password';
-                input.type = isPass ? 'text' : 'password';
-                btn.classList.toggle('bx-show', !isPass);
-                btn.classList.toggle('bx-hide', isPass);
-            });
-        };
+// Toggle visibility function with safety checks
+const setupToggle = (btnId, inputId, label) => {
+    const btn = document.getElementById(btnId);
+    const input = document.getElementById(inputId);
+    if (!btn || !input) return;
 
-        setupToggle('togglePassword', 'password');
-        setupToggle('toggleConfirm', 'confirm_password');
+    const icon = btn.querySelector('i');
+
+    btn.addEventListener('click', () => {
+        const isVisible = input.type === 'text';
+        input.type = isVisible ? 'password' : 'text';
+        if (icon) icon.className = isVisible ? 'bx bx-show' : 'bx bx-hide';
+        btn.setAttribute('aria-label', isVisible ? `Show ${label}` : `Hide ${label}`);
+    });
+};
+
+// Initialize listeners
+setupToggle('togglePassword', 'password', 'password');
+setupToggle('toggleConfirm', 'confirm_password', 'confirmation password');
+setupToggle('togglePin', 'pin', 'PIN');
 
         // Form validation
         function validateForm(form) {
@@ -398,8 +436,17 @@
             } else if (errorType === 'weak_password') {
                 showToast('Password is too weak. Use at least 8 characters.', 'warning');
                 window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (errorType === 'invalid_contact') {
+                showToast('Contact number must be exactly 11 digits.', 'warning');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (errorType === 'invalid_pin') {
+                showToast('PIN must be exactly 4 digits.', 'warning');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (errorType === 'pin_duplicate') {
+                showToast('That PIN is already used by another account. Please choose a different one.', 'error');
+                window.history.replaceState({}, document.title, window.location.pathname);
             } else if (errorType === 'exists') {
-                showToast('Email already exists. Please choose another one.', 'error');
+                showToast('Email or username already exists. Please choose another one.', 'error');
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
         };
