@@ -16,10 +16,13 @@ if (!$userId) {
 
 $payload = json_decode(file_get_contents('php://input'), true);
 $firstName = trim($payload['first_name'] ?? '');
+$middleName = trim($payload['middle_name'] ?? '');
 $lastName = trim($payload['last_name'] ?? '');
 $email = trim($payload['email'] ?? '');
 $contactNumber = trim($payload['contact_number'] ?? '');
 $address = trim($payload['address'] ?? '');
+$course = trim($payload['course'] ?? '');
+$gradeLevel = trim($payload['grade_level'] ?? '');
 
 if (empty($firstName) || empty($lastName) || empty($email) || empty($contactNumber)) {
     echo json_encode(['success' => false, 'message' => 'All fields are required.']);
@@ -35,7 +38,7 @@ $conn->begin_transaction();
 
 try {
     // Fetch current user data for comparison and notification
-    $currentStmt = $conn->prepare("SELECT first_name, last_name, email, contact_number, student_id FROM users WHERE id = ?");
+    $currentStmt = $conn->prepare("SELECT first_name, middle_name, last_name, email, contact_number, student_id, course, year_section, address FROM users WHERE id = ?");
     $currentStmt->bind_param('i', $userId);
     $currentStmt->execute();
     $currentResult = $currentStmt->get_result();
@@ -47,8 +50,8 @@ try {
     }
 
     // Update user profile
-    $stmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, contact_number = ?, address = ? WHERE id = ?");
-    $stmt->bind_param('sssssi', $firstName, $lastName, $email, $contactNumber, $address, $userId);
+    $stmt = $conn->prepare("UPDATE users SET first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ?, address = ?, course = ?, year_section = ? WHERE id = ?");
+    $stmt->bind_param('ssssssssi', $firstName, $middleName, $lastName, $email, $contactNumber, $address, $course, $gradeLevel, $userId);
     if (!$stmt->execute()) {
         throw new Exception('Failed to update profile: ' . $stmt->error);
     }
@@ -59,7 +62,7 @@ try {
     // Send notification email to admin
     $adminEmail = env('SMTP_USERNAME'); // Using the sender email as the admin notification recipient
     if (filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
-        $studentFullName = trim($currentUser['first_name'] . ' ' . $currentUser['last_name']);
+        $studentFullName = trim($currentUser['first_name'] . ' ' . ($currentUser['middle_name'] ? $currentUser['middle_name'] . ' ' : '') . $currentUser['last_name']);
         $studentId = $currentUser['student_id'];
 
         $emailSubject = "Student Profile Update Notification: {$studentFullName} ({$studentId})";
@@ -70,6 +73,8 @@ try {
                      "<li><strong>Student ID:</strong> {$studentId}</li>" .
                      "<li><strong>Old Email:</strong> {$currentUser['email']} -> <strong>New Email:</strong> {$email}</li>" .
                      "<li><strong>Old Contact:</strong> {$currentUser['contact_number']} -> <strong>New Contact:</strong> {$contactNumber}</li>" .
+                     "<li><strong>Old Course:</strong> {$currentUser['course']} -> <strong>New Course:</strong> {$course}</li>" .
+                     "<li><strong>Old Grade Level:</strong> {$currentUser['year_section']} -> <strong>New Grade Level:</strong> {$gradeLevel}</li>" .
                      "<li><strong>Address:</strong> {$address}</li>" .
                      "</ul>" .
                      "<p>Please review these changes in the system if necessary.</p>" .

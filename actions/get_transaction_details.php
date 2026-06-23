@@ -45,17 +45,22 @@ try {
             ct.payment_received,
             ct.change_amount,
             ct.payment_status,
-            ct.created_at,
-            aa.name AS cashier_name
+            ct.created_at,  
+            CONCAT(aa.first_name, ' ', aa.middle_name, ' ', aa.last_name) AS cashier_name,
+            COALESCE(NULLIF(us.course, ''), NULLIF(us.year_section, ''), 'N/A') AS user_course,
+            us.student_id AS student_id
         FROM
             cashier_transactions ct
         LEFT JOIN
             admincashier_acc aa ON ct.cashier_id = aa.id
+        LEFT JOIN
+            users us ON ct.user_id = us.id
         WHERE
             ct.transaction_number = ? OR ct.id = ?
         LIMIT 1";
     $stmt = $conn->prepare($query);
-    $stmt->bind_param('si', $transactionId, $transactionId); // Try matching by number or ID
+    // Bind both parameters as strings to avoid type coercion issues when transaction number is used
+    $stmt->bind_param('ss', $transactionId, $transactionId); // Try matching by number or ID
     $stmt->execute();
     $transaction = $stmt->get_result()->fetch_assoc();
     $stmt->close();
@@ -64,6 +69,45 @@ try {
         echo json_encode(['success' => false, 'message' => 'Transaction not found.']);
         exit;
     }
+
+    // Ensure we have a reliable `user_course` value.
+    // Prefer the registered user's `course`, then `year_section`.
+    // For guest orders with a valid guest_school_id, resolve the student record and use its course.
+    $userCourse = 'N/A';
+    if (!empty($transaction['user_id'])) {
+        $uid = intval($transaction['user_id']);
+        $uStmt = $conn->prepare("SELECT course, year_section FROM users WHERE id = ? LIMIT 1");
+        if ($uStmt) {
+            $uStmt->bind_param('i', $uid);
+            $uStmt->execute();
+            $uRow = $uStmt->get_result()->fetch_assoc();
+            $uStmt->close();
+            if ($uRow) {
+                if (!empty($uRow['course'])) $userCourse = $uRow['course'];
+                elseif (!empty($uRow['year_section'])) $userCourse = $uRow['year_section'];
+            }
+        }
+    }
+
+    if ($userCourse === 'N/A' && !empty($transaction['guest_school_id'])) {
+        $gStmt = $conn->prepare("SELECT course, year_section FROM users WHERE student_id = ? LIMIT 1");
+        if ($gStmt) {
+            $gStmt->bind_param('s', $transaction['guest_school_id']);
+            $gStmt->execute();
+            $gRow = $gStmt->get_result()->fetch_assoc();
+            $gStmt->close();
+            if ($gRow) {
+                if (!empty($gRow['course'])) $userCourse = $gRow['course'];
+                elseif (!empty($gRow['year_section'])) $userCourse = $gRow['year_section'];
+            }
+        }
+    }
+
+    if (empty($transaction['student_id']) && !empty($transaction['guest_school_id'])) {
+        $transaction['student_id'] = $transaction['guest_school_id'];
+    }
+
+    $transaction['user_course'] = $userCourse;
 
     // Security: Prevent students from viewing other users' orders (IDOR protection)
     if (($_SESSION['role'] === 'student' || $_SESSION['role'] === 'user') && intval($transaction['user_id']) !== intval($_SESSION['user_id'])) {

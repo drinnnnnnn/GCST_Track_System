@@ -512,6 +512,10 @@
               <input type="text" id="first-name" placeholder="First name" readonly>
             </div>
             <div class="form-group">
+              <label>Middle Name</label>
+              <input type="text" id="middle-name" placeholder="Middle name" readonly>
+            </div>
+            <div class="form-group">
               <label>Last Name</label>
               <input type="text" id="last-name" placeholder="Last name" readonly>
             </div>
@@ -532,7 +536,7 @@
               <input type="text" id="address" placeholder="Address" readonly  >
             </div>
             <div class="form-group">
-              <label>Grade Level</label>
+              <label>Grade Level (Only can be changed)</label>
               <input type="text" id="grade-level" placeholder="Grade level">
             </div>
           </div>
@@ -540,6 +544,10 @@
             <div class="form-group">
               <label>Student ID</label>
               <input type="text" id="student-id" placeholder="Student ID" readonly>
+            </div>
+            <div class="form-group">
+              <label>Course</label>
+              <input type="text" id="course" placeholder="Course" readonly>
             </div>
           </div>
           <button type="submit" class="save-button">
@@ -849,10 +857,13 @@
     function getProfilePayload() {
       return {
         first_name: document.getElementById('first-name').value.trim(),
+        middle_name: document.getElementById('middle-name').value.trim(),
         last_name: document.getElementById('last-name').value.trim(),
         email: document.getElementById('email').value.trim(),
         contact_number: document.getElementById('phone').value.trim(),
-        address: document.getElementById('address')?.value.trim() || ''
+        address: document.getElementById('address')?.value.trim() || '',
+        grade_level: document.getElementById('grade-level').value.trim(),
+        course: document.getElementById('course').value.trim()
       };
     }
 
@@ -934,32 +945,6 @@
       }
     }
 
-    async function saveNotifications() {
-      const payload = {
-        email_notifications: document.getElementById('email-notif').checked,
-        rental_reminders: document.getElementById('rental-notif').checked,
-        payment_reminders: document.getElementById('payment-notif').checked,
-        queue_notifications: document.getElementById('queue-notif').checked,
-        system_updates: document.getElementById('system-notif').checked,
-      };
-
-      try {
-        const result = await fetchWithError('../../actions/save_notification_preferences.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (!result.success) {
-          throw new Error(result.message || 'Unable to save notification preferences.');
-        }
-
-        showToast('Notification preferences saved successfully', 'success');
-      } catch (error) {
-        showToast(error.message || 'Unable to save notification preferences.', 'error');
-      }
-    }
-
     initializeAdminCashierPage(async (userData) => {
       try {
         const params = new URLSearchParams({
@@ -986,11 +971,13 @@
 
         // Fill form fields
         document.getElementById('first-name').value = user.first_name || '';
+        document.getElementById('middle-name').value = user.middle_name || '';
         document.getElementById('last-name').value = user.last_name || '';
         document.getElementById('email').value = user.email || '';
         document.getElementById('phone').value = contactNumber;
         document.getElementById('grade-level').value = user.year_section || user.year_level || user.course || '';
         document.getElementById('student-id').value = user.student_id || '';
+        document.getElementById('course').value = user.course || '';
 
         const addressField = document.getElementById('address');
         if (addressField) {
@@ -1015,11 +1002,17 @@
         document.getElementById('account-status').textContent = user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Active';
 
         const prefs = user.notification_preferences || {};
-        document.getElementById('email-notif').checked = prefs.email_notifications ?? true;
-        document.getElementById('rental-notif').checked = prefs.rental_reminders ?? true;
-        document.getElementById('payment-notif').checked = prefs.payment_reminders ?? true;
-        document.getElementById('queue-notif').checked = prefs.queue_notifications ?? true;
-        document.getElementById('system-notif').checked = prefs.system_updates ?? true;
+        const emailCheckbox = document.getElementById('email-notif');
+        const rentalCheckbox = document.getElementById('rental-notif');
+        const paymentCheckbox = document.getElementById('payment-notif');
+        const queueCheckbox = document.getElementById('queue-notif');
+        const systemCheckbox = document.getElementById('system-notif');
+
+        if (emailCheckbox) emailCheckbox.checked = prefs.email_notifications ?? true;
+        if (rentalCheckbox) rentalCheckbox.checked = prefs.rental_reminders ?? true;
+        if (paymentCheckbox) paymentCheckbox.checked = prefs.payment_reminders ?? true;
+        if (queueCheckbox) queueCheckbox.checked = prefs.queue_notifications ?? true;
+        if (systemCheckbox) systemCheckbox.checked = prefs.system_updates ?? true;
 
         showToast('Profile loaded successfully', 'info');
       } catch (error) {

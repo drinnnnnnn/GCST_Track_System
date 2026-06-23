@@ -923,7 +923,7 @@
               </div>
               <span class="font-semibold text-gray-700">${formatCurrency(item.total_item_amount)}</span>
             </div>`).join('');
-          content.innerHTML = `<div class="space-y-6"><div class="bg-gray-50 p-4 rounded-xl text-sm"><p>Ref: ${t.transaction_number}</p><p>Date: ${new Date(t.created_at).toLocaleString()}</p></div><div>${itemsHtml}</div><div class="bg-gray-50 p-4 rounded-xl text-sm font-bold"><p>Total: ${formatCurrency(t.total_amount)}</p></div></div>`;
+          content.innerHTML = `<div class="space-y-6"><div class="bg-gray-50 p-4 rounded-xl text-sm"><p>Ref: ${t.transaction_number}</p><p>Date: ${new Date(t.created_at).toLocaleString()}</p><p>Customer: ${t.student_name || 'N/A'} (ID: ${t.student_id || t.guest_school_id || t.user_id || 'N/A'})</p><p>Course: ${t.user_course || 'N/A'}</p><p>Cashier: ${t.cashier_name || 'N/A'}</p></div><div>${itemsHtml}</div><div class="bg-gray-50 p-4 rounded-xl text-sm font-bold"><p>Total: ${formatCurrency(t.total_amount)}</p></div></div>`;
         }
       } catch (err) { console.error(err); }
     }
