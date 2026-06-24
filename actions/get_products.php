@@ -20,10 +20,13 @@ $availableOnly = isset($_GET['available_only']) && $_GET['available_only'] === '
 
 // Base Query
 $sql = "SELECT product_id, product_name, product_category, product_description,
-               product_image, product_status, stock_count, buy_price, rent_price, barcode,
+               product_image, product_status, stock_count,
+               COALESCE(buy_price, price, 0.00) AS buy_price,
+               rent_price, barcode,
                book_author AS author, book_pages AS pages, 
                COALESCE(uniform_course, book_course) AS course_program,
                uniform_type, uniform_material AS material_type,
+               uniform_upper_fabric, uniform_lower_fabric,
                book_publication_year AS publish_year, book_subject
         FROM products WHERE 1=1";
 $params = [];

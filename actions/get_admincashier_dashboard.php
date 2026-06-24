@@ -47,9 +47,9 @@ try {
                  FROM products) as total_inventory,
                 
                 (SELECT COUNT(*) 
-                 FROM cashier_transactions 
-                 WHERE payment_status = 'pending' 
-                 AND is_expired = 0) as pending_queue,
+                 FROM queue_tickets 
+                 WHERE DATE(created_at) = CURDATE() 
+                   AND status = 'waiting') as pending_queue,
                  
                 (SELECT COALESCE(SUM(ti.quantity), 0) 
                  FROM transaction_items ti

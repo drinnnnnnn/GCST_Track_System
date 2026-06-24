@@ -388,6 +388,21 @@
       display: flex;
     }
 
+    .txn-history-table th,
+    .txn-history-table td {
+      padding: 14px 16px;
+      border: 1px solid #e2e8f0;
+      vertical-align: middle;
+    }
+
+    .txn-history-table tbody tr:nth-child(even) {
+      background: #fbfcfd;
+    }
+
+    .receipt-modal .save-profile-modal-card {
+      max-width: 720px;
+    }
+
     .save-profile-modal-card {
       background: #fff;
       width: min(520px, 100%);
@@ -497,6 +512,9 @@
         </button>
         <button class="tab-btn" onclick="switchTab('account', event)">
           <i class="fas fa-user-shield"></i> Account
+        </button>
+        <button class="tab-btn" onclick="switchTab('transactions', event)">
+          <i class="fas fa-receipt"></i> Transactions
         </button>
       </div>
     </section>
@@ -626,10 +644,40 @@
         </form>
       </div>
     </section>
+
+    <!-- Tab: Transaction History -->
+    <section id="tab-transactions" class="tab-content">
+      <div class="activity-section">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+          <div>
+            <h2><i class="fas fa-receipt"></i> Transaction History</h2>
+            <p class="text-sm text-slate-500">View your purchased products and receipt details.</p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <input id="txn-search" type="text" placeholder="Search by transaction #" class="w-full sm:w-72 px-4 py-3 border border-gray-200 rounded-2xl bg-slate-50 focus:outline-none focus:border-blue-500" />
+            <button onclick="loadTransactionHistory(1)" class="btn btn-primary">Search</button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="txn-history-table min-w-full border-collapse border border-slate-200">
+            <thead class="bg-slate-100 text-left text-slate-600 text-xs uppercase tracking-[0.18em]">
+              <tr>
+                <th class="px-4 py-3 border border-slate-200">Date</th>
+                <th class="px-4 py-3 border border-slate-200">Transaction #</th>
+                <th class="px-4 py-3 border border-slate-200">Status</th>
+                <th class="px-4 py-3 border border-slate-200">Total</th>
+                <th class="px-4 py-3 border border-slate-200">Action</th>
+              </tr>
+            </thead>
+            <tbody id="txn-history-body">
+              <tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">Loading transaction history...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   </main>
   </div>
-
-  <div id="toastContainer"></div>
 
   <div id="save-profile-modal" class="save-profile-modal">
     <div class="save-profile-modal-card">
@@ -661,6 +709,40 @@
       <div class="save-profile-modal-footer">
         <button type="button" onclick="closeSaveProfileModal()" class="px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-all">Cancel</button>
         <button type="button" onclick="saveProfile()" class="px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="receipt-modal" class="save-profile-modal receipt-modal hidden">
+    <div class="save-profile-modal-card">
+      <div class="save-profile-modal-header flex items-center justify-between">
+        <div>
+          <h3 class="text-2xl font-bold text-slate-900">Receipt Details</h3>
+          <p class="text-sm text-slate-500">Review your purchased items and payment summary.</p>
+        </div>
+        <button type="button" onclick="closeReceiptModal()" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+      </div>
+      <div id="receipt-modal-content" class="save-profile-modal-body space-y-4">
+        <div class="grid gap-3 md:grid-cols-2">
+          <div><strong>Transaction #</strong><div id="receipt-modal-transaction" class="mt-1 text-slate-700"></div></div>
+          <div><strong>Status</strong><div id="receipt-modal-status" class="mt-1 text-slate-700"></div></div>
+          <div><strong>Date</strong><div id="receipt-modal-date" class="mt-1 text-slate-700"></div></div>
+          <div><strong>Cashier</strong><div id="receipt-modal-cashier" class="mt-1 text-slate-700"></div></div>
+        </div>
+        <div>
+          <h4 class="text-base font-semibold text-slate-900 mb-3">Items</h4>
+          <div id="receipt-modal-items" class="space-y-3"></div>
+        </div>
+        <div class="grid gap-2 md:grid-cols-2">
+          <div><span class="block text-slate-500">Subtotal</span><strong id="receipt-modal-subtotal" class="text-slate-900"></strong></div>
+          <div><span class="block text-slate-500">Discount</span><strong id="receipt-modal-discount" class="text-slate-900"></strong></div>
+          <div><span class="block text-slate-500">Total</span><strong id="receipt-modal-total" class="text-slate-900"></strong></div>
+          <div><span class="block text-slate-500">Paid</span><strong id="receipt-modal-paid" class="text-slate-900"></strong></div>
+          <div><span class="block text-slate-500">Change</span><strong id="receipt-modal-change" class="text-slate-900"></strong></div>
+        </div>
+        <div class="flex justify-end gap-3">
+          <button type="button" onclick="closeReceiptModal()" class="btn btn-secondary">Close</button>
+        </div>
       </div>
     </div>
   </div>
@@ -945,6 +1027,135 @@
       }
     }
 
+    function formatDateTime(value) {
+      if (!value) return 'N/A';
+      const date = new Date(value);
+      if (isNaN(date.getTime())) return value;
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      }).format(date);
+    }
+
+    function renderTransactionHistory(transactions) {
+      const tbody = document.getElementById('txn-history-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (!transactions || transactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">No transactions found.</td></tr>';
+        return;
+      }
+
+      transactions.forEach(txn => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="px-4 py-4 text-slate-700">${formatDateTime(txn.created_at)}</td>
+          <td class="px-4 py-4 text-slate-700">${txn.transaction_number || txn.receipt_number || 'N/A'}</td>
+          <td class="px-4 py-4"><span class="status-badge ${txn.payment_status === 'paid' ? 'complete' : txn.payment_status === 'pending' ? 'pending' : 'failed'}">${txn.payment_status?.toUpperCase() || 'N/A'}</span></td>
+          <td class="px-4 py-4 text-slate-700">${formatCurrency(txn.total_amount)}</td>
+          <td class="px-4 py-4"><button class="btn btn-secondary btn-sm" onclick="viewTransactionReceipt('${encodeURIComponent(txn.transaction_number || txn.id)}')">View Receipt</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    async function loadTransactionHistory(page = 1) {
+      const search = document.getElementById('txn-search')?.value.trim() || '';
+      const body = document.getElementById('txn-history-body');
+      if (body) {
+        body.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">Loading transaction history...</td></tr>';
+      }
+
+      try {
+        const params = new URLSearchParams({ page: String(page), limit: '20' });
+        if (search) params.set('search', search);
+
+        const response = await fetchWithError(`../../actions/get_recent_transactions_student.php?${params.toString()}`, { cache: 'no-store' });
+        if (!response || response.success !== true) {
+          throw new Error(response?.message || 'Unable to load transaction history.');
+        }
+
+        renderTransactionHistory(response.transactions || []);
+      } catch (err) {
+        console.error(err);
+        if (body) {
+          body.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-rose-500">${err.message || 'Error loading transactions.'}</td></tr>`;
+        }
+      }
+    }
+
+    function openReceiptModal() {
+      const modal = document.getElementById('receipt-modal');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      modal.classList.add('show');
+    }
+
+    function closeReceiptModal() {
+      const modal = document.getElementById('receipt-modal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('show');
+    }
+
+    async function viewTransactionReceipt(idOrNumber) {
+      const txnId = decodeURIComponent(idOrNumber);
+      try {
+        const response = await fetchWithError(`../../actions/get_transaction_details.php?id=${encodeURIComponent(txnId)}`, { cache: 'no-store' });
+        if (!response || response.success !== true) {
+          throw new Error(response?.message || 'Unable to load receipt.');
+        }
+
+        const txn = response.transaction || {};
+        document.getElementById('receipt-modal-transaction').textContent = txn.transaction_number || 'N/A';
+        document.getElementById('receipt-modal-status').textContent = txn.payment_status ? txn.payment_status.toUpperCase() : 'N/A';
+        document.getElementById('receipt-modal-date').textContent = formatDateTime(txn.created_at);
+        document.getElementById('receipt-modal-cashier').textContent = txn.cashier_name || 'N/A';
+        document.getElementById('receipt-modal-subtotal').textContent = formatCurrency(txn.subtotal);
+        document.getElementById('receipt-modal-discount').textContent = `-${formatCurrency(txn.discount_amount)}`;
+        document.getElementById('receipt-modal-total').textContent = formatCurrency(txn.total_amount);
+        document.getElementById('receipt-modal-paid').textContent = formatCurrency(txn.payment_received);
+        document.getElementById('receipt-modal-change').textContent = formatCurrency(txn.change_amount);
+
+        const itemsContainer = document.getElementById('receipt-modal-items');
+        itemsContainer.innerHTML = '';
+
+        const items = Array.isArray(txn.items) ? txn.items : [];
+        if (items.length === 0) {
+          itemsContainer.innerHTML = '<div class="text-slate-500">No items available for this receipt.</div>';
+        } else {
+          items.forEach(item => {
+            const name = item.product_name || item.display_name || item.name || 'Item';
+            const quantity = item.quantity || item.qty || 0;
+            const unitPrice = item.unit_price || item.price || 0;
+            const total = item.total || item.total_item_amount || (quantity * unitPrice);
+            const itemRow = document.createElement('div');
+            itemRow.className = 'p-4 bg-slate-50 rounded-2xl border border-slate-200';
+            itemRow.innerHTML = `
+              <div class="flex justify-between gap-3">
+                <div>
+                  <div class="font-semibold text-slate-900">${name}</div>
+                  <div class="text-xs text-slate-500">Qty: ${quantity}${item.unit_name ? ' · ' + item.unit_name : ''}${item.duration ? ' · ' + item.duration + (item.duration_unit ? ' ' + item.duration_unit : '') : ''}</div>
+                </div>
+                <div class="text-slate-900 font-semibold">${formatCurrency(total)}</div>
+              </div>
+            `;
+            itemsContainer.appendChild(itemRow);
+          });
+        }
+
+        openReceiptModal();
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || 'Unable to load receipt.', 'error');
+      }
+    }
+
     initializeAdminCashierPage(async (userData) => {
       try {
         const params = new URLSearchParams({
@@ -1014,6 +1225,7 @@
         if (queueCheckbox) queueCheckbox.checked = prefs.queue_notifications ?? true;
         if (systemCheckbox) systemCheckbox.checked = prefs.system_updates ?? true;
 
+        await loadTransactionHistory(1);
         showToast('Profile loaded successfully', 'info');
       } catch (error) {
         console.error('Error fetching user data:', error);

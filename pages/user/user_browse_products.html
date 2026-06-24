@@ -268,9 +268,88 @@
       transform: none;
     }
 
-    @media (min-width: 768px) {
-      .modal-card { border-radius: 2.5rem; max-height: 90vh; }
-      .checkout-confirm-card { border-radius: 1.75rem; }
+    .confirmation-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(6px);
+      z-index: 3500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .confirmation-modal-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .confirmation-modal-card {
+      width: 100%;
+      max-width: 520px;
+      background: white;
+      border-radius: 1.75rem;
+      overflow: hidden;
+      box-shadow: 0 30px 60px -18px rgba(15, 23, 42, 0.35);
+      transform: translateY(20px) scale(0.95);
+      transition: all 0.3s ease;
+    }
+
+    .confirmation-modal-overlay.active .confirmation-modal-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .confirmation-modal-body {
+      padding: 1.75rem 1.75rem 1.25rem;
+    }
+
+    .confirmation-modal-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 0.75rem;
+    }
+
+    .confirmation-modal-message {
+      color: #475569;
+      line-height: 1.8;
+      margin-bottom: 1.5rem;
+    }
+
+    .confirmation-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      padding: 0 1.75rem 1.25rem;
+    }
+
+    .confirmation-modal-btn {
+      min-width: 120px;
+      border-radius: 999px;
+      font-weight: 700;
+      padding: 0.95rem 1rem;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .confirmation-modal-btn.cancel {
+      background: #f8fafc;
+      color: #334155;
+      border-color: #e2e8f0;
+    }
+
+    .confirmation-modal-btn.confirm {
+      background: #ef4444;
+      color: white;
+      border-color: #ef4444;
+    }
+
+    .confirmation-modal-btn.confirm:hover {
+      background: #dc2626;
+      transform: translateY(-1px);
     }
 
     .modal-content-scroll {
@@ -938,6 +1017,22 @@
     </div>
   </div>
 
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-confirm-modal" class="confirmation-modal-overlay" onclick="if(event.target === this) closeDeleteConfirmationModal()">
+    <div class="confirmation-modal-card">
+      <div class="confirmation-modal-body">
+        <h3 class="confirmation-modal-title">Confirm Deletion</h3>
+        <p id="delete-confirm-message" class="confirmation-modal-message">
+          Are you sure you want to remove selected items from your cart?
+        </p>
+      </div>
+      <div class="confirmation-modal-actions">
+        <button type="button" class="confirmation-modal-btn cancel" onclick="closeDeleteConfirmationModal()">Cancel</button>
+        <button type="button" id="confirm-delete-btn" class="confirmation-modal-btn confirm" onclick="confirmDeleteSelectedItems()">Remove</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Checkout Confirmation Modal -->
   <div id="checkout-confirm-modal" class="checkout-confirm-overlay" onclick="if(event.target === this) closeCheckoutModal()">
     <div class="checkout-confirm-card">
@@ -1009,6 +1104,10 @@
       return `${window.location.origin}/GCST_Track_System/${cleanPath}`;
     }
 
+    function getEffectiveBuyPrice(product) {
+      return Math.max(0, parseFloat(product.buy_price ?? product.price ?? 0) || 0);
+    }
+
     function filterByCategory(category, button) {
       currentCategory = category;
       document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
@@ -1056,6 +1155,8 @@
           metaHtml = `
             <div class="compact-meta">${product.course_program || product.uniform_course || 'General'} • ${product.uniform_type || 'Fabric'}</div>
             <div class="compact-meta">${product.material_type || product.uniform_material || 'Standard'}</div>
+            <div class="compact-meta">${renderSpecRow('Upper Fabric', product.uniform_upper_fabric || 'N/A')}</div>
+            <div class="compact-meta">${renderSpecRow('Lower Fabric', product.uniform_lower_fabric || 'N/A')}</div>
           `;
         } else {
           metaHtml = `<div class="compact-meta">${product.product_category || 'General'}</div>`;
@@ -1066,6 +1167,7 @@
         let stockLabel = stockValue > 10 ? 'Available' : stockValue > 0 ? 'Low Stock' : 'Out of Stock';
         let stockIcon = stockValue > 10 ? 'check-circle' : stockValue > 0 ? 'exclamation-triangle' : 'times-circle';
 
+        const effectiveBuyPrice = getEffectiveBuyPrice(product);
         return `
           <div class="product-card cursor-pointer group" onclick="openProductModal('${product.product_id}')">
             <img src="${imageUrl}" alt="${product.product_name}" class="product-image" id="prod-img-${product.product_id}">
@@ -1073,7 +1175,7 @@
               <h3 class="product-name">${product.product_name}</h3>
               ${metaHtml}
               <div class="mt-auto pt-2 flex items-center justify-between">
-                <span class="product-price-value">${formatCurrency(product.buy_price > 0 ? product.buy_price : product.rent_price)}</span>
+                <span class="product-price-value">${formatCurrency(effectiveBuyPrice > 0 ? effectiveBuyPrice : product.rent_price)}</span>
                 <span class="stock-badge ${stockClass}">
                   <i class="fas fa-${stockIcon}"></i> ${stockLabel}
                 </span>
@@ -1082,11 +1184,11 @@
                 <div class="mt-2" onclick="event.stopPropagation()">
                   <input type="number" step="0.25" min="0.25" value="1.00" 
                     class="w-full px-2 py-1 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg text-center" 
-                    id="qty-fabric-${product.product_id}" oninput="updateFabricTotal(${product.product_id}, ${product.buy_price})">
+                    id="qty-fabric-${product.product_id}" oninput="updateFabricTotal(${product.product_id}, ${effectiveBuyPrice})">
                 </div>` : ''}
             </div>
             <div class="product-actions" onclick="event.stopPropagation()">
-              ${product.buy_price > 0 ? `<button class="btn-action btn-buy" type="button" ${stockValue <= 0 ? 'disabled' : ''} onclick="handleAddToCart('${product.product_id}', 'buy', ${isFabric}, event)">Add to Cart</button>` : ''} 
+              ${effectiveBuyPrice > 0 ? `<button class="btn-action btn-buy" type="button" ${stockValue <= 0 ? 'disabled' : ''} onclick="handleAddToCart('${product.product_id}', 'buy', ${isFabric}, event)">Add to Cart</button>` : ''} 
               ${product.rent_price > 0 ? `<button class="btn-action btn-rent" type="button" ${stockValue <= 0 ? 'disabled' : ''} onclick="addToCart('${product.product_id}', 'rent', 1, 'day', event)">Rent Now</button>` : ''}
             </div>
           </div>
@@ -1130,7 +1232,8 @@
       statusEl.className = statusLower === 'available' ? 'text-emerald-500' : 'text-red-500';
 
       // Price & Stock
-      const displayPrice = product.buy_price > 0 ? `₱${parseFloat(product.buy_price).toFixed(2)}` : `₱${parseFloat(product.rent_price).toFixed(2)}`;
+      const effectiveBuyPrice = getEffectiveBuyPrice(product);
+      const displayPrice = effectiveBuyPrice > 0 ? `₱${effectiveBuyPrice.toFixed(2)}` : `₱${parseFloat(product.rent_price).toFixed(2)}`;
       document.getElementById('modal-p-price').textContent = displayPrice;
 
       // Render Specifications section
@@ -1153,6 +1256,8 @@
           <div class="spec-group">
             ${renderSpecRow('Course Program', product.course_program || product.uniform_course)}
             ${renderSpecRow('Uniform Type', product.uniform_type)}
+            ${renderSpecRow('Upper Fabric', product.uniform_upper_fabric || 'N/A')}
+            ${renderSpecRow('Lower Fabric', product.uniform_lower_fabric || 'N/A')}
             ${renderSpecRow('Material Type', product.material_type || product.uniform_material)}
           </div>
         `;
@@ -1196,8 +1301,9 @@
           <span class="text-xs font-bold text-slate-400 uppercase">${isFabric ? 'Yards' : 'Pieces'}</span>
         `;
 
+        const effectiveBuyPrice = getEffectiveBuyPrice(product);
         actionContainer.innerHTML = '';
-        if (product.buy_price > 0) {
+        if (effectiveBuyPrice > 0) {
           actionContainer.innerHTML += `
             <button class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl blue-500/20 active:scale-95" 
               onclick="handleModalAddToCart(${product.product_id}, 'buy', ${isFabric}, event)">
@@ -1362,6 +1468,60 @@
       el.addEventListener('animationend', () => el.remove());
     }
 
+    function normalizeFabricValue(val) {
+      if (val === null || val === undefined) return '';
+      const str = String(val).trim();
+      if (!str || str.toLowerCase() === 'null' || str.toLowerCase() === 'undefined' || str === 'N/A') return '';
+      return str;
+    }
+
+    function isCompleteUniformSet(product) {
+      const category = (product?.product_category || '').toString().toLowerCase();
+      const type = (product.uniform_type || '').toString().toLowerCase();
+      return category === 'uniform fabrics' && type.includes('complete uniform set');
+    }
+
+    function getCompleteUniformQuantity(product) {
+      return Math.max(1, parseFloat(product.uniform_min_yards) || 1);
+    }
+
+    function createCompleteUniformCartItems(product, unitPrice, quantity) {
+      const groupKey = `${product.product_id}-complete-uniform`;
+      const upperLabel = normalizeFabricValue(product.uniform_upper_fabric || product.upperFabric) || 'Upper';
+      const lowerLabel = normalizeFabricValue(product.uniform_lower_fabric || product.lowerFabric) || 'Lower';
+
+      return [
+        {
+          cart_id: `${groupKey}-upper`,
+          product_id: product.product_id,
+          product_name: product.product_name,
+          groupKey,
+          isCompleteUniformSet: true,
+          displayName: `Upper Fabric - ${upperLabel}`,
+          fabricPart: 'Upper',
+          colorLabel: `Color: ${upperLabel}`,
+          quantity,
+          unitPrice,
+          unitName: 'yards',
+          selected: true
+        },
+        {
+          cart_id: `${groupKey}-lower`,
+          product_id: product.product_id,
+          product_name: product.product_name,
+          groupKey,
+          isCompleteUniformSet: true,
+          displayName: `Lower Fabric - ${lowerLabel}`,
+          fabricPart: 'Lower',
+          colorLabel: `Color: ${lowerLabel}`,
+          quantity,
+          unitPrice,
+          unitName: 'yards',
+          selected: true
+        }
+      ];
+    }
+
     function handleAddToCart(productId, type, isFabric, event) {
       if (isFabric === true && type === 'buy') {
         const input = document.getElementById(`qty-fabric-${productId}`);
@@ -1390,11 +1550,36 @@
 
       const qtyToAdd = customQty !== null ? parseFloat(customQty) : 1;
       const uName = unitName || (type === 'rent' ? 'day' : 'pc/s');
-      const existing = cart.find(item => Number(item.product_id) === normalizedProductId && item.type === type);
-      const unitPrice = type === 'rent' ? parseFloat(product.rent_price) : parseFloat(product.buy_price);
+      const unitPrice = type === 'rent' ? parseFloat(product.rent_price) : getEffectiveBuyPrice(product);
+      const isComplete = type === 'buy' && isCompleteUniformSet(product);
+      const groupKey = isComplete ? `${normalizedProductId}-complete-uniform` : null;
+      const existingGroupItems = isComplete ? cart.filter(item => item.groupKey === groupKey) : [];
+      const existing = !isComplete ? cart.find(item => Number(item.product_id) === normalizedProductId && item.type === type) : null;
 
-      if (!existing) {
+      if (isComplete) {
+        const currentQuantity = existingGroupItems.length > 0 ? existingGroupItems[0].quantity : 0;
+        if (currentQuantity + qtyToAdd > stockValue) {
+          showToast('Stock limit reached for this product.', 'error');
+          return;
+        }
+        if (existingGroupItems.length > 0) {
+          existingGroupItems.forEach(item => {
+            item.quantity += qtyToAdd;
+          });
+          showToast(`Updated ${product.product_name} complete uniform set quantity.`);
+        } else {
+          if (stockValue < qtyToAdd) {
+            showToast('Stock limited: not enough yards available for this complete uniform set.', 'error');
+            return;
+          }
+          cart.push(...createCompleteUniformCartItems(product, unitPrice, qtyToAdd));
+          showToast(`Added ${product.product_name} complete uniform set to cart.`);
+        }
+        animateProductImage(normalizedProductId);
+        triggerFloatingPlusOne(event);
+      } else if (!existing) {
         cart.push({
+          cart_id: `${normalizedProductId}-${type}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           product_id: normalizedProductId,
           product_name: product.product_name,
           product_category: product.product_category || 'General',
@@ -1430,22 +1615,22 @@
       renderCart();
     }
 
-    function toggleSelectItem(productId, type, checked) {
-      const item = cart.find(entry => entry.product_id === productId && entry.type === type);
+    function toggleSelectItem(cartItemId, checked) {
+      const item = cart.find(entry => entry.cart_id === cartItemId);
       if (item) item.selected = checked;
       renderCart();
     }
 
-    function updateRentalDuration(productId, value) {
-      const item = cart.find(entry => Number(entry.product_id) === Number(productId) && entry.type === 'rent');
+    function updateRentalDuration(cartItemId, value) {
+      const item = cart.find(entry => entry.cart_id === cartItemId && entry.type === 'rent');
       if (item) {
         item.duration = Math.max(1, parseInt(value) || 1);
         renderCart();
       }
     }
 
-    function updateRentalUnit(productId, value) {
-      const item = cart.find(entry => Number(entry.product_id) === Number(productId) && entry.type === 'rent');
+    function updateRentalUnit(cartItemId, value) {
+      const item = cart.find(entry => entry.cart_id === cartItemId && entry.type === 'rent');
       if (item) {
         item.durationUnit = value;
         renderCart();
@@ -1458,19 +1643,49 @@
         showToast('Please select at least one item to remove.', 'warning');
         return;
       }
-      
-      if (confirm(`Are you sure you want to remove ${selectedItems.length} selected item(s) from your cart?`)) {
-        cart = cart.filter(item => !item.selected);
-        renderCart();
-        showToast('Selected items removed from cart.', 'success');
-      }
+
+      openDeleteConfirmationModal(selectedItems.length);
     }
 
-    function changeCartQuantity(productId, type, delta) {
-      const item = cart.find(entry => entry.product_id === productId && entry.type === type);
+    function openDeleteConfirmationModal(itemCount) {
+      const modal = document.getElementById('delete-confirm-modal');
+      const message = document.getElementById('delete-confirm-message');
+      const confirmBtn = document.getElementById('confirm-delete-btn');
+      if (!modal || !message || !confirmBtn) return;
+
+      message.textContent = `Are you sure you want to remove ${itemCount} selected item(s) from your cart?`;
+      confirmBtn.dataset.count = itemCount;
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeDeleteConfirmationModal() {
+      const modal = document.getElementById('delete-confirm-modal');
+      if (!modal) return;
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function confirmDeleteSelectedItems() {
+      const selectedItems = cart.filter(item => item.selected);
+      if (selectedItems.length === 0) {
+        closeDeleteConfirmationModal();
+        showToast('No selected items were found.', 'warning');
+        return;
+      }
+
+      cart = cart.filter(item => !item.selected);
+      renderCart();
+      closeDeleteConfirmationModal();
+      showToast('Selected items removed from cart.', 'success');
+    }
+
+    function changeCartQuantity(cartItemId, delta) {
+      const item = cart.find(entry => entry.cart_id === cartItemId);
       if (!item) return;
       const nextQuantity = Math.round((item.quantity + delta) * 100) / 100;
-      if (nextQuantity < (item.unitName === 'yard/s' ? 0.25 : 1)) {
+      const isYardUnit = item.unitName === 'yard/s' || item.unitName === 'yards';
+      if (nextQuantity < (isYardUnit ? 0.25 : 1)) {
         return;
       }
       if (nextQuantity > (item.stock || 0)) {
@@ -1481,8 +1696,8 @@
       renderCart();
     }
 
-    function removeCartItem(productId, type) {
-      cart = cart.filter(entry => !(entry.product_id === productId && entry.type === type));
+    function removeCartItem(cartItemId) {
+      cart = cart.filter(entry => entry.cart_id !== cartItemId);
       renderCart();
     }
 
@@ -1528,11 +1743,14 @@
         selectAllCheckbox.indeterminate = someSelected && !allSelected;
       }
 
-      cartItemsContainer.innerHTML = cart.map(item => `
+      cartItemsContainer.innerHTML = cart.map(item => {
+        const isYardUnit = item.unitName === 'yard/s' || item.unitName === 'yards';
+        return `
         <div class="cart-item">
-          <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="toggleSelectItem(${item.product_id}, '${item.type}', this.checked)">
+          <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="toggleSelectItem('${item.cart_id}', this.checked)">
           <div>
-            <span class="font-semibold text-slate-900">${item.product_name}</span>
+            <span class="font-semibold text-slate-900">${item.displayName || item.product_name}</span>
+            ${item.colorLabel ? `<div class="text-[10px] text-slate-500 mt-1">${item.colorLabel}</div>` : ''}
             <div class="text-[10px] font-semibold uppercase tracking-widest text-blue-600 mt-1">
               ${item.type} • ₱${item.unitPrice.toFixed(2)}
               ${item.unitName ? ` per ${item.unitName}` : ''}
@@ -1540,8 +1758,8 @@
             ${item.type === 'rent' ? `
               <div class="flex items-center gap-2 mt-2">
                 <span class="text-[10px] font-semibold text-slate-400 uppercase">Duration:</span>
-                <input type="number" min="1" value="${item.duration || 1}" class="w-12 text-center text-xs font-semibold py-1 bg-white border border-slate-200 rounded-lg" onchange="updateRentalDuration(${item.product_id}, this.value)">
-                <select class="text-[10px] font-semibold py-1 px-1 bg-white border border-slate-200 rounded-lg outline-none" onchange="updateRentalUnit(${item.product_id}, this.value)">
+                <input type="number" min="1" value="${item.duration || 1}" class="w-12 text-center text-xs font-semibold py-1 bg-white border border-slate-200 rounded-lg" onchange="updateRentalDuration('${item.cart_id}', this.value)">
+                <select class="text-[10px] font-semibold py-1 px-1 bg-white border border-slate-200 rounded-lg outline-none" onchange="updateRentalUnit('${item.cart_id}', this.value)">
                   <option value="days" ${item.durationUnit === 'days' ? 'selected' : ''}>Days</option>
                   <option value="hours" ${item.durationUnit === 'hours' ? 'selected' : ''}>Hours</option>
                 </select>
@@ -1550,14 +1768,15 @@
           </div>
           <div class="flex flex-col items-end gap-2">
             <div class="flex items-center gap-2">
-              <button type="button" class="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-md text-xs hover:bg-slate-50" onclick="changeCartQuantity(${item.product_id}, '${item.type}', ${item.unitName === 'yard/s' ? -0.25 : -1})">−</button>
-              <span class="text-sm font-semibold min-w-[30px] text-center">${item.unitName === 'yard/s' ? item.quantity.toFixed(2) : item.quantity}${item.unitName === 'yard/s' ? ' yd' : ''}</span>
-              <button type="button" class="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-md text-xs hover:bg-slate-50" onclick="changeCartQuantity(${item.product_id}, '${item.type}', ${item.unitName === 'yard/s' ? 0.25 : 1})">+</button>
+              <button type="button" class="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-md text-xs hover:bg-slate-50" onclick="changeCartQuantity('${item.cart_id}', ${isYardUnit ? -0.25 : -1})">−</button>
+              <span class="text-sm font-semibold min-w-[30px] text-center">${isYardUnit ? item.quantity.toFixed(2) : item.quantity}${isYardUnit ? ' yd' : ''}</span>
+              <button type="button" class="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-md text-xs hover:bg-slate-50" onclick="changeCartQuantity('${item.cart_id}', ${isYardUnit ? 0.25 : 1})">+</button>
             </div>
-            <button type="button" class="text-red-400 hover:text-red-600 transition-colors" onclick="removeCartItem(${item.product_id}, '${item.type}')"><i class="fas fa-trash-alt text-xs"></i></button>
+            <button type="button" class="text-red-400 hover:text-red-600 transition-colors" onclick="removeCartItem('${item.cart_id}')"><i class="fas fa-trash-alt text-xs"></i></button>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
 
     function renderCart() {
@@ -1599,6 +1818,7 @@
           
           const unitPrice = parseFloat(item.unitPrice || item.unit_price) || (product ? (item.type === 'rent' ? parseFloat(product.rent_price) : parseFloat(product.buy_price)) : 0);
           return {
+            cart_id: item.cart_id || `${normalizedProductId}-${item.type || 'buy'}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
             product_id: normalizedProductId,
             product_name: item.product_name || (product ? product.product_name : 'Unknown item'),
             product_category: item.product_category || (product ? product.product_category : 'General'),

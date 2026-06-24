@@ -340,10 +340,59 @@
       </div>
     </section>
 
+     <!-- Charts Section -->
+    <section class="activity-section">
+      <h2>Analytics</h2>
+      <div class="charts-grid">
+        <div class="chart-container">
+          <h3>Daily Sales Trends</h3>
+          <div class="chart-wrapper">
+            <canvas id="salesTrendChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-container">
+          <h3>Top Selling Products</h3>
+          <div class="chart-wrapper">
+            <canvas id="topProductsChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sales History Section -->
+    <section class="history-card">
+      <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+        <h3 class="m-0 text-xl font-bold">Sales History</h3>
+        <div class="relative w-full sm:w-72">
+          <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          <input type="text" id="historySearch" placeholder="Search transactions..." class="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm bg-gray-50">
+        </div>
+      </div>
+      <div class="table-scroll-container">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Transaction</th>
+              <th>Product</th>
+              <th>Quantity</th>
+              <th>Amount</th>
+              <th style="text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="6" class="empty-state">Loading sales history...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="salesPaginationInfo" class="pagination-info"></div>
+      <div id="salesPaginationControls" class="pagination-controls"></div>
+    </section>
+
     <!-- Comprehensive Inventory Report Module -->
     <section class="balance-section mt-12">
       <div class="flex justify-between items-center mb-6">
-        <h2 class="m-0">Unified Inventory Report</h2>
+        <h2 class="m-0">Inventory Report</h2>
         <button onclick="window.exportInventoryToExcel()" class="period-button" style="background: var(--primary); color: white;">
           <i class="fas fa-file-download mr-2"></i> Export Inventory Report
         </button>
@@ -441,55 +490,6 @@
         <div id="inventoryPaginationInfo" class="pagination-info"></div>
         <div id="inventoryPaginationControls" class="pagination-controls"></div>
       </div>
-    </section>
-
-    <!-- Charts Section -->
-    <section class="activity-section">
-      <h2>Analytics</h2>
-      <div class="charts-grid">
-        <div class="chart-container">
-          <h3>Daily Sales Trends</h3>
-          <div class="chart-wrapper">
-            <canvas id="salesTrendChart"></canvas>
-          </div>
-        </div>
-        <div class="chart-container">
-          <h3>Top Selling Products</h3>
-          <div class="chart-wrapper">
-            <canvas id="topProductsChart"></canvas>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Sales History Section -->
-    <section class="history-card">
-      <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
-        <h3 class="m-0 text-xl font-bold">Sales History</h3>
-        <div class="relative w-full sm:w-72">
-          <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          <input type="text" id="historySearch" placeholder="Search transactions..." class="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm bg-gray-50">
-        </div>
-      </div>
-      <div class="table-scroll-container">
-        <table class="history-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Transaction</th>
-              <th>Product</th>
-              <th>Quantity</th>
-              <th>Amount</th>
-              <th style="text-align: center;">Action</th>
-            </tr>
-          </thead>
-          <tbody id="historyBody">
-            <tr><td colspan="6" class="empty-state">Loading sales history...</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div id="salesPaginationInfo" class="pagination-info"></div>
-      <div id="salesPaginationControls" class="pagination-controls"></div>
     </section>
 
     <!-- Receipt Modal -->

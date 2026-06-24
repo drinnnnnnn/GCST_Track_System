@@ -203,8 +203,8 @@
 
     <form action="http://localhost/GCST_Track_System/actions/process_admin_cashier.php" method="POST" id="authForm">
         <div class="input-box animate-item">
-            <label>Email</label>
-            <input type="email" name="email" placeholder="staff@gmail.com" required>
+            <label>Username or Email</label>
+            <input type="text" name="email" placeholder="Username or Email" autocomplete="username" required>
             <i class='bx bxs-envelope'></i>
         </div>
 
@@ -223,7 +223,7 @@
         </div>
 
         <button type="submit" class="submit-btn animate-item" id="loginBtn">
-            Sign Into Dashboard
+            Sign In
         </button>
     </form>
 </div>
@@ -253,7 +253,7 @@
         statusArea.style.display = "block";
         if (urlParams.get('error') === 'wrongpassword') {
             statusArea.className = "animate-item msg-error";
-            statusArea.innerText = "Invalid Master Password.";
+            statusArea.innerText = "Invalid Password.";
         } else if (urlParams.get('error') === 'nouser') {
             statusArea.className = "animate-item msg-error";
             statusArea.innerText = "Authorized account not found.";

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿<?php
+﻿﻿﻿﻿﻿﻿﻿<?php
 /**
  * process_admin_cashier.php
  * Centralized controller for Admin/Cashier account management.
@@ -166,18 +166,18 @@ try {
 
         // 2. Handling Login (Form or AJAX)
         if (isset($inputData['email']) && isset($inputData['password']) && isset($inputData['pin'])) {
-            $email = trim($inputData['email']);
+            $identifier = trim($inputData['email']);
             $password = $inputData['password'];
             $pin = trim($inputData['pin']);
 
-            if (empty($email) || empty($password) || empty($pin)) {
-                if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Email, password, and PIN are required'], 400);
+            if (empty($identifier) || empty($password) || empty($pin)) {
+                if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Username or email, password, and PIN are required'], 400);
                 header('Location: ../pages/sign_in_admin_cashier.html?error=invalid');
                 exit();
             }
 
-            $stmt = $conn->prepare('SELECT id, last_name, first_name, middle_name, password, pin, status FROM admincashier_acc WHERE email = ?');
-            $stmt->bind_param('s', $email);
+            $stmt = $conn->prepare('SELECT id, username, last_name, first_name, middle_name, password, pin, status FROM admincashier_acc WHERE email = ? OR username = ? LIMIT 1');
+            $stmt->bind_param('ss', $identifier, $identifier);
             $stmt->execute();
             $result = $stmt->get_result();
 

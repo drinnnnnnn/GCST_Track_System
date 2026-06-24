@@ -218,6 +218,12 @@ try {
         $cartItems[] = [
             'product_id' => $productId,
             'product_name' => $product['product_name'],
+            'display_name' => trim((string)($item['display_name'] ?? $item['displayName'] ?? $product['product_name'])),
+            'displayName' => trim((string)($item['displayName'] ?? $item['display_name'] ?? $product['product_name'])),
+            'fabric_part' => isset($item['fabric_part']) ? trim((string)$item['fabric_part']) : (isset($item['fabricPart']) ? trim((string)$item['fabricPart']) : null),
+            'fabricPart' => isset($item['fabricPart']) ? trim((string)$item['fabricPart']) : (isset($item['fabric_part']) ? trim((string)$item['fabric_part']) : null),
+            'uniform_upper_fabric' => isset($item['uniform_upper_fabric']) ? trim((string)$item['uniform_upper_fabric']) : null,
+            'uniform_lower_fabric' => isset($item['uniform_lower_fabric']) ? trim((string)$item['uniform_lower_fabric']) : null,
             'type' => $type,
             'quantity' => $quantity,
             'unit_price' => $unitPrice,

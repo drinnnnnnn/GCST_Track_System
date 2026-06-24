@@ -1128,13 +1128,14 @@
                   </select>
                 </div>
 
+                <!--
                 <div class="form-group">
                   <label for="new-product-featured">Featured Status</label>
                   <select id="new-product-featured" name="is_featured">
                     <option value="0">Standard Listing</option>
                     <option value="1">Promoted / Featured</option>
                   </select>
-                </div>
+                </div> -->
 
                 <div class="form-section-divider">Financials & Inventory</div>
                 <div class="form-group">
@@ -1207,16 +1208,16 @@
                       <option value="" disabled selected>Select Type</option>
                       <option value="Upper Uniform Fabric">Upper Uniform Fabric</option>
                       <option value="Lower Uniform Fabric">Lower Uniform Fabric</option>
-                      <option value="Complete Uniform Set">Complete Uniform Set (Upper + Lower)</option>
+                      <!-- <option value="Complete Uniform Set">Complete Uniform Set (Upper + Lower)</option> -->
                     </select>
                   </div>
                   
                   <div id="new-fabric-combination-fields" class="hidden md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="form-group">
+                    <div id="new-upper-fabric-field" class="form-group hidden">
                       <label for="new-upper-fabric">Upper Fabric Name/Color <span class="text-rose-500">*</span></label>
                       <input id="new-upper-fabric" name="uniform_upper_fabric" type="text" placeholder="e.g., White Twill" />
                     </div>
-                    <div class="form-group">
+                    <div id="new-lower-fabric-field" class="form-group hidden">
                       <label for="new-lower-fabric">Lower Fabric Name/Color <span class="text-rose-500">*</span></label>
                       <input id="new-lower-fabric" name="uniform_lower_fabric" type="text" placeholder="e.g., Navy Blue" />
                     </div>
@@ -1294,6 +1295,14 @@
                   <div class="flex justify-between pb-2 border-b border-slate-100">
                     <span class="text-slate-400">Uniform Type:</span>
                     <span id="disp-uniform-type" class="text-slate-700 text-right max-w-[150px] truncate"></span>
+                  </div>
+                  <div class="flex justify-between pb-2 border-b border-slate-100">
+                    <span class="text-slate-400">Upper Fabric:</span>
+                    <span id="disp-uniform-upper-fabric" class="text-slate-700"></span>
+                  </div>
+                  <div class="flex justify-between pb-2 border-b border-slate-100">
+                    <span class="text-slate-400">Lower Fabric:</span>
+                    <span id="disp-uniform-lower-fabric" class="text-slate-700"></span>
                   </div>
                   <div class="flex justify-between pb-2 border-b border-slate-100">
                     <span class="text-slate-400">Material Type:</span>
@@ -1381,6 +1390,8 @@
                       <option value="unavailable">Unavailable</option>
                     </select>
                   </div>
+
+                  
                   <div class="form-group">
                     <label for="detail-featured-input">Featured Status</label>
                     <select id="detail-featured-input">
@@ -1442,7 +1453,7 @@
                   <label class="!mb-1 text-xs text-indigo-500 font-bold uppercase tracking-wider">Uniform Information</label>
                   <div class="form-group">
                     <label for="detail-uniform-course-input">Applicable Course/Program <span class="text-rose-500">*</span></label>
-                    <select id="detail-uniform-course-input" required>
+                    <select id="detail-uniform-course-input" name="course_program" required>
                       <option value="" disabled selected>Select Course/Program</option>
                       <option value="BS Information Technology">BS Information Technology</option>
                       <option value="BS Computer Science">BS Computer Science</option>
@@ -1456,7 +1467,7 @@
                   </div>
                   <div class="form-group">
                     <label for="detail-uniform-type-input">Uniform Type <span class="text-rose-500">*</span></label>
-                    <select id="detail-uniform-type-input" onchange="toggleFabricCombination('detail', this.value)">
+                    <select id="detail-uniform-type-input" name="uniform_type" onchange="toggleFabricCombination('detail', this.value)">
                       <option value="Upper Uniform Fabric">Upper Uniform Fabric</option>
                       <option value="Lower Uniform Fabric">Lower Uniform Fabric</option>
                       <option value="Complete Uniform Set">Complete Uniform Set</option>
@@ -1464,19 +1475,19 @@
                   </div>
 
                   <div id="detail-fabric-combination-fields" class="hidden space-y-4">
-                    <div class="form-group">
+                    <div id="detail-upper-fabric-field" class="form-group hidden">
                       <label for="detail-upper-fabric-input">Upper Fabric Name/Color <span class="text-rose-500">*</span></label>
-                      <input id="detail-upper-fabric-input" type="text" placeholder="e.g., White Twill" />
+                      <input id="detail-upper-fabric-input" name="uniform_upper_fabric" type="text" placeholder="e.g., White Twill" />
                     </div>
-                    <div class="form-group">
+                    <div id="detail-lower-fabric-field" class="form-group hidden">
                       <label for="detail-lower-fabric-input">Lower Fabric Name/Color <span class="text-rose-500">*</span></label>
-                      <input id="detail-lower-fabric-input" type="text" placeholder="e.g., Navy Blue" />
+                      <input id="detail-lower-fabric-input" name="uniform_lower_fabric" type="text" placeholder="e.g., Navy Blue" />
                     </div>
                   </div>
 
                   <div class="form-group">
                     <label for="detail-material-input">Material <span class="text-rose-500">*</span></label>
-                    <input id="detail-material-input" type="text" />
+                    <input id="detail-material-input" name="material_type" type="text" />
                   </div>
                 </div>
               </div>
@@ -2007,6 +2018,10 @@
                             <span class="text-[0.6rem] font-medium text-slate-400"><i class="fas fa-tshirt mr-1 opacity-60"></i>${product.uniform_type || 'N/A'}</span>
                             <span class="text-[0.6rem] font-medium text-slate-400"><i class="fas fa-palette mr-1 opacity-60"></i>${product.material_type || product.uniform_material || 'N/A'}</span>
                         </div>
+                        <div class="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-[0.6rem] text-slate-500">
+                            ${product.uniform_upper_fabric ? `<span class="font-medium text-slate-500"><i class="fas fa-angle-up mr-1 opacity-60"></i>${product.uniform_upper_fabric}</span>` : ''}
+                            ${product.uniform_lower_fabric ? `<span class="font-medium text-slate-500"><i class="fas fa-angle-down mr-1 opacity-60"></i>${product.uniform_lower_fabric}</span>` : ''}
+                        </div>
                     </div>`;
             }
 
@@ -2167,12 +2182,16 @@
 
             const courseDisp = document.getElementById('disp-uniform-course');
             const typeDisp = document.getElementById('disp-uniform-type');
+            const upperFabricDisp = document.getElementById('disp-uniform-upper-fabric');
+            const lowerFabricDisp = document.getElementById('disp-uniform-lower-fabric');
             const materialDisp = document.getElementById('disp-uniform-material');
             const stockDisp = document.getElementById('disp-uniform-stock');
             const priceDisp = document.getElementById('disp-uniform-price');
 
             if (courseDisp) courseDisp.textContent = p.course_program || p.uniform_course || 'N/A';
             if (typeDisp) typeDisp.textContent = p.uniform_type || 'N/A';
+            if (upperFabricDisp) upperFabricDisp.textContent = p.uniform_upper_fabric || 'N/A';
+            if (lowerFabricDisp) lowerFabricDisp.textContent = p.uniform_lower_fabric || 'N/A';
             if (materialDisp) materialDisp.textContent = p.material_type || p.uniform_material || 'N/A';
             if (stockDisp) stockDisp.textContent = `${parseFloat(p.stock_count || 0).toFixed(2)} Yards`;
             if (priceDisp) priceDisp.textContent = formatCurrency(p.buy_price);
@@ -2233,6 +2252,14 @@
                     const upper = document.getElementById(`${pfx}upper-fabric`)?.value || document.getElementById(`${pfx}upper-fabric-input`)?.value;
                     const lower = document.getElementById(`${pfx}lower-fabric`)?.value || document.getElementById(`${pfx}lower-fabric-input`)?.value;
                     if (!upper || !lower) return 'Both Upper and Lower fabric names are required for complete sets.';
+                }
+                if (type === 'Upper Uniform Fabric') {
+                    const upper = document.getElementById(`${pfx}upper-fabric`)?.value || document.getElementById(`${pfx}upper-fabric-input`)?.value;
+                    if (!upper) return 'Upper fabric color is required for upper uniforms.';
+                }
+                if (type === 'Lower Uniform Fabric') {
+                    const lower = document.getElementById(`${pfx}lower-fabric`)?.value || document.getElementById(`${pfx}lower-fabric-input`)?.value;
+                    if (!lower) return 'Lower fabric color is required for lower uniforms.';
                 }
             }
 
@@ -2504,9 +2531,22 @@
     }
 
     function toggleFabricCombination(context, type) {
-        const isComplete = type === 'Complete Uniform Set';
-        const el = document.getElementById(`${context === 'new' ? 'new-' : 'detail-'}fabric-combination-fields`);
-        if (el) el.classList.toggle('hidden', !isComplete);
+        const prefix = context === 'new' ? 'new-' : 'detail-';
+        const upperField = document.getElementById(`${prefix}upper-fabric-field`);
+        const lowerField = document.getElementById(`${prefix}lower-fabric-field`);
+        const wrapper = document.getElementById(`${prefix}fabric-combination-fields`);
+
+        const showUpper = type === 'Upper Uniform Fabric' || type === 'Complete Uniform Set';
+        const showLower = type === 'Lower Uniform Fabric' || type === 'Complete Uniform Set';
+
+        if (wrapper) wrapper.classList.toggle('hidden', !(showUpper || showLower));
+        if (upperField) upperField.classList.toggle('hidden', !showUpper);
+        if (lowerField) lowerField.classList.toggle('hidden', !showLower);
+
+        const upperInput = document.getElementById(`${prefix}upper-fabric-input`);
+        const lowerInput = document.getElementById(`${prefix}lower-fabric-input`);
+        if (upperInput && !showUpper) upperInput.value = '';
+        if (lowerInput && !showLower) lowerInput.value = '';
     }
 
     window.openImageLightbox = (src, title, cat) => {

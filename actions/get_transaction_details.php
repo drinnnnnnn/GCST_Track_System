@@ -45,7 +45,8 @@ try {
             ct.payment_received,
             ct.change_amount,
             ct.payment_status,
-            ct.created_at,  
+            ct.created_at,
+            ct.items AS raw_items,
             CONCAT(aa.first_name, ' ', aa.middle_name, ' ', aa.last_name) AS cashier_name,
             COALESCE(NULLIF(us.course, ''), NULLIF(us.year_section, ''), 'N/A') AS user_course,
             us.student_id AS student_id
@@ -115,27 +116,36 @@ try {
         exit;
     }
 
-    // Fetch individual items for the transaction
-    $itemsQuery = "
-        SELECT
-            ti.product_name,
-            ti.item_type,
-            ti.quantity,
-            ti.unit_price,
-            ti.duration,
-            ti.duration_unit,
-            ti.total_item_amount
-        FROM
-            transaction_items ti
-        WHERE
-            ti.cashier_transaction_id = ?";
-    $itemsStmt = $conn->prepare($itemsQuery);
-    $itemsStmt->bind_param('i', $transaction['id']);
-    $itemsStmt->execute();
-    $items = $itemsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $itemsStmt->close();
+    // Prefer using the saved cart JSON if available, to preserve display metadata like upper/lower uniform details.
+    $transaction['items'] = [];
+    if (!empty($transaction['raw_items'])) {
+        $decodedItems = json_decode($transaction['raw_items'], true);
+        if (is_array($decodedItems) && count($decodedItems) > 0) {
+            $transaction['items'] = $decodedItems;
+        }
+    }
 
-    $transaction['items'] = $items;
+    if (empty($transaction['items'])) {
+        $itemsQuery = "
+            SELECT
+                ti.product_name,
+                ti.item_type,
+                ti.quantity,
+                ti.unit_price,
+                ti.duration,
+                ti.duration_unit,
+                ti.total_item_amount
+            FROM
+                transaction_items ti
+            WHERE
+                ti.cashier_transaction_id = ?";
+        $itemsStmt = $conn->prepare($itemsQuery);
+        $itemsStmt->bind_param('i', $transaction['id']);
+        $itemsStmt->execute();
+        $items = $itemsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $itemsStmt->close();
+        $transaction['items'] = $items;
+    }
 
     echo json_encode(['success' => true, 'transaction' => $transaction]);
 

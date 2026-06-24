@@ -212,26 +212,13 @@
           <p class="amount" id="lowStockCount">0</p>
         </div>
         <div class="balance-card">
-          <h3>Pending Queue</h3>
+          <h3>Waiting Queue</h3>
           <p class="amount" id="pendingQueue">0</p>
         </div>
         <div class="balance-card">
           <h3>Total Sales (Today)</h3>
           <p class="amount" id="totalSalesToday">₱0.00</p>
         </div>
-      </div>
-    </section>
-
-    <!-- Low Stock Alert Section -->
-    <section class="activity-section" id="lowStockAlertSection" style="display: none;">
-      <div class="low-stock-alert-panel">
-        <div class="panel-header">
-          <h2 class="panel-title"><i class="fas fa-triangle-exclamation"></i> Low Stock Alerts</h2>
-          <button id="viewInventoryBtn" class="px-4 py-2 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition-colors">
-            Open Inventory
-          </button>
-        </div>
-        <div id="lowStockAlertList" class="low-stock-alert-list"></div>
       </div>
     </section>
 
@@ -271,6 +258,19 @@
             </div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- Low Stock Alert Section -->
+    <section class="activity-section" id="lowStockAlertSection" style="display: none;">
+      <div class="low-stock-alert-panel">
+        <div class="panel-header">
+          <h2 class="panel-title"><i class="fas fa-triangle-exclamation"></i> Low Stock Alerts</h2>
+          <button id="viewInventoryBtn" class="px-4 py-2 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition-colors">
+            Open Inventory
+          </button>
+        </div>
+        <div id="lowStockAlertList" class="low-stock-alert-list"></div>
       </div>
     </section>
   </main>

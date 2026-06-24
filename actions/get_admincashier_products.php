@@ -23,6 +23,8 @@ $sql = "SELECT product_id, product_name, product_description, product_category, 
         COALESCE(product_status, 'available') AS product_status, 
         book_author, book_pages, book_course, book_subject, book_edition, book_publisher, book_isbn, book_publication_year,
         uniform_course, uniform_type, uniform_upper_fabric, uniform_lower_fabric, uniform_material,
+        uniform_upper_fabric AS upperFabric,
+        uniform_lower_fabric AS lowerFabric,
         uniform_course AS course_program, 
         uniform_material AS material_type,
         CASE WHEN COALESCE(stock_count, stock, 0) < 10 THEN 'Low Stock' ELSE 'In Stock' END AS status 
@@ -36,6 +38,8 @@ if ($result) {
         // Ensure course_program and material_type are always present for frontend consistency
         $row['course_program'] = $row['course_program'] ?? $row['uniform_course'] ?? null;
         $row['material_type'] = $row['material_type'] ?? $row['uniform_material'] ?? null;
+        $row['upperFabric'] = $row['upperFabric'] ?? $row['uniform_upper_fabric'] ?? null;
+        $row['lowerFabric'] = $row['lowerFabric'] ?? $row['uniform_lower_fabric'] ?? null;
         $products[] = $row;
     }
 } else {

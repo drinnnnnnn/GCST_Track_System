@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<?php
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<?php
 // Force JSON output even if errors occur
 header('Content-Type: application/json');
 ini_set('display_errors', '0'); // Prevent HTML error output
