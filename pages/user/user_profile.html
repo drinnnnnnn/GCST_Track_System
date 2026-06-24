@@ -1208,7 +1208,7 @@
           return `${dPart} – ${tPart}`;
         };
 
-        document.getElementById('account-created').textContent = formatDate(user.created_at) || 'N/A';
+        document.getElementById('account-created').textContent = formatDate(user.created_at, true) || 'N/A';
         document.getElementById('last-login').textContent = formatDate(user.last_login, true) || 'First login';
         document.getElementById('account-status').textContent = user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Active';
 

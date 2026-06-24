@@ -143,7 +143,11 @@ const OrderScanner = {
         const input = document.getElementById('manual-order-input');
         const code = input?.value.trim().toUpperCase();
         if (!code) {
-            alert("Please enter an order number.");
+            const errorDiv = document.getElementById('camera-error-message');
+            if (errorDiv) {
+                errorDiv.textContent = "Please enter an order number.";
+                errorDiv.classList.remove('hidden');
+            }
             return;
         }
         this.hideManualEntry();
@@ -212,9 +216,19 @@ const OrderScanner = {
                 }
             }
 
-            // SUCCESS handling for Order Found
+            const order = result.order;
             const successOverlay = document.getElementById('scan-success-overlay');
-            if (successOverlay) successOverlay.classList.remove('hidden');
+            const successTooltip = document.getElementById('scan-success-tooltip');
+            const successMessage = `Order ${txnNumber} loaded for ${order.student_full_name || 'Student'}`;
+
+            if (successTooltip) {
+                successTooltip.textContent = successMessage;
+                successTooltip.title = successMessage;
+            }
+            if (successOverlay) {
+                successOverlay.title = successMessage;
+                successOverlay.classList.remove('hidden');
+            }
             
             if (typeof SCAN_SOUND !== 'undefined') {
                 SCAN_SOUND.currentTime = 0;
@@ -224,15 +238,13 @@ const OrderScanner = {
             // Set verification state
             if (typeof state !== 'undefined') state.isQRScanned = true;
             // Store original transaction number to prevent duplicates on finalize
-            if (typeof state !== 'undefined') state.scannedTxnNumber = result.order.transaction_number;
+            if (typeof state !== 'undefined') state.scannedTxnNumber = order.transaction_number;
 
             await new Promise(resolve => setTimeout(resolve, 800));
             this.close();
 
-            const order = result.order;
             const hasGlobalState = typeof state !== 'undefined';
 
-            console.log("Order Loaded from QR:", order.transaction_number);
 
             if (hasGlobalState) {
                 // Synchronize Page State
@@ -267,20 +279,21 @@ const OrderScanner = {
                 
                 // Open the checkout view automatically
                 if (typeof openCheckoutModal === 'function') openCheckoutModal();
-                
-                alert(`Order ${txnNumber} loaded for ${order.student_full_name || 'Student'}`);
             } else {
                 // Fallback for non-cashier pages if ever needed
                 console.log("Order Data Loaded:", order);
-                alert(`Order ${txnNumber} found.`);
             }
         } catch (err) {
             console.error("Order Load Error:", err);
+            const errorDiv = document.getElementById('camera-error-message');
+            if (errorDiv) {
+                errorDiv.textContent = "Error: " + err.message;
+                errorDiv.classList.remove('hidden');
+            }
             if (typeof ERROR_SOUND !== 'undefined') {
                 ERROR_SOUND.currentTime = 0;
                 ERROR_SOUND.play().catch(() => {});
             }
-            alert("Error: " + err.message);
         }
     }
 };

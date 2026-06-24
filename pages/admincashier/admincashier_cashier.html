@@ -1071,6 +1071,65 @@
       font-size: 0.9rem;
       margin-bottom: 20px;
     }
+    .tooltip-badge {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      margin-left: 0.55rem;
+      padding: 0.15rem;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.38);
+      background: rgba(255,255,255,0.14);
+      color: #f8fafc;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+    .tooltip-badge:hover {
+      background: rgba(255,255,255,0.24);
+      transform: translateY(-1px);
+    }
+    .tooltip-badge i {
+      font-size: 0.85rem;
+    }
+    .tooltip-box {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 0.55rem);
+      transform: translateX(-50%) scale(0.95);
+      width: min(320px, 100vw - 3rem);
+      padding: 0.9rem 1rem;
+      background: rgba(15, 23, 42, 0.96);
+      color: #f8fafc;
+      border-radius: 14px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.35);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      text-align: left;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      z-index: 30;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    .tooltip-badge:hover .tooltip-box {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) scale(1);
+      pointer-events: auto;
+    }
+    .tooltip-box::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 100%;
+      transform: translateX(-50%);
+      border-width: 6px;
+      border-style: solid;
+      border-color: rgba(15, 23, 42, 0.96) transparent transparent transparent;
+    }
     #reader {
       border-radius: 12px;
       overflow: hidden;
@@ -1724,7 +1783,13 @@
           <div id="scan-success-overlay" class="scan-overlay hidden" style="background: rgba(16, 185, 129, 0.85); z-index: 10; pointer-events: auto;">
              <div class="success-checkmark-pop flex flex-col items-center">
                 <i class="fas fa-check-circle text-white" style="font-size: 5.5rem;"></i>
-                <p class="text-white font-bold mt-4 text-lg">Scan Successful</p>
+                <p id="scan-success-text" class="text-white font-bold mt-4 text-lg" title="Scan Successful">Scan Successful</p>
+                <p id="scan-success-detail" class="text-white/80 text-sm mt-3 max-w-[320px] text-center">Order loaded successfully
+                  <span class="tooltip-badge" aria-label="Order loaded message" role="tooltip">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="scan-success-tooltip" class="tooltip-box">Order loaded successfully</span>
+                  </span>
+                </p>
              </div>
           </div>
           <div id="scan-error-overlay" class="scan-overlay hidden" style="background: rgba(239, 68, 68, 0.9); z-index: 10; pointer-events: auto;">

@@ -39,6 +39,7 @@ $mysqli->query(
         `role` ENUM('user','admin','cashier','admincashier','superadmin') NOT NULL DEFAULT 'user',
         `status` ENUM('Active','Inactive','Suspended') NOT NULL DEFAULT 'Active',
         `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `last_login` DATETIME DEFAULT NULL,
         `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
 );
