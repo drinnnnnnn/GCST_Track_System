@@ -8,10 +8,10 @@ require_once __DIR__ . '/../config/db_connect.php';
 
 try {
     $stmt = $conn->prepare("
-    SELECT ct.*, u.student_id, a.name as cashier_name 
+    SELECT ct.*, u.student_id, ct.student_name AS cashier_name 
     FROM cashier_transactions ct 
     LEFT JOIN users u ON ct.user_id = u.id 
-    LEFT JOIN admins a ON ct.cashier_id = a.admin_id 
+    LEFT JOIN admincashier_acc aa ON ct.cashier_id = aa.id 
     WHERE ct.payment_status = 'voided' 
     ORDER BY ct.created_at DESC
     ");

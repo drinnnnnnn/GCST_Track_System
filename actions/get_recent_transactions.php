@@ -24,6 +24,8 @@ try {
         $where .= " AND u.student_id = '" . $conn->real_escape_string($session_student_id) . "'";
     }
 
+    $status = isset($_GET['status']) ? $conn->real_escape_string($_GET['status']) : 'all';
+
     if ($search) {
         $where .= " AND (ct.id LIKE '%$search%'
                     OR ct.transaction_number LIKE '%$search%' 
@@ -36,6 +38,11 @@ try {
                     OR ct.created_at LIKE '%$search%'
                     OR ac.first_name LIKE '%$search%' 
                     OR ac.last_name LIKE '%$search%')";
+    }
+    if ($status === 'paid') {
+        $where .= " AND ct.payment_status = 'paid'";
+    } elseif ($status === 'pending') {
+        $where .= " AND ct.payment_status = 'pending'";
     }
     if ($from) { $where .= " AND DATE(ct.created_at) >= '$from'"; }
     if ($to) { $where .= " AND DATE(ct.created_at) <= '$to'"; }

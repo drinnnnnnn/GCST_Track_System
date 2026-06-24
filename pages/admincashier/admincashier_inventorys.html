@@ -1062,10 +1062,10 @@
           <input id="inventory-search" type="search" placeholder="Search products by name, category..." />
           <div class="inventory-search-actions">
             <button id="btn-open-add-product" type="button" class="btn btn-secondary">Add New Product</button>
-            <button id="refresh-button" type="button" class="btn btn-secondary">
+           <!-- <button id="refresh-button" type="button" class="btn btn-secondary"> 
               <i class="fas fa-sync-alt"></i>
               <span>Refresh</span>
-            </button>
+            </button> -->
             <button id="btn-print-stock-sheet" type="button" class="btn btn-secondary" title="Print blank stock-taking sheet for manual audit">
               <i class="fas fa-print"></i>
               <span>Print Inventory</span>
@@ -1128,14 +1128,13 @@
                   </select>
                 </div>
 
-                <!--
                 <div class="form-group">
-                  <label for="new-product-featured">Featured Status</label>
+                  <label for="new-product-featured">Product Type</label>
                   <select id="new-product-featured" name="is_featured">
                     <option value="0">Standard Listing</option>
-                    <option value="1">Promoted / Featured</option>
+                    <option value="1">New Product</option>
                   </select>
-                </div> -->
+                </div>
 
                 <div class="form-section-divider">Financials & Inventory</div>
                 <div class="form-group">
@@ -1154,15 +1153,15 @@
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="form-group">
                       <label for="new-book-author">Author <span class="text-rose-500">*</span></label>
-                      <input id="new-book-author" name="book_author" type="text" placeholder="e.g., Robert Martin" />
+                      <input id="new-book-author" name="book_author" type="text" placeholder="e.g., Robert Martin" required />
                     </div>
                     <div class="form-group">
                       <label for="new-book-pages">Pages <span class="text-rose-500">*</span></label>
-                      <input id="new-book-pages" name="book_pages" type="number" min="1" placeholder="0" />
+                      <input id="new-book-pages" name="book_pages" type="number" min="1" placeholder="0" required />
                     </div>
                     <div class="form-group">
                       <label for="new-book-course">Target Course <span class="text-rose-500">*</span></label>
-                      <select id="new-book-course" name="book_course">
+                      <select id="new-book-course" name="book_course" required>
                         <option value="" disabled selected>Select Course/Program</option>
                           <option value="BS Information Technology">BS Information Technology</option>
                           <option value="BS Computer Science">BS Computer Science</option>
@@ -1175,12 +1174,12 @@
                       </select>
                     </div>
                     <div class="form-group">
-                      <label for="new-book-subject">Subject</label>
-                      <input id="new-book-subject" name="book_subject" type="text" placeholder="e.g., Programming" />
+                      <label for="new-book-subject">Subject <span class="text-rose-500">*</span></label>
+                      <input id="new-book-subject" name="book_subject" type="text" placeholder="e.g., Programming" required />
                     </div>
                     <div class="form-group">
-                      <label for="new-book-year">Publish Year</label>
-                      <input id="new-book-year" name="book_publication_year" type="number" placeholder="YYYY" />
+                      <label for="new-book-year">Publish Year <span class="text-rose-500"> </span></label>
+                      <input id="new-book-year" name="book_publication_year" type="number" placeholder="YYYY" required />
                     </div>
                   </div>
                 </div>
@@ -1393,10 +1392,10 @@
 
                   
                   <div class="form-group">
-                    <label for="detail-featured-input">Featured Status</label>
+                    <label for="detail-featured-input">Product Type</label>
                     <select id="detail-featured-input">
                       <option value="0">Standard listing</option>
-                      <option value="1">Featured / Promoted</option>
+                      <option value="1">New Product</option>
                     </select>
                   </div>
                 </div>
@@ -1438,8 +1437,8 @@
                       </select>
                     </div>
                     <div class="form-group">
-                      <label for="detail-book-subject-input">Subject</label>
-                      <input id="detail-book-subject-input" type="text" />
+                      <label for="detail-book-subject-input">Subject <span class="text-rose-500">*</span></label>
+                      <input id="detail-book-subject-input" type="text" required />
                     </div>
                     <div class="form-group">
                       <label for="detail-book-year-input">Publish Year</label>
@@ -2235,10 +2234,12 @@
                 const author = document.getElementById(`${pfx}book-author`)?.value || document.getElementById(`${pfx}book-author-input`)?.value;
                 const pages = parseInt(document.getElementById(`${pfx}book-pages`)?.value || document.getElementById(`${pfx}book-pages-input`)?.value);
                 const course = document.getElementById(`${pfx}book-course`)?.value || document.getElementById(`${pfx}book-course-input`)?.value;
+                const subject = document.getElementById(`${pfx}book-subject`)?.value || document.getElementById(`${pfx}book-subject-input`)?.value;
 
                 if (!author) return 'Book Author is required.';
                 if (isNaN(pages) || pages <= 0) return 'Valid page count is required.';
                 if (!course) return 'Target Course association is required.';
+                if (!subject) return 'Book Subject is required.';
             } else if (cat === 'Uniform Fabrics') {
                 const course = document.getElementById(`${pfx}uniform-course`)?.value || document.getElementById(`${pfx}uniform-course-input`)?.value;
                 const type = document.getElementById(`${pfx}uniform-type`)?.value || document.getElementById(`${pfx}uniform-type-input`)?.value;

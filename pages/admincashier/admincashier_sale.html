@@ -374,6 +374,7 @@
             <tr>
               <th>Date</th>
               <th>Transaction</th>
+              <th>Student</th>
               <th>Product</th>
               <th>Quantity</th>
               <th>Amount</th>
@@ -381,7 +382,7 @@
             </tr>
           </thead>
           <tbody id="historyBody">
-            <tr><td colspan="6" class="empty-state">Loading sales history...</td></tr>
+            <tr><td colspan="7" class="empty-state">Loading sales history...</td></tr>
           </tbody>
         </table>
       </div>
@@ -601,7 +602,7 @@
     async function loadSalesData(period) {
       const historyBody = document.getElementById('historyBody');
       if (historyBody && historyBody.innerHTML === '') {
-        historyBody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading data...</td></tr>';
+        historyBody.innerHTML = '<tr><td colspan="7" class="empty-state">Loading data...</td></tr>';
       }
 
       try {
@@ -806,7 +807,7 @@
 
       historyBody.innerHTML = '';
       if (bounds.totalItems === 0) {
-        historyBody.innerHTML = '<tr><td colspan="6" class="empty-state">No sales history found.</td></tr>';
+        historyBody.innerHTML = '<tr><td colspan="7" class="empty-state">No sales history found.</td></tr>';
         return;
       }
 
@@ -816,11 +817,15 @@
         const itemsHtml = items.map(i => `<span class="product-tag">${i}</span>`).join('');
         const displayId = entry.transaction_id || entry.transaction_number || '—';
         const internalId = entry.id || entry.transaction_id || entry.transaction_number;
+        const studentInfo = entry.student_id || entry.student_name ? `
+            <div class="font-semibold text-gray-800">${entry.student_id || '—'}</div>
+            ${entry.student_name ? `<div class="text-xs text-gray-500">${entry.student_name}</div>` : ''}` : '—';
         
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${formatDate(entry.date)}</td>
           <td>${displayId}</td>
+          <td>${studentInfo}</td>
           <td><div class="product-tag-list">${itemsHtml}</div></td>
           <td>${entry.quantity}</td>
           <td>${formatCurrency(entry.amount)}</td>
@@ -1381,7 +1386,7 @@
       document.getElementById('historySearch')?.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = lastFetchedSalesHistory.filter(entry => {
-          const text = `${entry.transaction_id || ''} ${entry.transaction_number || ''} ${entry.item || ''} ${entry.date || ''}`.toLowerCase();
+          const text = `${entry.transaction_id || ''} ${entry.transaction_number || ''} ${entry.student_id || ''} ${entry.student_name || ''} ${entry.item || ''} ${entry.date || ''}`.toLowerCase();
           return text.includes(query);
         });
         renderSalesHistory(filtered, { resetPage: true });

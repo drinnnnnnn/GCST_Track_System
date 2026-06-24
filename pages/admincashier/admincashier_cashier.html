@@ -211,8 +211,7 @@
     #active-rentals-content,
     #overdue-rentals-content,
     #renewals-content,
-    #txn-history-content,
-    #pending-orders-content {
+    #txn-history-content {
       display: flex;
       flex-direction: column;
       overflow-y: auto;
@@ -228,8 +227,7 @@
     .panel::-webkit-scrollbar, /* Apply to generic panels */
     #overdue-rentals-content::-webkit-scrollbar,
     #renewals-content::-webkit-scrollbar,
-    #txn-history-content::-webkit-scrollbar,
-    #pending-orders-content::-webkit-scrollbar {
+    #txn-history-content::-webkit-scrollbar {
       width: 6px;
     }
     #products-grid::-webkit-scrollbar-track,
@@ -238,8 +236,7 @@
     #active-rentals-content::-webkit-scrollbar-track,
     #overdue-rentals-content::-webkit-scrollbar-track,
     #renewals-content::-webkit-scrollbar-track,
-    #txn-history-content::-webkit-scrollbar-track,
-    #pending-orders-content::-webkit-scrollbar-track {
+    #txn-history-content::-webkit-scrollbar-track {
       background: #f1f5f9;
       background: #f8fafc; /* Lighter track */
       border-radius: 10px;
@@ -249,8 +246,7 @@
     #active-rentals-content::-webkit-scrollbar-thumb,
     #overdue-rentals-content::-webkit-scrollbar-thumb,
     #renewals-content::-webkit-scrollbar-thumb,
-    #txn-history-content::-webkit-scrollbar-thumb,
-    #pending-orders-content::-webkit-scrollbar-thumb {
+    #txn-history-content::-webkit-scrollbar-thumb {
       background: #cbd5e1; /* Lighter thumb */
       background: #cbd5e1;
       border-radius: 10px;
@@ -261,8 +257,7 @@
     #overdue-rentals-content::-webkit-scrollbar-thumb:hover,
     #renewals-content::-webkit-scrollbar-thumb:hover,
     .cashier-layout::-webkit-scrollbar-thumb:hover,
-    #txn-history-content::-webkit-scrollbar-thumb:hover,
-    #pending-orders-content::-webkit-scrollbar-thumb:hover {
+    #txn-history-content::-webkit-scrollbar-thumb:hover {
       background: #94a3b8;
     }
     .product-grid,
@@ -1357,8 +1352,8 @@
       <div class="panel">
         <div class="panel-header" style="flex-wrap: wrap; gap: 20px;">
           <div style="display: flex; align-items: center; gap: 15px;">
-            <h2>Recent Transactions</h2>
-            <button id="txn-refresh-btn" class="btn btn-secondary" onclick="loadRecentTransactions()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> <span>Refresh</span></button>
+            <h2>Transactions</h2>
+            <button id="txn-refresh-btn" class="btn btn-secondary" onclick="loadRecentTransactions()" style="padding: 6px 10px; font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center;" title="Refresh Transactions" aria-label="Refresh Transactions"><i class="fas fa-sync-alt"></i></button>
             <button class="btn btn-secondary" onclick="openVoidedReportModal()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-file-invoice"></i> Voided Report</button>
           </div>
           <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; justify-content: flex-end;">
@@ -1367,6 +1362,13 @@
               <input id="txn-date-from" class="search-input" type="date" style="padding: 8px 0; font-size: 0.85rem; width: auto; border: none; background: transparent; cursor: pointer;" title="From Date" />
               <span style="font-size: 0.8rem; color: #94a3b8; font-weight: bold;">→</span>
               <input id="txn-date-to" class="search-input" type="date" style="padding: 8px 0; font-size: 0.85rem; width: auto; border: none; background: transparent; cursor: pointer;" title="To Date" />
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <select id="txn-status-filter" class="search-input" style="max-width: 180px;">
+                <option value="all">All Statuses</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+              </select>
             </div>
             <div style="position: relative; max-width: 400px; flex: 1;">
               <i class="fas fa-search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem; pointer-events: none;"></i>
@@ -1383,7 +1385,7 @@
                 <tr>
                   <th><i class="far fa-calendar-alt"></i> Date</th>
                   <th><i class="fas fa-hashtag"></i> Order #</th>
-                  <th><i class="fas fa-user-graduate"></i> Student ID</th>
+                  <th><i class="fas fa-user-graduate"></i> Student ID/Name</th>
                   <th><i class="fas fa-tag"></i> Type</th>
                   <th><i class="fas fa-coins"></i> Total</th>
                   <th><i class="fas fa-user-tie"></i> Cashier</th>
@@ -1397,44 +1399,7 @@
           </table>
         </div>
         <div id="txn-pagination" class="pagination-controls" style="margin-top: 15px; border-top: none; padding-top: 0;"></div>
-        <div id="txn-history-empty" class="empty-state">No recent transactions found.</div>
-      </div>
-    </section>
-
-    <section class="management-section" style="margin-top: 24px; padding: 0 20px;">
-      <div class="panel">
-        <div class="panel-header" style="flex-wrap: wrap; gap: 20px;">
-          <div style="display: flex; align-items: center; gap: 15px;">
-            <h2>Pending Orders</h2>
-            <span id="pending-order-count" class="badge" style="background: #fffbe6; color: #b45309;">0 pending</span>
-            <button class="btn btn-secondary" onclick="loadPendingOrders()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
-          </div>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; justify-content: flex-end;">
-            <div style="position: relative; max-width: 300px; flex: 1;">
-              <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem;"></i>
-              <input id="pending-order-search" class="search-input" type="text" placeholder="Search order # or student..." style="padding: 10px 16px 10px 38px; font-size: 0.85rem; width: 100%;" />
-            </div>
-          </div>
-        </div>
-        <div id="pending-orders-content">
-          <table class="data-table">
-              <thead>
-                <tr>
-                  <th><i class="far fa-calendar-alt"></i> Date</th>
-                  <th><i class="fas fa-hashtag"></i> Order #</th>
-                  <th><i class="fas fa-user-graduate"></i> Student</th>
-                  <th><i class="fas fa-tag"></i> Type</th>
-                  <th><i class="fas fa-coins"></i> Total</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="pending-orders-body">
-                <tr><td colspan="6" class="empty-state">Loading pending orders...</td></tr>
-              </tbody>
-          </table>
-        </div>
-        <div id="pending-orders-pagination" class="pagination-controls" style="margin-top: 15px; border-top: none; padding-top: 0;"></div>
-        <div id="pending-orders-empty" class="empty-state hidden">No pending orders found.</div>
+        <div id="txn-history-empty" class="empty-state">No transactions found.</div>
       </div>
     </section>
 
@@ -1460,21 +1425,28 @@
           <button type="button" onclick="closeVoidedReportModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:#6b7280;">×</button>
         </div>
         <div id="voided-report-content">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Date Created</th>
-                <th>Order #</th>
-                <th>Student</th>
-                <th>Total</th>
-                <th>Type</th>
-              </tr>
-            </thead>
-            <tbody id="voided-report-body"></tbody>
-          </table>
-        </div>
-        <div style="margin-top: 20px; text-align: right;">
-          <button class="btn btn-secondary" onclick="closeVoidedReportModal()">Close</button>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 14px;">
+            <div style="position: relative; flex: 1; min-width: 220px;">
+              <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.9rem; pointer-events: none;"></i>
+              <input id="voided-report-search" class="search-input" type="search" placeholder="Search order #, student, or type" style="width: 100%; padding: 12px 14px 12px 38px; border-radius: 14px; border: 1px solid #d1d5db;" oninput="updateVoidedReportSearch(event)" />
+            </div>
+            <div id="voided-report-summary" style="font-size: 0.85rem; color: #64748b; min-width: 160px;">Showing 0 of 0 records</div>
+          </div>
+          <div id="voided-report-table-wrapper" style="max-height: 420px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 12px; padding: 0; background: #ffffff;">
+            <table class="data-table" style="width:100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th>Date Created</th>
+                  <th>Order #</th>
+                  <th>Student</th>
+                  <th>Total</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody id="voided-report-body"></tbody>
+            </table>
+          </div>
+          <div id="voided-report-pagination" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 12px; padding: 10px 0;"></div>
         </div>
       </div>
     </div>
@@ -1563,6 +1535,14 @@
                     <div style="grid-column: span 2;">
                         <span style="display: block; font-size: 0.6rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px;">Course / Program</span>
                         <div id="display-course" style="font-weight: 700; color: #334155; font-size: 0.85rem;">---</div>
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <span style="display: block; font-size: 0.6rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px;">Email</span>
+                        <div id="display-email" style="font-weight: 700; color: #334155; font-size: 0.85rem; word-break: break-all;">---</div>
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <span style="display: block; font-size: 0.6rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px;">Contact Number</span>
+                        <div id="display-contact" style="font-weight: 700; color: #334155; font-size: 0.85rem;">---</div>
                     </div>
                 </div>
             </div>
@@ -1777,6 +1757,7 @@
         <div id="camera-error-message" class="hidden" style="color: #ef4444; background: #fee2e2; padding: 12px; border-radius: 12px; font-size: 0.85rem; margin-bottom: 20px; text-align: center; border: 1px solid #fecaca;"></div>
 
         <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button class="btn btn-primary" onclick="OrderScanner.showManualEntry()" style="width: 100%; border-radius: 14px; padding: 12px;">Enter Order Number Manually</button>
           <button class="btn btn-secondary" onclick="closeQRScanner()" style="width: 100%; border-radius: 14px; padding: 12px;">Cancel</button>
         </div>
         <!-- Datalist for student search/autocomplete -->
@@ -1826,11 +1807,20 @@
       discountPercent: 0,
       cashReceived: 0,
       paymentStatus: 'paid', // Default to paid
+      txnHistoryStatusFilter: 'all',
       studentId: '',
       isGuest: false,
       isQRScanned: false,
       scannedTxnNumber: null
     };
+
+    const voidedReportState = {
+      items: [],
+      currentPage: 1,
+      pageSize: 8,
+      searchQuery: ''
+    };
+
     function formatCurrency(value) {
       return '₱' + parseFloat(value || 0).toFixed(2);
     }
@@ -2213,7 +2203,7 @@
       if (parseInt(product.is_featured) === 1) {
         const badgeCont = document.createElement('div');
         badgeCont.className = 'absolute top-2.5 right-2.5 z-10';
-        badgeCont.innerHTML = `<span class="bg-amber-400 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm border border-white/20">PROMOTED</span>`;
+        badgeCont.innerHTML = `<span class="bg-amber-400 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm border border-white/20">NEW</span>`;
         container.appendChild(badgeCont);
       }
 
@@ -3060,6 +3050,8 @@
       const schoolIdEl = document.getElementById('display-school-id');
       const yearEl = document.getElementById('display-year-level');
       const courseEl = document.getElementById('display-course');
+      const emailEl = document.getElementById('display-email');
+      const contactEl = document.getElementById('display-contact');
 
       const normalizeDisplayValue = (value) => {
         if (value === null || value === undefined) return '';
@@ -3082,6 +3074,8 @@
           schoolIdEl.textContent = '—';
           yearEl.textContent = '—';
           courseEl.textContent = 'Guest Transaction';
+          if (emailEl) emailEl.textContent = '—';
+          if (contactEl) contactEl.textContent = '—';
         }
         return;
       }
@@ -3134,9 +3128,13 @@
               student.courseProgram ||
               student.department
             );
+            const emailValue = normalizeDisplayValue(student.email || student.student_email || student.email_address);
+            const contactValue = normalizeDisplayValue(student.contact_number || student.contactNumber || student.phone || student.mobile || student.phone_number || student.contact);
             schoolIdEl.textContent = studentIdValue || '—';
             yearEl.textContent = yearValue || '—';
             courseEl.textContent = courseValue || '—';
+            if (emailEl) emailEl.textContent = emailValue || '—';
+            if (contactEl) contactEl.textContent = contactValue || '—';
         }
       } else {
         nameText.textContent = 'Student Not Found';
@@ -3527,15 +3525,17 @@
       // 1. Prioritize 'search' argument if provided as string
       // 2. Fallback to UI input value if search is null (e.g. from Refresh button)
       const finalSearch = (search !== null) ? search : (historySearch ? historySearch.value.trim() : '');
+      const statusFilter = document.getElementById('txn-status-filter')?.value || 'all';
+      state.txnHistoryStatusFilter = statusFilter;
       
       if (refreshIcon) refreshIcon.classList.add('fa-spin');
 
       txnCurrentPage = page;
-      fetch(`${API_ROOT}/get_recent_transactions.php?page=${page}&limit=10&search=${encodeURIComponent(finalSearch)}&from=${from}&to=${to}`)
+      fetch(`${API_ROOT}/get_recent_transactions.php?page=${page}&limit=10&search=${encodeURIComponent(finalSearch)}&from=${from}&to=${to}&status=${encodeURIComponent(statusFilter)}`)
         .then(res => res.json())
         .then(data => {
           recentTransactions = data.transactions || [];
-          renderRecentTransactions(recentTransactions, finalSearch);
+          renderRecentTransactions(recentTransactions, finalSearch, statusFilter);
           renderTxnPagination(data.total_pages, data.current_page, finalSearch);
         })
         .catch(err => {
@@ -3562,6 +3562,41 @@
       }
     }
 
+    function getFilteredPendingOrders(query = '') {
+      if (!pendingOrders || !Array.isArray(pendingOrders)) return [];
+      const normalized = pendingOrders.map(item => ({
+        ...item,
+        transaction_number: item.transaction_number || item.order_number || '',
+        created_at: item.created_at || item.date_created || item.created_at || '',
+        student_name: item.student_name || item.student_display || '',
+        student_id: item.student_id || item.guest_school_id || item.student_id || '',
+        transaction_type: item.transaction_type || 'pending',
+        total_amount: parseFloat(item.total_amount || item.total || 0) || 0,
+        cashier_name: item.cashier_name || '',
+        payment_status: 'pending',
+        is_pending: true
+      }));
+
+      if (!query) return normalized;
+      const search = query.trim().toLowerCase();
+      return normalized.filter(txn => {
+        const searchable = [
+          txn.transaction_number,
+          txn.student_name,
+          txn.student_id,
+          txn.transaction_type,
+          txn.payment_status,
+          txn.cashier_name,
+          txn.total_amount && String(txn.total_amount)
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return searchable.includes(search);
+      });
+    }
+
     /**
      * Utility to highlight search query matches in text.
      */
@@ -3573,24 +3608,46 @@
       return String(text).replace(regex, '<mark style="background: #fef08a; color: #1e293b; padding: 0 2px; border-radius: 4px; font-weight: inherit;">$1</mark>');
     }
 
-    function renderRecentTransactions(data, query = '') {
+    function renderRecentTransactions(data, query = '', status = 'all') {
       const body = document.getElementById('txn-history-body');
       const empty = document.getElementById('txn-history-empty');
       const content = document.getElementById('txn-history-content');
       body.innerHTML = '';
-      
-      // Ensure the table container is visible so results (or empty state row) can be seen
+
       content.style.display = 'block';
       if (empty) empty.classList.add('hidden');
 
-      if (!data || data.length === 0) {
+      const recentList = Array.isArray(data) ? data : [];
+      const pendingList = getFilteredPendingOrders(query);
+      const mergedList = [...pendingList, ...recentList];
+      const uniqueByTxnNumber = new Map();
+      mergedList.forEach(txn => {
+        const key = txn.transaction_number || txn.id || JSON.stringify(txn);
+        if (!uniqueByTxnNumber.has(key)) {
+          uniqueByTxnNumber.set(key, txn);
+        }
+      });
+
+      let filteredList = Array.from(uniqueByTxnNumber.values());
+      if (status === 'paid') {
+        filteredList = filteredList.filter(txn => txn.payment_status === 'paid');
+      } else if (status === 'pending') {
+        filteredList = filteredList.filter(txn => txn.payment_status === 'pending');
+      }
+
+      if (filteredList.length === 0) {
         const isSearching = document.getElementById('txn-history-search').value.trim() !== '';
         body.innerHTML = `<tr><td colspan="8" class="empty-state">${isSearching ? '<i class="fas fa-search mb-2" style="font-size: 1.5rem; display:block; opacity:0.5;"></i> No transactions match your search.' : 'No recent transactions found.'}</td></tr>`;
         return;
       }
-      data.forEach(txn => {
+
+      filteredList.forEach(txn => {
         const dateObj = new Date(txn.created_at);
         const tr = document.createElement('tr');
+        if (txn.is_pending) {
+          tr.style.backgroundColor = '#fffbeb';
+          tr.style.borderLeft = '4px solid #f59e0b';
+        }
         tr.innerHTML = `
           <td style="font-size: 0.85rem; color: #64748b;">
             <strong>${highlightMatch(dateObj.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' }), query)}</strong><br>
@@ -3599,13 +3656,13 @@
           <td style="font-weight: 600; color: #4f46e5;">${highlightMatch(txn.transaction_number, query)}</td>
           <td>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <i class="fas fa-user-circle" style="color: #cbd5e1; font-size: 1.2rem;" title="${txn.student_name}"></i>
-              <span>${highlightMatch(txn.student_id || txn.guest_school_id || '', query)}</span>
+              <i class="fas fa-user-circle" style="color: #cbd5e1; font-size: 1.2rem;" title="${txn.student_name || ''}"></i>
+              <span>${highlightMatch(txn.student_id || txn.student_name || '', query)}</span>
             </div>
           </td>
           <td><span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; text-transform: uppercase; font-size: 0.7rem;">${highlightMatch(txn.transaction_type, query)}</span></td>
           <td style="font-weight: 700; color: #1e293b;">${formatCurrency(txn.total_amount)}</td>
-          <td style="font-size: 0.85rem; color: #4b5563;">${highlightMatch(txn.cashier_name || 'System', query)}</td>
+          <td style="font-size: 0.85rem; color: #4b5563;">${highlightMatch(txn.cashier_name || '', query)}</td>
           <td><span class="badge ${txn.payment_status === 'paid' ? 'badge-success' : 'badge-warning'}" style="text-transform: uppercase; font-size: 0.75rem;">${highlightMatch(txn.payment_status, query)}</span></td>
           <td><button class="btn btn-secondary btn-sm" onclick="reprintReceipt('${txn.transaction_number}')" title="View Details"><i class="fas fa-eye"></i> View</button></td>
         `;
@@ -3724,34 +3781,137 @@
 
     async function loadVoidedTransactions() {
       const body = document.getElementById('voided-report-body');
+      const pagination = document.getElementById('voided-report-pagination');
+      const searchInput = document.getElementById('voided-report-search');
+      const summary = document.getElementById('voided-report-summary');
+
+      voidedReportState.currentPage = 1;
+      voidedReportState.searchQuery = '';
+      if (searchInput) searchInput.value = '';
+      if (summary) summary.textContent = 'Showing 0 of 0 records';
+
       body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Loading report...</td></tr>';
+      if (pagination) pagination.innerHTML = '';
       
       try {
         const response = await fetch(`${API_ROOT}/get_voided_transactions.php`);
-        const data = await response.json();
-        
-        body.innerHTML = '';
-        const voidedItems = (data && Array.isArray(data.voided)) ? data.voided : [];
-        
-        if (data.success && voidedItems.length > 0) {
-          voidedItems.forEach(txn => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td style="font-size: 0.85rem;">${new Date(txn.created_at).toLocaleString()}</td>
-              <td><strong style="color: #4f46e5;">${txn.transaction_number}</strong></td>
-              <td>${txn.student_name || 'N/A'} <br><small style="color:#64748b;">${txn.student_id || ''}</small></td>
-              <td style="font-weight: 600;">${formatCurrency(txn.total_amount)}</td>
-              <td><span class="badge" style="background:#fee2e2; color:#b91c1c; font-size: 0.7rem;">${(txn.transaction_type || 'unknown').toUpperCase()}</span></td>
-            `;
-            body.appendChild(tr);
-          });
-        } else {
-          body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">No voided transactions found.</td></tr>';
+        const responseText = await response.text();
+        let data;
+
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('Voided report response is not valid JSON:', responseText);
+          throw new Error('Server returned invalid JSON for voided report.');
         }
+
+        console.log('Voided report response:', data);
+        const voidedItems = (data && Array.isArray(data.voided)) ? data.voided : [];
+        voidedReportState.items = voidedItems;
+        voidedReportState.currentPage = 1;
+
+        if (!response.ok) {
+          const message = data?.message || `HTTP ${response.status}`;
+          console.error('Voided report fetch failed:', message);
+          body.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">Failed to load report: ${message}</td></tr>`;
+          return;
+        }
+
+        renderVoidedReportPage();
       } catch (error) {
         console.error('Error fetching voided report:', error);
         body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">Failed to load report.</td></tr>';
       }
+    }
+
+    function updateVoidedReportSearch(event) {
+      voidedReportState.searchQuery = event?.target?.value || '';
+      voidedReportState.currentPage = 1;
+      renderVoidedReportPage();
+    }
+
+    function getFilteredVoidedReportItems() {
+      const query = (voidedReportState.searchQuery || '').trim().toLowerCase();
+      if (!query) return Array.isArray(voidedReportState.items) ? voidedReportState.items : [];
+      return (Array.isArray(voidedReportState.items) ? voidedReportState.items : []).filter(txn => {
+        const searchable = [
+          txn.transaction_number,
+          txn.student_name,
+          txn.student_id,
+          txn.transaction_type,
+          txn.payment_status,
+          txn.total_amount && String(txn.total_amount)
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return searchable.includes(query);
+      });
+    }
+
+    function renderVoidedReportPage(page = 1) {
+      const body = document.getElementById('voided-report-body');
+      const pagination = document.getElementById('voided-report-pagination');
+      const summary = document.getElementById('voided-report-summary');
+      const items = getFilteredVoidedReportItems();
+      const pageSize = voidedReportState.pageSize;
+      const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+      const currentPage = Math.min(Math.max(1, page), totalPages);
+      voidedReportState.currentPage = currentPage;
+
+      body.innerHTML = '';
+      if (items.length === 0) {
+        body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">No voided transactions match your search.</td></tr>';
+        if (pagination) pagination.innerHTML = '';
+        if (summary) summary.textContent = `Showing 0 of ${Array.isArray(voidedReportState.items) ? voidedReportState.items.length : 0} records`;
+        return;
+      }
+
+      if (summary) summary.textContent = `Showing ${Math.min((currentPage - 1) * pageSize + 1, items.length)}-${Math.min(currentPage * pageSize, items.length)} of ${items.length} records`;
+      const startIndex = (currentPage - 1) * pageSize;
+      const pageItems = items.slice(startIndex, startIndex + pageSize);
+
+      pageItems.forEach(txn => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-size: 0.85rem;">${new Date(txn.created_at).toLocaleString()}</td>
+          <td><strong style="color: #4f46e5;">${txn.transaction_number}</strong></td>
+          <td>${txn.student_name || 'N/A'} <br><small style="color:#64748b;">${txn.student_id || ''}</small></td>
+          <td style="font-weight: 600;">${formatCurrency(txn.total_amount)}</td>
+          <td><span class="badge" style="background:#fee2e2; color:#b91c1c; font-size: 0.7rem;">${(txn.transaction_type || 'unknown').toUpperCase()}</span></td>
+        `;
+        body.appendChild(tr);
+      });
+
+      if (!pagination) return;
+      pagination.innerHTML = '';
+
+      if (totalPages <= 1) return;
+
+      const createPageButton = (label, targetPage, disabled = false, active = false) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = label;
+        btn.style.border = '1px solid #cbd5e1';
+        btn.style.borderRadius = '999px';
+        btn.style.padding = '6px 12px';
+        btn.style.background = active ? '#eef2ff' : '#ffffff';
+        btn.style.color = disabled ? '#94a3b8' : '#1f2937';
+        btn.style.cursor = disabled ? 'not-allowed' : 'pointer';
+        btn.style.minWidth = '44px';
+        btn.disabled = disabled;
+        if (!disabled) {
+          btn.addEventListener('click', () => renderVoidedReportPage(targetPage));
+        }
+        return btn;
+      };
+
+      pagination.appendChild(createPageButton('«', currentPage - 1, currentPage === 1));
+      for (let i = 1; i <= totalPages; i++) {
+        pagination.appendChild(createPageButton(String(i), i, false, i === currentPage));
+      }
+      pagination.appendChild(createPageButton('»', currentPage + 1, currentPage === totalPages));
     }
 
     async function autoVoidExpiredOrders() {
@@ -3771,95 +3931,17 @@
       }
     }
 
-
-    // New function to load pending orders
-    let pendingOrdersCurrentPage = 1;
     function loadPendingOrders(page = 1) {
-      pendingOrdersCurrentPage = page;
-      const search = document.getElementById('pending-order-search').value.trim();
+      const search = document.getElementById('pending-order-search')?.value.trim() || '';
       fetch(`${API_ROOT}/get_pending_orders.php?search=${encodeURIComponent(search)}&page=${page}&limit=10`)
         .then(res => res.json())
         .then(data => {
           pendingOrders = Array.isArray(data.orders) ? data.orders : [];
-          renderPendingOrders(pendingOrders);
-          renderPendingOrdersPagination(data.total_pages, data.current_page);
+          renderRecentTransactions(recentTransactions, document.getElementById('txn-history-search')?.value.trim() || '');
         })
         .catch(err => {
           console.error('Error loading pending orders:', err);
-          document.getElementById('pending-orders-body').innerHTML = '<tr><td colspan="6" class="empty-state">Error loading pending orders. Please refresh.</td></tr>';
-        })
-        .finally(() => {
-          const pendingSearchSpinner = document.getElementById('pending-order-search-spinner');
-          if (pendingSearchSpinner) {
-            pendingSearchSpinner.classList.add('hidden');
-          }
         });
-    }
-
-    function renderPendingOrdersPagination(totalPages, currentPage) {
-      const container = document.getElementById('pending-orders-pagination');
-      if (!container) return;
-      container.innerHTML = '';
-      if (totalPages <= 1) return;
-
-      for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement('button');
-        btn.className = i === currentPage ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
-        btn.textContent = i;
-        btn.onclick = () => loadPendingOrders(i);
-        container.appendChild(btn);
-      }
-    }
-
-    // New function to render pending orders
-    function renderPendingOrders(data) {
-      const body = document.getElementById('pending-orders-body');
-      const empty = document.getElementById('pending-orders-empty');
-      const content = document.getElementById('pending-orders-content');
-      const count = document.getElementById('pending-order-count');
-
-      body.innerHTML = '';
-
-      // Accuracy Filter: Ensure only truly pending, non-expired, and non-voided transactions are shown
-      const activePending = data.filter(item => 
-        (item.payment_status === 'pending' || !item.payment_status) && 
-        parseInt(item.is_expired || 0) === 0
-      );
-
-      if (!activePending || activePending.length === 0) {
-        content.style.display = 'none';
-        empty.classList.remove('hidden');
-        count.textContent = '0 pending';
-        return;
-      }
-
-      content.style.display = 'block';
-      empty.classList.add('hidden');
-      count.textContent = `${activePending.length} pending`;
-
-      activePending.forEach(item => {
-        const dateObj = new Date(item.created_at);
-        const tr = document.createElement('tr');
-        tr.style.backgroundColor = '#fffbe6'; // Light yellow background for pending
-        tr.style.boxShadow = 'inset 4px 0 0 #f59e0b'; // Orange left border
-
-        tr.innerHTML = `
-          <td style="font-size: 0.85rem; color: #64748b;">
-            <strong>${dateObj.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' })}</strong><br>
-            ${dateObj.toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })}
-          </td>
-          <td style="font-weight: 600; color: #f59e0b;">${item.transaction_number}</td>
-          <td>${item.student_display}</td>
-          <td><span class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; text-transform: uppercase; font-size: 0.7rem;">${item.transaction_type}</span></td>
-          <td style="font-weight: 700; color: #1e293b;">${formatCurrency(item.total_amount)}</td>
-          <td style="white-space: nowrap;">
-            <div style="display: flex; gap: 6px;">
-              <button class="btn btn-primary btn-sm" onclick="reprintReceipt('${item.transaction_number}')" title="View Details"><i class="fas fa-eye"></i></button>
-            </div>
-          </td>
-        `;
-        body.appendChild(tr);
-      });
     }
 
     function markOrderAsPaid(transactionId) {
@@ -4017,6 +4099,10 @@
         historySearch?.focus();
       });
 
+      document.getElementById('txn-status-filter')?.addEventListener('change', () => {
+        loadRecentTransactions(1, historySearch?.value.trim() || '');
+      });
+
       // Standardized User Triggered Event Binding
       document.getElementById('complete-sale')?.addEventListener('click', openFinalizeConfirmationModal);
       document.getElementById('confirm-finalize-cancel')?.addEventListener('click', closeFinalizeConfirmationModal);
@@ -4072,13 +4158,6 @@
               item.product_name.toLowerCase().includes(query);
       });
       renderActiveRentals(filtered);
-    });
-    let pendingOrderSearchTimeout = null;
-    document.getElementById('pending-order-search')?.addEventListener('input', (e) => {
-      clearTimeout(pendingOrderSearchTimeout);
-      pendingOrderSearchTimeout = setTimeout(() => {
-        loadPendingOrders();
-      }, 400);
     });
     document.getElementById('txn-date-from')?.addEventListener('change', () => {
       const search = document.getElementById('txn-history-search')?.value.trim() || '';
@@ -4243,10 +4322,13 @@
       }
     }, true); // Use capture phase to ensure this listener runs before others
 
-    // Maintain focus on hardware scanner input while scanner modal is open
+    // Maintain focus on hardware scanner input while scanner modal is open,
+    // but allow manual order entry to take focus when visible.
     document.getElementById('hardware-scan-input').addEventListener('blur', function() {
       const modal = document.getElementById('qr-modal');
-      if (modal && !modal.classList.contains('hidden')) {
+      const manualOverlay = document.getElementById('manual-entry-overlay');
+      const isManualOpen = manualOverlay && !manualOverlay.classList.contains('hidden');
+      if (modal && !modal.classList.contains('hidden') && !isManualOpen) {
         setTimeout(() => this.focus(), 100);
       }
     });

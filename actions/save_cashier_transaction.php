@@ -527,7 +527,7 @@ try {
                             </div>
                         </div>
                         <div class='receipt-footer' style='background-color: #f8fafc; padding: 22px 18px; text-align: center; border-top: 1px solid #e2e8f0;'>
-                            <p style='margin: 0; color: #64748b; font-size: 12px;'>&copy; " . date('Y') . " Granby College of Science and Technology. All rights reserved.</p>
+                            <p style='margin: 0; color: #64748b; font-size: 12px;'>&copy; " . date('Y') . " Granby Colleges of Science and Technology. All rights reserved.</p>
                             <p style='margin: 8px 0 0; color: #94a3b8; font-size: 11px; line-height: 1.4;'>This is an automated system notification regarding your recent transaction. Please do not reply directly to this email.</p>
                         </div>
                     </div>";
@@ -578,7 +578,7 @@ try {
                             </div>
                         </div>
                         <div style='background-color: #f8fafc; padding: 25px; text-align: center; border-top: 1px solid #e2e8f0;'>
-                            <p style='margin: 0; color: #64748b; font-size: 12px;'>&copy; " . date('Y') . " Granby College of Science and Technology. All rights reserved.</p>
+                            <p style='margin: 0; color: #64748b; font-size: 12px;'>&copy; " . date('Y') . " Granby Colleges of Science and Technology. All rights reserved.</p>
                             <p style='margin: 8px 0 0; color: #94a3b8; font-size: 11px; line-height: 1.4;'>This is an automated system notification. We look forward to serving you.</p>
                         </div>
                     </div>";

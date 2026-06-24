@@ -38,7 +38,7 @@ try {
                 <p>Please proceed to the cashier window immediately. Thank you!</p>
             </div>
             <div style='background: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;'>
-                © " . date('Y') . " Granby College of Science and Technology
+                © " . date('Y') . " Granby Colleges of Science and Technology
             </div>
         </div>";
 
