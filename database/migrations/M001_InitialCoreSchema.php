@@ -59,6 +59,8 @@ class M001_InitialCoreSchema extends BaseMigration {
             `middle_name` VARCHAR(100),
             `email` VARCHAR(100) NOT NULL UNIQUE,
             `password` VARCHAR(255) NOT NULL,
+            `contact_number` VARCHAR(25) DEFAULT NULL,
+            `signature_image` VARCHAR(255) DEFAULT NULL,
             `role` VARCHAR(50) DEFAULT 'admincashier',
             `status` ENUM('active', 'inactive') DEFAULT 'active',
             `last_login` DATETIME,

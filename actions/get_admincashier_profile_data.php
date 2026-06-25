@@ -18,13 +18,14 @@ try {
     $conn->query("ALTER TABLE `admincashier_acc` 
         ADD COLUMN IF NOT EXISTS `username` VARCHAR(100) DEFAULT NULL AFTER `id`,
         ADD COLUMN IF NOT EXISTS `contact_number` VARCHAR(20) DEFAULT NULL AFTER `email`,
+        ADD COLUMN IF NOT EXISTS `signature_image` VARCHAR(255) DEFAULT NULL AFTER `contact_number`,
         ADD COLUMN IF NOT EXISTS `role` VARCHAR(50) DEFAULT 'admincashier' AFTER `password`,
         ADD COLUMN IF NOT EXISTS `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         ADD COLUMN IF NOT EXISTS `last_login` DATETIME DEFAULT NULL,
         ADD COLUMN IF NOT EXISTS `status` ENUM('active','inactive') DEFAULT 'active'");
 
     // Fetch admin details
-    $stmt = $conn->prepare("SELECT id AS admin_id, username, first_name, last_name, middle_name, email, contact_number, role, created_at, last_login, status FROM admincashier_acc WHERE id = ?");
+    $stmt = $conn->prepare("SELECT id AS admin_id, username, first_name, last_name, middle_name, email, contact_number, signature_image, role, created_at, last_login, status FROM admincashier_acc WHERE id = ?");
     if (!$stmt) {
         throw new Exception("Failed to prepare statement: " . $conn->error);
     }

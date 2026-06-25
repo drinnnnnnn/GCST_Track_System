@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS `admincashier_acc` (
   `middle_name` VARCHAR(100) DEFAULT NULL,
   `email` VARCHAR(150) NOT NULL UNIQUE,
   `password` VARCHAR(255) NOT NULL,
+  `contact_number` VARCHAR(25) DEFAULT NULL,
+  `signature_image` VARCHAR(255) DEFAULT NULL,
   `role` ENUM('admincashier','cashier','superadmin') NOT NULL DEFAULT 'admincashier',
   `status` ENUM('active','inactive') NOT NULL DEFAULT 'active',
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
