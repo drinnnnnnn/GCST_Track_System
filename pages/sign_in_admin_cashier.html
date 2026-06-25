@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin / Cashier Sign In</title>
-    <!-- Premium Fonts and Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
@@ -157,6 +156,62 @@
             transform: scale(0.96) translateY(0);
         }
 
+        .tooltip-icon::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: -34px;
+            right: 0;
+            white-space: nowrap;
+            background: rgba(15, 23, 42, 0.95);
+            color: #fff;
+            font-size: 0.75rem;
+            padding: 6px 10px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(8px);
+            transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .tooltip-icon:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .tooltip-btn {
+            position: relative;
+        }
+
+        .tooltip-btn::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%) translateY(6px);
+            white-space: nowrap;
+            background: rgba(15, 23, 42, 0.95);
+            color: #fff;
+            font-size: 0.75rem;
+            padding: 6px 10px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .tooltip-btn:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
         .submit-btn {
             width: 100%;
             padding: 16px;
@@ -199,26 +254,26 @@
     <h1 class="animate-item">Admin Login</h1>
     <p class="animate-item">Authorized personnel access only</p>
 
-    <div id="status-area" class="animate-item"></div>
+    <div id="status-area" class="animate-item tooltip-btn" role="status"></div>
 
     <form action="http://localhost/GCST_Track_System/actions/process_admin_cashier.php" method="POST" id="authForm">
-        <div class="input-box animate-item">
+        <div class="input-box animate-item tooltip-btn" data-tooltip="Enter your admin username or email.">
             <label>Username or Email</label>
             <input type="text" name="email" placeholder="Username or Email" autocomplete="username" required>
             <i class='bx bxs-envelope'></i>
         </div>
 
         <div class="input-box animate-item">
-            <div style="position: relative;">
+            <div style="position: relative;" class="tooltip-btn" data-tooltip="Your account password.">
                 <label>Password</label>
                 <input type="password" name="password" id="password" placeholder="••••••••" required>
-                <i class='bx bx-hide' id="toggleBtn" style="cursor: pointer; position: absolute; right: 10px; top: 38px;"></i>
+                <i class='bx bx-hide tooltip-icon' id="toggleBtn" style="cursor: pointer; position: absolute; right: 10px; top: 38px;" data-tooltip="Show or hide password"></i>
             </div>
 
-            <div style="position: relative; margin-top: 15px;">
+            <div style="position: relative; margin-top: 15px;" class="tooltip-btn" data-tooltip="4-digit PIN used for extra security.">
                 <label>Pin</label>
                 <input type="password" name="pin" id="pin" placeholder="••••" maxlength="4" pattern="\d{4}" inputmode="numeric" required>
-                <i class='bx bx-hide' id="togglePinBtn" style="cursor: pointer; position: absolute; right: 10px; top: 38px;"></i>
+                <i class='bx bx-hide tooltip-icon' id="togglePinBtn" style="cursor: pointer; position: absolute; right: 10px; top: 38px;" data-tooltip="Show or hide PIN"></i>
             </div>
         </div>
 
@@ -254,15 +309,21 @@
         if (urlParams.get('error') === 'wrongpassword') {
             statusArea.className = "animate-item msg-error";
             statusArea.innerText = "Invalid Password.";
+            statusArea.setAttribute('data-tooltip', 'Please verify your password and try again.');
         } else if (urlParams.get('error') === 'nouser') {
             statusArea.className = "animate-item msg-error";
             statusArea.innerText = "Authorized account not found.";
+            statusArea.setAttribute('data-tooltip', 'Check your username/email and ensure your account exists.');
+        } else if (urlParams.get('error') === 'locked') {
+            statusArea.className = "animate-item msg-error";
+            statusArea.innerText = "Account suspended after 4 failed login attempts. Contact the administrator.";
+            statusArea.setAttribute('data-tooltip', 'Your account is temporarily locked after too many failed attempts.');
         } else if (urlParams.get('success') === '1') {
             statusArea.className = "animate-item msg-success";
             statusArea.innerText = "Profile verified. Please login.";
+            statusArea.setAttribute('data-tooltip', 'Verification successful, you may now sign in.');
         }
     }
 </script>
-
 </body>
 </html>

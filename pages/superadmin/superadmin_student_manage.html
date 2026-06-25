@@ -303,6 +303,11 @@
                     <input type="email" id="form-email" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
                 </div>
 
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold uppercase text-slate-500">Address</label>
+                    <textarea id="form-address" rows="2" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary resize-none"></textarea>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1.5">
                     <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-sans">Course</label>
@@ -328,6 +333,30 @@
                 </div>
 
                 <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-sans">Department</label>
+                    <div class="relative w-full">
+                        <select 
+                            id="form-department" 
+                            required 
+                            class="w-full pl-4 pr-11 py-2.5 bg-slate-50 border border-slate-200/70 rounded-xl outline-none transition-all duration-200 text-slate-700 text-sm font-semibold appearance-none cursor-pointer font-sans shadow-sm focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5"
+                        >
+                            <option value="">Select Department</option>
+                            <option value="Information Technology">Information Technology</option>
+                            <option value="Computer Science">Computer Science</option>
+                            <option value="Tourism Management">Tourism Management</option>
+                            <option value="Business Administration">Business Administration</option>
+                            <option value="Elementary Education">Elementary Education</option>
+                            <option value="Secondary Education">Secondary Education</option>
+                            <option value="Criminology">Criminology</option>
+                            <option value="Accountancy">Accountancy</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400 text-xs">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5">
                     <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-sans">Year Level</label>
                     <div class="relative w-full">
                         <select 
@@ -343,6 +372,10 @@
                             <i class="fas fa-chevron-down"></i>
                         </div>
                     </div>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-sans">Year Section</label>
+                    <input type="text" id="form-year-section" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary" placeholder="e.g. A, B, C, 11" />
                 </div>
             </div>
 
@@ -478,6 +511,10 @@
                     <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Year Level</span>
                     <span class="font-semibold text-slate-800">${s.year_level || '1'}</span>
                 </div>
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Year Section</span>
+                    <span class="font-semibold text-slate-800">${s.year_section || 'N/A'}</span>
+                </div>
             `;
             openModal('delete-student-modal');
         }
@@ -589,7 +626,8 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="text-sm font-bold text-slate-700">${s.course || 'N/A'}</div>
-                            <div class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">${s.year_level || '1'} Year Level</div>
+                            <div class="text-[11px] text-slate-500 font-semibold">${s.department || 'General'}</div>
+                            <div class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">${s.year_level || '1'} Year Level • Section ${s.year_section || 'N/A'}</div>
                         </td>
                         <td class="px-6 py-4">
                             ${statusBadge}
@@ -800,6 +838,7 @@
             const formLastName = document.getElementById('form-last-name');
             const formContactNumber = document.getElementById('form-contact-number');
             const formEmail = document.getElementById('form-email');
+            const formAddress = document.getElementById('form-address');
             const formCourse = document.getElementById('form-course');
             const formYear = document.getElementById('form-year');
 
@@ -809,8 +848,11 @@
             if (formLastName) formLastName.value = s.last_name || '';
             if (formContactNumber) formContactNumber.value = s.contact_number || '';
             if (formEmail) formEmail.value = s.email || '';
+            if (formAddress) formAddress.value = s.address || '';
             if (formCourse) formCourse.value = s.course || 'BSIT';
             if (formYear) formYear.value = String(s.year_level || '1');
+            const formYearSection = document.getElementById('form-year-section');
+            if (formYearSection) formYearSection.value = s.year_section || '';
             openModal('student-modal');
         }
 
@@ -822,10 +864,13 @@
             const lastName = document.getElementById('form-last-name')?.value.trim();
             const contactNumber = document.getElementById('form-contact-number')?.value.trim();
             const email = document.getElementById('form-email')?.value.trim();
+            const address = document.getElementById('form-address')?.value.trim();
             const course = document.getElementById('form-course')?.value;
+            const department = document.getElementById('form-department')?.value;
             const year = document.getElementById('form-year')?.value;
+            const yearSection = document.getElementById('form-year-section')?.value.trim();
 
-            if (!id || !firstName || !lastName || !email || !course || !year) {
+            if (!id || !firstName || !lastName || !email || !address || !course || !department || !year) {
                 showToast('Please fill out all required fields.', 'warning');
                 return;
             }
@@ -838,8 +883,11 @@
                 last_name: lastName,
                 contact_number: contactNumber,
                 email,
+                address,
                 course,
-                year
+                department,
+                year,
+                year_section: yearSection
             };
 
             openConfirmModal({

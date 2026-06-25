@@ -110,6 +110,14 @@ export function getSidebarHTML() {
             }
         };
 
+        window.handleSidebarLinkClick = function() {
+            if (window.matchMedia('(max-width: 1024px)').matches) {
+                if (typeof window.toggleSidebar === 'function') {
+                    window.toggleSidebar();
+                }
+            }
+        };
+
         // Global utility to initialize lock screen events
         window.initLockScreenEvents = function() {
             const pinInput = document.getElementById('lock-screen-pin');
@@ -164,6 +172,15 @@ export function getSidebarHTML() {
         window.initLockScreenEvents();
     }
 
+    if (!document.getElementById('sidebar-overlay')) {
+        const overlayHTML = `<div id="sidebar-overlay" onclick="typeof window.toggleSidebar === 'function' ? window.toggleSidebar() : null"></div>`;
+        document.body.insertAdjacentHTML('beforeend', overlayHTML);
+    }
+
+    const currentPage = (window.location.pathname || '').split('/').pop().split('?')[0].split('#')[0].toLowerCase();
+    const getFileName = (href) => href.split('/').pop().split('?')[0].split('#')[0].toLowerCase();
+    const activeClass = (href) => getFileName(href) === currentPage ? ' active' : '';
+
     return `
 <style>
     .sidebar {
@@ -182,6 +199,31 @@ export function getSidebarHTML() {
         -webkit-backdrop-filter: blur(18px) saturate(170%);
         transition: width 0.35s ease, transform 0.35s ease, background 0.25s ease;
         overflow: hidden;
+    }
+
+    .mobile-sidebar-toggle {
+        display: none;
+        position: fixed;
+        top: 14px;
+        left: 14px;
+        z-index: 1101;
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        border: 1px solid rgba(var(--border-rgb), 0.18);
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--text);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+        transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .mobile-sidebar-toggle:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 1);
     }
 
     .sidebar-brand {
@@ -478,6 +520,10 @@ export function getSidebarHTML() {
         .sidebar-minimize-btn {
             display: none;
         }
+
+        .mobile-sidebar-toggle {
+            display: inline-flex;
+        }
     }
 
     @media (max-width: 640px) {
@@ -589,6 +635,10 @@ export function getSidebarHTML() {
     }
 </style>
 
+<button id="mobile-sidebar-toggle" class="mobile-sidebar-toggle" type="button" aria-label="Open navigation menu" onclick="typeof window.toggleSidebar === 'function' ? window.toggleSidebar() : null">
+    <i class="fas fa-bars"></i>
+</button>
+
 <aside id="main-sidebar" class="sidebar" aria-label="Main Sidebar">
     <div class="sidebar-brand" id="sidebar-brand-area">
         <div class="brand-content">
@@ -608,21 +658,21 @@ export function getSidebarHTML() {
     <div class="sidebar-nav-wrap">
         <p class="nav-section-label">Main Menu</p>
         <nav class="sidebar-nav">
-            <a href="superadmin_dashb.html" class="sidebar-link" title="Dashboard" onclick="handleSidebarLinkClick()">
+            <a href="superadmin_dashb.html" class="sidebar-link${activeClass('superadmin_dashb.html')}" title="Dashboard" onclick="handleSidebarLinkClick()">
                 <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
             </a>
-            <a href="superadmin_admin_manage.html" class="sidebar-link" title="Manage Admins" onclick="handleSidebarLinkClick()">
+            <a href="superadmin_admin_manage.html" class="sidebar-link${activeClass('superadmin_admin_manage.html')}" title="Manage Admins" onclick="handleSidebarLinkClick()">
                 <i class="fas fa-user-shield"></i> <span>Manage Admins</span>
             </a>
-            <a href="superadmin_student_manage.html" class="sidebar-link" title="Manage Students" onclick="handleSidebarLinkClick()">
+            <a href="superadmin_student_manage.html" class="sidebar-link${activeClass('superadmin_student_manage.html')}" title="Manage Students" onclick="handleSidebarLinkClick()">
                 <i class="fas fa-user-graduate"></i> <span>Manage Students</span>
             </a>
 
             <p class="nav-section-label">System Control</p>
-            <a href="register_admin_cashier.html" class="sidebar-link" title="Register Staff" onclick="handleSidebarLinkClick()">
+            <a href="register_admin_cashier.html" class="sidebar-link${activeClass('register_admin_cashier.html')}" title="Register Staff" onclick="handleSidebarLinkClick()">
                 <i class="fas fa-user-plus"></i> <span>Register Staff</span>
             </a>
-            <a href="superadmin_system_maintenance.html" class="sidebar-link" title="System Maintenance" onclick="handleSidebarLinkClick()">
+            <a href="superadmin_system_maintenance.html" class="sidebar-link${activeClass('superadmin_system_maintenance.html')}" title="System Maintenance" onclick="handleSidebarLinkClick()">
                 <i class="fas fa-tools"></i> <span>System Maintenance</span>
             </a>
         </nav>

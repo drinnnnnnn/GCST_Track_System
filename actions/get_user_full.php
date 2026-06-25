@@ -26,9 +26,14 @@ if (!$studentId && !$userId && !in_array($sessionRole, ['admincashier', 'superad
 }
 
 try {
+    $hasLastLoginColumn = $conn->query("SHOW COLUMNS FROM users LIKE 'last_login'")->num_rows > 0;
+    $selectColumns = 'id, student_id, last_name, first_name, middle_name, email, course, year_section, contact_number, phone, address, status, created_at';
+    if ($hasLastLoginColumn) {
+        $selectColumns .= ', last_login';
+    }
+
     $stmt = $conn->prepare(
-        'SELECT id, student_id, last_name, first_name, middle_name, email, course, year_section, contact_number, phone, address, status, created_at ' .
-        'FROM users WHERE student_id = ? OR id = ? LIMIT 1'
+        "SELECT $selectColumns FROM users WHERE student_id = ? OR id = ? LIMIT 1"
     );
     if (!$stmt) {
         throw new Exception('Unable to prepare user lookup statement.');
@@ -48,6 +53,7 @@ try {
         $user['contact_number'] = $user['phone'];
     }
 
+    $user['last_login'] = $hasLastLoginColumn ? ($user['last_login'] ?? null) : null;
     $user['full_name'] = trim($user['first_name'] . ' ' . ($user['middle_name'] ? $user['middle_name'] . ' ' : '') . $user['last_name']);
     $user['transaction_history'] = [];
     $user['notification_preferences'] = [
@@ -57,20 +63,6 @@ try {
         'queue_notifications' => true,
         'system_updates' => true,
     ];
-
-    if ($conn->query("SHOW COLUMNS FROM users LIKE 'last_login'")->num_rows > 0) {
-        $loginStmt = $conn->prepare('SELECT last_login FROM users WHERE student_id = ? OR id = ? LIMIT 1');
-        if ($loginStmt) {
-            $loginStmt->bind_param('si', $studentId, $userId);
-            $loginStmt->execute();
-            $loginResult = $loginStmt->get_result();
-            $loginRow = $loginResult ? $loginResult->fetch_assoc() : null;
-            $loginStmt->close();
-            if ($loginRow && isset($loginRow['last_login'])) {
-                $user['last_login'] = $loginRow['last_login'];
-            }
-        }
-    }
 
     // Load recent transaction history if the related tables exist.
     if (tableExists($conn, 'transactions') && tableExists($conn, 'products')) {

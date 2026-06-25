@@ -26,7 +26,7 @@ if ($input && isset($input['action'])) {
 
 switch ($action) {
     case 'list':
-        $query = "SELECT id, student_id, first_name, last_name, middle_name, email, sex, course, department, year_level, contact_number, address, status, is_pwd, school_id_pic, reg_form, payment_scheme, pwd_front, pwd_back, created_at FROM users ORDER BY created_at DESC";
+        $query = "SELECT id, student_id, first_name, last_name, middle_name, email, sex, course, department, year_level, year_section, contact_number, address, status, is_pwd, school_id_pic, reg_form, payment_scheme, pwd_front, pwd_back, created_at FROM users ORDER BY created_at DESC";
         $result = $conn->query($query);
         $user = [];
         while ($row = $result->fetch_assoc()) {
@@ -58,11 +58,14 @@ switch ($action) {
         $lname = trim($input['last_name'] ?? '');
         $email = trim($input['email'] ?? '');
         $course = trim($input['course'] ?? '');
+        $department = trim($input['department'] ?? '');
+        $address = trim($input['address'] ?? '');
         $year = filter_var($input['year'] ?? 1, FILTER_VALIDATE_INT);
+        $yearSection = trim($input['year_section'] ?? '');
         $contact_number = trim ($input['contact_number'] ?? '');
         $status = $input['status'] ?? 'pending';
 
-        if (!$id || empty($fname) || empty($lname) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (!$id || empty($fname) || empty($lname) || empty($department) || empty($address) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             echo json_encode(['success' => false, 'message' => 'All required fields must be valid.']);
             exit;
         }
@@ -74,8 +77,8 @@ switch ($action) {
             exit;
         }
 
-        $stmt = $conn->prepare("UPDATE users SET first_name = ?, middle_name = ?, last_name = ?, email = ?, course = ?, year_level = ?, status = ?, contact_number = ? WHERE id = ?");
-        $stmt->bind_param("sssssissi", $fname, $middle, $lname, $email, $course, $year, $status, $contact_number, $id);
+        $stmt = $conn->prepare("UPDATE users SET first_name = ?, middle_name = ?, last_name = ?, email = ?, course = ?, department = ?, year_level = ?, year_section = ?, address = ?, status = ?, contact_number = ? WHERE id = ?");
+        $stmt->bind_param("ssssssisssis", $fname, $middle, $lname, $email, $course, $department, $year, $yearSection, $address, $status, $contact_number, $id);
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'message' => 'Student profile updated successfully.']);
         } else {

@@ -364,6 +364,28 @@
       transition: font-size 0.3s ease; /* Smoothly scale text when values change */
     }
 
+    .summary-card.summary-card-action {
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .summary-card.summary-card-action:hover,
+    .summary-card.summary-card-action:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(99, 102, 241, 0.25);
+      box-shadow: 0 20px 45px rgba(99, 102, 241, 0.08);
+    }
+
+    .summary-card.summary-card-action.active {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.06);
+    }
+
+    .summary-card.summary-card-action.active h3,
+    .summary-card.summary-card-action.active strong {
+      color: var(--primary);
+    }
+
     .products-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
@@ -1247,7 +1269,7 @@
               <h3>Total products</h3>
               <strong id="summary-total">0</strong>
             </div>
-            <div class="summary-card">
+            <div id="low-stock-card" class="summary-card summary-card-action" role="button" tabindex="0" onclick="InventoryApp.toggleLowStock()" onkeypress="if(event.key==='Enter'||event.key===' ')InventoryApp.toggleLowStock()">
               <i class="fas fa-exclamation-triangle"></i>
               <h3>Low stock</h3>
               <strong id="summary-low">0</strong>
@@ -1672,7 +1694,7 @@
             selected: null,
             pendingDeleteId: null,
             pendingDeleteProduct: null,
-            filter: { query: '', category: 'All', course: 'All' },
+            filter: { query: '', category: 'All', course: 'All', lowStock: false },
             isProcessing: false
         },
 
@@ -1845,6 +1867,7 @@
                 this.buildCategoryFilters();
                 this.buildCourseFilter();
                 this.applyFilters();
+                this.updateLowStockCardState();
             } catch (err) {
                 console.error('Inventory Load Error:', err);
                 if (this.ui.grid) {
@@ -1969,7 +1992,8 @@
                 }
 
                 const searchable = `${p.product_name} ${p.product_category} ${p.uniform_course || ''} ${p.uniform_type || ''} ${p.book_author || ''}`.toLowerCase();
-                return matchesCat && matchesCourse && (!query || searchable.includes(query));
+                const matchesLowStock = !this.state.filter.lowStock || Number(p.stock_count || 0) < 10;
+                return matchesCat && matchesCourse && matchesLowStock && (!query || searchable.includes(query));
             });
 
             this.renderGrid();
@@ -2103,8 +2127,37 @@
 
         setCategory(cat) {
             this.state.filter.category = cat;
+            this.state.filter.lowStock = false;
             this.buildCategoryFilters();
             this.applyFilters();
+        },
+
+        toggleLowStock() {
+            this.state.filter.lowStock = !this.state.filter.lowStock;
+
+            if (this.state.filter.lowStock) {
+                this.state.filter.query = '';
+                this.state.filter.category = 'All';
+                this.state.filter.course = 'All';
+
+                if (this.ui.search) this.ui.search.value = '';
+                const courseSelect = document.getElementById('course-filter');
+                if (courseSelect) courseSelect.value = 'All';
+                showToast('Showing low-stock products only', 'info');
+            } else {
+                showToast('Showing all inventory', 'success');
+            }
+
+            this.buildCategoryFilters();
+            this.buildCourseFilter();
+            this.updateLowStockCardState();
+            this.applyFilters();
+        },
+
+        updateLowStockCardState() {
+            const lowCard = document.getElementById('low-stock-card');
+            if (!lowCard) return;
+            lowCard.classList.toggle('active', this.state.filter.lowStock);
         },
 
         showAddProductForm() {

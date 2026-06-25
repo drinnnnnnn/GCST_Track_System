@@ -317,37 +317,63 @@
         buttonId: 'optimizeDatabaseBtn',
         impact: 'Medium',
         message: 'This will repair and optimize database tables for better performance.'
+      },
+      restoreBackup: {
+        label: 'Restore Backup',
+        endpoint: 'restore_backup.php',
+        impact: 'High',
+        message: 'This will overwrite the current database state with the selected backup.'
       }
     };
 
     let pendingMaintenanceAction = null;
+    let pendingMaintenancePayload = null;
 
-    function openMaintenanceConfirmModal(actionKey) {
+    function openMaintenanceConfirmModal(actionKey, payload = null) {
       const config = maintenanceActionConfig[actionKey];
       if (!config) return;
 
       pendingMaintenanceAction = actionKey;
+      pendingMaintenancePayload = payload;
       document.getElementById('maintenanceModalAction').textContent = config.label;
       document.getElementById('maintenanceModalImpact').textContent = `Impact Level: ${config.impact}`;
-      document.getElementById('maintenanceModalMessage').textContent = config.message;
+      document.getElementById('maintenanceModalMessage').textContent = payload?.message || config.message;
+      document.getElementById('maintenanceConfirmBtn').textContent = actionKey === 'restoreBackup' ? 'Restore' : 'Proceed';
       document.getElementById('maintenanceModal').classList.add('active');
       document.getElementById('maintenanceConfirmBtn').focus();
+
+      if (payload?.button) {
+        payload.button.disabled = true;
+      }
     }
 
-    function closeMaintenanceModal() {
+    function closeMaintenanceModal(preserveButton = false) {
       document.getElementById('maintenanceModal').classList.remove('active');
+      if (!preserveButton && pendingMaintenancePayload?.button) {
+        pendingMaintenancePayload.button.disabled = false;
+      }
       pendingMaintenanceAction = null;
+      pendingMaintenancePayload = null;
     }
 
     function executeMaintenanceAction(actionKey) {
       const config = maintenanceActionConfig[actionKey];
       if (!config) return;
-      closeMaintenanceModal();
+      const callback = actionKey === 'backupDatabase' ? () => loadRecentBackups() : actionKey === 'restoreBackup' ? () => loadRecentBackups() : null;
+      const button = pendingMaintenancePayload?.button || config.buttonId || null;
+      const options = actionKey === 'restoreBackup' ? {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: pendingMaintenancePayload?.backupId })
+      } : {};
+
+      closeMaintenanceModal(true);
       performMaintenance(
         config.endpoint,
-        config.buttonId,
-        actionKey === 'backupDatabase' ? () => loadRecentBackups() : null,
-        config.label
+        button,
+        callback,
+        config.label,
+        options
       );
     }
 
@@ -406,7 +432,7 @@
                 <td class="font-medium text-slate-700">${date}</td>
                 <td class="text-slate-500">${backup.file_size}</td>
                 <td><span class="status ${backup.status === 'success' ? 'in-stock' : 'out-of-stock'}">${backup.status === 'success' ? 'Success' : 'Failed'}</span></td>
-                <td class="text-right"><button class="btn-success py-1.5 px-3 text-xs" onclick="restoreBackup(${backup.id})">Restore</button></td>
+                <td class="text-right"><button class="btn-success py-1.5 px-3 text-xs" data-backup-id="${backup.id}" data-backup-date="${backup.backup_date}" onclick="restoreBackup(${backup.id}, this)">Restore Snapshot</button></td>
               </tr>
             `;
           });
@@ -451,15 +477,23 @@
     }
 
     // Perform maintenance task
-    function performMaintenance(endpoint, btnId, callback, actionLabel) {
-      const btn = document.getElementById(btnId);
-      const originalHTML = btn.innerHTML;
-      
-      btn.disabled = true;
-      btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Processing...`;
+    function performMaintenance(endpoint, btnRef, callback, actionLabel, options = {}) {
+      const btn = typeof btnRef === 'string' ? document.getElementById(btnRef) : btnRef;
+      const originalHTML = btn ? btn.innerHTML : null;
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Processing...`;
+      }
       showToast(`Executing ${actionLabel || 'maintenance task'}...`, 'info');
 
-      fetch(`../../actions/${endpoint}`)
+      const fetchOptions = {
+        method: options.method || 'GET',
+        headers: options.headers || {},
+        body: options.body || undefined
+      };
+
+      fetch(`../../actions/${endpoint}`, fetchOptions)
         .then(async res => {
           const data = await res.json();
           if (!res.ok || data.success === false) {
@@ -476,14 +510,22 @@
           showToast(err.message || 'Operation failed. Please try again.', 'error');
         })
         .finally(() => {
-          btn.disabled = false;
-          btn.innerHTML = originalHTML;
+          if (btn && originalHTML !== null) {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+          }
         });
     }
 
-    // Restore backup (placeholder)
-    function restoreBackup(backupId) {
-      showToast('Restore functionality is not implemented yet', 'warning');
+    // Restore backup via confirmation modal
+    function restoreBackup(backupId, button) {
+      const backupDate = button?.dataset?.backupDate;
+      const formattedDate = backupDate ? new Date(backupDate).toLocaleString() : 'selected backup';
+      openMaintenanceConfirmModal('restoreBackup', {
+        backupId,
+        button,
+        message: `Restore snapshot from ${formattedDate}? This will overwrite current database state.`
+      });
     }
 
   </script>

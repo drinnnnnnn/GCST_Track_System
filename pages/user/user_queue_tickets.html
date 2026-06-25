@@ -630,6 +630,12 @@
       return `${minutes}m ${seconds}s`;
     }
 
+    function formatQueueNumber(rawNumber) {
+      if (rawNumber === null || rawNumber === undefined) return '-';
+      const numberString = String(rawNumber).trim();
+      return numberString.replace(/^(?:REG|PWD)-/i, '');
+    }
+
     function showConfirmation(message, isError = false) {
       const msgElement = document.getElementById('confirmation-msg');
       const textElement = document.getElementById('confirmation-text');
@@ -679,7 +685,7 @@
             <div class="relative z-10">
               <div class="flex items-start justify-between mb-6 gap-3">
                 <div class="flex items-center gap-2">
-                  <div class="text-3xl font-semibold text-blue-600 tracking-tighter">${ticket.queue_number}</div>
+                  <div class="text-3xl font-semibold text-blue-600 tracking-tighter">${formatQueueNumber(ticket.queue_number)}</div>
                   ${isPwd ? '<span class="pwd-badge" title="PWD Priority User">♿ PWD</span>' : ''}
                 </div>
                 <span class="text-[10px] px-3 py-1 rounded-full uppercase tracking-[0.1em] font-semibold ${badgeColors}">
@@ -843,7 +849,7 @@
 
       const isPwd = Number(ticket.is_pwd || 0) === 1;
 
-      if (numberEl) numberEl.textContent = ticket.queue_number || '-';
+      if (numberEl) numberEl.textContent = formatQueueNumber(ticket.queue_number) || '-';
       if (numberPwdEl) {
         numberPwdEl.classList.toggle('hidden', !isPwd);
       }
@@ -955,7 +961,7 @@
         }
 
         await refreshQueueStatus();
-        showToast(`Queue ticket ${payload.queue_number || payload.ticket?.queue_number || 'Ticket'} generated successfully.`, 'success');
+        showToast(`Queue ticket ${formatQueueNumber(payload.queue_number || payload.ticket?.queue_number) || 'Ticket'} generated successfully.`, 'success');
         startCooldown(120); // Start 2-minute cooldown
         openQueueModal();
       } catch (error) {
@@ -1065,7 +1071,7 @@
           <body>
             <div class="ticket">
               <h1>Queue Ticket</h1>
-              <p><span class="font-semibold">Ticket Number:</span> ${ticket.queue_number}</p>
+              <p><span class="font-semibold">Ticket Number:</span> ${formatQueueNumber(ticket.queue_number)}</p>
               <p><span class="font-semibold">Status:</span> ${mapStatus(ticket.status)}</p>
               <p><span class="font-semibold">Generated:</span> ${formatDateTime(ticket.created_at)}</p>
               ${ticket.served_at ? `<p><span class="font-semibold">Served:</span> ${formatDateTime(ticket.served_at)}</p>` : ''}
@@ -1135,7 +1141,7 @@
       const ticket = allTickets.find(item => String(item.id) === String(ticketId)) || null;
 
       if (ticket) {
-        document.getElementById('cancel-ticket-number').textContent = ticket.queue_number || '-';
+        document.getElementById('cancel-ticket-number').textContent = formatQueueNumber(ticket.queue_number) || '-';
         document.getElementById('cancel-ticket-type').textContent = ticket.purpose || 'General Inquiry';
         document.getElementById('cancel-ticket-status').textContent = mapStatus(ticket.status);
         document.getElementById('cancel-ticket-window').textContent = ticket.window_name || ticket.window || ticket.assigned_window || 'Not assigned';

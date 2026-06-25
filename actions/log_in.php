@@ -48,6 +48,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($hashed_password && password_verify($password_input, $hashed_password)) {
             $full_name = $first_name . ' ' . ($middle_name ? $middle_name . ' ' : '') . $last_name;
 
+            $updateLogin = $conn->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
+            if ($updateLogin) {
+                $updateLogin->bind_param("i", $user_id);
+                $updateLogin->execute();
+                $updateLogin->close();
+            }
+
             session_regenerate_id(true);
             $_SESSION = [];
             $_SESSION['user_id'] = $user_id;

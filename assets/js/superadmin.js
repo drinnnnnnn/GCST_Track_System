@@ -322,8 +322,12 @@ window.showError = SuperAdmin.utils.showError;
 window.toggleSidebar = function() {
     const sidebar = document.getElementById('main-sidebar');
     const overlay = document.getElementById('sidebar-overlay');
-    sidebar?.classList.toggle('active');
+    const isSidebarActive = sidebar?.classList.toggle('active') ?? false;
     overlay?.classList.toggle('active');
+
+    if (window.matchMedia('(max-width: 1024px)').matches) {
+        document.body.style.overflow = isSidebarActive ? 'hidden' : '';
+    }
 };
 
 window.toggleMinimizeSidebar = function() {

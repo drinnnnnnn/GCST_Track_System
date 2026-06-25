@@ -308,7 +308,7 @@
 
             data.forEach(a => {
                 const isActive = a.status === 'active';
-                const lastLogin = a.last_login ? new Date(a.last_login).toLocaleDateString() : 'Never';
+                const lastLogin = a.last_login ? new Date(a.last_login).toLocaleString() : 'Never';
                 const displayName = (a.name || `${a.first_name} ${a.middle_name || ''} ${a.last_name}`).trim();
                 const displayContact = a.contact_number || 'N/A';
                 const initials = displayName.charAt(0).toUpperCase();

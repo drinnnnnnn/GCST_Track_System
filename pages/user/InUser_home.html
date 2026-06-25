@@ -402,6 +402,12 @@
       return days;
     }
 
+    function formatQueueNumber(rawNumber) {
+      if (rawNumber === null || rawNumber === undefined) return '-';
+      const numberString = String(rawNumber).trim();
+      return numberString.replace(/^(?:REG|PWD)-/i, '');
+    }
+
     function buildImageUrl(src) {
       const defaultImage = '/GCST_Track_System/assets/img_bg/product_details.png';
       if (!src) return defaultImage;
@@ -476,7 +482,7 @@
 
         if (tickets.length > 0) {
           const latest = tickets[0];
-          latestTicketEl.textContent = latest.queue_number;
+          latestTicketEl.textContent = formatQueueNumber(latest.queue_number);
           statusEl.textContent = latest.display_status || (latest.status.charAt(0).toUpperCase() + latest.status.slice(1));
           
           statusEl.style.color = latest.status === 'serving' ? '#166534' : 

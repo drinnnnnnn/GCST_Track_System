@@ -183,52 +183,78 @@ try {
 
             if ($result->num_rows === 1) {
                 $user = $result->fetch_assoc();
-                if (password_verify($password, $user['password'])) {
-                    $pinValid = false;
+                $userId = $user['id'];
+                $passwordMatches = password_verify($password, $user['password']);
+                $pinValid = false;
+
+                if ($passwordMatches) {
                     if (!empty($user['pin']) && password_verify($pin, $user['pin'])) {
                         $pinValid = true;
                     } elseif ($user['pin'] === $pin) {
                         $pinValid = true;
                         $rehashPin = password_hash($pin, PASSWORD_DEFAULT);
                         $rehashStmt = $conn->prepare('UPDATE admincashier_acc SET pin = ? WHERE id = ?');
-                        $rehashStmt->bind_param('si', $rehashPin, $user['id']);
+                        $rehashStmt->bind_param('si', $rehashPin, $userId);
                         $rehashStmt->execute();
                         $rehashStmt->close();
                     }
+                }
 
-                    if ($pinValid) {
-                        if ($user['status'] !== 'active') {
-                            if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Account suspended'], 403);
-                            header('Location: ../pages/sign_in_admin_cashier.html?error=suspended');
-                            exit();
-                        }
-
-                        session_regenerate_id(true);
-                        $_SESSION = [];
-                        $updateLogin = $conn->prepare("UPDATE admincashier_acc SET last_login = NOW(), login_attempts = 0 WHERE id = ?");
-                        $updateLogin->bind_param("i", $user['id']);
-                        $updateLogin->execute();
-
-                        $_SESSION['admin_id'] = $user['id'];
-                        $_SESSION['admincashier_id'] = $user['id'];
-                        $_SESSION['admin_name'] = trim(implode(' ', array_filter([
-                            $user['first_name'], 
-                            $user['middle_name'], 
-                            $user['last_name']
-                        ])));
-                        $_SESSION['contact_number'] = $user['contact_number'] ?? '';
-                        $_SESSION['username'] = $user['username'] ?? '';
-                        $_SESSION['role'] = 'admincashier';
-                        $_SESSION['admincashier_role'] = 'admincashier';
-                        $_SESSION['login_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
-                        $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
-                        
-                        logAudit($conn, 'admincashier', $user['id'], 'login', 'Admin Cashier logged in.');
-
-                        if (isAjax()) sendJsonResponse(['success' => true, 'redirect' => '../pages/admincashier/admincashier_dashb.html']);
-                        header('Location: ../pages/admincashier/admincashier_dashb.html');
+                if ($passwordMatches && $pinValid) {
+                    if ($user['status'] !== 'active') {
+                        if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Account suspended'], 403);
+                        header('Location: ../pages/sign_in_admin_cashier.html?error=suspended');
                         exit();
                     }
+
+                    session_regenerate_id(true);
+                    $_SESSION = [];
+                    $updateLogin = $conn->prepare("UPDATE admincashier_acc SET last_login = NOW(), login_attempts = 0 WHERE id = ?");
+                    $updateLogin->bind_param("i", $userId);
+                    $updateLogin->execute();
+
+                    $_SESSION['admin_id'] = $userId;
+                    $_SESSION['admincashier_id'] = $userId;
+                    $_SESSION['admin_name'] = trim(implode(' ', array_filter([
+                        $user['first_name'], 
+                        $user['middle_name'], 
+                        $user['last_name']
+                    ])));
+                    $_SESSION['contact_number'] = $user['contact_number'] ?? '';
+                    $_SESSION['username'] = $user['username'] ?? '';
+                    $_SESSION['role'] = 'admincashier';
+                    $_SESSION['admincashier_role'] = 'admincashier';
+                    $_SESSION['login_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
+                    $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
+                    
+                    logAudit($conn, 'admincashier', $userId, 'login', 'Admin Cashier logged in.');
+
+                    if (isAjax()) sendJsonResponse(['success' => true, 'redirect' => '../pages/admincashier/admincashier_dashb.html']);
+                    header('Location: ../pages/admincashier/admincashier_dashb.html');
+                    exit();
+                }
+
+                $incrementAttempts = $conn->prepare(
+                    'UPDATE admincashier_acc SET login_attempts = COALESCE(login_attempts, 0) + 1, status = IF(COALESCE(login_attempts, 0) + 1 >= 4, \'inactive\', status) WHERE id = ?'
+                );
+                $incrementAttempts->bind_param('i', $userId);
+                if (!$incrementAttempts->execute()) {
+                    error_log('Login attempts update failed for admincashier_acc id=' . $userId . ': ' . $incrementAttempts->error);
+                }
+
+                $incrementAttempts->close();
+
+                $statusCheck = $conn->prepare('SELECT login_attempts, status FROM admincashier_acc WHERE id = ?');
+                $statusCheck->bind_param('i', $userId);
+                $statusCheck->execute();
+                $statusResult = $statusCheck->get_result();
+                $statusRow = $statusResult ? $statusResult->fetch_assoc() : null;
+                $statusCheck->close();
+
+                if ($statusRow && $statusRow['status'] === 'inactive' && intval($statusRow['login_attempts']) >= 4) {
+                    if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Account suspended after too many failed login attempts.'], 403);
+                    header('Location: ../pages/sign_in_admin_cashier.html?error=locked');
+                    exit();
                 }
             }
             if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Invalid credentials'], 401);
