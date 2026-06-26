@@ -257,7 +257,7 @@
     <div id="status-area" class="animate-item tooltip-btn" role="status"></div>
 
     <form action="http://localhost/GCST_Track_System/actions/process_admin_cashier.php" method="POST" id="authForm">
-        <div class="input-box animate-item tooltip-btn" data-tooltip="Enter your admin username or email.">
+        <div class="input-box animate-item tooltip-btn" data-tooltip="(Example: admin@gmail.com or AdminUser)">
             <label>Username or Email</label>
             <input type="text" name="email" placeholder="Username or Email" autocomplete="username" required>
             <i class='bx bxs-envelope'></i>
@@ -306,19 +306,36 @@
 
     if (urlParams.has('error') || urlParams.has('success')) {
         statusArea.style.display = "block";
-        if (urlParams.get('error') === 'wrongpassword') {
+
+        const errorCode = urlParams.get('error');
+        const successCode = urlParams.get('success');
+
+        if (errorCode === 'wrongpassword') {
             statusArea.className = "animate-item msg-error";
             statusArea.innerText = "Invalid Password.";
             statusArea.setAttribute('data-tooltip', 'Please verify your password and try again.');
-        } else if (urlParams.get('error') === 'nouser') {
+            alert("Login failed: Invalid Password.");
+
+        } else if (errorCode === 'nouser') {
             statusArea.className = "animate-item msg-error";
             statusArea.innerText = "Authorized account not found.";
             statusArea.setAttribute('data-tooltip', 'Check your username/email and ensure your account exists.');
-        } else if (urlParams.get('error') === 'locked') {
+
+        } else if (errorCode === 'invalid') {
+            statusArea.className = "animate-item msg-error";
+            statusArea.innerText = "Invalid credentials. Please check your inputs.";
+            statusArea.setAttribute('data-tooltip', 'Make sure username/email, password, and PIN are correct.');
+
+        } else if (errorCode === 'suspended') {
+            statusArea.className = "animate-item msg-error";
+            statusArea.innerText = "Account suspended.";
+            statusArea.setAttribute('data-tooltip', 'Your account is currently suspended. Contact the administrator.');
+        } else if (errorCode === 'locked') {
             statusArea.className = "animate-item msg-error";
             statusArea.innerText = "Account suspended after 4 failed login attempts. Contact the administrator.";
             statusArea.setAttribute('data-tooltip', 'Your account is temporarily locked after too many failed attempts.');
-        } else if (urlParams.get('success') === '1') {
+
+        } else if (successCode === '1') {
             statusArea.className = "animate-item msg-success";
             statusArea.innerText = "Profile verified. Please login.";
             statusArea.setAttribute('data-tooltip', 'Verification successful, you may now sign in.');

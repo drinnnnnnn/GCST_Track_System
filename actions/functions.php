@@ -264,7 +264,7 @@ function testEmailService() {
     }
 
     $fromEmail = filter_var(defined('MAIL_FROM') ? MAIL_FROM : '', FILTER_VALIDATE_EMAIL) ? MAIL_FROM : $smtpUser;
-    $fromName = defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'GCST Support';
+    $fromName = defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'GRANBY COLLEGES OF SCIENCE AND TECHNOLOGY Support';
     $toEmail = filter_var($smtpUser, FILTER_VALIDATE_EMAIL) ? $smtpUser : $fromEmail;
     if (empty($toEmail)) {
         throw new Exception('No valid recipient email available for SMTP test.');

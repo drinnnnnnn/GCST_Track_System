@@ -63,6 +63,7 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
             $mail->Username   = SMTP_USER;
             $mail->Password   = SMTP_PASS;
             $mail->Port       = SMTP_PORT;
+            $mail->SMTPAutoTLS = false;
             
             // Dynamically set encryption based on config
             $mail->SMTPSecure = (defined('SMTP_SECURE') && strtolower(SMTP_SECURE) === 'ssl') 
@@ -77,8 +78,13 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
                 ]
             ];
 
-            // Use configuration for sender identity
-            $mail->setFrom(MAIL_FROM, MAIL_FROM_NAME);
+            // Use the authenticated SMTP account as the envelope sender for Gmail compatibility.
+            // Keep MAIL_FROM as a Reply-To address only when it differs.
+            $mail->setFrom(SMTP_USER, MAIL_FROM_NAME);
+            $mail->Sender = SMTP_USER;
+            if (!empty(MAIL_FROM) && strcasecmp(MAIL_FROM, SMTP_USER) !== 0) {
+                $mail->addReplyTo(MAIL_FROM, MAIL_FROM_NAME);
+            }
             $mail->addAddress($toEmail);
             $mail->isHTML(true);
             $mail->Subject = $subject;
@@ -106,6 +112,9 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
         } catch (Exception $e) {
             $emailStatus = 'failed';
             $err = $e->getMessage() ?: $mail->ErrorInfo;
+            if (strpos($err, 'Daily user sending limit exceeded') !== false) {
+                $err = 'Gmail SMTP daily sending limit exceeded. Please wait 24 hours or use another SMTP service.';
+            }
             $logMessage .= "Email failed: $err. ";
             error_log("Mailer Error: " . $err);
         }

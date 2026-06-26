@@ -88,11 +88,54 @@ try {
             $pin = trim($inputData['pin'] ?? '');
             $password = $inputData['password'] ?? '';
             $confirm_password = $inputData['confirm_password'] ?? '';
+            $signatureImagePath = null;
 
             if (!$username || !$last_name || !$first_name || !$email || !$contact_number || !$pin || !$password) {
                 if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Missing fields'], 400);
                 header('Location: ../pages/superadmin/register_admin_cashier.html?error=missing');
                 exit();
+            }
+
+            if (isset($_FILES['signature_image']) && $_FILES['signature_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+                $file = $_FILES['signature_image'];
+                if ($file['error'] !== UPLOAD_ERR_OK) {
+                    if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Signature upload failed'], 400);
+                    header('Location: ../pages/superadmin/register_admin_cashier.html?error=invalid_signature');
+                    exit();
+                }
+
+                $allowedMime = ['image/jpeg', 'image/png'];
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $actualMime = $finfo->file($file['tmp_name']);
+
+                if (!in_array($actualMime, $allowedMime, true)) {
+                    if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Invalid signature image format'], 400);
+                    header('Location: ../pages/superadmin/register_admin_cashier.html?error=invalid_signature');
+                    exit();
+                }
+
+                if ($file['size'] > 2 * 1024 * 1024) {
+                    if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Signature image file size must be 2MB or smaller'], 400);
+                    header('Location: ../pages/superadmin/register_admin_cashier.html?error=invalid_signature');
+                    exit();
+                }
+
+                $uploadDir = __DIR__ . '/../assets/images/signatures/';
+                if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
+                    throw new Exception('Unable to create signature upload directory.');
+                }
+
+                $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $newFileName = 'signature_' . bin2hex(random_bytes(8)) . '.' . $extension;
+                $destination = $uploadDir . $newFileName;
+
+                if (!move_uploaded_file($file['tmp_name'], $destination)) {
+                    if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Unable to save uploaded signature image'], 500);
+                    header('Location: ../pages/superadmin/register_admin_cashier.html?error=invalid_signature');
+                    exit();
+                }
+
+                $signatureImagePath = 'assets/images/signatures/' . $newFileName;
             }
 
             if (!preg_match('/^\d{11}$/', $contact_number)) {
@@ -147,8 +190,13 @@ try {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
             $hashed_pin = password_hash($pin, PASSWORD_DEFAULT);
             $role = 'admincashier';
-            $stmt = $conn->prepare('INSERT INTO admincashier_acc (username, last_name, first_name, middle_name, email, contact_number, pin, password, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, "active")');
-            $stmt->bind_param('sssssssss', $username, $last_name, $first_name, $middle_name, $email, $contact_number, $hashed_pin, $hashed_password, $role);
+            if ($signatureImagePath) {
+                $stmt = $conn->prepare('INSERT INTO admincashier_acc (username, last_name, first_name, middle_name, email, contact_number, pin, password, role, signature_image, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "active")');
+                $stmt->bind_param('ssssssssss', $username, $last_name, $first_name, $middle_name, $email, $contact_number, $hashed_pin, $hashed_password, $role, $signatureImagePath);
+            } else {
+                $stmt = $conn->prepare('INSERT INTO admincashier_acc (username, last_name, first_name, middle_name, email, contact_number, pin, password, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, "active")');
+                $stmt->bind_param('sssssssss', $username, $last_name, $first_name, $middle_name, $email, $contact_number, $hashed_pin, $hashed_password, $role);
+            }
 
             if ($stmt->execute()) {
                 $superModel = new SuperAdminModel();
@@ -308,6 +356,42 @@ try {
                     }
                     $check->close();
 
+                    $signatureImagePath = null;
+                    if (isset($_FILES['signature_image']) && $_FILES['signature_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+                        $file = $_FILES['signature_image'];
+                        if ($file['error'] !== UPLOAD_ERR_OK) {
+                            throw new Exception('Signature upload failed. Please try again.');
+                        }
+
+                        $allowedMime = ['image/jpeg', 'image/png'];
+                        $finfo = new finfo(FILEINFO_MIME_TYPE);
+                        $actualMime = $finfo->file($file['tmp_name']);
+                        if (!in_array($actualMime, $allowedMime, true)) {
+                            throw new Exception('Invalid signature image format. Only JPG and PNG are allowed.');
+                        }
+
+                        if ($file['size'] > 2 * 1024 * 1024) {
+                            throw new Exception('Signature image file size must be 2MB or smaller.');
+                        }
+
+                        $uploadDir = __DIR__ . '/../assets/images/signatures/';
+                        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
+                            throw new Exception('Unable to create signature upload directory.');
+                        }
+
+                        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                        if (!in_array($extension, ['jpg', 'jpeg', 'png'], true)) {
+                            $extension = $actualMime === 'image/png' ? 'png' : 'jpg';
+                        }
+
+                        $newFileName = 'signature_' . bin2hex(random_bytes(8)) . '.' . $extension;
+                        $destination = $uploadDir . $newFileName;
+                        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+                            throw new Exception('Unable to save uploaded signature image.');
+                        }
+                        $signatureImagePath = 'assets/images/signatures/' . $newFileName;
+                    }
+
                     if ($pin !== '') {
                         $pinCheck = $conn->prepare('SELECT id, pin FROM admincashier_acc WHERE pin IS NOT NULL AND pin <> "" AND id <> ?');
                         $pinCheck->bind_param('i', $id);
@@ -323,14 +407,53 @@ try {
                         $pinCheck->close();
                         $pin = password_hash($pin, PASSWORD_DEFAULT);
 
-                        $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ?, pin = ? WHERE id = ?");
-                        $stmt->bind_param("sssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $pin, $id);
+                        if ($signatureImagePath) {
+                            $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ?, pin = ?, signature_image = ? WHERE id = ?");
+                            $stmt->bind_param("ssssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $pin, $signatureImagePath, $id);
+                        } else {
+                            $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ?, pin = ? WHERE id = ?");
+                            $stmt->bind_param("sssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $pin, $id);
+                        }
                     } else {
-                        $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ? WHERE id = ?");
-                        $stmt->bind_param("ssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $id);
+                        if ($signatureImagePath) {
+                            $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ?, signature_image = ? WHERE id = ?");
+                            $stmt->bind_param("sssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $signatureImagePath, $id);
+                        } else {
+                            $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ? WHERE id = ?");
+                            $stmt->bind_param("ssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $id);
+                        }
                     }
                     if ($stmt->execute()) sendJsonResponse(['success' => true, 'message' => 'Account updated']);
                     throw new Exception("Update failed: " . $stmt->error);
+
+                case 'update_pin':
+                    $id = filter_var($inputData['id'] ?? 0, FILTER_VALIDATE_INT);
+                    $pin = trim($inputData['pin'] ?? '');
+                    if (!$id || !preg_match('/^\d{4}$/', $pin)) {
+                        throw new Exception('Security PIN must be exactly 4 digits.');
+                    }
+
+                    $pinCheck = $conn->prepare('SELECT id, pin FROM admincashier_acc WHERE pin IS NOT NULL AND pin <> "" AND id <> ?');
+                    $pinCheck->bind_param('i', $id);
+                    $pinCheck->execute();
+                    $pinResult = $pinCheck->get_result();
+                    while ($pinRow = $pinResult->fetch_assoc()) {
+                        $existingPin = $pinRow['pin'];
+                        if ($existingPin !== '' && (password_verify($pin, $existingPin) || $existingPin === $pin)) {
+                            $pinCheck->close();
+                            throw new Exception('Security PIN is already used by another account.');
+                        }
+                    }
+                    $pinCheck->close();
+
+                    $hashedPin = password_hash($pin, PASSWORD_DEFAULT);
+                    $stmt = $conn->prepare("UPDATE admincashier_acc SET pin = ? WHERE id = ?");
+                    $stmt->bind_param("si", $hashedPin, $id);
+                    if ($stmt->execute()) {
+                        logAudit($conn, 'superadmin', $_SESSION['admin_id'], 'pin_update', "Updated PIN for ID: $id");
+                        sendJsonResponse(['success' => true, 'message' => 'Security PIN updated']);
+                    }
+                    throw new Exception("PIN update failed: " . $stmt->error);
 
                 case 'update_password':
                     $id = filter_var($inputData['id'] ?? 0, FILTER_VALIDATE_INT);

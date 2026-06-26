@@ -198,6 +198,8 @@ $mysqli->query(
         `payment_received` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `change_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `payment_status` ENUM('paid','pending','voided') NOT NULL DEFAULT 'pending',
+        `payment_method` VARCHAR(50) NOT NULL DEFAULT 'Cash',
+        `check_number` VARCHAR(100) DEFAULT NULL,
         `is_expired` TINYINT(1) NOT NULL DEFAULT 0,
         `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY `uniq_transaction_number` (`transaction_number`),
@@ -266,6 +268,8 @@ addColumnIfNotExists($mysqli, 'queue_tickets', 'queue_type', "ENUM('regular', 'p
 addColumnIfNotExists($mysqli, 'queue_tickets', 'is_pwd', "TINYINT(1) NOT NULL DEFAULT 0 AFTER `queue_type` ");
 addColumnIfNotExists($mysqli, 'queue_tickets', 'window_number', "INT(11) DEFAULT NULL AFTER `queue_type` ");
 addColumnIfNotExists($mysqli, 'queue_tickets', 'served_by', "INT(11) DEFAULT NULL AFTER `window_number` ");
+addColumnIfNotExists($mysqli, 'cashier_transactions', 'payment_method', "VARCHAR(50) NOT NULL DEFAULT 'Cash'");
+addColumnIfNotExists($mysqli, 'cashier_transactions', 'check_number', "VARCHAR(100) DEFAULT NULL");
 
 // Ensure critical columns exist in active_rentals for the renewal system
 addColumnIfNotExists($mysqli, 'active_rentals', 'rental_date', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `quantity` ");

@@ -64,6 +64,8 @@ try {
         `payment_received` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `change_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `payment_status` ENUM('paid','pending') NOT NULL DEFAULT 'pending',
+        `payment_method` VARCHAR(50) NOT NULL DEFAULT 'Cash',
+        `check_number` VARCHAR(100) DEFAULT NULL,
         `is_expired` TINYINT(1) NOT NULL DEFAULT 0,
         `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (`id`),

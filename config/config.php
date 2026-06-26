@@ -42,10 +42,10 @@ if (!defined('SMTP_PASS')) {
     define('SMTP_PASS', 'kmmlwgyxoaqvglfm');   // Update this with your 16-character App Password
 }
 if (!defined('MAIL_FROM')) {
-    define('MAIL_FROM', 'no-reply@gcst-track.edu');
+    define('MAIL_FROM', 'no-reply@mail.com');
 }
 if (!defined('MAIL_FROM_NAME')) {
-    define('MAIL_FROM_NAME', 'GCST Support');
+    define('MAIL_FROM_NAME', 'GRANBY COLLEGES OF SCIENCE AND TECHNOLOGY');
 }
 
 // Add other system-wide settings below...

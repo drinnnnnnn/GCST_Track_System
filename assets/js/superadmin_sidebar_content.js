@@ -635,10 +635,6 @@ export function getSidebarHTML() {
     }
 </style>
 
-<button id="mobile-sidebar-toggle" class="mobile-sidebar-toggle" type="button" aria-label="Open navigation menu" onclick="typeof window.toggleSidebar === 'function' ? window.toggleSidebar() : null">
-    <i class="fas fa-bars"></i>
-</button>
-
 <aside id="main-sidebar" class="sidebar" aria-label="Main Sidebar">
     <div class="sidebar-brand" id="sidebar-brand-area">
         <div class="brand-content">

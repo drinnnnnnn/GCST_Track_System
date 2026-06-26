@@ -200,7 +200,7 @@
     </section>
 
     <!-- Summary Section -->
-    <section class="balance-section">
+    <section class="balance-section" id="totalSaleSummaryCard" role="button" tabindex="0" aria-label="View total sales">
       <h2>Dashboard Summary</h2>
       <div class="balance-cards">
         <div class="balance-card">
@@ -211,11 +211,11 @@
           <h3>Low Stock Products</h3>
           <p class="amount" id="lowStockCount">0</p>
         </div>
-        <div class="balance-card">
+        <div class="balance-card" id="waitingQueueSummaryCard" role="button" tabindex="0" aria-label="View waiting queue">
           <h3>Waiting Queue</h3>
           <p class="amount" id="pendingQueue">0</p>
         </div>
-        <div class="balance-card">
+        <div class="balance-card" id="totalSaleSummaryCard" role="button" tabindex="0" aria-label="View total sales">
           <h3>Total Sales (Today)</h3>
           <p class="amount" id="totalSalesToday">₱0.00</p>
         </div>
@@ -558,6 +558,26 @@
       return div.innerHTML;
     }
 
+    function initWaitingQueueInteractions() {
+  const card = document.getElementById('waitingQueueSummaryCard');
+
+  // Handle Mouse Click
+  card?.addEventListener('click', () => {
+    window.location.href = 'admincashier_queuing_system.html';
+  });
+
+  // Handle Keyboard Access (Enter and Space)
+  card?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault(); // Prevents page scrolling when Space is pressed
+      window.location.href = 'admincashier_queuing_system.html';
+    }
+  });
+}
+
+// Call the function once the DOM is ready
+document.addEventListener('DOMContentLoaded', initWaitingQueueInteractions);
+
     function initLowStockInteractions() {
       const card = document.getElementById('lowStockSummaryCard');
       const inventoryBtn = document.getElementById('viewInventoryBtn');
@@ -585,6 +605,26 @@
         window.location.href = 'admincashier_inventorys.html';
       });
     }
+
+    function initTotalSaleInteractions() {
+  const card = document.getElementById('totalSaleSummaryCard');
+
+  // Handle Mouse Click
+  card?.addEventListener('click', () => {
+    window.location.href = 'admincashier_sale.html';
+  });
+
+  // Handle Keyboard Access (Enter and Space)
+  card?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault(); // Prevents page scrolling when Space is pressed
+      window.location.href = 'admincashier_sale.html';
+    }
+  });
+}
+
+// Call the function once the DOM is ready
+document.addEventListener('DOMContentLoaded', initTotalSaleInteractions);    
 
     /**
      * Main initialization function for the Dashboard.

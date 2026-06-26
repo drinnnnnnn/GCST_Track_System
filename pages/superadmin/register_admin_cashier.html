@@ -292,7 +292,7 @@
             <p class="subtitle">Set up a new administrator or cashier</p>
         </div>
 
-        <form action="../../actions/process_admin_cashier.php" method="POST" onsubmit="return validateForm(this)">
+        <form action="../../actions/process_admin_cashier.php" method="POST" enctype="multipart/form-data" onsubmit="return validateForm(this)">
             <div class="form-fields form-anim animate-item">
                 <div class="input-group">
                     <input type="text" name="username" placeholder="Username" required>
@@ -311,6 +311,11 @@
                 </div>
                 <div class="input-group">
                     <input type="tel" name="contact_number" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);" placeholder="Contact Number" required>
+                </div>
+                <div class="input-group">
+                    <label for="signature_image" style="display:block; margin-bottom: 8px; font-size: 0.9rem; color: #334155;">Upload Signature Image</label>
+                    <input type="file" name="signature_image" id="signature_image" accept="image/png, image/jpeg" style="width: 100%;" required/>
+                    <small style="display:block; margin-top: 6px; color: #64748b; font-size: 0.85rem;">PNG/JPG only, up to 2MB.</small>
                 </div>
                 <div class="input-group">
                     <input type="password" name="password" id="password" placeholder="Password" required>

@@ -23,11 +23,18 @@ class M003_POSAndInventorySchema extends BaseMigration {
             `payment_received` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
             `change_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
             `payment_status` ENUM('paid','pending','voided') NOT NULL DEFAULT 'pending',
+            `payment_method` VARCHAR(50) NOT NULL DEFAULT 'Cash',
+            `check_number` VARCHAR(100) DEFAULT NULL,
             `is_expired` TINYINT(1) NOT NULL DEFAULT 0,
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             KEY (`user_id`), KEY (`cashier_id`)
-        ) ENGINE=InnoDB");
-
+        ) ENGINE=InnoDB";
+        if (!MigrationManager::columnExists($this->conn, 'cashier_transactions', 'payment_method')) {
+            $this->conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `payment_method` VARCHAR(50) NOT NULL DEFAULT 'Cash'");
+        }
+        if (!MigrationManager::columnExists($this->conn, 'cashier_transactions', 'check_number')) {
+            $this->conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `check_number` VARCHAR(100) DEFAULT NULL");
+        }
         // Transaction Items
         $this->conn->query("CREATE TABLE IF NOT EXISTS `transaction_items` (
             `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
