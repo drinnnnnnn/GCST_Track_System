@@ -257,25 +257,24 @@
     <div id="status-area" class="animate-item tooltip-btn" role="status"></div>
 
     <form action="http://localhost/GCST_Track_System/actions/process_admin_cashier.php" method="POST" id="authForm">
-        <div class="input-box animate-item tooltip-btn" data-tooltip="(Example: admin@gmail.com or AdminUser)">
+        <div class="input-box animate-item">
             <label>Username or Email</label>
             <input type="text" name="email" placeholder="Username or Email" autocomplete="username" required>
             <i class='bx bxs-envelope'></i>
         </div>
 
         <div class="input-box animate-item">
-            <div style="position: relative;" class="tooltip-btn" data-tooltip="Your account password.">
+            <div style="position: relative;">
                 <label>Password</label>
                 <input type="password" name="password" id="password" placeholder="••••••••" required>
                 <i class='bx bx-hide tooltip-icon' id="toggleBtn" style="cursor: pointer; position: absolute; right: 10px; top: 38px;" data-tooltip="Show or hide password"></i>
             </div>
 
-            <div style="position: relative; margin-top: 15px;" class="tooltip-btn" data-tooltip="4-digit PIN used for extra security.">
+            <div style="position: relative; margin-top: 15px;">
                 <label>Pin</label>
                 <input type="password" name="pin" id="pin" placeholder="••••" maxlength="4" pattern="\d{4}" inputmode="numeric" required>
-                <i class='bx bx-hide tooltip-icon' id="togglePinBtn" style="cursor: pointer; position: absolute; right: 10px; top: 38px;" data-tooltip="Show or hide PIN"></i>
-            </div>
-        </div>
+                <i class='bx bx-hide tooltip-icon' id="togglePinBtn" style="cursor: pointer; position: absolute; right: 10px; top: 38px;"></i>
+            </div> 
 
         <button type="submit" class="submit-btn animate-item" id="loginBtn">
             Sign In

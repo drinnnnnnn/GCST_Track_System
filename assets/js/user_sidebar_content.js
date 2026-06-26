@@ -387,7 +387,7 @@ export function getSidebarHTML() {
 <nav class="user-top-navbar">
     <div class="nav-inner">
         <a href="InUser_home.html" class="nav-brand">
-            <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Logo">
+            <img src="/GCST_Track_System/assets/images/icons/granby_logo.png" alt="Logo">
             <div class="brand-text">
                 <h1 class="brand-title">
                     <span class="brand-college">Granby Colleges of Science and Technology</span>

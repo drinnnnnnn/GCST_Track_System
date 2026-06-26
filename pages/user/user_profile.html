@@ -11,9 +11,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
-    .content-wrapper {
-      padding-top: 2 !important;
-    }
     /* Refined Activity Section Styling */
     .activity-section {
       background: white;
@@ -398,8 +395,81 @@
       vertical-align: middle;
     }
 
-    .txn-history-table tbody tr:nth-child(even) {
+.txn-history-table tbody tr:nth-child(even) {
       background: #fbfcfd;
+    }
+
+    .txn-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    .txn-page-btn {
+      background: #f1f5f9;
+      color: #0f172a;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .txn-page-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .txn-page-btn:not(:disabled):hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: rgba(37, 99, 235, 0.05);
+      transform: translateY(-1px);
+    }
+
+    .txn-page-numbers {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .txn-page-number {
+      background: white;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 800;
+      cursor: pointer;
+      min-width: 44px;
+      transition: all 0.2s ease;
+    }
+
+    .txn-page-number.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.25);
+    }
+
+    .txn-page-number:disabled {
+      cursor: not-allowed;
+      opacity: 1;
+    }
+
+    .txn-page-ellipsis {
+      color: #94a3b8;
+      font-weight: 900;
+      padding: 0 6px;
     }
 
     .receipt-modal .save-profile-modal-card {
@@ -676,6 +746,19 @@
               <tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">Loading transaction history...</td></tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="txn-pagination" id="txn-pagination" aria-label="Transaction history pagination">
+          <button type="button" id="txn-prev" class="txn-page-btn" onclick="loadTransactionHistory(window.__txnCurrentPage - 1)" disabled>
+            <i class="fas fa-chevron-left"></i>
+            Prev
+          </button>
+          <div class="txn-page-numbers" id="txn-page-numbers"></div>
+          <button type="button" id="txn-next" class="txn-page-btn" onclick="loadTransactionHistory(window.__txnCurrentPage + 1)" disabled>
+            Next
+            <i class="fas fa-chevron-right"></i>
+          </button>
         </div>
       </div>
     </section>
@@ -1067,6 +1150,58 @@
       });
     }
 
+    function renderPagination({ current_page, total_pages }) {
+      const prevBtn = document.getElementById('txn-prev');
+      const nextBtn = document.getElementById('txn-next');
+      const numbersContainer = document.getElementById('txn-page-numbers');
+
+      if (!prevBtn || !nextBtn || !numbersContainer) return;
+
+      const safeCurrent = Math.max(1, parseInt(current_page, 10) || 1);
+      const safeTotal = Math.max(1, parseInt(total_pages, 10) || 1);
+
+      window.__txnCurrentPage = safeCurrent;
+
+      prevBtn.disabled = safeCurrent <= 1;
+      nextBtn.disabled = safeCurrent >= safeTotal;
+
+      // Hide pagination entirely if only one page
+      if (safeTotal <= 1) {
+        numbersContainer.innerHTML = '';
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        return;
+      }
+
+      const pages = [];
+      // Basic windowing: show first/last + around current
+      for (let p = 1; p <= safeTotal; p++) {
+        const show = p === 1 || p === safeTotal || Math.abs(p - safeCurrent) <= 2;
+        if (show) pages.push(p);
+      }
+
+      // Build numbers with ellipsis
+      numbersContainer.innerHTML = '';
+      let last = 0;
+      pages.forEach(p => {
+        if (last && p - last > 1) {
+          const ellipsis = document.createElement('span');
+          ellipsis.className = 'txn-page-ellipsis';
+          ellipsis.textContent = '...';
+          numbersContainer.appendChild(ellipsis);
+        }
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `txn-page-number ${p === safeCurrent ? 'active' : ''}`;
+        btn.textContent = String(p);
+        btn.disabled = p === safeCurrent;
+        btn.onclick = () => loadTransactionHistory(p);
+        numbersContainer.appendChild(btn);
+        last = p;
+      });
+    }
+
     async function loadTransactionHistory(page = 1) {
       const search = document.getElementById('txn-search')?.value.trim() || '';
       const body = document.getElementById('txn-history-body');
@@ -1084,10 +1219,21 @@
         }
 
         renderTransactionHistory(response.transactions || []);
+        renderPagination({ current_page: response.current_page, total_pages: response.total_pages });
       } catch (err) {
         console.error(err);
         if (body) {
           body.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-rose-500">${err.message || 'Error loading transactions.'}</td></tr>`;
+        }
+
+        // Reset pagination UI on error
+        const prevBtn = document.getElementById('txn-prev');
+        const nextBtn = document.getElementById('txn-next');
+        const numbersContainer = document.getElementById('txn-page-numbers');
+        if (prevBtn && nextBtn && numbersContainer) {
+          numbersContainer.innerHTML = '';
+          prevBtn.disabled = true;
+          nextBtn.disabled = true;
         }
       }
     }
