@@ -151,6 +151,7 @@ try {
     $paymentReceived = isset($payload['payment_received']) ? floatval($payload['payment_received']) : 0.0;
     $paymentStatus = isset($payload['payment_status']) && in_array($payload['payment_status'], ['paid', 'pending'], true) ? $payload['payment_status'] : 'paid';
     $receiptNumber = isset($payload['receipt_number']) ? trim((string)$payload['receipt_number']) : null;
+    $receiptCategory = isset($payload['receipt_category']) ? trim((string)$payload['receipt_category']) : null;
     $paymentMethod = isset($payload['payment_method']) ? trim((string)$payload['payment_method']) : 'Cash';
     $checkNumber = isset($payload['check_number']) ? trim((string)$payload['check_number']) : null;
 
@@ -285,12 +286,13 @@ try {
     // or insert a new transaction if it's a manual cashier-initiated sale.
     $isExpiredFlag = ($paymentStatus === 'paid') ? 1 : 0; // Set is_expired to 1 if paid, 0 otherwise
     $upsertSql = "INSERT INTO cashier_transactions ( 
-        transaction_number, receipt_number, user_id, student_name, guest_school_id, guest_email, cashier_id, 
+        transaction_number, receipt_number, receipt_category, user_id, student_name, guest_school_id, guest_email, cashier_id, 
         transaction_type, items, subtotal, discount_percent, discount_amount,
         total_amount, payment_received, change_amount, payment_status, payment_method, check_number, is_expired 
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE 
         receipt_number = VALUES(receipt_number),
+        receipt_category = VALUES(receipt_category),
         cashier_id = VALUES(cashier_id),
         student_name = VALUES(student_name),
         guest_school_id = VALUES(guest_school_id),
@@ -308,8 +310,8 @@ try {
         is_expired = VALUES(is_expired)"; // Ensure is_expired is updated based on payment status
 
     $insertStmt = $conn->prepare($upsertSql);
-    // Corrected type string: 19 parameters (s=string, i=int, d=double). Added guest_school_id, guest_email, payment_method, and check_number.
-    $insertStmt->bind_param('ssisssissddddddsssi', $transactionNumber, $receiptNumber, $userId, $studentFullName, $guestSchoolId, $guestEmail, $cashierId, $transactionType, $itemsJson, $subtotal, $discountPercent, $discountAmount, $totalAmount, $paymentReceived, $changeAmount, $paymentStatus, $paymentMethod, $checkNumber, $isExpiredFlag);
+    // Corrected type string: 20 parameters (s=string, i=int, d=double).
+    $insertStmt->bind_param('sssisssissddddddsssi', $transactionNumber, $receiptNumber, $receiptCategory, $userId, $studentFullName, $guestSchoolId, $guestEmail, $cashierId, $transactionType, $itemsJson, $subtotal, $discountPercent, $discountAmount, $totalAmount, $paymentReceived, $changeAmount, $paymentStatus, $paymentMethod, $checkNumber, $isExpiredFlag);
     if (!$insertStmt->execute()) {
         throw new Exception('Could not save transaction: ' . $insertStmt->error);
     }
@@ -627,8 +629,12 @@ try {
             'total_amount' => number_format($totalAmount, 2, '.', ''),
             'payment_received' => number_format($paymentReceived, 2, '.', ''),
             'change_amount' => number_format($changeAmount, 2, '.', ''),
-        'payment_method' => $paymentMethod,
-        'check_number' => $checkNumber,
+            'payment_method' => $paymentMethod,
+            'check_number' => $checkNumber,
+            'receipt_category' => $receiptCategory,
+        ],
+    ];
+
     array_walk_recursive($responseData, function(&$item) {
         if (is_string($item)) $item = mb_convert_encoding($item, 'UTF-8', 'UTF-8');
     });

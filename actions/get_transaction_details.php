@@ -38,6 +38,7 @@ try {
             ct.guest_school_id,
             ct.cashier_id,
             ct.transaction_type,
+            ct.receipt_category,
             ct.subtotal,
             ct.discount_percent,
             ct.discount_amount,

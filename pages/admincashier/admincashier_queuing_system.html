@@ -135,7 +135,6 @@
     align-items: center;
     gap: 20px;
     padding: 20px;
-    border: 2px dashed #667eea;
     border-radius: 16px;
     background: #f8fafc;
   }
@@ -149,7 +148,7 @@
   
   .ticket-label {
     text-transform: uppercase;
-    color: #667eea;
+    color: #1e1f20;
     font-size: 0.85rem;
     letter-spacing: 0.05em;
   }
@@ -802,7 +801,7 @@
               ${t.queue_type === 'priority' ? '<span class="badge-priority"><i class="fas fa-wheelchair mr-1"></i> PRIORITY</span>' : ''}
               ${t.expiry_alert_sent == 1 ? '<span class="text-orange-500 animate-pulse" title="Expiration Warning Sent"><i class="fas fa-bell"></i></span>' : ''}
               <span class="font-semibold text-gray-800">${t.student_name || 'Walk-in'}</span>
-              <span class="text-xs text-gray-400 font-mono">[${t.school_id || 'N/A'}]</span>
+              <span class="text-xs text-gray-400 font-mono">${t.school_id || ''}</span>
             </div>
             ${t.cashier_name ? `<div class="text-[10px] text-emerald-600 font-bold mb-1"><i class="fas fa-user-tie mr-1"></i> SERVED BY: ${t.cashier_name.toUpperCase()}</div>` : ''}
             <div class="text-sm text-gray-600">

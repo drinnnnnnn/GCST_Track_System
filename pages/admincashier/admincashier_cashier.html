@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GCST Admin Cashier - Point of Sale</title>
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="../../assets/css/admincashier.css" />
   <script src="https://cdn.tailwindcss.com"></script>
@@ -25,9 +26,7 @@
     .cashier-sidebar {
       display: flex;
       flex-direction: column;
-      gap: 24px;
-      /* position: sticky; /* Removed sticky for better mobile behavior */
-      /* top: 20px; */
+      gap: 24px;       /* position: sticky; /* Removed sticky for better mobile behavior */ /* top: 20px; */
     }
     .panel {
       background: #ffffff;
@@ -43,8 +42,7 @@
       flex-direction: column; /* Stack children vertically */
     }
     .cashier-layout .panel {
-      /* height: calc(100vh - 220px); */ /* Removed fixed height for flexibility */
-      flex: 1; /* Allow product grid to take available space */
+      flex: 1; /* Allow product grid to take available space */ /* height: calc(100vh - 220px); */ /* Removed fixed height for flexibility */
       min-height: 500px;
       display: flex;
       flex-direction: column;
@@ -1576,6 +1574,11 @@
             <input id="tuition-provisional-number" type="text" maxlength="6" inputmode="numeric" pattern="\d{6}" class="search-input" placeholder="XXXXXX" />
           </div>
           <div style="display: grid; gap: 8px;">
+            <label class="checkout-label" style="font-size: 0.85rem; font-weight: 700; color: #475569;">Student ID</label>
+            <input id="tuition-student-id" type="text" list="tuition-student-id-datalist" class="search-input" placeholder="GC-123456" autocomplete="off" />
+            <datalist id="tuition-student-id-datalist"></datalist>
+          </div>
+          <div style="display: grid; gap: 8px;">
             <label class="checkout-label" style="font-size: 0.85rem; font-weight: 700; color: #475569;">Student Name</label>
             <input id="tuition-student-name" type="text" class="search-input" placeholder="Name" />
           </div>
@@ -1608,7 +1611,7 @@
           <div style="display: grid; gap: 8px;">
             <label class="checkout-label" style="font-size: 0.85rem; font-weight: 700; color: #475569;">Receipt Type</label>
             <select id="tuition-receipt-category" class="search-input" onchange="toggleTuitionFeeFields()">
-              <option value="Payment Receipt" selected>Payment Receipt</option>
+              <option value="" disabled selected>Select Receipt</option>
               <option value="Tuition Receipt">Tuition Receipt</option>
               <option value="Medical Receipt">Medical Receipt</option>
               <option value="Foundation Receipt">Foundation Receipt</option>
@@ -1649,7 +1652,11 @@
             <input type="email" id="tuition-student-email" class="search-input" placeholder="Enter student Gmail address" />
           </div>
           <div style="display: grid; gap: 8px;">
-            <p style="margin: 0; font-size: 0.85rem; color: #475569;">The receipt will be automatically sent to the selected student&rsquo;s Gmail address when generated.</p>
+            <label class="checkout-label" style="font-size: 0.85rem; font-weight: 700; color: #475569;">Current Tuition Balance (₱)</label>
+            <input id="tuition-current-balance" type="text" readonly class="search-input" placeholder="N/A" style="background: #f8fafc;" />
+          </div>
+          <div style="display: grid; gap: 8px;">
+            <p style="margin: 0; font-size: 0.85rem; color: #64748b;">The receipt will be automatically sent to the selected student&rsquo;s Gmail address when generated.</p>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button id="tuition-generate-btn" type="button" class="btn btn-primary btn-sm" style="flex: 1 1 150px;" onclick="generateTuitionReceipt()">Generate Receipt</button>
@@ -1684,7 +1691,19 @@
                 </tr>
               </table>
               <div style="margin-top: 14px;">
-                <div style="font-size: 0.92rem; font-weight: 700; margin-bottom: 8px; color: #1f2937;">Latest Receipt History</div>
+                <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 8px;">
+                <div style="flex: 1; min-width: 220px;">
+                  <input id="tuition-history-search" type="search" class="search-input" placeholder="Search recent tuition receipts..." style="width: 100%;" />
+                </div>
+                <div style="min-width: 170px;">
+                  <select id="tuition-history-status-filter" class="search-input" style="width: 100%;">
+                    <option value="all">All Status</option>
+                    <option value="paid">Paid</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
+              </div>
+              <div style="font-size: 0.92rem; font-weight: 700; margin-bottom: 8px; color: #1f2937;">Latest Receipt History</div>
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
                   <thead>
                     <tr>
@@ -2018,7 +2037,7 @@
   <script>
     const API_ROOT = window.location.origin + '/GCST_Track_System/actions';
     const ASSET_ROOT = window.location.origin + '/GCST_Track_System/assets';
-    const IMAGE_FALLBACK = `${ASSET_ROOT}/images/icons/granbylogo.png`;
+    const IMAGE_FALLBACK = `${ASSET_ROOT}/images/icons/granby_logo.png`;
     
     // Scanner Audio Feedback
     const SCAN_SOUND = new Audio('https://raw.githubusercontent.com/rafaelbotazini/floating-whatsapp/master/beep.mp3');
@@ -2034,6 +2053,7 @@
     let pendingOrders = []; // New array for pending orders
     let studentList = []; // Global registry for instant name resolution
     let recentTransactions = [];
+    let recentTuitionTransactions = [];
     let txnAutoRefreshInterval = null;
     let pendingAutoRefreshInterval = null;
     let isProcessingTransaction = false;
@@ -3679,6 +3699,7 @@
     }
 
     async function generateTuitionReceipt() {
+      const studentId = document.getElementById('tuition-student-id').value.trim();
       const name = document.getElementById('tuition-student-name').value.trim();
       const provisional = document.getElementById('tuition-provisional-number').value.trim();
       const category = document.getElementById('tuition-receipt-category').value;
@@ -3720,6 +3741,10 @@
         return;
       }
       if (category === 'Tuition Receipt') {
+        if (!studentId) {
+          alert('Please enter a valid Student ID for Tuition Receipts.');
+          return;
+        }
         if (isNaN(totalPayment) || totalPayment <= 0) {
           alert('Please enter a valid total payment amount.');
           return;
@@ -3738,6 +3763,29 @@
         return;
       }
 
+      const tuitionSaveResult = await saveTuitionReceipt({
+        receipt_number: provisional,
+        receipt_category: category,
+        student_name: name,
+        student_email: document.getElementById('tuition-student-email').value.trim() || null,
+        student_id: studentId || null,
+        payment_method: paymentMethod,
+        check_number: checkNumber || null,
+        payment_status: 'paid',
+        payment_received: amount,
+        total_amount: (!isNaN(totalPayment) && totalPayment > 0) ? totalPayment : amount,
+        change_amount: 0,
+        authorized_rep: rep,
+        remarks: remarks,
+        note: note
+      });
+
+      if (!tuitionSaveResult.success) {
+        alert('Unable to save tuition receipt: ' + (tuitionSaveResult.message || 'Please try again.'));
+        return;
+      }
+
+      recentTuitionTransactions = [];
       document.getElementById('tuition-receipt-name').textContent = name;
       document.getElementById('tuition-receipt-preview-title').textContent = category;
       document.getElementById('tuition-receipt-category-preview').textContent = category;
@@ -3771,7 +3819,7 @@
         }
       }
 
-      populateTuitionReceiptStorePanel();
+      await populateTuitionReceiptStorePanel();
 
       const emailStatus = document.getElementById('tuition-receipt-email-status');
       if (emailStatus) {
@@ -3783,13 +3831,30 @@
       await sendTuitionReceiptEmail();
     }
 
+    async function saveTuitionReceipt(payload) {
+      try {
+        const response = await fetch(`${API_ROOT}/save_tuition_receipt.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        return await response.json();
+      } catch (error) {
+        console.error('Tuition receipt save failed:', error);
+        return { success: false, message: error.message || 'Unable to save tuition receipt.' };
+      }
+    }
+
     function clearTuitionForm() {
+      document.getElementById('tuition-student-id').value = '';
       document.getElementById('tuition-student-name').value = '';
       document.getElementById('tuition-provisional-number').value = '';
       document.getElementById('tuition-amount').value = '';
       document.getElementById('tuition-total-payment').value = '';
       document.getElementById('tuition-or-number').value = '';
       document.getElementById('tuition-balance').value = '';
+      document.getElementById('tuition-current-balance').value = '';
       document.getElementById('tuition-remarks').value = '';
       document.getElementById('tuition-note').value = '';
       document.getElementById('tuition-receipt-category').value = 'Tuition Receipt';
@@ -3833,6 +3898,62 @@
       }
     }
 
+    async function loadTuitionBalanceForStudent(studentId) {
+      const balanceField = document.getElementById('tuition-current-balance');
+      if (!balanceField) return;
+      if (!studentId) {
+        balanceField.value = 'N/A';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_ROOT}/get_tuition_balance.php?student_id=${encodeURIComponent(studentId)}`);
+        const result = await response.json();
+        if (result.success && result.student) {
+          const studentBalance = parseFloat(result.student.tuition_balance ?? result.student.current_balance ?? 0) || 0;
+          balanceField.value = `₱${studentBalance.toFixed(2)}`;
+        } else {
+          balanceField.value = 'N/A';
+        }
+      } catch (error) {
+        console.error('Failed to load tuition balance:', error);
+        balanceField.value = 'N/A';
+      }
+    }
+
+    async function handleTuitionStudentIdInput() {
+      const studentIdInput = document.getElementById('tuition-student-id');
+      if (!studentIdInput) return;
+
+      const value = studentIdInput.value.trim();
+      state.studentId = value;
+
+      if (!value) {
+        document.getElementById('tuition-current-balance').value = 'N/A';
+        return;
+      }
+
+      const normalized = value.toLowerCase();
+      const student = studentList.find(s => {
+        const idMatch = s.student_id && s.student_id.toLowerCase() === normalized;
+        const numericMatch = String(s.id) === value;
+        return idMatch || numericMatch;
+      });
+
+      if (student) {
+        document.getElementById('tuition-student-name').value = student.name || `${student.first_name || ''} ${student.last_name || ''}`.trim();
+        const emailInput = document.getElementById('tuition-student-email');
+        if (emailInput && !emailInput.value.trim()) {
+          emailInput.value = student.email || '';
+        }
+        await loadTuitionBalanceForStudent(student.student_id || String(student.id));
+      } else {
+        document.getElementById('tuition-current-balance').value = 'N/A';
+      }
+
+      await populateTuitionReceiptStorePanel();
+    }
+
     function toggleTuitionFeeFields() {
       const category = document.getElementById('tuition-receipt-category').value;
       const feeBlock = document.getElementById('tuition-fee-fields');
@@ -3871,9 +3992,56 @@
       };
     }
 
-    function getTuitionReceiptHistoryEntries(limit = 3) {
-      if (!Array.isArray(recentTransactions) || recentTransactions.length === 0) return [];
-      return [...recentTransactions]
+    async function loadRecentTuitionReceipts(limit = 5, status = 'paid', studentId = '') {
+      try {
+        const params = new URLSearchParams({ limit: String(limit), status: String(status) });
+        if (studentId) params.set('student_id', studentId);
+
+        const response = await fetch(`${API_ROOT}/get_tuition_receipts.php?${params.toString()}`);
+        const data = await response.json();
+        if (data.success && Array.isArray(data.transactions)) {
+          recentTuitionTransactions = data.transactions;
+          return recentTuitionTransactions;
+        }
+      } catch (error) {
+        console.error('Failed to load tuition receipts:', error);
+      }
+      return [];
+    }
+
+    function getTuitionReceiptHistoryEntries(limit = 3, search = '') {
+      if (!Array.isArray(recentTuitionTransactions) || recentTuitionTransactions.length === 0) return [];
+
+      const tuitionKeywordRegex = /tuition\s*receipt/i;
+      const normalizedSearch = (search || '').toString().trim().toLowerCase();
+      const isTuitionTxn = (txn) => {
+        const receiptType = (txn?.receipt_category || txn?.receipt_type || txn?.transaction_type || '').toString();
+        return tuitionKeywordRegex.test(receiptType);
+      };
+
+      const filtered = [...recentTuitionTransactions].filter(txn => {
+        if (!isTuitionTxn(txn)) return false;
+        if (!normalizedSearch) return true;
+
+        const searchableText = [
+          txn.transaction_number,
+          txn.receipt_number,
+          txn.receipt_category,
+          txn.student_id,
+          txn.student_name,
+          txn.guest_school_id,
+          txn.payment_status,
+          txn.cashier_name,
+          txn.items
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return searchableText.includes(normalizedSearch);
+      });
+
+      return filtered
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
         .slice(0, limit)
         .map(txn => ({
@@ -3884,16 +4052,22 @@
         }));
     }
 
-    function populateTuitionReceiptStorePanel() {
+
+    async function populateTuitionReceiptStorePanel() {
       const storeData = getStoreData();
       document.getElementById('tuition-receipt-store-name').textContent = storeData.storeName;
       document.getElementById('tuition-receipt-system-name').textContent = storeData.systemName;
       document.getElementById('tuition-receipt-store-branch').textContent = storeData.branch;
       document.getElementById('tuition-receipt-store-contact').textContent = storeData.contact;
 
+      const currentStudentId = document.getElementById('tuition-student-id')?.value.trim() || '';
+      const currentStatus = document.getElementById('tuition-history-status-filter')?.value || 'paid';
+      const currentSearch = document.getElementById('tuition-history-search')?.value.trim() || '';
+      await loadRecentTuitionReceipts(3, currentStatus, currentStudentId);
+
       const historyBody = document.getElementById('tuition-receipt-history-body');
       if (!historyBody) return;
-      const entries = getTuitionReceiptHistoryEntries(3);
+      const entries = getTuitionReceiptHistoryEntries(3, currentSearch);
       if (entries.length === 0) {
         historyBody.innerHTML = '<tr><td colspan="4" style="padding: 12px 10px; color: #64748b;">No recent transactions available.</td></tr>';
         return;
@@ -4096,12 +4270,20 @@
       }
     }
 
-    function openTuitionModal() {
+    async function openTuitionModal() {
       const modal = document.getElementById('tuition-modal');
       if (modal) {
         modal.classList.remove('hidden');
         toggleTuitionFeeFields();
         updateTuitionBalance();
+
+        const studentIdInput = document.getElementById('tuition-student-id');
+        if (studentIdInput && state.studentId && !studentIdInput.value.trim()) {
+          studentIdInput.value = state.studentId;
+          await handleTuitionStudentIdInput();
+        }
+
+        await populateTuitionReceiptStorePanel();
       }
     }
 
@@ -4344,7 +4526,7 @@
               <span>${highlightMatch(txn.student_id || txn.student_name || '', query)}</span>
             </div>
           </td>
-          <td><span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; text-transform: uppercase; font-size: 0.7rem;">${highlightMatch(txn.transaction_type, query)}</span></td>
+          <td><span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; text-transform: uppercase; font-size: 0.7rem;">${highlightMatch(txn.receipt_category || txn.transaction_type, query)}</span></td>
           <td style="font-weight: 700; color: #1e293b;">${formatCurrency(txn.total_amount)}</td>
           <td style="font-size: 0.85rem; color: #4b5563;">${highlightMatch(txn.cashier_name || '', query)}</td>
           <td><span class="badge ${txn.payment_status === 'paid' ? 'badge-success' : 'badge-warning'}" style="text-transform: uppercase; font-size: 0.75rem;">${highlightMatch(txn.payment_status, query)}</span></td>
@@ -4749,7 +4931,22 @@
       setInterval(updateDateTime, 60000);
       loadPendingOrders(); // Load pending orders on page load
       loadRecentTransactions();
+      await loadRecentTuitionReceipts(3);
       await loadStudentList(); // Await student list loading
+      document.getElementById('tuition-student-id')?.addEventListener('input', handleTuitionStudentIdInput);
+
+      const tuitionHistorySearch = document.getElementById('tuition-history-search');
+      const tuitionHistoryStatus = document.getElementById('tuition-history-status-filter');
+      const refreshTuitionHistory = async () => {
+        await populateTuitionReceiptStorePanel();
+      };
+
+      tuitionHistorySearch?.addEventListener('input', () => {
+        refreshTuitionHistory();
+      });
+      tuitionHistoryStatus?.addEventListener('change', () => {
+        refreshTuitionHistory();
+      });
 
       // Listen for inventory updates from other tabs
       const syncChannel = new BroadcastChannel('inventory_sync_channel');
@@ -5025,16 +5222,31 @@
         const data = await response.json();
         studentList = Array.isArray(data) ? data : [];
         const datalist = document.getElementById('student-datalist');
-        if (datalist) { // Added null check for datalist
+        const tuitionDatalist = document.getElementById('tuition-student-id-datalist');
+        if (datalist) {
           datalist.innerHTML = '';
-          studentList.forEach(student => {
-            const option = document.createElement('option');
-            // Use the human-readable student_id as the primary value for seamless integration with scanning
-            option.value = student.student_id || student.id; // Use student_id as value
-            option.textContent = `${student.name} (${student.student_id || 'ID: ' + student.id})`;
-            datalist.appendChild(option);
-          });
         }
+        if (tuitionDatalist) {
+          tuitionDatalist.innerHTML = '';
+        }
+
+        studentList.forEach(student => {
+          const optionLabel = `${student.name} (${student.student_id || 'ID: ' + student.id})`;
+          const studentValue = student.student_id || student.id;
+
+          if (datalist) {
+            const option = document.createElement('option');
+            option.value = studentValue;
+            option.textContent = optionLabel;
+            datalist.appendChild(option);
+          }
+          if (tuitionDatalist) {
+            const option = document.createElement('option');
+            option.value = studentValue;
+            option.textContent = optionLabel;
+            tuitionDatalist.appendChild(option);
+          }
+        });
       } catch (err) {
         console.error('Error loading student list:', err);
       }

@@ -186,6 +186,7 @@ $mysqli->query(
         `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
         `transaction_number` VARCHAR(50) NOT NULL,
         `receipt_number` VARCHAR(100) DEFAULT NULL,
+        `receipt_category` VARCHAR(100) DEFAULT NULL,
         `user_id` INT(11) DEFAULT NULL,
         `student_name` VARCHAR(255) DEFAULT NULL,
         `cashier_id` INT(11) NOT NULL,
@@ -270,6 +271,7 @@ addColumnIfNotExists($mysqli, 'queue_tickets', 'window_number', "INT(11) DEFAULT
 addColumnIfNotExists($mysqli, 'queue_tickets', 'served_by', "INT(11) DEFAULT NULL AFTER `window_number` ");
 addColumnIfNotExists($mysqli, 'cashier_transactions', 'payment_method', "VARCHAR(50) NOT NULL DEFAULT 'Cash'");
 addColumnIfNotExists($mysqli, 'cashier_transactions', 'check_number', "VARCHAR(100) DEFAULT NULL");
+addColumnIfNotExists($mysqli, 'cashier_transactions', 'receipt_category', "VARCHAR(100) DEFAULT NULL");
 
 // Ensure critical columns exist in active_rentals for the renewal system
 addColumnIfNotExists($mysqli, 'active_rentals', 'rental_date', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `quantity` ");

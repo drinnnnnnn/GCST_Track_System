@@ -126,7 +126,7 @@ try {
     }
 
     // 6. Secure Image Upload Processing
-    $productImage = 'assets/images/icons/granbylogo.png'; // Default placeholder
+    $productImage = 'assets/images/icons/granby_logo.png'; // Default placeholder
     if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] === UPLOAD_ERR_OK) {
         $file = $_FILES['product_image'];
         $uploadDir = __DIR__ . '/../assets/images/products/';

@@ -9,6 +9,7 @@ class M003_POSAndInventorySchema extends BaseMigration {
             `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
             `transaction_number` VARCHAR(50) NOT NULL UNIQUE,
             `receipt_number` VARCHAR(100) DEFAULT NULL UNIQUE,
+            `receipt_category` VARCHAR(100) DEFAULT NULL,
             `user_id` INT(11) DEFAULT NULL,
             `student_name` VARCHAR(255) DEFAULT NULL,
             `guest_school_id` VARCHAR(50) DEFAULT NULL,
@@ -34,6 +35,9 @@ class M003_POSAndInventorySchema extends BaseMigration {
         }
         if (!MigrationManager::columnExists($this->conn, 'cashier_transactions', 'check_number')) {
             $this->conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `check_number` VARCHAR(100) DEFAULT NULL");
+        }
+        if (!MigrationManager::columnExists($this->conn, 'cashier_transactions', 'receipt_category')) {
+            $this->conn->query("ALTER TABLE `cashier_transactions` ADD COLUMN `receipt_category` VARCHAR(100) DEFAULT NULL");
         }
         // Transaction Items
         $this->conn->query("CREATE TABLE IF NOT EXISTS `transaction_items` (

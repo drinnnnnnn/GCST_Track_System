@@ -82,7 +82,7 @@ try {
 
         if (move_uploaded_file($file['tmp_name'], $destination)) {
             // Delete old image if it's not the default fallback and exists
-            if ($productImage && $productImage !== 'assets/images/icons/granbylogo.png' && file_exists(__DIR__ . '/../' . $productImage)) {
+            if ($productImage && $productImage !== 'assets/images/icons/granby_logo.png' && file_exists(__DIR__ . '/../' . $productImage)) {
                 @unlink(__DIR__ . '/../' . $productImage);
             }
             $productImage = 'assets/images/products/' . $newFileName; // Store relative path
