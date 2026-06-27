@@ -200,10 +200,10 @@
     </section>
 
     <!-- Summary Section -->
-    <section class="balance-section" id="totalSaleSummaryCard" role="button" tabindex="0" aria-label="View total sales">
+    <section class="balance-section">
       <h2>Dashboard Summary</h2>
       <div class="balance-cards">
-        <div class="balance-card">
+        <div class="balance-card" id="itemsInventorySummaryCard" role="button" tabindex="0" aria-label="View Items in Inventory">
           <h3>Items in Inventory</h3>
           <p class="amount" id="totalInventory">0</p>
         </div>
@@ -606,22 +606,40 @@ document.addEventListener('DOMContentLoaded', initWaitingQueueInteractions);
       });
     }
 
-    function initTotalSaleInteractions() {
-  const card = document.getElementById('totalSaleSummaryCard');
+     function initItemsInventoryInteractions() {
+    const card = document.getElementById('itemsInventorySummaryCard');
 
-  // Handle Mouse Click
-  card?.addEventListener('click', () => {
-    window.location.href = 'admincashier_sale.html';
-  });
+      // Handle Mouse Click
+      card?.addEventListener('click', () => {
+        window.location.href = 'admincashier_sale.html#inventory-details';
+      });
 
-  // Handle Keyboard Access (Enter and Space)
-  card?.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault(); // Prevents page scrolling when Space is pressed
-      window.location.href = 'admincashier_sale.html';
+      // Handle Keyboard Access (Enter and Space)
+      card?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault(); // Prevents page scrolling when Space is pressed
+          window.location.href = 'admincashier_sale.html#inventory-details';
+        }
+      });
     }
-  });
-}
+    document.addEventListener('DOMContentLoaded', initItemsInventoryInteractions);    
+
+    function initTotalSaleInteractions() {
+    const card = document.getElementById('totalSaleSummaryCard');
+
+      // Handle Mouse Click
+      card?.addEventListener('click', () => {
+        window.location.href = 'admincashier_sale.html';
+      });
+
+      // Handle Keyboard Access (Enter and Space)
+      card?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault(); // Prevents page scrolling when Space is pressed
+          window.location.href = 'admincashier_sale.html';
+        }
+      });
+    }
 
 // Call the function once the DOM is ready
 document.addEventListener('DOMContentLoaded', initTotalSaleInteractions);    

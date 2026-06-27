@@ -55,9 +55,9 @@
       background-position: center;
       background-repeat: no-repeat;
       color: white;
-      padding: 100px 60px;
+      padding: 50px 60px;
       border-radius: 3rem;
-      text-align: left;
+      text-align: center;
       margin-bottom: 32px;
       position: relative;
       overflow: hidden;
@@ -616,7 +616,7 @@
   <header>
     <div class="nav-container glass rounded-2xl px-6 py-3 shadow-lg">
       <div class="flex items-center space-x-4">
-        <img src="../../assets/images/icons/granbylogo.png" alt="Logo" class="w-10 h-10 drop-shadow-sm">
+        <img src="../../assets/images/icons/granby_logo.png" alt="Logo" class="w-10 h-10 drop-shadow-sm">
         <div class="hidden sm:block">
           <h1 class="text-sm font-extrabold tracking-tight text-slate-800 leading-none">Granby Colleges of Science and Technology Track System</h1>
           <span class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Student Portal</span>
@@ -638,9 +638,11 @@
     
     <!-- Refined Welcome Banner -->
     <div class="welcome-banner">
-      <span class="px-4 py-1.5 bg-blue-500/30 text-blue-100 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] mb-6 inline-block backdrop-blur-md border border-white/10">Authorized Student Portal</span>
-      <h1 class="text-4xl md:text-5xl font-black mb-3">Welcome to Granby Colleges of Science and Technology Track System</h1>
-      <p class="text-slate-200 text-lg font-light max-w-2xl leading-relaxed">Access your academic resources, manage transactions, and streamline your campus experience in one secure location.</p>
+      <span class="px-4 py-1.5 bg-blue-500/30 text-blue-100 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] mb-6 inline-block backdrop-blur-md border border-white/10">Student Page</span>
+      <h1 class="text-4xl md:text-4xl font-black mb-3">Welcome to</h1>
+      <h1 class="text-4xl md:text-3xl font-black mb-3">Granby Colleges of Science and Technology</h1>
+      <h1 class="text-4xl md:text-4xl font-black mb-3">Track System</h1>
+      <p class="text-slate-200 text-lg font-light max-w-2xl leading-relaxed text-center mx-auto">Everything you need, in one place. Easily process transactions, get in line for services, and shop products without the hassle.</p>
     </div>
 
     <!-- Actionable Services -->
@@ -651,17 +653,17 @@
       </div>
       
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <a href="InUser_home.html" class="quick-link-card">
+        <a class="quick-link-card">
           <div class="quick-link-icon text-blue-600"><i class="fas fa-chart-pie"></i></div>
           <h3 class="text-lg font-bold text-slate-800">Dashboard</h3>
           <p class="text-sm text-slate-500 mt-2">Personalized rental summaries and real-time statistics.</p>
         </a>
-        <a href="user_browse_products.html" class="quick-link-card">
+        <a class="quick-link-card">
           <div class="quick-link-icon text-emerald-600"><i class="fas fa-shopping-bag"></i></div>
           <h3 class="text-lg font-bold text-slate-800">Browse Products</h3>
           <p class="text-sm text-slate-500 mt-2">Shop for school supplies and uniforms.</p>
         </a>
-        <a href="user_queue_tickets.html" class="quick-link-card">
+        <a class="quick-link-card">
           <div class="quick-link-icon text-amber-600"><i class="fas fa-ticket-alt"></i></div>
           <h3 class="text-lg font-bold text-slate-800">Queue Tickets</h3>
           <p class="text-sm text-slate-500 mt-2">Skip the line with digital queue management.</p>
@@ -683,13 +685,13 @@
         <div class="step-box">
           <div class="step-number">1</div>
           <h4 class="font-bold text-slate-800 mb-2">Check Dashboard</h4>
-          <p class="text-sm text-slate-500 leading-relaxed">Visit your <span class="help-hint" title="Summarizes your active rentals, pending orders, and queue position.">Home Dashboard</span> to see real-time updates on your account status.</p>
+          <p class="text-sm text-slate-500 leading-relaxed">Visit your <span class="help-hint" title="Summarizes your pending orders, and queue position.">Home Dashboard</span> to see real-time updates on your account status.</p>
         </div>
         <!-- Step 2 -->
         <div class="step-box">
           <div class="step-number" style="background: var(--emerald-600);">2</div>
           <h4 class="font-bold text-slate-800 mb-2">Browse Products</h4>
-          <p class="text-sm text-slate-500 leading-relaxed">Go to <strong>Browse Products</strong> to purchase fabric uniform and accessories. Add items to your cart and proceed to checkout.</p>
+          <p class="text-sm text-slate-500 leading-relaxed">Go to <span class="help-hint" title="We sell Books, Uniform Fabrics, and Accessories.">Browse Products</span> to purchase fabric uniform and accessories. Add items to your cart and proceed to checkout.</p>
         </div>
         <!-- Step 3 -->
         <div class="step-box">
@@ -728,7 +730,7 @@
   </div>
 
     <!-- Institutional Cards Section (from index.html) -->
-    <section id="institution" class="max-w-7xl mx-auto py-20">
+    <section id="institution" class="max-w-7xl mx-auto py-0">
       <div class="text-center mb-16">
           <h3 class="text-3xl font-bold text-slate-900">Institutional Governance</h3>
           <p class="text-slate-500 mt-2">Transparency and support at the heart of Granby Colleges.</p>
@@ -740,7 +742,7 @@
           <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-colors">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-7h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
           </div>
-          <h4 class="font-bold text-slate-900 mb-2">About Granby Colleges of Science and Technology Track System</h4>
+          <h5 class="font-bold text-slate-900 mb-1">About Granby Colleges of Science and Technology Track System</h5>
           <p class="text-xs text-slate-500 leading-relaxed">Our history, mission, and vision for science and technology.</p>
         </button>
 
@@ -775,9 +777,9 @@
   </main>
 
   <!-- Footer -->
-  <footer id="footer" class="py-12 border-t border-slate-200 mt-12 text-center">
-    <img src="../../assets/images/icons/granbylogo.png" class="w-8 h-8 grayscale opacity-50 inline-block mb-4">
-    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 Granby Colleges - Track System</p>
+  <footer id="footer" class="py-6 border-t border-slate-300 mt-12 text-center">
+    <img src="../../assets/images/icons/granby_logo.png" class="w-8 h-8 grayscale opacity-50 inline-block mb-4">
+    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 Granby Colleges of Science and Technology - Track System</p>
   </footer>
 
   <script>
@@ -972,7 +974,7 @@
         'support-modal': {
           title: 'Contact Support',
           subtitle: 'Technical Help Desk',
-          text: 'Having trouble? Contact the MIS support team at the Administration building or email gcst001234@gmail.com for assistance with your student account or portal access.'
+          text: 'Having trouble? Contact Gcst001234@gmail.com or on our facebook page Granby Colleges of Science and Technology for assistance with your student account or portal access.'
         }
       };
 

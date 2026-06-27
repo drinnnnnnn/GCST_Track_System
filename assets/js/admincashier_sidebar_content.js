@@ -465,7 +465,7 @@ export function getSidebarHTML() {
 <aside id="main-sidebar" class="sidebar" aria-label="Main Sidebar">
     <div class="sidebar-brand" id="sidebar-brand-area">
         <div class="brand-content">
-            <img src="/GCST_Track_System/assets/images/icons/granbylogo.png" alt="Granby Colleges Logo" class="brand-logo">
+            <img src="/GCST_Track_System/assets/images/icons/granby_logo.png" alt="Granby Colleges Logo" class="brand-logo">
             <div class="brand-text">
                 <span class="brand-subtitle">Granby Colleges of</span>
                 <h2 class="brand-title">Science & Technology</h2>

@@ -1362,7 +1362,7 @@
     <section class="cashier-layout">
       <div class="panel">
         <div class="panel-header">
-          <h2>Products</h2>
+          <h2 class="text-3xl font-bold text-gray-500 mb-4">Products</h2>
           <span id="product-count">0 items</span>
         </div>
         <div class="search-group">
@@ -1418,19 +1418,19 @@
       <div class="panel">
         <div class="panel-header" style="flex-wrap: wrap; gap: 20px;">
           <div style="display: flex; align-items: center; gap: 15px;">
-            <h2>Transactions</h2>
+            <h2 class="text-3xl font-bold text-gray-500 mb-4">Transactions History</h2>
             <button id="txn-refresh-btn" class="btn btn-secondary" onclick="loadRecentTransactions()" style="padding: 6px 10px; font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center;" title="Refresh Transactions" aria-label="Refresh Transactions"><i class="fas fa-sync-alt"></i></button>
             <button class="btn btn-secondary" onclick="openVoidedReportModal()" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-file-invoice"></i> Voided Report</button>
           </div>
           <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; justify-content: flex-end;">
-            <div style="display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 4px 14px; border-radius: 14px; border: 1px solid #d1d5db;">
+            <div style="display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 3px 3px; border-radius: 14px; border: 1px solid #d1d5db;">
               <i class="far fa-calendar-alt" style="color: #64748b; font-size: 0.85rem;"></i>
-              <input id="txn-date-from" class="search-input" type="date" style="padding: 8px 0; font-size: 0.85rem; width: auto; border: none; background: transparent; cursor: pointer;" title="From Date" />
+              <input id="txn-date-from" class="search-input" type="date" style="padding: 3px 6px; font-size: 0.85rem; width: auto; border: none; background: transparent; cursor: pointer;" title="From Date" />
               <span style="font-size: 0.8rem; color: #94a3b8; font-weight: bold;">→</span>
-              <input id="txn-date-to" class="search-input" type="date" style="padding: 8px 0; font-size: 0.85rem; width: auto; border: none; background: transparent; cursor: pointer;" title="To Date" />
+              <input id="txn-date-to" class="search-input" type="date" style="padding: 3px 6px; font-size: 0.85rem; width: auto; border: none; background: transparent; cursor: pointer;" title="To Date" />
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <select id="txn-status-filter" class="search-input" style="max-width: 180px;">
+              <select id="txn-status-filter" class="search-input" style="padding: 6px 12px; font-size: 0.85rem;">
                 <option value="all">All Statuses</option>
                 <option value="paid">Paid</option>
                 <option value="pending">Pending</option>
@@ -1581,11 +1581,34 @@
           </div>
           <div style="display: grid; gap: 8px;">
             <label class="checkout-label" style="font-size: 0.85rem; font-weight: 700; color: #475569;">Amount Paid (₱)</label>
-            <input id="tuition-amount" type="number" min="0" step="0.01" class="search-input" placeholder="0.00" />
+            <input id="tuition-amount" type="number" min="0" step="0.01" class="search-input" placeholder="0.00" oninput="updateTuitionBalance()" />
+          </div>
+          <div id="tuition-fee-fields" style="display: none; gap: 16px;">
+            <div style="display: grid; gap: 8px;">
+              <label class="checkout-label" style="font-size: 0.85rem; font-weight: 700; color: #475569;">Total Payment (₱)</label>
+              <input id="tuition-total-payment" type="number" min="0" step="0.01" class="search-input" placeholder="0.00" oninput="updateTuitionBalance()" />
+            </div>
+            <div style="display: grid; gap: 8px;">
+              <label class="checkout-label" style="font-size: 0.85rem; font-weight: 700; color: #475569;">O.R.#</label>
+              <input id="tuition-or-number" type="text" inputmode="numeric" pattern="\d*" class="search-input" placeholder="Only digits" maxlength="20" />
+            </div>
+            <div style="display: grid; gap: 8px;">
+              <label class="checkout-label" style="font-size: 0.85rem; font-weight: 700; color: #475569;">Balance (₱)</label>
+              <input id="tuition-balance" type="text" readonly class="search-input" placeholder="0.00" style="background: #f8fafc;" />
+            </div>
+            <div style="display: grid; gap: 8px;">
+              <label class="checkout-label" style="font-size: 0.85rem; font-weight: 700; color: #475569;">Remarks</label>
+              <textarea id="tuition-remarks" class="search-input" placeholder="Enter remarks" rows="2"></textarea>
+            </div>
+            <div style="display: grid; gap: 8px;">
+              <label class="checkout-label" style="font-size: 0.85rem; font-weight: 700; color: #475569;">Note (Optional)</label>
+              <textarea id="tuition-note" class="search-input" placeholder="Additional notes (optional)" rows="2"></textarea>
+            </div>
           </div>
           <div style="display: grid; gap: 8px;">
             <label class="checkout-label" style="font-size: 0.85rem; font-weight: 700; color: #475569;">Receipt Type</label>
-            <select id="tuition-receipt-category" class="search-input">
+            <select id="tuition-receipt-category" class="search-input" onchange="toggleTuitionFeeFields()">
+              <option value="Payment Receipt" selected>Payment Receipt</option>
               <option value="Tuition Receipt">Tuition Receipt</option>
               <option value="Medical Receipt">Medical Receipt</option>
               <option value="Foundation Receipt">Foundation Receipt</option>
@@ -1640,6 +1663,43 @@
                 <p id="tuition-receipt-email-status" style="margin: 8px 0 0; color: #0f766e; font-size: 0.85rem; display: none;">Receipt will be sent automatically to the student&rsquo;s Gmail.</p>
               </div>
             </div>
+            <div id="tuition-receipt-store-panel" style="margin-bottom: 16px; padding: 14px; background: #eef2ff; border-radius: 14px; border: 1px solid #e2e8f0;">
+              <div style="margin-bottom: 12px; font-weight: 700; color: #1f2937;">Store Data & Recent History</div>
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; color: #334155;">
+                <tr>
+                  <td style="padding: 8px 10px; vertical-align: top; width: 35%; color: #64748b;">Store Name</td>
+                  <td id="tuition-receipt-store-name" style="padding: 8px 10px; font-weight: 700;">GRANBY COLLEGES OF SCIENCE AND TECHNOLOGY</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; vertical-align: top; color: #64748b;">System</td>
+                  <td id="tuition-receipt-system-name" style="padding: 8px 10px; font-weight: 700;">GCST Tracking System</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; vertical-align: top; color: #64748b;">Branch</td>
+                  <td id="tuition-receipt-store-branch" style="padding: 8px 10px; font-weight: 700;">Admin Cashier</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; vertical-align: top; color: #64748b;">Support</td>
+                  <td id="tuition-receipt-store-contact" style="padding: 8px 10px; font-weight: 700;">Contact your cashier or office for assistance</td>
+                </tr>
+              </table>
+              <div style="margin-top: 14px;">
+                <div style="font-size: 0.92rem; font-weight: 700; margin-bottom: 8px; color: #1f2937;">Latest Receipt History</div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+                  <thead>
+                    <tr>
+                      <th style="text-align:left; padding: 8px 10px; color:#475569; font-weight:700;">Date</th>
+                      <th style="text-align:left; padding: 8px 10px; color:#475569; font-weight:700;">Receipt #</th>
+                      <th style="text-align:right; padding: 8px 10px; color:#475569; font-weight:700;">Total</th>
+                      <th style="text-align:right; padding: 8px 10px; color:#475569; font-weight:700;">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tuition-receipt-history-body">
+                    <tr><td colspan="4" style="padding: 12px 10px; color: #64748b;">No recent transactions available.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
             <div style="display: grid; gap: 10px; margin-bottom: 16px; padding: 14px; background: #f8fafc; border-radius: 14px; border: 1px solid #e2e8f0;">
               <div class="receipt-line" style="justify-content: space-between;"><span>Student Name</span><strong id="tuition-receipt-name"></strong></div>
               <div class="receipt-line" style="justify-content: space-between;"><span>Receipt Type</span><strong id="tuition-receipt-category-preview"></strong></div>
@@ -1648,6 +1708,11 @@
             </div>
             <div style="display: grid; gap: 10px; margin-bottom: 16px;">
               <div class="receipt-line" style="justify-content: space-between;"><span>Amount Paid</span><strong id="tuition-receipt-amount"></strong></div>
+              <div class="receipt-line" style="justify-content: space-between;"><span>Total Payment</span><strong id="tuition-receipt-total-payment">—</strong></div>
+              <div class="receipt-line" style="justify-content: space-between;"><span>Balance</span><strong id="tuition-receipt-balance">—</strong></div>
+              <div class="receipt-line" style="justify-content: space-between;"><span>O.R.#</span><strong id="tuition-receipt-or-number">—</strong></div>
+              <div class="receipt-line" style="justify-content: space-between;"><span>Remarks</span><strong id="tuition-receipt-remarks">—</strong></div>
+              <div class="receipt-line" style="justify-content: space-between;"><span>Note</span><strong id="tuition-receipt-note">—</strong></div>
               <div class="receipt-line" style="justify-content: space-between;"><span>Payment</span><strong id="tuition-receipt-type"></strong></div>
               <div class="receipt-line" style="justify-content: space-between;"><span>Form of Payment</span><strong id="tuition-receipt-method"></strong></div>
               <div class="receipt-line" style="justify-content: space-between;"><span>Check Number</span><strong id="tuition-receipt-check-number">—</strong></div>
@@ -3618,6 +3683,11 @@
       const provisional = document.getElementById('tuition-provisional-number').value.trim();
       const category = document.getElementById('tuition-receipt-category').value;
       const amount = parseFloat(document.getElementById('tuition-amount').value);
+      const totalPayment = parseFloat(document.getElementById('tuition-total-payment').value);
+      const orNumber = document.getElementById('tuition-or-number').value.trim();
+      const balance = parseFloat(document.getElementById('tuition-balance').value.replace(/,/g, '')) || 0;
+      const remarks = document.getElementById('tuition-remarks').value.trim();
+      const note = document.getElementById('tuition-note').value.trim();
       const paymentType = document.getElementById('tuition-payment-type').value;
       const paymentMethod = document.getElementById('tuition-form-of-payment').value;
       const checkNumber = document.getElementById('tuition-check-number').value.trim();
@@ -3649,6 +3719,16 @@
         alert('Please enter a valid amount paid.');
         return;
       }
+      if (category === 'Tuition Receipt') {
+        if (isNaN(totalPayment) || totalPayment <= 0) {
+          alert('Please enter a valid total payment amount.');
+          return;
+        }
+        if (!/^[0-9]+$/.test(orNumber)) {
+          alert('Please enter a valid O.R. number containing only digits.');
+          return;
+        }
+      }
       if (!rep) {
         alert('Please provide the authorized representative name.');
         return;
@@ -3664,6 +3744,11 @@
       document.getElementById('tuition-receipt-datetime').textContent = dateTime;
       document.getElementById('tuition-receipt-provisional').textContent = provisional;
       document.getElementById('tuition-receipt-amount').textContent = '₱' + amount.toFixed(2);
+      document.getElementById('tuition-receipt-total-payment').textContent = !isNaN(totalPayment) ? '₱' + totalPayment.toFixed(2) : '₱0.00';
+      document.getElementById('tuition-receipt-balance').textContent = '₱' + balance.toFixed(2);
+      document.getElementById('tuition-receipt-or-number').textContent = orNumber || '—';
+      document.getElementById('tuition-receipt-remarks').textContent = remarks || '—';
+      document.getElementById('tuition-receipt-note').textContent = note || '—';
       document.getElementById('tuition-receipt-type').textContent = paymentType;
       document.getElementById('tuition-receipt-method').textContent = paymentMethod;
       document.getElementById('tuition-receipt-check-number').textContent = paymentMethod === 'Check' ? checkNumber : '—';
@@ -3686,6 +3771,8 @@
         }
       }
 
+      populateTuitionReceiptStorePanel();
+
       const emailStatus = document.getElementById('tuition-receipt-email-status');
       if (emailStatus) {
         emailStatus.style.display = 'block';
@@ -3700,10 +3787,16 @@
       document.getElementById('tuition-student-name').value = '';
       document.getElementById('tuition-provisional-number').value = '';
       document.getElementById('tuition-amount').value = '';
+      document.getElementById('tuition-total-payment').value = '';
+      document.getElementById('tuition-or-number').value = '';
+      document.getElementById('tuition-balance').value = '';
+      document.getElementById('tuition-remarks').value = '';
+      document.getElementById('tuition-note').value = '';
       document.getElementById('tuition-receipt-category').value = 'Tuition Receipt';
       document.getElementById('tuition-payment-type').value = 'Partial Payment';
       document.getElementById('tuition-form-of-payment').value = 'Cash';
       document.getElementById('tuition-check-number').value = '';
+      toggleTuitionFeeFields();
       toggleTuitionCheckNumberField();
       document.getElementById('tuition-authorized-rep').value = '';
       document.getElementById('tuition-student-email').value = '';
@@ -3726,6 +3819,27 @@
       }
     }
 
+    function updateTuitionBalance() {
+      const totalPayment = parseFloat(document.getElementById('tuition-total-payment').value);
+      const amount = parseFloat(document.getElementById('tuition-amount').value);
+      const balanceInput = document.getElementById('tuition-balance');
+      if (!balanceInput) return;
+      if (!isNaN(totalPayment) && !isNaN(amount)) {
+        balanceInput.value = (totalPayment - amount).toFixed(2);
+      } else if (!isNaN(totalPayment)) {
+        balanceInput.value = totalPayment.toFixed(2);
+      } else {
+        balanceInput.value = '';
+      }
+    }
+
+    function toggleTuitionFeeFields() {
+      const category = document.getElementById('tuition-receipt-category').value;
+      const feeBlock = document.getElementById('tuition-fee-fields');
+      if (!feeBlock) return;
+      feeBlock.style.display = category === 'Tuition Receipt' ? 'grid' : 'none';
+    }
+
     async function loadAdminCashierSignatureImage() {
       try {
         const response = await fetch(`${API_ROOT}/get_admincashier_profile_data.php`, { cache: 'no-store' });
@@ -3745,6 +3859,53 @@
       }
       const prefix = window.location.origin + '/GCST_Track_System/';
       return path.startsWith('/') ? window.location.origin + path : prefix + path;
+    }
+
+    function getStoreData() {
+      return {
+        storeName: 'GRANBY COLLEGES OF SCIENCE AND TECHNOLOGY',
+        systemName: 'GCST Tracking System',
+        branch: 'Admin Cashier',
+        contact: 'Contact your cashier or office for assistance',
+        supportEmail: ''
+      };
+    }
+
+    function getTuitionReceiptHistoryEntries(limit = 3) {
+      if (!Array.isArray(recentTransactions) || recentTransactions.length === 0) return [];
+      return [...recentTransactions]
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, limit)
+        .map(txn => ({
+          date: txn.created_at ? new Date(txn.created_at).toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' }) : '—',
+          receiptNumber: txn.transaction_number || txn.id || '—',
+          total: parseFloat(txn.total_amount || txn.total || txn.amount || 0) || 0,
+          status: txn.payment_status || txn.status || '—'
+        }));
+    }
+
+    function populateTuitionReceiptStorePanel() {
+      const storeData = getStoreData();
+      document.getElementById('tuition-receipt-store-name').textContent = storeData.storeName;
+      document.getElementById('tuition-receipt-system-name').textContent = storeData.systemName;
+      document.getElementById('tuition-receipt-store-branch').textContent = storeData.branch;
+      document.getElementById('tuition-receipt-store-contact').textContent = storeData.contact;
+
+      const historyBody = document.getElementById('tuition-receipt-history-body');
+      if (!historyBody) return;
+      const entries = getTuitionReceiptHistoryEntries(3);
+      if (entries.length === 0) {
+        historyBody.innerHTML = '<tr><td colspan="4" style="padding: 12px 10px; color: #64748b;">No recent transactions available.</td></tr>';
+        return;
+      }
+      historyBody.innerHTML = entries.map(entry => `
+            <tr>
+              <td style="padding: 8px 10px; color: #334155;">${entry.date}</td>
+              <td style="padding: 8px 10px; color: #334155;">${entry.receiptNumber}</td>
+              <td style="padding: 8px 10px; text-align: right; color: #0f172a; font-weight: 700;">₱${entry.total.toFixed(2)}</td>
+              <td style="padding: 8px 10px; text-align: right; color: ${entry.status === 'paid' ? '#15803d' : '#b45309'}; font-weight: 700;">${entry.status}</td>
+            </tr>
+          `).join('');
     }
 
     function escapeHtml(text) {
@@ -3770,6 +3931,11 @@
         { label: 'Date & Time', value: escapeHtml(document.getElementById('tuition-receipt-datetime').textContent) },
         { label: 'Provisional Receipt #', value: escapeHtml(document.getElementById('tuition-receipt-provisional').textContent) },
         { label: 'Amount Paid', value: escapeHtml(document.getElementById('tuition-receipt-amount').textContent), highlight: true },
+        { label: 'Total Payment', value: escapeHtml(document.getElementById('tuition-receipt-total-payment').textContent) },
+        { label: 'Balance', value: escapeHtml(document.getElementById('tuition-receipt-balance').textContent) },
+        { label: 'O.R.#', value: escapeHtml(document.getElementById('tuition-receipt-or-number').textContent) },
+        { label: 'Remarks', value: escapeHtml(document.getElementById('tuition-receipt-remarks').textContent) },
+        { label: 'Note', value: escapeHtml(document.getElementById('tuition-receipt-note').textContent) },
         { label: 'Payment Type', value: escapeHtml(document.getElementById('tuition-receipt-type').textContent) },
         { label: 'Form of Payment', value: escapeHtml(document.getElementById('tuition-receipt-method').textContent) },
         { label: 'Check Number', value: escapeHtml(document.getElementById('tuition-receipt-check-number').textContent) },
@@ -3777,12 +3943,64 @@
         { label: 'Admin Cashier', value: escapeHtml(document.getElementById('tuition-receipt-admin-signature').textContent) }
       ];
 
+      const storeData = getStoreData();
+      const historyEntries = getTuitionReceiptHistoryEntries(3);
+
       const detailRows = details.map(detail => `
             <div style="display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid #e5e7eb; font-size: 0.95rem; color: #334155;">
               <span style="color: #64748b; width: 40%;">${detail.label}</span>
               <strong style="font-weight: ${detail.highlight ? '700' : '600'}; color: ${detail.highlight ? '#4f46e5' : '#0f172a'}; width: 60%; text-align: right; word-break: break-word;">${detail.value}</strong>
             </div>
           `).join('');
+
+      const storePanel = `
+            <div style="margin-bottom: 20px; padding: 18px; background: #eef2ff; border-radius: 16px; border: 1px solid #dbeafe;">
+              <div style="font-size: 1rem; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Store Data & Recent History</div>
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem; color: #334155;">
+                <tr>
+                  <td style="padding: 8px 10px; color: #64748b; width: 35%;">Store Name</td>
+                  <td style="padding: 8px 10px; font-weight: 700;">${escapeHtml(storeData.storeName)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; color: #64748b;">System</td>
+                  <td style="padding: 8px 10px; font-weight: 700;">${escapeHtml(storeData.systemName)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; color: #64748b;">Branch</td>
+                  <td style="padding: 8px 10px; font-weight: 700;">${escapeHtml(storeData.branch)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; color: #64748b;">Support</td>
+                  <td style="padding: 8px 10px; font-weight: 700;">${escapeHtml(storeData.contact)}</td>
+                </tr>
+              </table>
+              <div style="margin-top: 16px; font-weight: 700; color: #1f2937;">Latest Receipt History</div>
+              <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <thead>
+                  <tr>
+                    <th style="text-align:left; padding: 8px 10px; color:#475569; font-weight:700;">Date</th>
+                    <th style="text-align:left; padding: 8px 10px; color:#475569; font-weight:700;">Receipt #</th>
+                    <th style="text-align:right; padding: 8px 10px; color:#475569; font-weight:700;">Total</th>
+                    <th style="text-align:right; padding: 8px 10px; color:#475569; font-weight:700;">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${historyEntries.length === 0 ? `
+                    <tr>
+                      <td colspan="4" style="padding: 12px 10px; color: #64748b;">No recent transactions available.</td>
+                    </tr>
+                  ` : historyEntries.map(entry => `
+                    <tr>
+                      <td style="padding: 8px 10px; color: #334155;">${entry.date}</td>
+                      <td style="padding: 8px 10px; color: #334155;">${entry.receiptNumber}</td>
+                      <td style="padding: 8px 10px; text-align: right; color: #0f172a; font-weight: 700;">₱${entry.total.toFixed(2)}</td>
+                      <td style="padding: 8px 10px; text-align: right; color: ${entry.status === 'paid' ? '#15803d' : '#b45309'}; font-weight: 700;">${escapeHtml(entry.status)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
 
       return `
         <div style="font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 24px; background: #eef2ff; color: #0f172a;">
@@ -3792,6 +4010,7 @@
               <p style="margin: 10px auto 0; max-width: 520px; font-size: 0.95rem; color: #475569;">A digital copy of your receipt has been generated and securely emailed to your Gmail account.</p>
             </div>
             <div style="padding: 22px 24px; background: #f8fafc;">
+              ${storePanel}
               ${detailRows}
             </div>
             ${signatureImageHtml}
@@ -3879,7 +4098,11 @@
 
     function openTuitionModal() {
       const modal = document.getElementById('tuition-modal');
-      if (modal) modal.classList.remove('hidden');
+      if (modal) {
+        modal.classList.remove('hidden');
+        toggleTuitionFeeFields();
+        updateTuitionBalance();
+      }
     }
 
     function closeTuitionModal() {
