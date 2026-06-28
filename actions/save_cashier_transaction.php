@@ -272,14 +272,32 @@ try {
     $cashierId = $adminId ?? 0;
 
     if ($receiptNumber !== null && $receiptNumber !== '') {
-        $existingReceipt = $conn->prepare('SELECT 1 FROM cashier_transactions WHERE receipt_number = ? LIMIT 1');
-        $existingReceipt->bind_param('s', $receiptNumber);
-        $existingReceipt->execute();
-        $existingReceipt->store_result();
-        if ($existingReceipt->num_rows > 0) {
-            throw new Exception('Duplicate receipt number detected.');
+        // Generate a unique receipt number if the provided one already exists
+        $originalReceiptNumber = $receiptNumber;
+        $attemptCount = 0;
+        $maxAttempts = 10;
+        
+        while ($attemptCount < $maxAttempts) {
+            $existingReceipt = $conn->prepare('SELECT 1 FROM cashier_transactions WHERE receipt_number = ? LIMIT 1');
+            $existingReceipt->bind_param('s', $receiptNumber);
+            $existingReceipt->execute();
+            $existingReceipt->store_result();
+            
+            if ($existingReceipt->num_rows === 0) {
+                $existingReceipt->close();
+                break; // Receipt number is unique, proceed
+            }
+            $existingReceipt->close();
+            
+            // Generate a new unique receipt number by appending timestamp fragment
+            $timestamp = str_pad(time() % 1000000, 6, '0', STR_PAD_LEFT);
+            $receiptNumber = substr($timestamp, 0, 6);
+            $attemptCount++;
         }
-        $existingReceipt->close();
+        
+        if ($attemptCount >= $maxAttempts) {
+            throw new Exception('Unable to generate a unique receipt number. Please try again.');
+        }
     }
 
     // Use ON DUPLICATE KEY UPDATE to either update the scanned pending order to 'paid' 

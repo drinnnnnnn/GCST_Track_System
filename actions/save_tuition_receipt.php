@@ -37,6 +37,10 @@ $changeAmount = isset($input['change_amount']) ? floatval($input['change_amount'
 $authorizedRep = isset($input['authorized_rep']) ? trim((string)$input['authorized_rep']) : null;
 $remarks = isset($input['remarks']) ? trim((string)$input['remarks']) : null;
 $note = isset($input['note']) ? trim((string)$input['note']) : null;
+$orNumber = isset($input['or_number']) ? trim((string)$input['or_number']) : null;
+$totalPayment = isset($input['total_payment']) ? floatval($input['total_payment']) : null;
+$balance = isset($input['balance']) ? floatval($input['balance']) : 0.0;
+$paymentType = isset($input['payment_type']) ? trim((string)$input['payment_type']) : 'Partial Payment';
 
 try {
     if (empty($receiptNumber) || !preg_match('/^[0-9]{6}$/', $receiptNumber)) {
@@ -88,73 +92,77 @@ try {
         $userId = null;
     }
 
-    $existingReceipt = $conn->prepare('SELECT 1 FROM cashier_transactions WHERE receipt_number = ? LIMIT 1');
-    if (!$existingReceipt) {
-        throw new Exception('Unable to prepare receipt validation query.');
+    // Generate a unique receipt number if the provided one already exists
+    // Check ONLY in tuition_receipts table (isolated from regular transactions)
+    $originalReceiptNumber = $receiptNumber;
+    $attemptCount = 0;
+    $maxAttempts = 50;
+    
+    while ($attemptCount < $maxAttempts) {
+        $existingReceipt = $conn->prepare('SELECT 1 FROM tuition_receipts WHERE receipt_number = ? LIMIT 1');
+        if (!$existingReceipt) {
+            throw new Exception('Unable to prepare receipt validation query.');
+        }
+        $existingReceipt->bind_param('s', $receiptNumber);
+        $existingReceipt->execute();
+        $existingReceipt->store_result();
+        
+        if ($existingReceipt->num_rows === 0) {
+            $existingReceipt->close();
+            break; // Receipt number is unique, proceed
+        }
+        $existingReceipt->close();
+        
+        // Generate a new unique 6-digit receipt number
+        $receiptNumber = sprintf('%06d', random_int(0, 999999));
+        $attemptCount++;
     }
-    $existingReceipt->bind_param('s', $receiptNumber);
-    $existingReceipt->execute();
-    $existingReceipt->store_result();
-    if ($existingReceipt->num_rows > 0) {
-        throw new Exception('Duplicate receipt number detected.');
+    
+    if ($attemptCount >= $maxAttempts) {
+        throw new Exception('Unable to generate a unique receipt number. Please try again.');
     }
-    $existingReceipt->close();
 
     $transactionNumber = 'TUI-' . time() . '-' . bin2hex(random_bytes(4));
-    $itemsJson = json_encode([[
-        'product_id' => null,
-        'product_name' => $receiptCategory,
-        'display_name' => $receiptCategory,
-        'type' => 'buy',
-        'quantity' => 1,
-        'unit_price' => $paymentReceived,
-        'unit_name' => 'receipt',
-        'total' => $paymentReceived
-    ]], JSON_UNESCAPED_UNICODE);
-
+    
     $conn->begin_transaction();
 
-    $insertSql = "INSERT INTO cashier_transactions (
-        transaction_number, receipt_number, receipt_category, user_id, student_name,
-        guest_school_id, guest_email, cashier_id, transaction_type, items,
-        subtotal, discount_percent, discount_amount, total_amount,
-        payment_received, change_amount, payment_status, payment_method,
-        check_number, is_expired
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    // Insert into separate tuition_receipts table
+    $insertSql = "INSERT INTO tuition_receipts (
+        transaction_number, receipt_number, user_id, student_id, student_name,
+        student_email, cashier_id, receipt_category, amount_paid, total_payment,
+        balance, or_number, check_number, payment_method, payment_type,
+        remarks, note, authorized_rep, payment_status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    $invoiceType = 'buy';
-    $subtotal = $paymentReceived;
-    $discountPercent = 0.0;
-    $discountAmount = 0.0;
-    $isExpiredFlag = ($paymentStatus === 'paid') ? 1 : 0;
     $cashierId = $_SESSION['admin_id'] ?? 0;
+    $finalTotalPayment = $totalPayment !== null ? $totalPayment : $paymentReceived;
+    $finalBalance = $balance !== null ? $balance : 0.0;
 
     $stmt = $conn->prepare($insertSql);
     if (!$stmt) {
         throw new Exception('Failed to prepare save query: ' . $conn->error);
     }
     $stmt->bind_param(
-        'sssiississddddddsssi',
+        'ssisssissddssssssss',
         $transactionNumber,
         $receiptNumber,
-        $receiptCategory,
         $userId,
-        $studentName,
         $studentId,
+        $studentName,
         $studentEmail,
         $cashierId,
-        $invoiceType,
-        $itemsJson,
-        $subtotal,
-        $discountPercent,
-        $discountAmount,
-        $totalAmount,
+        $receiptCategory,
         $paymentReceived,
-        $changeAmount,
-        $paymentStatus,
-        $payment_method,
+        $finalTotalPayment,
+        $finalBalance,
+        $orNumber,
         $checkNumber,
-        $isExpiredFlag
+        $payment_method,
+        $paymentType,
+        $remarks,
+        $note,
+        $authorizedRep,
+        $paymentStatus
     );
 
     if (!$stmt->execute()) {
