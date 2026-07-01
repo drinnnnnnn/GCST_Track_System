@@ -1617,7 +1617,9 @@
           <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; justify-content: flex-end;">
             <div style="position: relative; max-width: 320px; flex: 1; min-width: 240px;">
               <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem; pointer-events: none;"></i>
-              <input id="payment-history-search" class="search-input" type="search" placeholder="Search receipts or students..." style="padding: 11px 12px 11px 34px; font-size: 0.85rem; width: 100%; border-radius: 18px; background: #f8fafc; border: 1px solid #dbeafe;" oninput="populateTuitionReceiptStorePanel()" />
+              <input id="payment-history-search" class="search-input" type="search" placeholder="Search receipts or students..." style="padding: 11px 64px 11px 34px; font-size: 0.85rem; width: 100%; border-radius: 18px; background: #f8fafc; border: 1px solid #dbeafe;" />
+              <i id="payment-search-spinner" class="fas fa-spinner fa-spin hidden" style="position: absolute; right: 44px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem;"></i>
+              <button id="payment-clear-search" class="hidden" title="Clear search" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: #f1f5f9; color: #64748b; border: none; width: 28px; height: 28px; border-radius: 999px; display:flex; align-items:center; justify-content:center; cursor:pointer;"><i class="fas fa-times" style="font-size: 0.75rem;"></i></button>
             </div>
           </div>
         </div>
@@ -1912,8 +1914,10 @@
             </div>
             <div style="margin-bottom: 20px; padding: 18px; background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%); border-radius: 18px; border: 1px solid #dbeafe;">
               <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 14px;">
-                <div style="flex: 1; min-width: 220px;">
-                  <input id="tuition-history-search" type="search" class="search-input" placeholder="🔍 Search receipts..." style="width: 100%; background: #f8fafc; border: 1px solid #e2e8f0;" />
+                <div style="flex: 1; min-width: 220px; position: relative;">
+                  <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.95rem; pointer-events: none;"></i>
+                  <input id="tuition-history-search" type="search" class="search-input" placeholder="🔍 Search receipts..." style="width: 100%; padding: 8px 36px 8px 34px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;" />
+                  <i id="tuition-search-spinner" class="fas fa-spinner fa-spin hidden" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.95rem;"></i>
                 </div>
                 <div style="min-width: 160px;">
                   <select id="tuition-history-status-filter" class="search-input" style="width: 100%; background: #f8fafc; border: 1px solid #e2e8f0;">
@@ -4522,21 +4526,36 @@
 
     async function populateTuitionReceiptStorePanel() {
       const storeData = getStoreData();
-      document.getElementById('tuition-receipt-store-name').textContent = storeData.storeName;
-      document.getElementById('tuition-receipt-system-name').textContent = storeData.systemName;
-      document.getElementById('tuition-receipt-store-branch').textContent = storeData.branch;
-      document.getElementById('tuition-receipt-store-contact').textContent = storeData.contact;
 
-      const currentStudentId = document.getElementById('tuition-student-id')?.value.trim() || '';
-      const currentStatus = document.getElementById('payment-history-status-filter')?.value || document.getElementById('tuition-history-status-filter')?.value || 'paid';
-      const currentSearch = document.getElementById('payment-history-search')?.value.trim() || document.getElementById('tuition-history-search')?.value.trim() || '';
+      // Cache frequently used DOM nodes to avoid repeated lookups
+      const elStoreName = document.getElementById('tuition-receipt-store-name');
+      const elSystemName = document.getElementById('tuition-receipt-system-name');
+      const elBranch = document.getElementById('tuition-receipt-store-branch');
+      const elContact = document.getElementById('tuition-receipt-store-contact');
+      const elTuitionStudentId = document.getElementById('tuition-student-id');
+      const elPaymentStatusFilter = document.getElementById('payment-history-status-filter');
+      const elTuitionStatusFilter = document.getElementById('tuition-history-status-filter');
+      const elPaymentSearch = document.getElementById('payment-history-search');
+      const elTuitionSearch = document.getElementById('tuition-history-search');
+      const historyBody = document.getElementById('tuition-receipt-history-body');
+      const paymentHistoryBody = document.getElementById('payment-receipt-history-body');
+
+      if (elStoreName) elStoreName.textContent = storeData.storeName;
+      if (elSystemName) elSystemName.textContent = storeData.systemName;
+      if (elBranch) elBranch.textContent = storeData.branch;
+      if (elContact) elContact.textContent = storeData.contact;
+
+      const currentStudentId = elTuitionStudentId?.value.trim() || '';
+      const currentStatus = (elPaymentStatusFilter?.value) || (elTuitionStatusFilter?.value) || 'paid';
+      const currentSearch = (elPaymentSearch?.value.trim()) || (elTuitionSearch?.value.trim()) || '';
+
       await loadRecentTuitionReceipts(3, currentStatus, currentStudentId);
       await loadPaymentReceiptHistory(10, currentStatus, currentStudentId);
 
-      const historyBody = document.getElementById('tuition-receipt-history-body');
+      // Render tuition receipt history (small summary)
       if (historyBody) {
         const entries = getTuitionReceiptHistoryEntries(3, currentSearch);
-        if (entries.length === 0) {
+        if (!entries || entries.length === 0) {
           historyBody.innerHTML = '<tr><td colspan="4" style="padding: 12px 10px; color: #64748b;">No recent transactions available.</td></tr>';
         } else {
           historyBody.innerHTML = entries.map(entry => `
@@ -4550,13 +4569,14 @@
         }
       }
 
-      const paymentHistoryBody = document.getElementById('payment-receipt-history-body');
+      // Render payment receipt history (full table)
       if (paymentHistoryBody) {
         const paymentEntries = getPaymentReceiptHistoryEntries(5, currentSearch, currentStatus, currentStudentId);
-        if (paymentEntries.length === 0) {
+        if (!paymentEntries || paymentEntries.length === 0) {
           paymentHistoryBody.innerHTML = '<tr><td colspan="8" class="empty-state" style="padding: 12px 10px; color: #64748b;">No payment receipt transactions available.</td></tr>';
         } else {
-          paymentHistoryBody.innerHTML = paymentEntries.map(entry => `
+          paymentHistoryBody.innerHTML = paymentEntries.map(entry => {
+            return `
             <tr>
               <td style="font-size: 0.85rem; color: #64748b;">
                 <strong>${highlightMatch(entry.date, currentSearch)}</strong><br>
@@ -4575,7 +4595,7 @@
               <td><span class="badge ${entry.status === 'paid' ? 'badge-success' : 'badge-warning'}" style="text-transform: uppercase; font-size: 0.75rem;">${highlightMatch(entry.status, currentSearch)}</span></td>
               <td style="text-align: center;"><button class="btn btn-secondary btn-sm" onclick="reprintReceipt('${entry.receiptNumber}')" title="View Details"><i class="fas fa-eye"></i></button></td>
             </tr>
-          `).join('');
+          `}).join('');
         }
       }
     }
@@ -5387,7 +5407,10 @@
       loadRecentTransactions();
       await loadRecentTuitionReceipts(3);
       await loadStudentList(); // Await student list loading
-      document.getElementById('tuition-student-id')?.addEventListener('input', handleTuitionStudentIdInput);
+      // Debounced student ID input to avoid excessive lookups
+      const tuitionStudentIdEl = document.getElementById('tuition-student-id');
+      const debouncedHandleTuitionStudentIdInput = debounce(() => handleTuitionStudentIdInput(), 400);
+      tuitionStudentIdEl?.addEventListener('input', debouncedHandleTuitionStudentIdInput);
       await populateTuitionReceiptStorePanel();
 
       const tuitionHistorySearch = document.getElementById('tuition-history-search');
@@ -5402,6 +5425,45 @@
       tuitionHistoryStatus?.addEventListener('change', () => {
         refreshTuitionHistory();
       });
+
+      // Central debounced panel updater and UI feedback
+      const paymentHistorySearch = document.getElementById('payment-history-search');
+      const paymentClearBtn = document.getElementById('payment-clear-search');
+      const paymentSearchSpinner = document.getElementById('payment-search-spinner');
+      const tuitionSearchSpinner = document.getElementById('tuition-search-spinner');
+
+      const showSpinners = () => { if (paymentSearchSpinner) paymentSearchSpinner.classList.remove('hidden'); if (tuitionSearchSpinner) tuitionSearchSpinner.classList.remove('hidden'); };
+      const hideSpinners = () => { if (paymentSearchSpinner) setTimeout(() => paymentSearchSpinner.classList.add('hidden'), 180); if (tuitionSearchSpinner) setTimeout(() => tuitionSearchSpinner.classList.add('hidden'), 180); };
+
+      const debouncedPopulateTuitionPanel = debounce(() => {
+        showSpinners();
+        const p = populateTuitionReceiptStorePanel();
+        if (p && typeof p.finally === 'function') {
+          p.finally(() => { hideSpinners(); });
+        } else {
+          hideSpinners();
+        }
+      }, 300);
+
+      // Wire inputs/filters to the centralized debounced updater
+      paymentHistorySearch?.addEventListener('input', (e) => {
+        const q = paymentHistorySearch.value.trim();
+        if (paymentClearBtn) paymentClearBtn.classList.toggle('hidden', q === '');
+        debouncedPopulateTuitionPanel();
+      });
+
+      paymentClearBtn?.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        if (!paymentHistorySearch) return;
+        paymentHistorySearch.value = '';
+        paymentClearBtn.classList.add('hidden');
+        debouncedPopulateTuitionPanel();
+        paymentHistorySearch.focus();
+      });
+
+      document.getElementById('payment-history-status-filter')?.addEventListener('change', () => debouncedPopulateTuitionPanel());
+      document.getElementById('tuition-history-search')?.addEventListener('input', () => debouncedPopulateTuitionPanel());
+      document.getElementById('tuition-history-status-filter')?.addEventListener('change', () => debouncedPopulateTuitionPanel());
 
       // Listen for inventory updates from other tabs
       const syncChannel = new BroadcastChannel('inventory_sync_channel');
