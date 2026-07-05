@@ -95,7 +95,7 @@ try {
     $productName = isset($_POST['product_name']) ? trim($_POST['product_name']) : null;
     $productCategory = isset($_POST['product_category']) ? trim($_POST['product_category']) : null;
     $buyPrice = filter_input(INPUT_POST, 'buy_price', FILTER_VALIDATE_FLOAT);
-    $productStatus = isset($_POST['product_status']) ? trim($_POST['product_status']) : null;
+    $productStatus = isset($_POST['product_status']) ? trim($_POST['product_status']) : 'available';
     $stockCount = filter_input(INPUT_POST, 'stock_count', FILTER_VALIDATE_FLOAT);
     $isFeatured = filter_input(INPUT_POST, 'is_featured', FILTER_VALIDATE_INT) ?: 0;
 
@@ -114,7 +114,7 @@ try {
     $lowerFabric = isset($_POST['uniform_lower_fabric']) ? trim($_POST['uniform_lower_fabric']) : null;
     $materialType = isset($_POST['material_type']) ? trim($_POST['material_type']) : (isset($_POST['uniform_material']) ? trim($_POST['uniform_material']) : null);
 
-    if (!$productName || !$productCategory || $buyPrice === false || !$productStatus || $stockCount === false) {
+    if (empty($productName) || empty($productCategory) || $buyPrice === false || $stockCount === false) {
         throw new Exception('Invalid or missing product data.');
     }
 
@@ -164,9 +164,13 @@ try {
         if (empty($materialType)) {
             throw new Exception('Fabrics Module: Material Type is required.');
         }
-        
+
         if ($uniformType === 'Complete Uniform Set') {
             if (empty($upperFabric) || empty($lowerFabric)) throw new Exception('Fabric Combination details (Upper & Lower) are required for complete sets.');
+        } elseif ($uniformType === 'Upper Uniform Fabric' && empty($upperFabric)) {
+            throw new Exception('Fabrics Module: Upper fabric detail is required.');
+        } elseif ($uniformType === 'Lower Uniform Fabric' && empty($lowerFabric)) {
+            throw new Exception('Fabrics Module: Lower fabric detail is required.');
         }
     }
 

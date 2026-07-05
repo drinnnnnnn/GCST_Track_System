@@ -639,44 +639,58 @@
 
     window.loadGmailData = function() {
       const params = new URLSearchParams();
-      const filters = { 
-        status: 'statusFilter', 
-        email_type: 'typeFilter', 
-        from_date: 'fromDate', 
-        to_date: 'toDate', 
-        search: 'searchInput' 
+      const filters = {
+        status: 'statusFilter',
+        email_type: 'typeFilter',
+        from_date: 'fromDate',
+        to_date: 'toDate',
+        search: 'searchInput'
       };
-      
+
       for (const [param, id] of Object.entries(filters)) {
         const val = document.getElementById(id)?.value?.trim();
         if (val) params.set(param, val);
       }
 
       fetch(`${GMAIL_API_URL}?${params.toString()}`)
-        .then(res => res.json())
+        .then(async res => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'Unable to load notification logs.');
+          }
+          return data;
+        })
         .then(data => {
           const payload = data.data || data;
-          ['sentToday', 'failedEmails', 'pendingEmails', 'totalEmailsSent'].forEach(id => {
+          const metricMap = {
+            sentToday: payload.sent_today ?? payload.sentToday ?? 0,
+            failedEmails: payload.failed_emails ?? payload.failedEmails ?? 0,
+            pendingEmails: payload.pending_emails ?? payload.pendingEmails ?? 0,
+            totalEmailsSent: payload.total_emails_sent ?? payload.totalEmailsSent ?? 0
+          };
+
+          Object.entries(metricMap).forEach(([id, value]) => {
             const el = document.getElementById(id);
-            if (el) el.textContent = payload[id.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`)] ?? 0;
+            if (el) el.textContent = value ?? 0;
           });
+
           emailLogs = Array.isArray(payload.email_logs) ? payload.email_logs : [];
           window.renderEmailLogs(emailLogs);
-          window.populateEmailTypes(payload.email_types || []);
+          window.populateEmailTypes(Array.isArray(payload.email_types) ? payload.email_types : []);
         })
         .catch(err => {
           console.error('Gmail data error:', err);
           const body = document.getElementById('emailLogsBody');
           if (body) body.innerHTML = '<tr><td colspan="7" class="empty-state">Unable to load logs.</td></tr>';
-          showToast('Unable to load notification logs.', 'error');
+          showToast(err.message || 'Unable to load notification logs.', 'error');
         });
     };
 
     window.renderEmailLogs = function(logs) {
       const body = document.getElementById('emailLogsBody');
       if (!body) return;
-      
-      if (logs.length === 0) {
+
+      if (!Array.isArray(logs) || logs.length === 0) {
         body.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fas fa-inbox"></i><p>No transmission records found.</p></td></tr>';
         return;
       }
@@ -685,13 +699,16 @@
       logs.forEach(log => {
         const row = document.createElement('tr');
         const statusClass = log.status === 'sent' ? 'status-sent' : log.status === 'failed' ? 'status-failed' : 'status-pending';
+        const createdAt = log.created_at || log.sent_at || '';
+        const formattedDate = createdAt ? new Date(createdAt).toLocaleString() : 'N/A';
+        const subjectText = log.subject || '(No Subject)';
         row.innerHTML = `
-          <td>#${log.id}</td>
-          <td>${escapeHtml(log.recipient)}</td>
-          <td title="${escapeHtml(log.subject)}">${escapeHtml(log.subject || '(No Subject)')}</td>
-          <td>${escapeHtml(log.notification_type)}</td>
-          <td><span class="status-badge ${statusClass}">${escapeHtml(log.status)}</span></td>
-          <td>${new Date(log.created_at).toLocaleString()}</td>
+          <td>#${escapeHtml(log.id ?? '')}</td>
+          <td>${escapeHtml(log.recipient || 'N/A')}</td>
+          <td title="${escapeHtml(subjectText)}">${escapeHtml(subjectText)}</td>
+          <td>${escapeHtml(log.notification_type || 'General')}</td>
+          <td><span class="status-badge ${statusClass}">${escapeHtml(log.status || 'pending')}</span></td>
+          <td>${escapeHtml(formattedDate)}</td>
           <td class="text-right">
             <div class="action-buttons">
               <button class="btn-icon view" onclick="window.openEmailModal('view', ${log.id})"><i class="fas fa-eye"></i></button>
@@ -857,13 +874,15 @@
       window.updateAttachmentUI = function() {
         const input = document.getElementById('modalAttachments');
         const container = document.getElementById('attachmentPreview');
+        if (!input || !container) return;
+
         const allowedExts = ['jpg', 'jpeg', 'png', 'pdf', 'docx', 'zip', 'csv', 'xlsx'];
         const maxSize = 5 * 1024 * 1024; // 5MB
         
         container.innerHTML = '';
         const validFiles = new DataTransfer();
         
-        Array.from(input.files).forEach((file) => {
+        Array.from(input.files || []).forEach((file) => {
           const ext = file.name.split('.').pop().toLowerCase();
           if (!allowedExts.includes(ext)) {
             showToast(`File type not allowed: ${file.name}`, 'warning');
@@ -895,8 +914,9 @@
 
       window.removeAttachment = function(fileName) {
         const input = document.getElementById('modalAttachments');
+        if (!input) return;
         const dt = new DataTransfer();
-        Array.from(input.files).forEach(file => {
+        Array.from(input.files || []).forEach(file => {
           if (file.name !== fileName) dt.items.add(file);
         });
         input.files = dt.files;
@@ -907,18 +927,18 @@
       const modalSendBtn = document.getElementById('modalSendBtn');
       if (modalSendBtn) {
         modalSendBtn.addEventListener('click', async () => {
-          const recipient = document.getElementById('modalRecipient').value.trim(); // Existing
-          const subject = document.getElementById('modalSubject').value.trim(); // Existing
-          const message = document.getElementById('modalMessage').value.trim(); // Existing
-          const type = document.getElementById('modalType').value; // Existing
-          const fileInput = document.getElementById('modalAttachments'); // Existing
+          const recipient = document.getElementById('modalRecipient')?.value?.trim() || '';
+          const subject = document.getElementById('modalSubject')?.value?.trim() || '';
+          const message = document.getElementById('modalMessage')?.value?.trim() || '';
+          const type = document.getElementById('modalType')?.value || 'Manual Notification';
+          const fileInput = document.getElementById('modalAttachments');
 
           if (!recipient) {
             showToast('Recipient email is required.', 'warning');
             return;
           }
 
-          if (!subject || !message) { // Existing validation for subject and message
+          if (!subject || !message) {
             showToast('Subject and message are required.', 'warning');
             return;
           }
@@ -928,8 +948,9 @@
           formData.append('subject', subject);
           formData.append('message', message);
           formData.append('type', type);
-          
-          Array.from(fileInput.files).forEach(file => {
+          formData.append('email_type', type);
+
+          Array.from(fileInput?.files || []).forEach(file => {
             formData.append('attachments[]', file);
           });
 
@@ -941,32 +962,35 @@
               method: 'POST',
               body: formData
             });
-            
+
+            let result = {};
+            try {
+              result = await response.json();
+            } catch (err) {
+              result = {};
+            }
+
             if (!response.ok) {
               let errorMessage = `Server Error (${response.status})`;
               if (response.status === 404) {
-                errorMessage += `: The requested endpoint was not found. Please check the URL.`;
+                errorMessage += ': The requested endpoint was not found. Please check the URL.';
               } else if (response.status === 500) {
-                errorMessage += `: An internal server error occurred. Please try again later.`;
+                errorMessage += ': An internal server error occurred. Please try again later.';
               } else {
-                // Attempt to parse JSON error from server if available, otherwise fallback to raw text
-                const errorBody = await response.text();
-                errorMessage += `: ${errorBody.length > 0 ? (errorBody.startsWith('{') ? JSON.parse(errorBody).message : errorBody.substring(0, 100)) : 'Unknown error.'}`;
+                errorMessage += `: ${result.message || 'Unknown error.'}`;
               }
               throw new Error(errorMessage);
             }
 
-            const result = await response.json();
-            
             if (result.success) {
-              showToast('Email sent successfully.', 'success');
+              showToast(result.message || 'Email sent successfully.', 'success');
               document.getElementById('emailModal').classList.remove('open');
               if (window.loadGmailData) window.loadGmailData();
             } else {
               showToast(result.message || 'Failed to send email.', 'error');
             }
           } catch (error) {
-            console.error("Manual send error:", error);
+            console.error('Manual send error:', error);
             showToast(error.message || 'Communication error while sending email.', 'error');
           } finally {
             modalSendBtn.disabled = false;

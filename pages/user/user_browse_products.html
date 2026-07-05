@@ -875,7 +875,7 @@
     <!-- Controls: Search & Filters Combined -->
     <div class="control-panel">
       <div class="flex flex-col md:flex-row gap-4 items-stretch">
-        <input type="text" placeholder="Search..." class="w-full px-5 py-4 bg-white rounded-2xl shadow-xl shadow-gray-200 border border-transparent focus:border-indigo-500 outline-none transition-all"/>
+        <input id="search-input" type="search" autocomplete="off" aria-label="Search products" placeholder="Search products..." class="w-full px-5 py-4 bg-white rounded-2xl shadow-xl shadow-gray-200 border border-transparent focus:border-indigo-500 outline-none transition-all"/>
         <label class="availability-toggle w-full md:w-auto justify-center">
           <input type="checkbox" id="stock-toggle" />
           <div class="toggle-switch-ui"></div>
@@ -1373,7 +1373,12 @@
       addToCart(productId, type, qty, unitName, event);
       
       // Visual feedback in modal
-      const btn = event.currentTarget;
+      const btn = event?.currentTarget;
+      if (!btn) {
+        closeProductModal();
+        return;
+      }
+
       const originalText = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-check"></i> Added!';
@@ -2001,23 +2006,33 @@
       openCheckoutModal();
     }
 
-    document.getElementById('search-input').addEventListener('input', () => {
-      currentSearch = document.getElementById('search-input').value;
-      loadProducts();
-    });
+    const searchInput = document.getElementById('search-input');
+    const stockToggle = document.getElementById('stock-toggle');
+    const checkoutButton = document.getElementById('checkout-button');
 
-    document.getElementById('search-input').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        performSearch();
-      }
-    });
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        currentSearch = searchInput.value.trim();
+        loadProducts();
+      });
 
-    document.getElementById('stock-toggle').addEventListener('change', () => {
-      loadProducts();
-    });
+      searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          performSearch();
+        }
+      });
+    }
 
-    document.getElementById('checkout-button').addEventListener('click', checkoutCart);
+    if (stockToggle) {
+      stockToggle.addEventListener('change', () => {
+        loadProducts();
+      });
+    }
+
+    if (checkoutButton) {
+      checkoutButton.addEventListener('click', checkoutCart);
+    }
 
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {

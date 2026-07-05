@@ -278,6 +278,7 @@
 
             <form id="student-form" class="space-y-4 text-left">
                 <input type="hidden" id="form-id">
+                <input type="hidden" id="form-status">
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-0.5">
@@ -316,7 +317,7 @@
                             id="form-course" 
                             class="w-full pl-4 pr-11 py-2.5 bg-slate-50 border border-slate-200/70 rounded-xl outline-none transition-all duration-200 text-slate-700 text-sm font-semibold appearance-none cursor-pointer font-sans shadow-sm focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5"
                         >
-                            <option value="all">All Courses</option>
+                            <option value="">Select Course</option>
                             <option value="BS Information Technology">BS Information Technology</option>
                             <option value="BS Computer Science">BS Computer Science</option>
                             <option value="BS Tourism Management">BS Tourism Management</option>
@@ -394,6 +395,20 @@
         let pendingConfirmAction = null;
         let pendingDeleteStudentId = null;
         const apiPath = '../../actions/process_student.php';
+
+        function normalizeStatus(status) {
+            return String(status || 'pending').trim().toLowerCase();
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
 
         window.initializeSuperAdminPage(() => {
             loadStudents();
@@ -542,10 +557,13 @@
                 const data = await res.json();
 
                 if (Array.isArray(data)) {
-                    allStudents = data;
+                    allStudents = data.map(student => ({
+                        ...student,
+                        status: normalizeStatus(student.status)
+                    }));
                     document.getElementById('stat-total').textContent = allStudents.length;
-                    document.getElementById('stat-verified').textContent = allStudents.filter(s => s.status === 'active').length;
-                    document.getElementById('stat-pending').textContent = allStudents.filter(s => s.status === 'pending').length;
+                    document.getElementById('stat-verified').textContent = allStudents.filter(s => normalizeStatus(s.status) === 'active').length;
+                    document.getElementById('stat-pending').textContent = allStudents.filter(s => normalizeStatus(s.status) === 'pending').length;
                 }
                 applyFilters();
             } catch (err) {
@@ -587,13 +605,20 @@
             }
             empty.classList.add('hidden');
 
-            data.forEach(s => {
-                const status = s.status || 'pending';
+            tbody.innerHTML = data.map(s => {
+                const status = normalizeStatus(s.status);
                 const isActive = status === 'active';
                 const isSuspended = status === 'suspended';
                 const isPending = status === 'pending';
                 const isPwd = Number(s.is_pwd || 0) === 1;
-                
+                const studentName = `${escapeHtml(s.first_name || '')} ${escapeHtml(s.last_name || '')}`.trim();
+                const studentEmail = escapeHtml(s.email || '');
+                const studentCourse = escapeHtml(s.course || 'N/A');
+                const studentDepartment = escapeHtml(s.department || 'General');
+                const studentSection = escapeHtml(s.year_section || 'N/A');
+                const studentId = escapeHtml(s.student_id || 'N/A');
+                const studentYear = escapeHtml(s.year_level || '1');
+
                 let statusBadge = '';
                 if (isActive) {
                     statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600"><i class="fas fa-check-circle mr-1.5 text-[10px]"></i>Active</span>';
@@ -602,32 +627,32 @@
                 } else if (isPending) {
                     statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-600">Pending Approval</span>';
                 } else {
-                    statusBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-500">${status.toUpperCase()}</span>`;
+                    statusBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-500">${escapeHtml(status.toUpperCase())}</span>`;
                 }
-                
-                tbody.innerHTML += `
+
+                return `
                     <tr class="hover:bg-slate-50/50 transition-colors group">
                         <td class="px-6 py-4">
                             <div class="flex items-center">
                                 <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold mr-3 border border-slate-200">
-                                    ${(s.last_name || 'U').charAt(0).toUpperCase()}
+                                    ${(escapeHtml(s.last_name || 'U')).charAt(0).toUpperCase()}
                                 </div>
                                 <div>
-                                    <div class="font-bold text-slate-900">${s.first_name} ${s.last_name} ${isPwd ? '<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 text-violet-600 border border-violet-100">♿ PWD</span>' : ''}</div>
-                                    <div class="text-xs text-slate-500 font-semibold">${s.email}</div>
+                                    <div class="font-bold text-slate-900">${studentName} ${isPwd ? '<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 text-violet-600 border border-violet-100">♿ PWD</span>' : ''}</div>
+                                    <div class="text-xs text-slate-500 font-semibold">${studentEmail}</div>
                                 </div>
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded">${s.student_id}</span>
+                            <span class="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded">${studentId}</span>
                         </td>
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold ${isPwd ? 'bg-violet-50 text-violet-600 border border-violet-100' : 'bg-slate-100 text-slate-500'}">${isPwd ? 'Yes' : 'No'}</span>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="text-sm font-bold text-slate-700">${s.course || 'N/A'}</div>
-                            <div class="text-[11px] text-slate-500 font-semibold">${s.department || 'General'}</div>
-                            <div class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">${s.year_level || '1'} Year Level • Section ${s.year_section || 'N/A'}</div>
+                            <div class="text-sm font-bold text-slate-700">${studentCourse}</div>
+                            <div class="text-[11px] text-slate-500 font-semibold">${studentDepartment}</div>
+                            <div class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">${studentYear} Year Level • Section ${studentSection}</div>
                         </td>
                         <td class="px-6 py-4">
                             ${statusBadge}
@@ -657,7 +682,7 @@
                             </div>
                         </td>
                     </tr>`;
-            });
+            }).join('');
         }
 
         function setupEvents() {
@@ -688,6 +713,7 @@
 
         async function updateStatus(id, status) {
             const s = allStudents.find(x => x.id == id);
+            const normalizedStatus = normalizeStatus(status);
             const name = s ? `${s.first_name} ${s.last_name}` : 'this student';
             let actionText = 'update';
             let title = 'Confirm Student Update';
@@ -696,21 +722,21 @@
             let confirmText = 'Confirm';
             let confirmType = 'btn-modal-confirm';
 
-            if (status === 'active') {
+            if (normalizedStatus === 'active') {
                 actionText = 'approve/activate';
                 title = 'Confirm Account Activation';
                 message = `Are you sure you want to activate ${name}'s account?`;
                 iconClass = 'fa-user-check';
                 confirmText = 'Activate Account';
                 confirmType = 'bg-emerald-500 hover:bg-emerald-600 text-white';
-            } else if (status === 'suspended') {
+            } else if (normalizedStatus === 'suspended') {
                 actionText = 'deactivate';
                 title = 'Confirm Account Deactivation';
                 message = `Are you sure you want to deactivate ${name}'s account?`;
                 iconClass = 'fa-user-slash';
                 confirmText = 'Deactivate Account';
                 confirmType = 'bg-amber-500 hover:bg-amber-600 text-white';
-            } else if (status === 'rejected') {
+            } else if (normalizedStatus === 'rejected') {
                 actionText = 'reject';
                 title = 'Confirm Account Rejection';
                 message = `Are you sure you want to reject ${name}'s account request?`;
@@ -730,7 +756,7 @@
                         const res = await fetch(apiPath, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'update_status', student_id: id, status })
+                            body: JSON.stringify({ action: 'update_status', student_id: id, status: normalizedStatus })
                         });
                         const result = await res.json();
                         if (result.success) {
@@ -755,6 +781,7 @@
             const content = document.getElementById('review-content');
             const actions = document.getElementById('review-actions-container');
             const isPwd = Number(s.is_pwd || 0) === 1;
+            const normalizedStatus = normalizeStatus(s.status);
             const regDate = s.created_at ? new Date(s.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A';
 
             content.innerHTML = `
@@ -789,7 +816,7 @@
             `;
 
             actions.innerHTML = '';
-            if (s.status === 'pending') {
+            if (normalizedStatus === 'pending') {
                 actions.innerHTML = `
                     <button onclick="updateStatus(${s.id}, 'active')" class="btn-modal flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs py-2 rounded-lg transition-colors">Approve Account</button>
                     <button onclick="updateStatus(${s.id}, 'rejected')" class="btn-modal flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs py-2 rounded-lg transition-colors">Reject Request</button>
@@ -840,6 +867,7 @@
             const formEmail = document.getElementById('form-email');
             const formAddress = document.getElementById('form-address');
             const formCourse = document.getElementById('form-course');
+            const formDepartment = document.getElementById('form-department');
             const formYear = document.getElementById('form-year');
 
             if (formId) formId.value = s.id || '';
@@ -849,10 +877,17 @@
             if (formContactNumber) formContactNumber.value = s.contact_number || '';
             if (formEmail) formEmail.value = s.email || '';
             if (formAddress) formAddress.value = s.address || '';
-            if (formCourse) formCourse.value = s.course || 'BSIT';
+            if (formCourse) {
+                const courseValue = String(s.course || '').trim();
+                const hasCourseOption = Array.from(formCourse.options).some(option => option.value === courseValue);
+                formCourse.value = hasCourseOption ? courseValue : '';
+            }
+            if (formDepartment) formDepartment.value = s.department || '';
             if (formYear) formYear.value = String(s.year_level || '1');
             const formYearSection = document.getElementById('form-year-section');
             if (formYearSection) formYearSection.value = s.year_section || '';
+            const formStatus = document.getElementById('form-status');
+            if (formStatus) formStatus.value = normalizeStatus(s.status || 'pending');
             openModal('student-modal');
         }
 
@@ -869,6 +904,7 @@
             const department = document.getElementById('form-department')?.value;
             const year = document.getElementById('form-year')?.value;
             const yearSection = document.getElementById('form-year-section')?.value.trim();
+            const status = document.getElementById('form-status')?.value.trim() || 'pending';
 
             if (!id || !firstName || !lastName || !email || !address || !course || !department || !year) {
                 showToast('Please fill out all required fields.', 'warning');
@@ -887,7 +923,8 @@
                 course,
                 department,
                 year,
-                year_section: yearSection
+                year_section: yearSection,
+                status
             };
 
             openConfirmModal({

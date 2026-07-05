@@ -194,7 +194,7 @@
             <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Admin Maintenance Toolkit</h2>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 text-left group" id="clearCacheBtn">
+          <button type="button" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 text-left group" id="clearCacheBtn">
             <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-500 mb-4 group-hover:bg-primary group-hover:text-white transition-all duration-300 shadow-inner">
                 <i class="fas fa-broom text-lg"></i>
             </div>
@@ -204,7 +204,7 @@
             </div>
           </button>
 
-          <button class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-500/20 transition-all duration-300 text-left group" id="backupDatabaseBtn">
+          <button type="button" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-500/20 transition-all duration-300 text-left group" id="backupDatabaseBtn">
             <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-500 mb-4 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-inner">
                 <i class="fas fa-database text-lg"></i>
             </div>
@@ -214,7 +214,7 @@
             </div>
           </button>
 
-          <button class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-emerald-500/20 transition-all duration-300 text-left group" id="testEmailBtn">
+          <button type="button" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-emerald-500/20 transition-all duration-300 text-left group" id="testEmailBtn">
             <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-500 mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-inner">
                 <i class="fas fa-envelope text-lg"></i>
             </div>
@@ -224,7 +224,7 @@
             </div>
           </button>
 
-          <button class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-amber-500/20 transition-all duration-300 text-left group" id="optimizeDatabaseBtn">
+          <button type="button" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-amber-500/20 transition-all duration-300 text-left group" id="optimizeDatabaseBtn">
             <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-500 mb-4 group-hover:bg-amber-500 group-hover:text-white transition-all duration-300 shadow-inner">
                 <i class="fas fa-wrench text-lg"></i>
             </div>
@@ -255,8 +255,6 @@
               <!-- Rows populated by JS -->
             </tbody>
           </table>
-        </div>
-      </section>
         </div>
       </section>
     </main>
@@ -404,12 +402,18 @@
     // Load system metrics
     function loadSystemMetrics() {
       fetch('../../actions/get_system_metrics.php')
-        .then(res => res.json())
+        .then(async res => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data || typeof data.database_size === 'undefined') {
+            throw new Error(data.message || 'Invalid metrics response');
+          }
+          return data;
+        })
         .then(data => {
-          document.getElementById('databaseSize').textContent = data.database_size;
-          document.getElementById('storageUsed').textContent = data.storage_used;
-          document.getElementById('activeConnections').textContent = data.active_connections;
-          document.getElementById('serverLoad').textContent = data.server_load;
+          document.getElementById('databaseSize').textContent = data.database_size || 'N/A';
+          document.getElementById('storageUsed').textContent = data.storage_used || 'N/A';
+          document.getElementById('activeConnections').textContent = data.active_connections ?? 'N/A';
+          document.getElementById('serverLoad').textContent = data.server_load || 'N/A';
           showToast('System metrics refreshed', 'info');
         })
         .catch(err => {
@@ -421,10 +425,20 @@
     // Load recent backups
     function loadRecentBackups() {
       fetch('../../actions/get_recent_backups.php')
-        .then(res => res.json())
+        .then(async res => {
+          const data = await res.json().catch(() => null);
+          if (!res.ok || !Array.isArray(data)) {
+            throw new Error('Invalid backup list response');
+          }
+          return data;
+        })
         .then(data => {
           const tbody = document.getElementById('backupsTableBody');
           tbody.innerHTML = '';
+          if (!Array.isArray(data) || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-slate-500 py-6">No backups available.</td></tr>';
+            return;
+          }
           data.forEach(backup => {
             const date = new Date(backup.backup_date).toLocaleString();
             tbody.innerHTML += `
@@ -432,7 +446,7 @@
                 <td class="font-medium text-slate-700">${date}</td>
                 <td class="text-slate-500">${backup.file_size}</td>
                 <td><span class="status ${backup.status === 'success' ? 'in-stock' : 'out-of-stock'}">${backup.status === 'success' ? 'Success' : 'Failed'}</span></td>
-                <td class="text-right"><button class="btn-success py-1.5 px-3 text-xs" data-backup-id="${backup.id}" data-backup-date="${backup.backup_date}" onclick="restoreBackup(${backup.id}, this)">Restore Snapshot</button></td>
+                <td class="text-right"><button type="button" class="btn-success py-1.5 px-3 text-xs" data-backup-id="${backup.id}" data-backup-date="${backup.backup_date}" onclick="restoreBackup(${backup.id}, this)">Restore Snapshot</button></td>
               </tr>
             `;
           });

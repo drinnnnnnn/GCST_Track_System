@@ -1,51 +1,56 @@
 ﻿<?php
-session_start();
 header('Content-Type: application/json');
-require_once __DIR__ . '/../config/db_connect.php';
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+ini_set('display_errors', '0');
+ob_start();
 
-if ($conn->connect_error) {
-    echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
-    exit;
-}
+require_once __DIR__ . '/security.php';
+secureSessionStart();
+requireAuth(['admin', 'admincashier', 'superadmin', 'cashier']);
 
-$adminId = $_SESSION['admin_id'] ?? null;
-if (!$adminId) {
-    echo json_encode(['success' => false, 'message' => 'Authentication required.']);
-    exit;
-}
+try {
+    require_once __DIR__ . '/../database/connection.php';
+    $conn = Database::getConnection();
 
-$contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-if (strpos($contentType, 'application/json') !== false) {
-    $payload = json_decode(file_get_contents('php://input'), true);
-} else {
-    $payload = $_POST;
-}
+    if ($conn->connect_error) {
+        throw new Exception('Database connection failed.');
+    }
 
-$productId = isset($payload['product_id']) ? intval($payload['product_id']) : 0;
-if ($productId <= 0) {
-    echo json_encode(['success' => false, 'message' => 'Invalid product ID.']);
-    exit;
-}
+    $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+    $payload = (strpos($contentType, 'application/json') !== false)
+        ? json_decode(file_get_contents('php://input'), true)
+        : $_POST;
 
-$stmt = $conn->prepare('DELETE FROM products WHERE product_id = ?');
-if (!$stmt) {
-    echo json_encode(['success' => false, 'message' => 'Failed to prepare delete statement.']);
-    exit;
-}
-$stmt->bind_param('i', $productId);
-if (!$stmt->execute()) {
-    echo json_encode(['success' => false, 'message' => 'Unable to delete product: ' . $stmt->error]);
+    $productId = isset($payload['product_id']) ? intval($payload['product_id']) : 0;
+    if ($productId <= 0) {
+        throw new Exception('Invalid product ID.');
+    }
+
+    $stmt = $conn->prepare('DELETE FROM products WHERE product_id = ?');
+    if (!$stmt) {
+        throw new Exception('Failed to prepare delete statement.');
+    }
+
+    $stmt->bind_param('i', $productId);
+    if (!$stmt->execute()) {
+        throw new Exception('Unable to delete product: ' . $stmt->error);
+    }
+
+    $deleted = $stmt->affected_rows > 0;
     $stmt->close();
-    exit;
-}
 
-$deleted = $stmt->affected_rows > 0;
-$stmt->close();
-if (!$deleted) {
-    echo json_encode(['success' => false, 'message' => 'No product was deleted.']);
-    exit;
-}
+    if (!$deleted) {
+        throw new Exception('No product was deleted.');
+    }
 
-echo json_encode(['success' => true, 'message' => 'Product deleted successfully.']);
-exit;
+    if (ob_get_length()) ob_clean();
+    echo json_encode(['success' => true, 'message' => 'Product deleted successfully.']);
+    exit;
+} catch (Throwable $e) {
+    if (ob_get_length()) ob_clean();
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+} finally {
+    if (isset($conn)) $conn->close();
+}
 ?>

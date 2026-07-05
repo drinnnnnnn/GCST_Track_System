@@ -26,18 +26,42 @@ if (!$conn || $conn->connect_error) {
     exit;
 }
 
-$schoolId = $_GET['school_id'] ?? '';
+$schoolId = trim((string)($_GET['school_id'] ?? $_GET['student_id'] ?? ''));
 
 // Basic input validation: ensure it follows the system's identification format
-if (empty($schoolId)) {
-    echo json_encode(['success' => false, 'message' => 'School ID is required.']);
+if ($schoolId === '') {
+    echo json_encode(['success' => false, 'message' => 'Student identifier is required.']);
     exit;
 }
 
 try {
-    // Lookup user details while avoiding sensitive information
-    $stmt = $conn->prepare("SELECT first_name, last_name, course, year_level FROM users WHERE student_id = ? LIMIT 1");
-    $stmt->bind_param('s', $schoolId);
+    $searchText = strtolower($schoolId);
+    $normalizedSearch = preg_replace('/[^a-z0-9]/', '', $searchText);
+    $searchPattern = '%' . $conn->real_escape_string($schoolId) . '%';
+
+    $stmt = $conn->prepare(
+        'SELECT id, student_id, first_name, last_name, course, year_level, year_section, email
+         FROM users
+         WHERE student_id = ?
+            OR REPLACE(LOWER(student_id), "gc-", "") = ?
+            OR LOWER(CONCAT(first_name, " ", last_name)) = ?
+            OR LOWER(CONCAT(first_name, " ", last_name)) LIKE ?
+            OR LOWER(first_name) LIKE ?
+            OR LOWER(last_name) LIKE ?
+         ORDER BY CASE
+            WHEN student_id = ? THEN 0
+            WHEN REPLACE(LOWER(student_id), "gc-", "") = ? THEN 1
+            WHEN LOWER(CONCAT(first_name, " ", last_name)) = ? THEN 2
+            ELSE 3
+         END, last_name, first_name
+         LIMIT 1'
+    );
+
+    if (!$stmt) {
+        throw new Exception('Failed to prepare student lookup query.');
+    }
+
+    $stmt->bind_param('sssssssss', $schoolId, $normalizedSearch, $searchText, $searchPattern, $searchPattern, $searchPattern, $schoolId, $normalizedSearch, $searchText);
     $stmt->execute();
     $result = $stmt->get_result();
     $user = $result->fetch_assoc();
@@ -46,13 +70,21 @@ try {
     if ($user) {
         $course = !empty($user['course']) ? trim($user['course']) : 'Not Assigned';
         $yearLevel = !empty($user['year_level']) ? trim($user['year_level']) : 'Not Assigned';
+        $yearSection = !empty($user['year_section']) ? trim($user['year_section']) : '';
+        $fullName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
 
         echo json_encode([
             'success' => true,
             'user' => [
-                'full_name' => trim($user['first_name'] . ' ' . $user['last_name']),
+                'id' => (int)($user['id'] ?? 0),
+                'student_id' => trim((string)($user['student_id'] ?? '')),
+                'first_name' => trim((string)($user['first_name'] ?? '')),
+                'last_name' => trim((string)($user['last_name'] ?? '')),
+                'full_name' => $fullName,
                 'course' => $course,
                 'year_level' => $yearLevel,
+                'year_section' => $yearSection,
+                'email' => trim((string)($user['email'] ?? '')),
                 'discount_rate' => 5.0 // Configured student discount percentage
             ]
         ]);

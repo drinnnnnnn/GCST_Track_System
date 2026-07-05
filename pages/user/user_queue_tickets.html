@@ -447,10 +447,10 @@
           </div>
 
           <div class="ticket-actions flex flex-col sm:flex-row gap-3" id="latest-ticket-actions">
-          <button class="flex-1 py-3 px-5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-100 rounded-2xl font-semibold text-sm transition-all duration-300 active:scale-95 focus:outline-none focus:ring-4 focus:ring-blue-500/20 flex items-center justify-center gap-2 btn-action btn-email" onclick="sendTicketEmail(currentTicketId)">
+          <button class="flex-1 py-3 px-5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-100 rounded-2xl font-semibold text-sm transition-all duration-300 active:scale-95 focus:outline-none focus:ring-4 focus:ring-blue-500/20 flex items-center justify-center gap-2 btn-action btn-email" onclick="sendTicketEmail(currentTicketId, event)">
             <i class="fas fa-paper-plane"></i> Send Ticket
           </button>
-          <button class="flex-1 py-3 px-5 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-100 rounded-2xl font-semibold text-sm transition-all duration-300 active:scale-95 focus:outline-none focus:ring-4 focus:ring-red-500/20 flex items-center justify-center gap-2 btn-action btn-danger" onclick="cancelTicket(currentTicketId)">
+          <button class="flex-1 py-3 px-5 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-100 rounded-2xl font-semibold text-sm transition-all duration-300 active:scale-95 focus:outline-none focus:ring-4 focus:ring-red-500/20 flex items-center justify-center gap-2 btn-action btn-danger" onclick="cancelTicket(currentTicketId, event)">
             <i class="fas fa-times-circle"></i> Cancel Ticket
           </button>
           </div>
@@ -899,19 +899,40 @@
       }
     }
 
+    function startPolling() {
+      if (syncInterval) clearInterval(syncInterval);
+      syncInterval = setInterval(refreshQueueStatus, 30000);
+    }
+
+    function stopPolling() {
+      if (syncInterval) clearInterval(syncInterval);
+      syncInterval = null;
+      if (queueEventSource) {
+        queueEventSource.close();
+        queueEventSource = null;
+      }
+    }
+
     function startRealTimeSync() {
       if (queueEventSource) queueEventSource.close();
-      
+
       if (!!window.EventSource) {
         queueEventSource = new EventSource('../../actions/get_queue_status.php?stream=1');
         queueEventSource.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-          updateQueueUI(data);
-          loadUserTickets(); // Instant sync for ticket history when general status changes
-          updateSyncDisplay('Live');
+          try {
+            const data = JSON.parse(event.data);
+            updateQueueUI(data);
+            loadUserTickets(); // Instant sync for ticket history when general status changes
+            updateSyncDisplay('Live');
+          } catch (error) {
+            console.warn('Queue stream payload error:', error);
+          }
         };
         queueEventSource.onerror = () => {
-          queueEventSource.close();
+          if (queueEventSource) {
+            queueEventSource.close();
+            queueEventSource = null;
+          }
           startPolling(); // Automatic fallback
           updateSyncDisplay('Reconnecting...', true);
         };
@@ -1026,13 +1047,18 @@
       }
     }
 
-    async function sendTicketEmail(ticketId) {
+    async function sendTicketEmail(ticketId, event = null) {
       if (!ticketId) {
         showToast('No ticket selected.', 'warning');
         return;
       }
 
-      const btn = event.currentTarget;
+      const btn = event?.currentTarget || document.querySelector('.btn-email');
+      if (!btn) {
+        showToast('Unable to reach the action button.', 'warning');
+        return;
+      }
+
       const originalHtml = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Notifying...';
@@ -1210,7 +1236,7 @@
       }
     }
 
-    async function cancelTicket(ticketId) {
+    async function cancelTicket(ticketId, event = null) {
       openCancelQueueModal(ticketId);
     }
 
@@ -1262,20 +1288,6 @@
 
       // Load initial data
       await Promise.allSettled([refreshQueueStatus(), loadTuitionBalance()]);
-
-      const startPolling = () => {
-        if (syncInterval) clearInterval(syncInterval);
-        syncInterval = setInterval(refreshQueueStatus, 30000);
-      };
-
-      const stopPolling = () => {
-        if (syncInterval) clearInterval(syncInterval);
-        syncInterval = null;
-        if (queueEventSource) {
-          queueEventSource.close();
-          queueEventSource = null;
-        }
-      };
 
       startRealTimeSync();
 

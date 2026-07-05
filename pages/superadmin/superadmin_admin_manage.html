@@ -181,11 +181,11 @@
                     </div>
                     <div class="space-y-1">
                         <label class="text-[10px] font-bold uppercase text-slate-500">Last Name</label>
-                        <input type="text" id="form-last-name" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
+                        <input type="text" id="form-last-name" name="last_name" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
                     </div>
                     <div class="space-y-1">
                         <label class="text-[10px] font-bold uppercase text-slate-500">Contact Number</label>
-                        <input type="text" id="form-contact-number" required oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
+                        <input type="text" id="form-contact-number" name="contact_number" required oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
                     </div>
                 </div>
 
@@ -273,9 +273,16 @@
 
         async function loadAdmins() {
             try {
-                const res = await fetch(`${apiPath}?action=list`);
+                const res = await fetch(`${apiPath}?action=list`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => null);
+                    throw new Error(errorData?.message || 'Failed to load admin data.');
+                }
+
                 const data = await res.json();
-                
                 if (Array.isArray(data)) {
                     allAdmins = data;
                     document.getElementById('stat-total').textContent = allAdmins.length;
@@ -292,7 +299,7 @@
                 }
             } catch (err) {
                 console.error('Load Error:', err);
-                showToast('Failed to connect to the account database.', 'error');
+                showToast(err.message || 'Failed to connect to the account database.', 'error');
                 allAdmins = [];
                 renderTable([]);
             }
@@ -313,82 +320,105 @@
             renderTable(filtered);
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function normalizeAdmin(admin) {
+            const rawStatus = String(admin?.status ?? '').toLowerCase();
+            const isActive = rawStatus === 'active' || rawStatus === '1' || rawStatus === 'enabled';
+            const displayName = (admin?.name || `${admin?.first_name || ''} ${admin?.middle_name || ''} ${admin?.last_name || ''}`).trim();
+            const lastLoginValue = admin?.last_login ? new Date(admin.last_login) : null;
+            const lastLogin = lastLoginValue && !Number.isNaN(lastLoginValue.getTime()) ? lastLoginValue.toLocaleString() : 'Never';
+
+            return {
+                ...admin,
+                isActive,
+                displayName: displayName || 'Unnamed Admin',
+                lastLogin
+            };
+        }
+
         function renderTable(data) {
             const tbody = document.getElementById('admin-table-body');
             const empty = document.getElementById('table-empty-state');
-            tbody.innerHTML = '';
-            
-            if (data.length === 0) {
+
+            if (!data.length) {
+                tbody.innerHTML = '';
                 empty.classList.remove('hidden');
                 return;
             }
             empty.classList.add('hidden');
 
-            data.forEach(a => {
-                const isActive = a.status === 'active';
-                const lastLogin = a.last_login ? new Date(a.last_login).toLocaleString() : 'Never';
-                const displayName = (a.name || `${a.first_name} ${a.middle_name || ''} ${a.last_name}`).trim();
-                const displayContact = a.contact_number || 'N/A';
-                const initials = displayName.charAt(0).toUpperCase();
-                
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50/50 transition-colors group">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold mr-3 border border-slate-200">
-                                    ${initials || 'U'}
-                                </div>
-                                <div>
-                                    <div class="font-bold text-slate-900 leading-tight">${displayName}</div>
-                                    <div class="text-[11px] text-slate-500 font-medium">${a.email}</div>
-                                    ${a.username ? `<div class="text-[11px] text-slate-500 font-medium">Username: ${a.username}</div>` : ''}
-                                    ${a.contact_number ? `<div class="text-[11px] text-slate-500 font-medium">Contact: ${displayContact}</div>` : ''}
-                                </div>
+            const fragment = document.createDocumentFragment();
+            data.map(normalizeAdmin).forEach(a => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-50/50 transition-colors group';
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold mr-3 border border-slate-200">
+                                ${escapeHtml(a.displayName.charAt(0).toUpperCase() || 'U')}
                             </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="text-[10px] font-extrabold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg uppercase tracking-widest border border-slate-200/50">${a.role || 'Staff'}</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}">
-                                ${isActive ? 'Active' : 'Suspended'}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-[11px] text-slate-500 font-semibold tracking-tight">Last Login: ${lastLogin}</div>
-                            <div class="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider">Attempts: ${a.login_attempts}</div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center justify-end gap-1.5">
-                                <button onclick="openStatusConfirmModal(this, ${a.id}, '${isActive ? 'inactive' : 'active'}')" 
-                                        class="w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isActive ? 'text-orange-500 bg-orange-50 hover:bg-orange-500 hover:text-white' : 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white'}" 
-                                        title="${isActive ? 'Suspend Account' : 'Activate Account'}">
-                                    <i class="fas ${isActive ? 'fa-user-slash' : 'fa-user-check'} text-xs"></i>
-                                </button>
-                                <button onclick="openEditModal(${a.id})" 
-                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 bg-blue-50 hover:bg-blue-500 hover:text-white transition-all shadow-sm" 
-                                        title="Edit Profile">
-                                    <i class="fas fa-user-pen text-xs"></i>
-                                </button>
-                                <button onclick="openPasswordModal(${a.id})" 
-                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-amber-500 bg-amber-50 hover:bg-amber-500 hover:text-white transition-all" 
-                                        title="Reset Password">
-                                    <i class="fas fa-key text-xs"></i>
-                                </button>
-                                <button onclick="openPinModal(${a.id})" 
-                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-indigo-500 bg-indigo-50 hover:bg-indigo-500 hover:text-white transition-all" 
-                                        title="Update Security PIN">
-                                    <i class="fas fa-shield-alt text-xs"></i>
-                                </button>
-                                <button onclick="openDeleteAdminModal(${a.id}, this)" 
-                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white transition-all" 
-                                        title="Delete Account">
-                                    <i class="fas fa-trash-can text-xs"></i>
-                                </button>
+                            <div>
+                                <div class="font-bold text-slate-900 leading-tight">${escapeHtml(a.displayName)}</div>
+                                <div class="text-[11px] text-slate-500 font-medium">${escapeHtml(a.email || 'No email provided')}</div>
+                                ${a.username ? `<div class="text-[11px] text-slate-500 font-medium">Username: ${escapeHtml(a.username)}</div>` : ''}
+                                ${a.contact_number ? `<div class="text-[11px] text-slate-500 font-medium">Contact: ${escapeHtml(a.contact_number)}</div>` : ''}
                             </div>
-                        </td>
-                    </tr>`;
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-[10px] font-extrabold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg uppercase tracking-widest border border-slate-200/50">${escapeHtml(a.role || 'Staff')}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${a.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}">
+                            ${a.isActive ? 'Active' : 'Suspended'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-[11px] text-slate-500 font-semibold tracking-tight">Last Login: ${escapeHtml(a.lastLogin)}</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider">Attempts: ${escapeHtml(a.login_attempts ?? 0)}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center justify-end gap-1.5">
+                            <button onclick="openStatusConfirmModal(this, ${a.id}, '${a.isActive ? 'inactive' : 'active'}')"
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center transition-all ${a.isActive ? 'text-orange-500 bg-orange-50 hover:bg-orange-500 hover:text-white' : 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white'}"
+                                    title="${a.isActive ? 'Suspend Account' : 'Activate Account'}">
+                                <i class="fas ${a.isActive ? 'fa-user-slash' : 'fa-user-check'} text-xs"></i>
+                            </button>
+                            <button onclick="openEditModal(${a.id})"
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 bg-blue-50 hover:bg-blue-500 hover:text-white transition-all shadow-sm"
+                                    title="Edit Profile">
+                                <i class="fas fa-user-pen text-xs"></i>
+                            </button>
+                            <button onclick="openPasswordModal(${a.id})"
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center text-amber-500 bg-amber-50 hover:bg-amber-500 hover:text-white transition-all"
+                                    title="Reset Password">
+                                <i class="fas fa-key text-xs"></i>
+                            </button>
+                            <button onclick="openPinModal(${a.id})"
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center text-indigo-500 bg-indigo-50 hover:bg-indigo-500 hover:text-white transition-all"
+                                    title="Update Security PIN">
+                                <i class="fas fa-shield-alt text-xs"></i>
+                            </button>
+                            <button onclick="openDeleteAdminModal(${a.id}, this)"
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white transition-all"
+                                    title="Delete Account">
+                                <i class="fas fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                fragment.appendChild(row);
             });
+
+            tbody.replaceChildren(fragment);
         }
 
         function setupEvents() {

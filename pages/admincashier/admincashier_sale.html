@@ -531,6 +531,21 @@
     const SALES_ROWS_PER_PAGE = 10;
     let inventoryPaginationState = { page: 1, totalPages: 1, totalItems: 0 };
     let salesPaginationState = { page: 1, totalPages: 1, totalItems: 0 };
+    let salesSearchTimer = null;
+
+    function getSafeText(value, fallback = '') {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed || fallback;
+      }
+      if (value === null || value === undefined) return fallback;
+      return String(value);
+    }
+
+    function getSafeNumber(value, fallback = 0) {
+      const numericValue = Number(value);
+      return Number.isFinite(numericValue) ? numericValue : fallback;
+    }
 
     function formatDate(value) {
       const date = new Date(value);
@@ -606,21 +621,22 @@
       }
 
       try {
-        const data = await fetchWithError(`../../actions/get_admincashier_sales.php?period=${encodeURIComponent(period)}&limit=50`);
+        const payload = await fetchWithError(`../../actions/get_admincashier_sales.php?period=${encodeURIComponent(period)}&limit=50`);
+        const data = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
 
         if (!data.success) {
             showError(historyBody, data.message || 'Failed to fetch sales data');
             return;
         }
 
-        currentTotalSales = Number(data.total_sales ?? data.total_sales_today ?? 0);
-        currentTotalTransactions = Number(data.total_transactions ?? 0);
-        currentAvgTransaction = Number(data.average_transaction_value ?? (currentTotalTransactions > 0 ? (currentTotalSales / currentTotalTransactions) : 0));
-        currentItemsSold = Number(data.total_items_sold ?? data.books_sold ?? 0);
+        currentTotalSales = getSafeNumber(data.total_sales ?? data.total_sales_today);
+        currentTotalTransactions = getSafeNumber(data.total_transactions);
+        currentAvgTransaction = getSafeNumber(data.average_transaction_value, currentTotalTransactions > 0 ? (currentTotalSales / currentTotalTransactions) : 0);
+        currentItemsSold = getSafeNumber(data.total_items_sold ?? data.books_sold);
         
-        // Identify Top Selling Product from analytics data
-        if (data.top_products && data.top_products.length > 0) {
-            currentTopProduct = data.top_products[0].name;
+        const topProducts = Array.isArray(data.top_products) ? data.top_products : [];
+        if (topProducts.length > 0) {
+            currentTopProduct = getSafeText(topProducts[0].name, 'N/A');
         } else {
             currentTopProduct = 'N/A';
         }
@@ -630,14 +646,17 @@
         document.getElementById('avgTransaction').textContent = formatCurrency(currentAvgTransaction);
         document.getElementById('itemsSold').textContent = currentItemsSold;
 
+        const salesLabels = Array.isArray(data.sales_labels) ? data.sales_labels : [];
+        const salesData = Array.isArray(data.sales_data) ? data.sales_data : [];
+
         if (!salesTrendChartInstance) {
-          salesTrendChartInstance = createChart('salesTrendChart', 'line', data.sales_labels || [], data.sales_data || [], 'Daily Sales (₱)');
+          salesTrendChartInstance = createChart('salesTrendChart', 'line', salesLabels, salesData, 'Daily Sales (₱)');
         } else {
-          updateChart(salesTrendChartInstance, data.sales_labels || [], data.sales_data || [], 'Daily Sales (₱)', 'line', 'rgba(69, 88, 255, 0.16)', '#4558ff');
+          updateChart(salesTrendChartInstance, salesLabels, salesData, 'Daily Sales (₱)', 'line', 'rgba(69, 88, 255, 0.16)', '#4558ff');
         }
 
-        const productLabels = data.top_products?.map(item => item.name) || [];
-        const productQuantities = data.top_products?.map(item => item.quantity) || [];
+        const productLabels = topProducts.map(item => getSafeText(item.name, 'Unnamed Product'));
+        const productQuantities = topProducts.map(item => getSafeNumber(item.quantity));
 
         if (!topProductsChartInstance) {
           topProductsChartInstance = createChart('topProductsChart', 'bar', productLabels, productQuantities, 'Units Sold');
@@ -660,7 +679,10 @@
       const body = document.getElementById('inventoryReportBody');
       try {
         const products = await fetchWithError(`../../actions/get_admincashier_products.php`);
-        lastFetchedInventory = Array.isArray(products) ? products : [];
+        const normalizedProducts = Array.isArray(products)
+          ? products
+          : (products && typeof products === 'object' && Array.isArray(products.data) ? products.data : []);
+        lastFetchedInventory = normalizedProducts;
         renderInventoryTable(lastFetchedInventory, { resetPage: true });
         updateInventorySummary(lastFetchedInventory);
         populateInventoryFilters(lastFetchedInventory);
@@ -699,15 +721,19 @@
 
       const pageItems = products.slice(bounds.startIndex, bounds.endIndex);
       pageItems.forEach(item => {
-        const stock = parseFloat(item.stock_count || 0);
+        const stock = getSafeNumber(item.stock_count);
+        const unitPrice = getSafeNumber(item.buy_price);
         const status = getStockStatus(stock);
-        const value = stock * parseFloat(item.buy_price || 0);
+        const value = stock * unitPrice;
+        const productName = getSafeText(item.product_name, 'Unnamed Product');
+        const category = getSafeText(item.product_category, 'General');
+        const course = getSafeText(item.course_program || item.book_course, 'General');
         
         let metadata = '';
-        if (item.product_category === 'Books') {
-          metadata = `<div class="text-xs text-gray-400">Author: ${item.book_author || 'N/A'}</div>`;
-        } else if (item.product_category === 'Uniform Fabrics') {
-          metadata = `<div class="text-xs text-gray-400">${item.uniform_type || 'Fabric'} | ${item.uniform_color || 'Standard'}</div>`;
+        if (category === 'Books') {
+          metadata = `<div class="text-xs text-gray-400">Author: ${getSafeText(item.book_author, 'N/A')}</div>`;
+        } else if (category === 'Uniform Fabrics') {
+          metadata = `<div class="text-xs text-gray-400">${getSafeText(item.uniform_type, 'Fabric')} | ${getSafeText(item.uniform_color, 'Standard')}</div>`;
         }
 
         const row = document.createElement('tr');
@@ -715,12 +741,12 @@
         
         row.innerHTML = `
           <td>
-            <div class="font-bold text-gray-800">${item.product_name}</div>
+            <div class="font-bold text-gray-800">${productName}</div>
             ${metadata}
-            <div class="text-xs text-blue-500">${item.course_program || item.book_course || 'General'}</div>
+            <div class="text-xs text-blue-500">${course}</div>
           </td>
-          <td class="text-sm font-medium text-gray-600">${item.product_category}</td>
-          <td style="text-align: right;">${formatCurrency(item.buy_price)}</td>
+          <td class="text-sm font-medium text-gray-600">${category}</td>
+          <td style="text-align: right;">${formatCurrency(unitPrice)}</td>
           <td style="text-align: right;" class="font-semibold">${stock}</td>
           <td style="text-align: right;">${formatCurrency(value)}</td>
           <td style="text-align: center;">
@@ -740,9 +766,9 @@
 
     function updateInventorySummary(products) {
       const totalProducts = products.length;
-      const totalStock = products.reduce((acc, p) => acc + parseFloat(p.stock_count || 0), 0);
-      const totalValue = products.reduce((acc, p) => acc + (parseFloat(p.stock_count || 0) * parseFloat(p.buy_price || 0)), 0);
-      const lowStockCount = products.filter(p => parseFloat(p.stock_count || 0) < 10).length;
+      const totalStock = products.reduce((acc, p) => acc + getSafeNumber(p.stock_count), 0);
+      const totalValue = products.reduce((acc, p) => acc + (getSafeNumber(p.stock_count) * getSafeNumber(p.buy_price)), 0);
+      const lowStockCount = products.filter(p => getSafeNumber(p.stock_count) < 10).length;
       
       document.getElementById('totalInventoryProducts').textContent = totalProducts;
       document.getElementById('totalStockQuantity').textContent = totalStock;
@@ -751,8 +777,8 @@
 
       // Group by category for top category
       const catValues = products.reduce((acc, p) => {
-        const cat = p.product_category || 'General';
-        acc[cat] = (acc[cat] || 0) + (parseFloat(p.stock_count || 0) * parseFloat(p.buy_price || 0));
+        const cat = getSafeText(p.product_category, 'General');
+        acc[cat] = (acc[cat] || 0) + (getSafeNumber(p.stock_count) * getSafeNumber(p.buy_price));
         return acc;
       }, {});
       
@@ -765,7 +791,7 @@
       document.getElementById('topCategoryName').textContent = topCat;
       document.getElementById('avgStockLevel').textContent = totalProducts > 0 ? (totalStock / totalProducts).toFixed(1) : '0.0';
       
-      const health = totalProducts > 0 ? ((products.filter(p => parseFloat(p.stock_count || 0) >= 10).length / totalProducts) * 100).toFixed(0) : 100;
+      const health = totalProducts > 0 ? ((products.filter(p => getSafeNumber(p.stock_count) >= 10).length / totalProducts) * 100).toFixed(0) : 100;
       const healthEl = document.getElementById('inventoryHealthScore');
       healthEl.textContent = health + '%';
       healthEl.className = `text-2xl font-bold ${health > 70 ? 'text-green-500' : health > 40 ? 'text-yellow-500' : 'text-red-500'}`;
@@ -813,22 +839,24 @@
 
       const pageItems = history.slice(bounds.startIndex, bounds.endIndex);
       pageItems.forEach(entry => {
-        const items = entry.item ? entry.item.split(', ') : [];
+        const items = getSafeText(entry.item).split(',').map(i => i.trim()).filter(Boolean);
         const itemsHtml = items.map(i => `<span class="product-tag">${i}</span>`).join('');
-        const displayId = entry.transaction_id || entry.transaction_number || '—';
+        const displayId = getSafeText(entry.transaction_id || entry.transaction_number, '—');
         const internalId = entry.id || entry.transaction_id || entry.transaction_number;
-        const studentInfo = entry.student_id || entry.student_name ? `
-            <div class="font-semibold text-gray-800">${entry.student_id || '—'}</div>
-            ${entry.student_name ? `<div class="text-xs text-gray-500">${entry.student_name}</div>` : ''}` : '—';
+        const studentId = getSafeText(entry.student_id, '—');
+        const studentName = getSafeText(entry.student_name);
+        const studentInfo = studentId !== '—' || studentName ? `
+            <div class="font-semibold text-gray-800">${studentId}</div>
+            ${studentName ? `<div class="text-xs text-gray-500">${studentName}</div>` : ''}` : '—';
         
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${formatDate(entry.date)}</td>
           <td>${displayId}</td>
           <td>${studentInfo}</td>
-          <td><div class="product-tag-list">${itemsHtml}</div></td>
-          <td>${entry.quantity}</td>
-          <td>${formatCurrency(entry.amount)}</td>
+          <td><div class="product-tag-list">${itemsHtml || '<span class="text-gray-400">No items</span>'}</div></td>
+          <td>${getSafeNumber(entry.quantity)}</td>
+          <td>${formatCurrency(getSafeNumber(entry.amount))}</td>
           <td style="text-align: center;">
             <button onclick="window.viewReceiptDetails('${internalId}')" class="view-details-btn" title="View Details">
               <i class="fas fa-eye"></i>
@@ -846,13 +874,16 @@
       const search = document.getElementById('inventorySearch').value.toLowerCase();
 
       const filtered = lastFetchedInventory.filter(item => {
-        const stock = parseFloat(item.stock_count || 0);
+        const stock = getSafeNumber(item.stock_count);
         const statusObj = getStockStatus(stock);
+        const productName = getSafeText(item.product_name).toLowerCase();
+        const author = getSafeText(item.book_author).toLowerCase();
+        const description = getSafeText(item.product_description).toLowerCase();
         
-        const matchesCategory = !category || item.product_category === category;
-        const matchesCourse = !course || (item.course_program === course || item.book_course === course);
+        const matchesCategory = !category || getSafeText(item.product_category) === category;
+        const matchesCourse = !course || (getSafeText(item.course_program) === course || getSafeText(item.book_course) === course);
         const matchesStatus = !statusFilter || statusObj.label.includes(statusFilter);
-        const matchesSearch = !search || item.product_name.toLowerCase().includes(search) || (item.book_author && item.book_author.toLowerCase().includes(search));
+        const matchesSearch = !search || productName.includes(search) || author.includes(search) || description.includes(search);
         
         return matchesCategory && matchesCourse && matchesStatus && matchesSearch;
       });
@@ -917,20 +948,23 @@
 
       try {
         const response = await fetch(`../../actions/get_transaction_details.php?id=${encodeURIComponent(transactionId)}`);
-        const data = await response.json();
-        if (data.success) {
-          const t = data.transaction;
-          const itemsHtml = (t.items || []).map(item => `
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data.success) {
+          const t = data.transaction || {};
+          const items = Array.isArray(t.items) ? t.items : [];
+          const itemsHtml = items.map(item => `
             <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
               <div class="flex-1 pr-2">
-                <p class="text-gray-800 font-medium">${item.product_name}</p>
-                <p class="text-gray-500 text-xs">${item.quantity} x ${formatCurrency(item.unit_price)}</p>
+                <p class="text-gray-800 font-medium">${getSafeText(item.product_name, 'Item')}</p>
+                <p class="text-gray-500 text-xs">${getSafeNumber(item.quantity)} x ${formatCurrency(getSafeNumber(item.unit_price))}</p>
               </div>
-              <span class="font-semibold text-gray-700">${formatCurrency(item.total_item_amount)}</span>
+              <span class="font-semibold text-gray-700">${formatCurrency(getSafeNumber(item.total_item_amount || item.total))}</span>
             </div>`).join('');
-          content.innerHTML = `<div class="space-y-6"><div class="bg-gray-50 p-4 rounded-xl text-sm"><p>Ref: ${t.transaction_number}</p><p>Date: ${new Date(t.created_at).toLocaleString()}</p><p>Customer: ${t.student_name || 'N/A'} (ID: ${t.student_id || t.guest_school_id || t.user_id || 'N/A'})</p><p>Course: ${t.user_course || 'N/A'}</p><p>Cashier: ${t.cashier_name || 'N/A'}</p></div><div>${itemsHtml}</div><div class="bg-gray-50 p-4 rounded-xl text-sm font-bold"><p>Total: ${formatCurrency(t.total_amount)}</p></div></div>`;
+          content.innerHTML = `<div class="space-y-6"><div class="bg-gray-50 p-4 rounded-xl text-sm"><p>Ref: ${getSafeText(t.transaction_number, 'N/A')}</p><p>Date: ${t.created_at ? new Date(t.created_at).toLocaleString() : 'N/A'}</p><p>Customer: ${getSafeText(t.student_name, 'N/A')} (ID: ${getSafeText(t.student_id || t.guest_school_id || t.user_id, 'N/A')})</p><p>Course: ${getSafeText(t.user_course, 'N/A')}</p><p>Cashier: ${getSafeText(t.cashier_name, 'N/A')}</p></div><div>${itemsHtml || '<p class="text-gray-500 text-sm">No item breakdown available.</p>'}</div><div class="bg-gray-50 p-4 rounded-xl text-sm font-bold"><p>Total: ${formatCurrency(getSafeNumber(t.total_amount))}</p></div></div>`;
+        } else {
+          content.innerHTML = `<div class="text-sm text-red-600">Unable to load transaction details.</div>`;
         }
-      } catch (err) { console.error(err); }
+      } catch (err) { console.error(err); content.innerHTML = `<div class="text-sm text-red-600">Unable to load transaction details.</div>`; }
     }
 
     window.closeReceiptModal = () => document.getElementById('receiptModal')?.classList.remove('active');
@@ -938,8 +972,7 @@
     function startSalesPolling() {
       if (salesPollInterval) clearInterval(salesPollInterval);
       salesPollInterval = setInterval(() => {
-        loadSalesData(currentSalesPeriod);
-        loadInventoryData();
+        Promise.allSettled([loadSalesData(currentSalesPeriod), loadInventoryData()]);
       }, 10000);
     }
 
@@ -1385,11 +1418,14 @@
       document.getElementById('export-csv-btn').addEventListener('click', window.exportSalesToExcel);
       document.getElementById('historySearch')?.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
-        const filtered = lastFetchedSalesHistory.filter(entry => {
-          const text = `${entry.transaction_id || ''} ${entry.transaction_number || ''} ${entry.student_id || ''} ${entry.student_name || ''} ${entry.item || ''} ${entry.date || ''}`.toLowerCase();
-          return text.includes(query);
-        });
-        renderSalesHistory(filtered, { resetPage: true });
+        if (salesSearchTimer) clearTimeout(salesSearchTimer);
+        salesSearchTimer = setTimeout(() => {
+          const filtered = lastFetchedSalesHistory.filter(entry => {
+            const text = `${getSafeText(entry.transaction_id)} ${getSafeText(entry.transaction_number)} ${getSafeText(entry.student_id)} ${getSafeText(entry.student_name)} ${getSafeText(entry.item)} ${getSafeText(entry.date)}`.toLowerCase();
+            return text.includes(query);
+          });
+          renderSalesHistory(filtered, { resetPage: true });
+        }, 120);
       });
 
       document.getElementById('inventoryFilterCategory')?.addEventListener('change', handleInventoryFiltering);

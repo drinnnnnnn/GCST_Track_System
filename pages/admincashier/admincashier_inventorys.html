@@ -1142,7 +1142,7 @@
                 <div class="form-group">
                   <label for="new-product-category">Category <span class="text-rose-500">*</span></label>
                   <select id="new-product-category" name="product_category" required onchange="toggleCategoryFields('new', this.value)">
-                    <option value="" disabled selected>Select category</option>
+                    <option value="" disabled selected>Select Category</option>
                     <option value="Uniform Fabrics">Uniform Fabrics</option>
                     <option value="Books">Books</option>
                     <option value="Accessories">Accessories</option>
@@ -1717,13 +1717,14 @@
             await this.refreshData();
             this.startPolling();
 
-            // Listen for updates from other tabs (e.g. Cashier finalized a sale)
-            this.syncChannel.onmessage = (event) => {
-                if (event.data === 'refresh_inventory') {
-                    this.refreshData();
-                    showToast('🔄 Inventory synced with latest transactions.', 'success');
-                }
-            };
+            if (this.syncChannel?.onmessage !== undefined) {
+                this.syncChannel.onmessage = (event) => {
+                    if (event.data === 'refresh_inventory') {
+                        this.refreshData();
+                        showToast('Inventory synced with the latest updates.', 'info');
+                    }
+                };
+            }
         },
 
         cacheDOMElements() {
@@ -1857,6 +1858,10 @@
 
             try {
                 const data = await InventoryAPI.fetchAll();
+                if (data && typeof data === 'object' && data.success === false) {
+                    throw new Error(data.message || 'Unable to load inventory data.');
+                }
+
                 this.state.products = Array.isArray(data) ? data : [];
                 
                 if (this.state.selected) {
@@ -1874,9 +1879,10 @@
                     this.ui.grid.innerHTML = `
                         <div class="col-span-full empty-state" style="border-color: #ef4444; color: #ef4444;">
                             <i class="fas fa-exclamation-triangle mb-2 text-2xl"></i>
-                            <p>Unable to connect to the inventory server. Please check your connection.</p>
+                            <p>${err.message || 'Unable to connect to the inventory server. Please check your connection.'}</p>
                         </div>`;
                 }
+                showToast(err.message || 'Unable to load inventory data.', 'error');
             } finally {
                 if (btn) btn.disabled = false;
                 if (icon) icon.classList.remove('fa-spin');
@@ -2178,11 +2184,22 @@
         updateDetailPanel() {
             if (!this.state.selected) {
                 if (this.ui.detailPanel) {
+                    this.ui.detailPanel.classList.add('hidden');
                     const inputs = this.ui.detailPanel.querySelectorAll('input, select');
-                    inputs.forEach(i => i.value = '');
+                    inputs.forEach(i => {
+                        if (i.type !== 'file') i.value = '';
+                    });
                 }
-                this.ui.detailPanel?.classList.add('hidden');
                 this.ui.detailEmpty?.classList.remove('hidden');
+                const headerName = document.getElementById('detail-name');
+                const headerCategory = document.getElementById('detail-category');
+                const headerStock = document.getElementById('detail-stock');
+                if (headerName) headerName.textContent = 'No product selected';
+                if (headerCategory) headerCategory.textContent = '';
+                if (headerStock) {
+                    headerStock.textContent = 'Select a product';
+                    headerStock.className = 'status-pill';
+                }
                 return;
             }
 
@@ -2520,12 +2537,15 @@
         resetAddForm() {
             if (this.ui.addForm) {
                 this.ui.addForm.reset();
+                const category = document.getElementById('new-product-category');
+                if (category) category.value = '';
                 toggleCategoryFields('new', 'All');
                 const preview = document.getElementById('new-product-image-preview');
                 if (preview) preview.innerHTML = `
                     <div class="text-center p-4">
                       <i class="fas fa-cloud-upload-alt text-3xl text-slate-300 transition-colors mb-2"></i>
                       <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Click to upload</p>
+                      <p class="text-[10px] text-slate-300 mt-1 italic">JPG, PNG or GIF (Max 5MB)</p>
                     </div>`;
             }
         },
@@ -2561,8 +2581,15 @@
         const container = document.getElementById('toast-container');
         if (!container) return;
         const t = document.createElement('div');
+        const iconMap = {
+            success: 'check-circle',
+            error: 'exclamation-circle',
+            info: 'info-circle',
+            warning: 'exclamation-triangle'
+        };
+        const icon = iconMap[type] || 'info-circle';
         t.className = `toast ${type}`;
-        t.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i><div class="toast-content">${msg}</div>`;
+        t.innerHTML = `<i class="fas fa-${icon}"></i><div class="toast-content">${msg}</div>`;
         container.appendChild(t);
         setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(20px)'; setTimeout(() => t.remove(), 400); }, 4000);
     };

@@ -705,6 +705,17 @@
       }, 4000);
     };
 
+    // Small helper to avoid injecting raw HTML from server values
+    window.escapeHtml = function (unsafe) {
+      if (unsafe === null || unsafe === undefined) return '';
+      return String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
+
     window.showNotification = window.showToast;
 
     window.formatTicketDisplay = function(value) {
@@ -800,12 +811,12 @@
               <span class="status-badge status-${t.status}">${t.status.toUpperCase()}</span>
               ${t.queue_type === 'priority' ? '<span class="badge-priority"><i class="fas fa-wheelchair mr-1"></i> PRIORITY</span>' : ''}
               ${t.expiry_alert_sent == 1 ? '<span class="text-orange-500 animate-pulse" title="Expiration Warning Sent"><i class="fas fa-bell"></i></span>' : ''}
-              <span class="font-semibold text-gray-800">${t.student_name || 'Walk-in'}</span>
-              <span class="text-xs text-gray-400 font-mono">${t.school_id || ''}</span>
+              <span class="font-semibold text-gray-800">${escapeHtml(t.student_name || 'Walk-in')}</span>
+              <span class="text-xs text-gray-400 font-mono">${escapeHtml(t.school_id || '')}</span>
             </div>
-            ${t.cashier_name ? `<div class="text-[10px] text-emerald-600 font-bold mb-1"><i class="fas fa-user-tie mr-1"></i> SERVED BY: ${t.cashier_name.toUpperCase()}</div>` : ''}
+            ${t.cashier_name ? `<div class="text-[10px] text-emerald-600 font-bold mb-1"><i class="fas fa-user-tie mr-1"></i> SERVED BY: ${escapeHtml(String(t.cashier_name).toUpperCase())}</div>` : ''}
             <div class="text-sm text-gray-600">
-              <span class="opacity-70">Purpose:</span> ${t.purpose || 'General Inquiry'} 
+              <span class="opacity-70">Purpose:</span> ${escapeHtml(t.purpose || 'General Inquiry')} 
               <span class="mx-2 opacity-30">|</span> 
               <span class="text-indigo-600 font-medium">${formatTicketDisplay(t.queue_number)}</span>
             </div>
@@ -994,9 +1005,8 @@
       
       // Ensure currentWindowNumber is treated as integer for comparison
       const currentWin = parseInt(currentWindowNumber);
-      
       document.getElementById('reassign-ticket-number').textContent = queueNumber;
-      document.getElementById('reassign-current-window').textContent = currentWin === 3 ? 'Priority Window' : `Window ${currentWin}`;
+      document.getElementById('reassign-current-window').textContent = isNaN(currentWin) ? 'Not assigned' : (currentWin === 3 ? 'Priority Window' : `Window ${currentWin}`);
       
       const newWindowSelect = document.getElementById('reassign-new-window');
       newWindowSelect.innerHTML = ''; // Clear previous options
@@ -1158,6 +1168,10 @@
       const queueEl = document.getElementById('preview-queue-number');
       if (panel && queueEl && ticket?.queue_number) {
         queueEl.textContent = formatTicketDisplay(ticket.queue_number);
+        const infoEl = document.getElementById('preview-student-info');
+        if (infoEl) infoEl.innerHTML = escapeHtml(ticket.student_name || 'Walk-in');
+        const genEl = document.getElementById('preview-generated-at');
+        if (genEl) genEl.textContent = ticket.created_at ? new Date(ticket.created_at).toLocaleString() : '';
         panel.style.display = 'block';
       }
     }
@@ -1271,7 +1285,13 @@
 
     window.updateKioskDisplay = function() {
       if (!lastQueueState) return;
-      const tickets = JSON.parse(lastQueueState);
+      let tickets = [];
+      try {
+        tickets = JSON.parse(lastQueueState);
+      } catch (e) {
+        console.error('Unable to parse lastQueueState for kiosk display', e);
+        return;
+      }
 
       // Map tickets to windows
       const parseWin = (t) => (t.window_number || t.window_id) ? parseInt(t.window_number || t.window_id) : null;

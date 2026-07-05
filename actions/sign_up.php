@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $is_pwd         = isset($_POST['is_pwd']) && $_POST['is_pwd'] == '1' ? 1 : 0;
     $status         = 'pending';
 
-    if ($student_id === '' || $last_name === '' || $first_name === '' || $email === '' || $password_raw === '' || $sex === '' || $course === '' || $department === '' || $year_level === '') {
+    if ($student_id === '' || $last_name === '' || $first_name === '' || $email === '' || $password_raw === '' || $sex === '' || $course === '' || $department === '' || $year_level === '' || $contact_number === '' || $address === '') {
         header('Location: ../pages/superadmin/sign_up.html?status=invalid&show=register');
         exit();
     }
@@ -41,8 +41,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    if (strlen($password_raw) < 8) {
+    if (strlen($password_raw) < 8 || !preg_match('/[!@#$%^&*]/', $password_raw)) {
         header('Location: ../pages/superadmin/sign_up.html?status=weak_password&show=register');
+        exit();
+    }
+
+    if (!preg_match('/^\d{11}$/', $contact_number)) {
+        header('Location: ../pages/superadmin/sign_up.html?status=invalid&show=register');
         exit();
     }
 
@@ -67,28 +72,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'pwd_back' => ''
     ];
 
-    $upload_file = function ($key, $allowedExts, $allowedMimesList, $isRequired = true) use (&$proof_paths, &$student_id, &$upload_dir, &$max_file_size) {
-        if (!isset($_FILES[$key]) || $_FILES[$key]['error'] !== UPLOAD_ERR_OK) {
+    $upload_error = null;
+    $upload_file = function ($key, $allowedExts, $allowedMimesList, $isRequired = true) use (&$proof_paths, &$student_id, &$upload_dir, &$max_file_size, &$upload_error) {
+        if (!isset($_FILES[$key]) || !is_uploaded_file($_FILES[$key]['tmp_name'])) {
             if ($isRequired) {
+                $upload_error = 'upload_failed';
                 return false;
             }
             return true;
         }
 
+        if ($_FILES[$key]['error'] !== UPLOAD_ERR_OK) {
+            $upload_error = 'upload_failed';
+            return false;
+        }
+
         if ($_FILES[$key]['size'] > $max_file_size) {
+            $upload_error = 'too_large';
             return false;
         }
 
         $ext = strtolower(pathinfo($_FILES[$key]['name'], PATHINFO_EXTENSION));
         if (!in_array($ext, $allowedExts, true)) {
+            $upload_error = 'invalid_file_type';
             return false;
         }
 
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime_type = finfo_file($finfo, $_FILES[$key]['tmp_name']);
-        finfo_close($finfo);
+        $mime_type = $finfo ? finfo_file($finfo, $_FILES[$key]['tmp_name']) : '';
+        if ($finfo) {
+            finfo_close($finfo);
+        }
 
-        if (!in_array($mime_type, $allowedMimesList, true)) {
+        if ($mime_type !== '' && !in_array($mime_type, $allowedMimesList, true)) {
+            $upload_error = 'invalid_file_type';
             return false;
         }
 
@@ -100,12 +117,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             return true;
         }
 
+        $upload_error = 'upload_failed';
         return false;
     };
 
     foreach (['school_id_pic', 'reg_form', 'payment_scheme'] as $key) {
         if (!$upload_file($key, $allowed_extensions, $allowed_mimes, true)) {
-            header('Location: ../pages/superadmin/sign_up.html?status=upload_failed&show=register');
+            header('Location: ../pages/superadmin/sign_up.html?status=' . $upload_error . '&show=register');
             exit();
         }
     }
@@ -115,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pwd_allowed_mimes = ['image/jpeg', 'image/png'];
         foreach (['pwd_front', 'pwd_back'] as $key) {
             if (!$upload_file($key, $pwd_allowed_ext, $pwd_allowed_mimes, true)) {
-                header('Location: ../pages/superadmin/sign_up.html?status=upload_failed&show=register');
+                header('Location: ../pages/superadmin/sign_up.html?status=' . $upload_error . '&show=register');
                 exit();
             }
         }

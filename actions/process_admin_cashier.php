@@ -36,6 +36,14 @@ function isAjax() {
            (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false);
 }
 
+function normalizeAdminStatus($value): string {
+    $normalized = strtolower(trim((string) $value));
+    if (in_array($normalized, ['active', 'enabled', '1', 'true'], true)) {
+        return 'active';
+    }
+    return 'inactive';
+}
+
 try {
     // Ensure we have a valid connection before proceeding
     $conn = Database::getConnection();
@@ -316,7 +324,7 @@ try {
             switch ($action) {
                 case 'update_status':
                     $adminId = filter_var($inputData['admin_id'] ?? 0, FILTER_VALIDATE_INT);
-                    $status = in_array($inputData['status'], ['active', 'inactive']) ? $inputData['status'] : 'inactive';
+                    $status = normalizeAdminStatus($inputData['status'] ?? 'inactive');
                     if (!$adminId) throw new Exception("Invalid ID");
                     
                     $stmt = $conn->prepare("UPDATE admincashier_acc SET status = ? WHERE id = ?");
@@ -334,14 +342,16 @@ try {
 
                 case 'update_account':
                     $id = filter_var($inputData['id'] ?? 0, FILTER_VALIDATE_INT);
-                    $username = trim($inputData['username'] ?? '');
-                    $fname = trim($inputData['first_name'] ?? '');
-                    $mname = trim($inputData['middle_name'] ?? '');
-                    $lname = trim($inputData['last_name'] ?? '');
-                    $contactNumber = trim($inputData['contact_number'] ?? '');
-                    $pin = trim($inputData['pin'] ?? '');
-                    $email = trim(filter_var($inputData['email'] ?? '', FILTER_VALIDATE_EMAIL));
+                    $username = trim((string) ($inputData['username'] ?? ''));
+                    $fname = trim((string) ($inputData['first_name'] ?? ''));
+                    $mname = trim((string) ($inputData['middle_name'] ?? ''));
+                    $lname = trim((string) ($inputData['last_name'] ?? ''));
+                    $contactNumber = trim((string) ($inputData['contact_number'] ?? ''));
+                    $pin = trim((string) ($inputData['pin'] ?? ''));
+                    $email = trim((string) ($inputData['email'] ?? ''));
                     if (!$id || !$username || !$fname || !$lname || !$email) throw new Exception("Invalid fields");
+                    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new Exception('Please provide a valid email address.');
+                    if ($contactNumber !== '' && !preg_match('/^\d{11}$/', $contactNumber)) throw new Exception('Contact number must be exactly 11 digits.');
 
                     if ($pin !== '' && !preg_match('/^\d{4}$/', $pin)) {
                         throw new Exception('Security PIN must be exactly 4 digits.');

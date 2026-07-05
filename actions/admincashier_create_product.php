@@ -111,17 +111,21 @@ try {
         if (empty($uniformCourse)) throw new Exception('Fabrics Module: Course/Program association is required.');
         if (!in_array($uniformCourse, $validCourses)) throw new Exception('Fabrics Module: Please select a valid course/program from the whitelist.');
         if (empty($uniformType)) throw new Exception('Fabrics Module: Uniform Type is required.');
-        
+
         if (empty($materialType)) {
             throw new Exception('Fabrics Module: Material Type is required.');
         }
 
         if ($stockCount <= 0) throw new Exception('Fabrics Module: Available yards must be greater than zero.');
-        
+
         if ($uniformType === 'Complete Uniform Set') {
             if (empty($upperFabric) || empty($lowerFabric)) {
                 throw new Exception('Fabrics Module: Upper and Lower fabric details are required for complete sets.');
             }
+        } elseif ($uniformType === 'Upper Uniform Fabric' && empty($upperFabric)) {
+            throw new Exception('Fabrics Module: Upper fabric detail is required.');
+        } elseif ($uniformType === 'Lower Uniform Fabric' && empty($lowerFabric)) {
+            throw new Exception('Fabrics Module: Lower fabric detail is required.');
         }
     }
 

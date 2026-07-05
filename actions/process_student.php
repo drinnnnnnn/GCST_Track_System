@@ -26,8 +26,12 @@ if ($input && isset($input['action'])) {
 
 switch ($action) {
     case 'list':
-        $query = "SELECT id, student_id, first_name, last_name, middle_name, email, sex, course, department, year_level, year_section, contact_number, address, status, is_pwd, school_id_pic, reg_form, payment_scheme, pwd_front, pwd_back, created_at FROM users ORDER BY created_at DESC";
+        $query = "SELECT id, student_id, first_name, last_name, middle_name, email, sex, course, department, year_level, year_section, contact_number, address, status, is_pwd, school_id_pic, reg_form, payment_scheme, pwd_front, pwd_back, created_at FROM users WHERE (role = 'student' OR role = 'user' OR role IS NULL OR role = '') ORDER BY created_at DESC";
         $result = $conn->query($query);
+        if ($result === false) {
+            echo json_encode(['success' => false, 'message' => 'Unable to load student data.']);
+            exit;
+        }
         $user = [];
         while ($row = $result->fetch_assoc()) {
             $user[] = $row;
@@ -63,7 +67,18 @@ switch ($action) {
         $year = filter_var($input['year'] ?? 1, FILTER_VALIDATE_INT);
         $yearSection = trim($input['year_section'] ?? '');
         $contact_number = trim ($input['contact_number'] ?? '');
-        $status = $input['status'] ?? 'pending';
+        $status = trim($input['status'] ?? '');
+
+        if ($status === '') {
+            $statusStmt = $conn->prepare("SELECT status FROM users WHERE id = ? LIMIT 1");
+            $statusStmt->bind_param('i', $id);
+            $statusStmt->execute();
+            $statusStmt->bind_result($existingStatus);
+            $statusStmt->fetch();
+            $statusStmt->close();
+            $status = $existingStatus ?: 'pending';
+        }
+        $status = strtolower($status);
 
         if (!$id || empty($fname) || empty($lname) || empty($department) || empty($address) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             echo json_encode(['success' => false, 'message' => 'All required fields must be valid.']);

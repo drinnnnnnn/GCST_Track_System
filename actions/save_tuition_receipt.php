@@ -172,6 +172,72 @@ try {
     $lastInsertId = $stmt->insert_id;
     $stmt->close();
 
+    $historyItemsJson = json_encode([
+        [
+            'type' => 'receipt',
+            'receipt_number' => $receiptNumber,
+            'receipt_category' => $receiptCategory,
+            'student_name' => $studentName,
+            'payment_status' => $paymentStatus,
+        ]
+    ], JSON_UNESCAPED_UNICODE);
+    if ($historyItemsJson === false) {
+        $historyItemsJson = '[]';
+    }
+
+    $historyUserId = $userId !== null ? (int) $userId : 0;
+    $historyGuestSchoolId = '';
+    $historyGuestEmail = '';
+    $historyTransactionType = 'buy';
+    $historySubtotal = round($paymentReceived, 2);
+    $historyDiscountPercent = 0.0;
+    $historyDiscountAmount = 0.0;
+    $historyTotalAmount = round($finalTotalPayment !== null ? $finalTotalPayment : $paymentReceived, 2);
+    $historyChangeAmount = round($changeAmount, 2);
+    $historyPaymentMethod = $payment_method;
+    $historyCheckNumber = $checkNumber !== null ? $checkNumber : '';
+    $historyIsExpired = $paymentStatus === 'paid' ? 1 : 0;
+
+    $historyInsertSql = "INSERT INTO cashier_transactions (
+        transaction_number, receipt_number, receipt_category, user_id, student_name, guest_school_id, guest_email, cashier_id,
+        transaction_type, items, subtotal, discount_percent, discount_amount, total_amount, payment_received, change_amount,
+        payment_status, payment_method, check_number, is_expired
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+    $historyStmt = $conn->prepare($historyInsertSql);
+    if (!$historyStmt) {
+        throw new Exception('Failed to prepare cashier history insert: ' . $conn->error);
+    }
+
+    $historyStmt->bind_param(
+        'sssisssissddddddsssi',
+        $transactionNumber,
+        $receiptNumber,
+        $receiptCategory,
+        $historyUserId,
+        $studentName,
+        $historyGuestSchoolId,
+        $historyGuestEmail,
+        $cashierId,
+        $historyTransactionType,
+        $historyItemsJson,
+        $historySubtotal,
+        $historyDiscountPercent,
+        $historyDiscountAmount,
+        $historyTotalAmount,
+        $paymentReceived,
+        $historyChangeAmount,
+        $paymentStatus,
+        $historyPaymentMethod,
+        $historyCheckNumber,
+        $historyIsExpired
+    );
+
+    if (!$historyStmt->execute()) {
+        throw new Exception('Failed to store receipt history entry: ' . $historyStmt->error);
+    }
+    $historyStmt->close();
+
     if ($studentId !== '' && $receiptCategory === 'Tuition Receipt' && $userId !== null) {
         $feeStmt = $conn->prepare('SELECT total_fees, total_paid, balance FROM tuition_fees WHERE user_id = ? LIMIT 1');
         if ($feeStmt) {

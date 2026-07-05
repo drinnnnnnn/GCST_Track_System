@@ -26,6 +26,9 @@ try {
 
     $status = isset($_GET['status']) ? $conn->real_escape_string($_GET['status']) : 'all';
     $receiptCategory = isset($_GET['receipt_category']) ? $conn->real_escape_string($_GET['receipt_category']) : '';
+    $studentIdFilter = isset($_GET['student_id']) ? $conn->real_escape_string($_GET['student_id']) : '';
+    $normalizedReceiptCategory = strtolower(trim($receiptCategory));
+    $normalizedStatus = strtolower(trim($status));
 
     if ($search) {
         $where .= " AND (ct.id LIKE '%$search%'
@@ -42,12 +45,27 @@ try {
                     OR ac.last_name LIKE '%$search%')";
     }
     if ($receiptCategory !== '') {
-        $where .= " AND ct.receipt_category = '$receiptCategory'";
+        if ($normalizedReceiptCategory === 'tuition fee') {
+            $where .= " AND (ct.receipt_category = 'Tuition Receipt' OR ct.receipt_category = 'Tuition Fee Receipt' OR ct.receipt_category = 'Tuition Fee')";
+        } else {
+            $where .= " AND ct.receipt_category = '$receiptCategory'";
+        }
     }
-    if ($status === 'paid') {
+    if ($studentIdFilter !== '') {
+        $where .= " AND (u.student_id = '$studentIdFilter' OR ct.guest_school_id = '$studentIdFilter' OR ct.student_name LIKE '%$studentIdFilter%')";
+    }
+    if ($normalizedStatus === 'paid') {
         $where .= " AND ct.payment_status = 'paid'";
-    } elseif ($status === 'pending') {
+    } elseif ($normalizedStatus === 'pending') {
         $where .= " AND ct.payment_status = 'pending'";
+    } elseif ($normalizedStatus === 'tuition fee') {
+        $where .= " AND (ct.receipt_category = 'Tuition Receipt' OR ct.receipt_category = 'Tuition Fee Receipt' OR ct.receipt_category = 'Tuition Fee')";
+    } elseif ($normalizedStatus === 'medical receipt') {
+        $where .= " AND ct.receipt_category = 'Medical Receipt'";
+    } elseif ($normalizedStatus === 'insurance receipt') {
+        $where .= " AND ct.receipt_category = 'Insurance Receipt'";
+    } elseif ($normalizedStatus === 'educational receipt') {
+        $where .= " AND ct.receipt_category = 'Educational Receipt'";
     }
     if ($from) { $where .= " AND DATE(ct.created_at) >= '$from'"; }
     if ($to) { $where .= " AND DATE(ct.created_at) <= '$to'"; }
@@ -61,18 +79,27 @@ try {
     $totalPages = ceil($totalRows / $limit);
 
     // Fetch transactions
-    $sql = "SELECT ct.*, u.student_id,
-                   CONCAT(ac.first_name, ' ', ac.last_name) as cashier_name
-            FROM cashier_transactions ct
-            LEFT JOIN users u ON ct.user_id = u.id
-            LEFT JOIN admincashier_acc ac ON ct.cashier_id = ac.id
-            $where
-            ORDER BY ct.created_at DESC
-            LIMIT $limit OFFSET $offset";
+        $sql = "SELECT ct.*, u.student_id, u.first_name AS user_first_name, u.last_name AS user_last_name,
+                 CONCAT(ac.first_name, ' ', ac.last_name) as cashier_name
+             FROM cashier_transactions ct
+             LEFT JOIN users u ON ct.user_id = u.id
+             LEFT JOIN admincashier_acc ac ON ct.cashier_id = ac.id
+             $where
+             ORDER BY ct.created_at DESC
+             LIMIT $limit OFFSET $offset";
 
     $result = $conn->query($sql);
     $txns = [];
     while ($row = $result->fetch_assoc()) {
+        // If transaction's student_name is missing, fall back to linked user name
+        if (empty($row['student_name'])) {
+            $first = trim($row['user_first_name'] ?? '');
+            $last = trim($row['user_last_name'] ?? '');
+            $full = trim(($first . ' ' . $last));
+            if ($full !== '') {
+                $row['student_name'] = $full;
+            }
+        }
         $txns[] = $row;
     }
 

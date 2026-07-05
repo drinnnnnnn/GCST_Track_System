@@ -78,6 +78,19 @@ function updateGreeting(name) {
   const prefix = existingText.includes('•') ? existingText.split('•')[0].trim() + ' • ' : '';
   greetingElement.textContent = prefix ? `${prefix}${name}` : `${timeGreet}, ${name}!`;
 }
+
+function resolveUserDisplayName(userData = {}) {
+  const candidates = [
+    userData.name,
+    userData.full_name,
+    userData.fullName,
+    userData.admin_name,
+    userData.display_name,
+    userData.username
+  ];
+
+  return candidates.find(value => typeof value === 'string' && value.trim()) || 'Admin';
+}
 /**
  * Update current date and time
  */
@@ -253,7 +266,7 @@ window.initializeAdminCashierPage = function(pageCallback) {
 
             // 3. Initialize UI elements now that sidebar is in the DOM
             initializeAdminCashierUI();
-            updateGreeting(userData.name || 'Admin');
+            updateGreeting(resolveUserDisplayName(userData));
             updateDateTime();
             setInterval(updateDateTime, 60000);
 
@@ -287,7 +300,26 @@ window.initializeAdminCashierPage = function(pageCallback) {
  */
 function fetchWithError(url, options = {}) {
     return fetch(url, options)
-        .then(res => res.ok ? res.json() : Promise.reject(`HTTP error! status: ${res.status}`))
+        .then(async res => {
+            const contentType = res.headers.get('content-type') || '';
+            let payload = null;
+
+            if (contentType.includes('application/json')) {
+                payload = await res.json();
+            } else {
+                const text = await res.text();
+                payload = text ? text : null;
+            }
+
+            if (!res.ok) {
+                const message = payload && typeof payload === 'object' && payload.message
+                    ? payload.message
+                    : `HTTP error! status: ${res.status}`;
+                throw new Error(message);
+            }
+
+            return payload;
+        })
         .catch(err => {
             console.error('Fetch error:', err);
             throw err;

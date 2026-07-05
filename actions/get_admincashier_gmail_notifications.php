@@ -24,30 +24,55 @@ try {
 
     // Handle POST actions (Delete Log / Retry)
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $input = json_decode(file_get_contents('php://input'), true);
+        $rawInput = file_get_contents('php://input');
+        $input = json_decode($rawInput, true) ?: [];
         $action = $input['action'] ?? '';
-        $id = $input['id'] ?? 0;
+        $id = (int)($input['id'] ?? 0);
 
-        if ($action === 'delete_log' && $id) {
+        if ($action === 'delete_log' && $id > 0) {
             $stmt = $conn->prepare("DELETE FROM email_notifications WHERE id = ?");
-            $stmt->bind_param('i', $id);
-            $success = $stmt->execute(); // Consider adding error handling here
-            echo json_encode(['success' => $success]);
+            if ($stmt) {
+                $stmt->bind_param('i', $id);
+                $success = $stmt->execute();
+                $stmt->close();
+                echo json_encode(['success' => $success]);
+                exit;
+            }
+            echo json_encode(['success' => false, 'error' => 'Failed to prepare delete statement']);
             exit;
         } elseif ($action === 'send_email') {
-            $res = sendEmailWithLog($conn, $input['recipient'], $input['subject'], $input['message'], $input['email_type'], []);
+            $res = sendEmailWithLog(
+                $conn,
+                $input['recipient'] ?? '',
+                $input['subject'] ?? '',
+                $input['message'] ?? '',
+                $input['email_type'] ?? 'Manual Notification',
+                []
+            );
             echo json_encode($res);
             exit;
-        } elseif ($action === 'retry_email' && $id) {
-            $stmt = $conn->prepare("SELECT * FROM email_notifications WHERE id = ?");
-            $stmt->bind_param('i', $id);
-            $stmt->execute();
-            $log = $stmt->get_result()->fetch_assoc();
-            if ($log) {
-                $res = sendEmailWithLog($conn, $log['recipient'], $log['subject'], $log['email_body'], $log['notification_type'], []);
-                echo json_encode($res);
+        } elseif ($action === 'retry_email' && $id > 0) {
+            $stmt = $conn->prepare("SELECT recipient, subject, notification_type, email_body FROM email_notifications WHERE id = ?");
+            if ($stmt) {
+                $stmt->bind_param('i', $id);
+                $stmt->execute();
+                $log = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                if ($log) {
+                    $res = sendEmailWithLog(
+                        $conn,
+                        $log['recipient'] ?? '',
+                        $log['subject'] ?? '',
+                        $log['email_body'] ?? '',
+                        $log['notification_type'] ?? 'Manual Notification',
+                        []
+                    );
+                    echo json_encode($res);
+                } else {
+                    echo json_encode(['success' => false, 'error' => 'Log not found']);
+                }
             } else {
-                echo json_encode(['success' => false, 'error' => 'Log not found']);
+                echo json_encode(['success' => false, 'error' => 'Failed to load notification log']);
             }
             exit;
         }
@@ -85,7 +110,7 @@ try {
     // - pending_emails: Total number of emails with status 'pending'.
     // - total_emails_sent: Total number of emails with status 'sent'.
     $metricsSql = "SELECT 
-        COUNT(CASE WHEN DATE(created_at) = CURDATE() AND status = 'sent' THEN 1 END) as sent_today,
+        COUNT(CASE WHEN DATE(sent_at) = CURDATE() AND status = 'sent' THEN 1 END) as sent_today,
         COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed_emails,
         COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_emails,
         COUNT(CASE WHEN status = 'sent' THEN 1 END) as total_emails_sent
@@ -93,24 +118,27 @@ try {
     $metrics = $conn->query($metricsSql)->fetch_assoc();
 
     // 2. Fetch unique notification types for the filter dropdown
-    // The column name for notification type is 'notification_type'.
-    $typeResult = $conn->query("SELECT DISTINCT notification_type FROM email_notifications WHERE notification_type IS NOT NULL");
+    $typeResult = $conn->query("SELECT DISTINCT notification_type FROM email_notifications WHERE notification_type IS NOT NULL AND notification_type <> ''");
     $uniqueTypes = [];
     while ($row = $typeResult->fetch_assoc()) {
         $uniqueTypes[] = $row['notification_type'];
     }
 
     // 3. Fetch the actual logs
-    $logsSql = "SELECT id, recipient, subject, notification_type, status, created_at, error_message, email_body 
+    $logsSql = "SELECT id, recipient, subject, notification_type, status, sent_at AS created_at, error_message, email_body 
                 FROM email_notifications 
                 WHERE $whereClause 
-                ORDER BY created_at DESC LIMIT 100";
+                ORDER BY sent_at DESC LIMIT 100";
     $stmt = $conn->prepare($logsSql);
+    if ($stmt === false) {
+        throw new RuntimeException('Unable to prepare email log query.');
+    }
     if (!empty($params)) {
         $stmt->bind_param($types, ...$params);
     }
     $stmt->execute();
     $logs = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
 
     echo json_encode([
         'success' => true,
