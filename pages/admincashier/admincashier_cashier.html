@@ -328,17 +328,119 @@
       line-height: 1.5;
     }
     .receipt-signature-preview {
-      min-height: 96px;
-      padding: 14px;
-      background: linear-gradient(135deg, #f8fafc 0%, #f5f9ff 100%);
-      border: 1px dashed #cbd5e1;
-      border-radius: 14px;
+      min-height: 112px;
+      padding: 12px;
+      background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+      border: 1px solid #cbd5e1;
+      border-radius: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
       text-align: center;
       color: #475569;
       font-size: 0.9rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    .receipt-signature-preview .signature-preview-shell {
+      width: 100%;
+      display: grid;
+      gap: 6px;
+      justify-items: center;
+    }
+    .receipt-signature-preview .signature-preview-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, 0.08);
+      color: #1d4ed8;
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .receipt-signature-preview .signature-preview-image {
+      max-width: 150px;
+      max-height: 60px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: #ffffff;
+      border: 1px solid #dbeafe;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.12);
+      padding: 6px;
+    }
+    .receipt-signature-preview .signature-preview-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: 0.02em;
+    }
+    .official-signature-seal {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      width: 100%;
+      min-height: 76px;
+      text-align: center;
+      background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+      border-radius: 14px;
+      border: 1px solid #dbeafe;
+      padding: 8px;
+    }
+    .official-signature-seal-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(29, 78, 216, 0.08);
+      color: #1d4ed8;
+      font-size: 0.64rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .official-signature-seal-text {
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .official-signature-rule {
+      margin-top: 14px;
+      width: 100%;
+      max-width: 240px;
+      border-top: 2px solid #93c5fd;
+      padding-top: 8px;
+    }
+    .official-signature-rule-text {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #0c4a6e;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .official-approval-meta {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #bfdbfe;
+    }
+    .official-approval-meta-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #0c4a6e;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .official-approval-meta-value {
+      margin-top: 4px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #0f172a;
     }
     .receipt-actions {
       display: flex;
@@ -355,6 +457,105 @@
       background: linear-gradient(135deg, #f8fbff 0%, #eef7ff 100%);
       border: 1px solid #dbeafe;
       box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .receipt-preview-card::before {
+      content: "GCST";
+      position: absolute;
+      inset: 50% auto auto 50%;
+      transform: translate(-50%, -50%) rotate(-18deg);
+      font-size: clamp(5rem, 12vw, 8rem);
+      font-weight: 900;
+      letter-spacing: 0.22em;
+      color: rgba(37, 99, 235, 0.05);
+      pointer-events: none;
+      z-index: 0;
+      user-select: none;
+    }
+    .receipt-preview-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #1d4ed8 0%, #3b82f6 50%, #d4af37 100%);
+      box-shadow: 0 8px 16px rgba(29, 78, 216, 0.18);
+    }
+    .receipt-preview-card > * {
+      position: relative;
+      z-index: 1;
+    }
+    .receipt-preview-header-shell {
+      position: relative;
+      padding: 20px;
+      border-radius: 20px;
+      border: 1px solid #bfdbfe;
+      background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+    .receipt-preview-header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(212, 175, 55, 0.16);
+      color: #7c5a00;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .receipt-preview-header-title {
+      margin: 0;
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: 0.01em;
+      color: #0f172a;
+    }
+    .receipt-preview-header-subtitle {
+      margin: 8px 0 0;
+      color: #64748b;
+      font-size: 0.92rem;
+      font-weight: 600;
+      line-height: 1.55;
+    }
+    .receipt-preview-submeta {
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.73rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #0c4a6e;
+    }
+    .receipt-preview-seal {
+      min-width: 180px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid #d4af37;
+      background: linear-gradient(135deg, #ffffff 0%, #fef9e6 100%);
+      text-align: center;
+      box-shadow: 0 12px 24px rgba(212, 175, 55, 0.15);
+    }
+    .receipt-preview-seal-label {
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #7c5a00;
+    }
+    .receipt-preview-seal-title {
+      margin-top: 8px;
+      font-size: 1rem;
+      font-weight: 900;
+      color: #0f172a;
     }
     .panel-header {
       display: flex;
@@ -1954,8 +2155,12 @@
                 <input id="tuition-authorized-rep" type="text" class="search-input receipt-input" placeholder="Authorized Representative" />
               </div>
               <div class="receipt-field-group">
+                <label class="receipt-label">Official Signature</label>
                 <div id="tuition-admin-signature-preview" class="receipt-signature-preview">
-                  <span>Loading signature from profile...</span>
+                  <div class="signature-preview-shell">
+                    <span class="signature-preview-label"><i class="fas fa-shield-alt"></i> Official Signature</span>
+                    <span>Loading signature from profile...</span>
+                  </div>
                 </div>
               </div>
               <div class="receipt-field-group full-width">
@@ -1972,11 +2177,17 @@
 
           <!-- Tuition Receipt Preview Section -->
           <div id="tuition-receipt-preview" class="receipt-panel hidden receipt-preview-card" style="display:none !important; visibility:hidden !important; pointer-events:none;" aria-hidden="true">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 12px; padding-bottom: 20px; border-bottom: 2px solid rgba(226, 232, 240, 0.6);">
-              <div>
-                <h3 id="tuition-receipt-preview-title" style="margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: 0.01em; color: #0f172a;">Payment Receipt</h3>
-                <p id="tuition-receipt-preview-subtitle" style="margin: 8px 0 0; color: #64748b; font-size: 0.9rem; font-weight: 500;">Official payment receipt summary from GCST Track System</p>
+            <div class="receipt-preview-header-shell" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 12px;">
+              <div style="flex: 1; min-width: 220px;">
+                <div class="receipt-preview-header-badge"><i class="fas fa-shield-alt"></i> GCST Official Receipt</div>
+                <div class="receipt-preview-submeta"><i class="fas fa-university"></i> Granby Colleges of Science and Technology</div>
+                <h3 id="tuition-receipt-preview-title" class="receipt-preview-header-title">Payment Receipt</h3>
+                <p id="tuition-receipt-preview-subtitle" class="receipt-preview-header-subtitle">Official payment receipt summary from GCST Track System</p>
                 <p id="tuition-receipt-email-status" style="margin: 8px 0 0; color: #0d9488; font-size: 0.85rem; display: none; font-weight: 600;"><i class="fas fa-check-circle mr-2"></i>Receipt will be sent to student's Gmail</p>
+              </div>
+              <div class="receipt-preview-seal">
+                <div class="receipt-preview-seal-label">GCST</div>
+                <div class="receipt-preview-seal-title">Official Receipt</div>
               </div>
             </div>
             <div id="tuition-reload-countdown" class="receipt-countdown-card" style="display: none; margin-top: 16px; padding: 18px; border: 1px solid #bbf7d0; border-radius: 18px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.08);">
@@ -2051,12 +2262,12 @@
               <div style="padding: 14px 18px; border-bottom: 1px solid #f1f5f9;"><div style="color: #64748b; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px;">Remarks</div><div id="tuition-receipt-remarks" style="color: #0f172a; font-weight: 500;">—</div></div>
               <div style="padding: 14px 18px;"><div style="color: #64748b; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px;">Additional Notes</div><div id="tuition-receipt-note" style="color: #0f172a; font-weight: 500;">—</div></div>
             </div>
-            <div style="margin-bottom: 20px; padding: 20px; background: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%); border-radius: 18px; border: 1px solid #bae6fd;">
-              <div style="margin-bottom: 16px;">
-                <p style="margin: 0 0 12px; font-weight: 700; color: #0369a1; font-size: 0.9rem;"><i class="fas fa-user-tie mr-2"></i>Admin Cashier</p>
-                <p id="tuition-receipt-admin-signature" style="margin: 0; font-size: 1rem; color: #0c4a6e; font-weight: 700;"></p>
+            <div style="margin-bottom: 10px; padding: 4px 6px; background: transparent; border-radius: 8px; border: 0;">
+              <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0;">
+                <div id="tuition-receipt-admin-signature" style="font-size: 0.68rem; color: #0f172a; font-weight: 800; line-height: 1.2; white-space: nowrap;"></div>
+                <div id="tuition-receipt-admin-signature-title" style="display: none; font-size: 0.6rem; color: #475569; font-weight: 700;">Admin Cashier</div>
+                <div id="tuition-receipt-admin-signature-image" style="max-width: 64px; width: 100%; min-height: 18px; border-radius: 6px; overflow: hidden; background: transparent; border: 0; display: flex; align-items: center; justify-content: center; padding: 0;"></div>
               </div>
-              <div id="tuition-receipt-admin-signature-image" style="max-width: 140px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(3, 105, 161, 0.15); border: 2px solid #bae6fd;"></div>
             </div>
             <div style="padding: 20px; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 18px; border: 1px solid #bbf7d0;">
               <div style="display: flex; gap: 16px; flex-direction: column;">
@@ -4372,21 +4583,33 @@
       setText('tuition-receipt-method', paymentMethod);
       setText('tuition-receipt-check-number', paymentMethod === 'Check' ? checkNumber : '—');
       setText('tuition-receipt-rep', rep);
-      setText('tuition-receipt-admin-signature', adminSignature);
+      setText('tuition-receipt-admin-signature', adminSignature || 'Admin Cashier');
+      setText('tuition-receipt-admin-signature-title', '');
+      setText('tuition-receipt-admin-approved-date', dateTime || '—');
       const signatureImageContainer = document.getElementById('tuition-receipt-admin-signature-image');
       if (currentAdminSignatureImage && signatureImageContainer) {
         const signatureImageUrl = getSignatureImageUrl(currentAdminSignatureImage);
-        signatureImageContainer.innerHTML = `<img src="${signatureImageUrl}" alt="Admin Signature" style="max-width: 240px; width: 100%; border-radius: 12px; border: 1px solid #e2e8f0;" />`;
+        signatureImageContainer.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: center; width: 100%; min-height: 18px; background: transparent; border-radius: 6px;">
+            <img src="${signatureImageUrl}" alt="Admin Cashier Signature" style="max-width: 64px; width: 100%; max-height: 18px; object-fit: contain; border-radius: 4px;" />
+          </div>
+        `;
       } else if (signatureImageContainer) {
-        signatureImageContainer.innerHTML = '';
+        signatureImageContainer.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; width:100%; min-height:18px; color:#64748b; font-size:0.58rem; font-weight:700; text-align:center;">No signature</div>';
       }
       const signaturePreview = document.getElementById('tuition-admin-signature-preview');
       if (signaturePreview) {
         if (currentAdminSignatureImage) {
           const signatureImageUrl = getSignatureImageUrl(currentAdminSignatureImage);
-          signaturePreview.innerHTML = `<img src="${signatureImageUrl}" alt="Admin Signature" style="max-width: 100%; max-height: 120px; object-fit: contain;" />`;
+          signaturePreview.innerHTML = `
+            <div class="signature-preview-shell">
+              <span class="signature-preview-label"><i class="fas fa-signature"></i> Official Signature</span>
+              <img src="${signatureImageUrl}" alt="Admin Cashier Signature" class="signature-preview-image" />
+              <div class="signature-preview-name">${currentAdminName || 'Admin Cashier'}</div>
+            </div>
+          `;
         } else {
-          signaturePreview.textContent = 'No signature image found in profile.';
+          signaturePreview.innerHTML = '<div class="signature-preview-shell"><span class="signature-preview-label"><i class="fas fa-exclamation-circle"></i> Signature Status</span><span>No official signature image found in profile.</span></div>';
         }
       }
 
@@ -4853,9 +5076,10 @@
 
     function buildTuitionReceiptEmailHtml() {
       const signatureImageHtml = currentAdminSignatureImage ? `
-            <div style="margin-top: 20px; text-align: center;">
-              <p style="margin: 0 0 10px; font-size: 0.95rem; color: #334155; font-weight: 700;">Admin Cashier Signature</p>
-              <img src="cid:admin_signature" alt="Admin Cashier Signature" style="display: inline-block; width: 220px; max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 14px;" />
+            <div style="margin-top: 10px; padding: 8px; background: #f8fbff; border: 1px solid #dbeafe; border-radius: 8px; text-align: center;">
+              <p style="margin: 0 0 5px; font-size: 0.62rem; color: #1d4ed8; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;">Approved by</p>
+              <p style="margin: 0 0 4px; font-size: 0.78rem; color: #0f172a; font-weight: 800;">${escapeHtml(document.getElementById('tuition-receipt-admin-signature').textContent || 'Admin Cashier')}</p>
+              <img src="cid:admin_signature" alt="Admin Cashier Signature" style="display: inline-block; width: 82px; max-width: 100%; height: auto; border: 1px solid #dbeafe; border-radius: 6px; background: #ffffff;" />
             </div>
           ` : '';
 
