@@ -115,12 +115,96 @@
       animation: countdownPulse 0.7s ease;
     }
 
+    @keyframes slideInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideOutUp {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-12px);
+      }
+    }
+
+    .validation-error-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10001;
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 320px;
+    }
+
+    .validation-error-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+      color: #991b1b;
+      font-size: 0.82rem;
+      font-weight: 600;
+      animation: slideInDown 0.3s ease-out;
+      box-shadow: 0 8px 20px rgba(153, 27, 27, 0.12);
+      pointer-events: auto;
+      width: 100%;
+    }
+
+    .validation-error-badge.hide {
+      animation: slideOutUp 0.3s ease-out forwards;
+    }
+
+    .validation-error-badge i {
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    .validation-error-badge-text {
+      flex: 1;
+      line-height: 1.3;
+    }
+
+    .validation-error-badge-close {
+      background: rgba(127, 29, 29, 0.1);
+      border: none;
+      border-radius: 5px;
+      color: #991b1b;
+      cursor: pointer;
+      padding: 2px 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      font-size: 0.75rem;
+    }
+
+    .validation-error-badge-close:hover {
+      background: rgba(127, 29, 29, 0.2);
+    }
+
     .confirmation-modal-overlay {
       position: fixed;
       inset: 0;
       background: rgba(15, 23, 42, 0.72);
       backdrop-filter: blur(5px);
-      z-index: 4000;
+      z-index: 11000;
       display: none;
       align-items: center;
       justify-content: center;
@@ -2055,7 +2139,7 @@
               </div>
               <div class="receipt-field-group">
                 <label class="receipt-label">Student Name</label>
-                <input id="tuition-student-name" type="text" class="search-input receipt-input" placeholder="Name" />
+                <input id="tuition-student-name" type="text" class="search-input receipt-input" placeholder="Name" title="Please enter the student name." />
               </div>
               <div class="receipt-field-group">
                 <label class="receipt-label">Amount Paid (₱)</label>
@@ -2171,7 +2255,7 @@
           </div>
 
           <div class="receipt-actions">
-            <button id="tuition-generate-btn" type="button" class="btn btn-primary btn-sm receipt-actions-btn" onclick="generateTuitionReceipt()">Generate Receipt</button>
+            <button id="tuition-generate-btn" type="button" class="btn btn-primary btn-sm receipt-actions-btn" onclick="openTuitionReceiptConfirmationModal()">Generate Receipt</button>
             <button id="tuition-clear-btn" type="button" class="btn btn-secondary btn-sm receipt-actions-btn" onclick="clearTuitionForm()">Clear</button>
           </div>
 
@@ -2634,6 +2718,7 @@
     let currentAdminName = 'Admin Cashier';
     let currentReceiptMode = 'payment';
     let tuitionReceiptReloadTimer = null;
+    let validationErrorTimer = null;
 
     const voidedReportState = {
       items: [],
@@ -3458,6 +3543,25 @@
       cart = cart.filter(item => !item.selected);
       updateCartSummary();
       closeDeleteConfirmationModal();
+    }
+
+    function openTuitionReceiptConfirmationModal() {
+      const modal = document.getElementById('tuition-receipt-confirm-modal');
+      if (!modal) return;
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeTuitionReceiptConfirmationModal() {
+      const modal = document.getElementById('tuition-receipt-confirm-modal');
+      if (!modal) return;
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function confirmGenerateTuitionReceipt() {
+      closeTuitionReceiptConfirmationModal();
+      generateTuitionReceipt();
     }
 
     /**
@@ -4293,6 +4397,62 @@
       printWindow.print();
     }
 
+    function showValidationError(message) {
+      // Clear any existing error timer
+      if (validationErrorTimer) clearTimeout(validationErrorTimer);
+
+      // Try to find the visible modal/panel context
+      let targetContainer = null;
+      
+      // Check for checkout modal first
+      let modal = document.getElementById('checkout-modal');
+      if (modal && !modal.classList.contains('hidden')) {
+        targetContainer = modal;
+      }
+      
+      // Fallback to body if no visible modal
+      if (!targetContainer) {
+        targetContainer = document.body;
+      }
+
+      let errorContainer = targetContainer.querySelector('.validation-error-container');
+      if (!errorContainer) {
+        errorContainer = document.createElement('div');
+        errorContainer.className = 'validation-error-container';
+        targetContainer.insertBefore(errorContainer, targetContainer.firstChild);
+      }
+
+      // Create error badge
+      const badge = document.createElement('div');
+      badge.className = 'validation-error-badge';
+      badge.innerHTML = `
+        <i class="fas fa-exclamation-circle"></i>
+        <span class="validation-error-badge-text">${message}</span>
+        <button type="button" class="validation-error-badge-close" onclick="this.closest('.validation-error-badge').remove()">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+
+      // Clear previous errors and add new one
+      errorContainer.innerHTML = '';
+      errorContainer.appendChild(badge);
+
+      // Scroll to show the error
+      if (targetContainer === document.body) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        targetContainer.scrollTop = 0;
+      }
+
+      // Auto-dismiss after 5 seconds
+      validationErrorTimer = setTimeout(() => {
+        if (badge.parentNode) {
+          badge.classList.add('hide');
+          setTimeout(() => badge.remove(), 300);
+        }
+      }, 5000);
+    }
+
     function isTuitionReceiptCategory(category) {
       return category === 'Tuition Receipt' || category === 'Tuition Fee Receipt';
     }
@@ -4420,6 +4580,8 @@
           paymentTypeSelect.value = 'Full Payment';
         }
       }
+
+      toggleReceiptGenerateButtonVisibility();
     }
 
     function setReceiptMode(mode) {
@@ -4489,41 +4651,41 @@
       });
 
       if (!name) {
-        alert('Please enter the student name.');
+        showValidationError('<i class="fas fa-user"></i> Please enter the student name.');
         return;
       }
       if (!category) {
-        alert('Please select a receipt type.');
+        showValidationError('<i class="fas fa-file-invoice"></i> Please select a receipt type.');
         return;
       }
       if (!/^[0-9]{6}$/.test(provisional)) {
-        alert('Please enter a valid 6-digit provisional receipt number.');
+        showValidationError('<i class="fas fa-barcode"></i> Please enter a valid 6-digit provisional receipt number.');
         return;
       }
       if (isNaN(amount) || amount <= 0) {
-        alert('Please enter a valid amount paid.');
+        showValidationError('<i class="fas fa-money-bill"></i> Please enter a valid amount paid.');
         return;
       }
       if (isTuitionReceiptCategory(category)) {
         if (!studentId) {
-          alert('Please enter a valid Student ID for Tuition Receipts.');
+          showValidationError('<i class="fas fa-id-card"></i> Please enter a valid Student ID for Tuition Receipts.');
           return;
         }
         if (isNaN(totalPayment) || totalPayment <= 0) {
-          alert('Please enter a valid total payment amount.');
+          showValidationError('<i class="fas fa-calculator"></i> Please enter a valid total payment amount.');
           return;
         }
         if (!/^[0-9]+$/.test(orNumber)) {
-          alert('Please enter a valid O.R. number containing only digits.');
+          showValidationError('<i class="fas fa-receipt"></i> Please enter a valid O.R. number containing only digits.');
           return;
         }
       }
       if (!rep) {
-        alert('Please provide the authorized representative name.');
+        showValidationError('<i class="fas fa-signature"></i> Please provide the authorized representative name.');
         return;
       }
       if (paymentMethod === 'Check' && !checkNumber) {
-        alert('Please enter the check number for Check payments.');
+        showValidationError('<i class="fas fa-check"></i> Please enter the check number for Check payments.');
         return;
       }
 
@@ -4670,6 +4832,7 @@
       }
       removeTuitionReceiptStorePanel();
       document.getElementById('tuition-receipt-preview').classList.add('hidden');
+      toggleReceiptGenerateButtonVisibility();
     }
 
     function toggleTuitionCheckNumberField() {
@@ -4682,6 +4845,29 @@
         group.style.display = 'none';
         document.getElementById('tuition-check-number').value = '';
       }
+      toggleReceiptGenerateButtonVisibility();
+    }
+
+    function toggleReceiptGenerateButtonVisibility() {
+      const generateBtn = document.getElementById('tuition-generate-btn');
+      if (!generateBtn) return;
+
+      const provisional = document.getElementById('tuition-provisional-number')?.value.trim() || '';
+      const studentName = document.getElementById('tuition-student-name')?.value.trim() || '';
+      const amount = parseFloat(document.getElementById('tuition-amount')?.value || '0');
+      const rep = document.getElementById('tuition-authorized-rep')?.value.trim() || '';
+      const paymentMethod = document.getElementById('tuition-form-of-payment')?.value || 'Cash';
+      const checkNumber = document.getElementById('tuition-check-number')?.value.trim() || '';
+      const studentId = document.getElementById('tuition-student-id')?.value.trim() || '';
+      const totalPayment = parseFloat(document.getElementById('tuition-total-payment')?.value || '0');
+      const orNumber = document.getElementById('tuition-or-number')?.value.trim() || '';
+      const isTuition = currentReceiptMode === 'tuition';
+
+      const hasBaseFields = /^[0-9]{6}$/.test(provisional) && studentName && !isNaN(amount) && amount > 0 && rep;
+      const hasPaymentMethod = paymentMethod !== 'Check' || checkNumber;
+      const hasTuitionExtras = !isTuition || (studentId && !isNaN(totalPayment) && totalPayment > 0 && /^[0-9]+$/.test(orNumber));
+
+      generateBtn.classList.toggle('hidden', hasBaseFields && hasPaymentMethod && hasTuitionExtras);
     }
 
     function updateTuitionBalance() {
@@ -5216,6 +5402,7 @@
         modal.classList.remove('hidden');
         setReceiptMode('payment');
         updateTuitionBalance();
+        toggleReceiptGenerateButtonVisibility();
 
         const studentIdInput = document.getElementById('tuition-student-id');
         if (studentIdInput && state.studentId && !studentIdInput.value.trim()) {
@@ -6002,8 +6189,19 @@
       loadRecentTransactions();
       await loadRecentTuitionReceipts(3);
       await loadStudentList(); // Await student list loading
-      document.getElementById('tuition-student-id')?.addEventListener('input', handleTuitionStudentIdInput);
+      document.getElementById('tuition-student-id')?.addEventListener('input', () => {
+        handleTuitionStudentIdInput();
+        toggleReceiptGenerateButtonVisibility();
+      });
+      ['tuition-provisional-number', 'tuition-student-name', 'tuition-amount', 'tuition-total-payment', 'tuition-or-number', 'tuition-form-of-payment', 'tuition-check-number', 'tuition-authorized-rep'].forEach((id) => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.addEventListener('input', toggleReceiptGenerateButtonVisibility);
+          element.addEventListener('change', toggleReceiptGenerateButtonVisibility);
+        }
+      });
       await populateTuitionReceiptStorePanel();
+      toggleReceiptGenerateButtonVisibility();
 
       const tuitionHistorySearch = document.getElementById('tuition-history-search');
       const tuitionHistoryStatus = document.getElementById('tuition-history-status-filter');
@@ -6498,6 +6696,19 @@
       <div class="confirmation-modal-actions">
         <button type="button" class="confirmation-modal-btn cancel" onclick="closeDeleteConfirmationModal()">Cancel</button>
         <button type="button" class="confirmation-modal-btn confirm" onclick="confirmDeleteSelectedCartItems()">Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tuition-receipt-confirm-modal" class="confirmation-modal-overlay" onclick="if(event.target === this) closeTuitionReceiptConfirmationModal()">
+    <div class="confirmation-modal-card" role="dialog" aria-modal="true" aria-labelledby="tuition-receipt-confirm-title">
+      <div class="confirmation-modal-body">
+        <h3 id="tuition-receipt-confirm-title" class="confirmation-modal-title">Generate Payment Receipt</h3>
+        <p class="confirmation-modal-message">Are you sure you want to generate this payment receipt? This action will save the receipt and send it to the student.</p>
+      </div>
+      <div class="confirmation-modal-actions">
+        <button type="button" class="confirmation-modal-btn cancel" onclick="closeTuitionReceiptConfirmationModal()">Cancel</button>
+        <button type="button" class="confirmation-modal-btn confirm" onclick="confirmGenerateTuitionReceipt()">Yes, Generate</button>
       </div>
     </div>
   </div>
