@@ -3450,43 +3450,41 @@
       const cartFooter = document.getElementById('cart-footer');
       const deleteSelectedBtn = document.getElementById('delete-selected-cart');
       const selectAllCheckbox = document.getElementById('select-all-cart');
-      
-      cartList.innerHTML = '';
+
+      if (cartList) cartList.innerHTML = '';
       if (cart.length === 0) {
-        cartContent.style.display = 'none';
-        cartEmpty.classList.remove('hidden');
-        cartFooter.classList.add('hidden');
-        deleteSelectedBtn.classList.add('hidden');
+        if (cartContent) cartContent.style.display = 'none';
+        if (cartEmpty) cartEmpty.classList.remove('hidden');
+        if (cartFooter) cartFooter.classList.add('hidden');
+        if (deleteSelectedBtn) deleteSelectedBtn.classList.add('hidden');
       } else {
-        cartContent.style.display = 'block';
-        cartEmpty.classList.add('hidden');
-        cartFooter.classList.remove('hidden');
-        
+        if (cartContent) cartContent.style.display = 'block';
+        if (cartEmpty) cartEmpty.classList.add('hidden');
+        if (cartFooter) cartFooter.classList.remove('hidden');
+
         const hasSelected = cart.some(item => item.selected);
-        deleteSelectedBtn.classList.toggle('hidden', !hasSelected);
+        if (deleteSelectedBtn) deleteSelectedBtn.classList.toggle('hidden', !hasSelected);
         if (selectAllCheckbox) {
           selectAllCheckbox.checked = cart.every(item => item.selected);
         }
       }
-      
+
       let subtotal = 0;
       cart.forEach(item => {
         const product = products.find(p => p.product_id == item.product_id);
         const category = (product?.product_category || '').toLowerCase();
         const isFabric = category === 'uniform fabrics';
         const isBook = category === 'books';
-        const unitLabel = isFabric ? 'yard/s' : (isBook ? 'pc/s' : 'unit');
         const rowTotal = Math.round(item.unitPrice * item.quantity * 100) / 100;
         if (item.selected) subtotal += rowTotal;
-        
+
         const imageSrc = resolveImagePath(product?.product_image);
-        
         const div = document.createElement('div');
         div.className = 'cart-item' + (item.selected ? '' : ' deselected');
         div.innerHTML = `
-          <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="toggleCartItemSelection('${item.cart_id}', this.checked)" 
+          <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="toggleCartItemSelection('${item.cart_id}', this.checked)"
                  style="width: 16px; height: 16px; cursor: pointer; accent-color: #4f46e5; flex-shrink: 0;">
-          
+
           <div class="cart-thumb">
             <img src="${imageSrc}" alt="${item.product_name}" onerror="this.src='${IMAGE_FALLBACK}'">
           </div>
@@ -3499,7 +3497,7 @@
           <div class="cart-actions-column">
             ${isFabric ? `
               <div style="display:flex; align-items:center; gap:8px;">
-                <input type="number" step="0.01" min="0.1" value="${item.quantity}" 
+                <input type="number" step="0.01" min="0.1" value="${item.quantity}"
                        onchange="updateFabricYardage('${item.cart_id}', this.value)"
                        style="width: 70px; padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-align: center; background:#fff;" />
                 <span style="font-size:0.7rem; font-weight:700; color:#64748b; text-transform:uppercase;">yards</span>
@@ -3513,24 +3511,23 @@
             `}
             <div class="cart-subtotal">${formatCurrency(rowTotal)}</div>
           </div>
-          
+
           <button class="cart-remove-btn" type="button" onclick="removeCartItem('${item.cart_id}')" title="Remove item">
             <i class="fas fa-times"></i>
           </button>
         `;
-        cartList.appendChild(div);
+        if (cartList) cartList.appendChild(div);
       });
 
-      // Standardized Financial Calculation
       const financials = calculateFinancials(subtotal);
-
-      // Update Financial Display Fields
-      document.getElementById('subtotal-amount').textContent = formatCurrency(financials.subtotal);
-      document.getElementById('discount-amount').textContent = financials.discountAmount > 0 
-          ? '-' + formatCurrency(financials.discountAmount) 
-          : formatCurrency(0);
-      document.getElementById('total-amount').textContent = formatCurrency(financials.total);
-      document.getElementById('cart-total-display').textContent = formatCurrency(financials.total);
+      const subtotalAmountEl = document.getElementById('subtotal-amount');
+      const discountAmountEl = document.getElementById('discount-amount');
+      const totalAmountEl = document.getElementById('total-amount');
+      const cartTotalDisplayEl = document.getElementById('cart-total-display');
+      if (subtotalAmountEl) subtotalAmountEl.textContent = formatCurrency(financials.subtotal);
+      if (discountAmountEl) discountAmountEl.textContent = financials.discountAmount > 0 ? '-' + formatCurrency(financials.discountAmount) : formatCurrency(0);
+      if (totalAmountEl) totalAmountEl.textContent = formatCurrency(financials.total);
+      if (cartTotalDisplayEl) cartTotalDisplayEl.textContent = formatCurrency(financials.total);
 
       updatePaymentStatusUI(financials.change);
     }
@@ -3549,24 +3546,24 @@
       const changeContainer = document.getElementById('change-due-container');
       const finalizeBtn = document.getElementById('complete-sale');
 
-      // Prevent UI updates from enabling the button while processing
       if (isProcessingTransaction) return;
+      if (!changeAmountEl || !changeLabelEl || !changeContainer) return;
 
       if (change < 0) {
         changeLabelEl.textContent = 'BALANCE DUE';
         changeAmountEl.textContent = formatCurrency(Math.abs(change));
-        changeContainer.style.backgroundColor = '#fff1f2'; // Red-50
-        changeContainer.style.borderColor = '#fecaca';     // Red-200
-        changeLabelEl.style.color = '#9f1239';             // Red-800
-        changeAmountEl.style.color = '#e11d48';            // Red-600
+        changeContainer.style.backgroundColor = '#fff1f2';
+        changeContainer.style.borderColor = '#fecaca';
+        changeLabelEl.style.color = '#9f1239';
+        changeAmountEl.style.color = '#e11d48';
         if (finalizeBtn) finalizeBtn.disabled = true;
       } else {
         changeLabelEl.textContent = 'CHANGE DUE';
         changeAmountEl.textContent = formatCurrency(change);
-        changeContainer.style.backgroundColor = '#f0fdf4'; // Green-50
-        changeContainer.style.borderColor = '#bbf7d0';     // Green-200
-        changeLabelEl.style.color = '#166534';             // Green-800
-        changeAmountEl.style.color = '#15803d';            // Green-700
+        changeContainer.style.backgroundColor = '#f0fdf4';
+        changeContainer.style.borderColor = '#bbf7d0';
+        changeLabelEl.style.color = '#166534';
+        changeAmountEl.style.color = '#15803d';
         if (finalizeBtn) finalizeBtn.disabled = (cart.filter(i => i.selected).length === 0);
       }
     }
@@ -3996,40 +3993,44 @@
       state.paymentStatus = 'paid';
       state.isQRScanned = false;
       state.scannedTxnNumber = null;
-      document.getElementById('discount-percent').value = '0';
-      document.getElementById('cash-received').value = '0.00';
-      document.getElementById('cash-received').value = '';
+      const discountInput = document.getElementById('discount-percent');
+      const cashInput = document.getElementById('cash-received');
+      if (discountInput) discountInput.value = '0';
+      if (cashInput) {
+        cashInput.value = '0.00';
+        cashInput.value = '';
+      }
       const selectAll = document.getElementById('select-all-cart');
       if (selectAll) selectAll.checked = false;
-      
-      // Removed reference to missing element 'payment-status-label'
-      
       updateCartSummary();
     }
     function openCheckoutModal() {
       if (cart.length === 0) return;
-      document.getElementById('receipt-card').classList.add('hidden');
-      document.getElementById('checkout-modal').classList.remove('hidden');
+      const receiptCard = document.getElementById('receipt-card');
+      const modal = document.getElementById('checkout-modal');
+      if (receiptCard) receiptCard.classList.add('hidden');
+      if (modal) modal.classList.remove('hidden');
 
-      // Update compact item overview in the modal
       const overview = document.getElementById('checkout-items-overview');
       if (overview) {
-          const selected = cart.filter(i => i.selected);
-          overview.innerHTML = selected.map(item => {
-            const product = products.find(p => p.product_id == item.product_id);
-            const isFabric = (product?.product_category || '').toLowerCase() === 'uniform fabrics';
-            const unit = isFabric ? ' yards' : '';
-            const displayLabel = item.displayName || item.product_name || product?.product_name || 'Item';
-            return `
+        const selected = cart.filter(i => i.selected);
+        overview.innerHTML = selected.map(item => {
+          const product = products.find(p => p.product_id == item.product_id);
+          const isFabric = (product?.product_category || '').toLowerCase() === 'uniform fabrics';
+          const unit = isFabric ? ' yards' : '';
+          const displayLabel = item.displayName || item.product_name || product?.product_name || 'Item';
+          return `
             <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #475569; margin-bottom: 4px;">
-                <span>${displayLabel} x ${item.quantity}${unit}</span>
-                <span style="font-weight: 600;">${formatCurrency(item.unitPrice * item.quantity)}</span>
+              <span>${displayLabel} x ${item.quantity}${unit}</span>
+              <span style="font-weight: 600;">${formatCurrency(item.unitPrice * item.quantity)}</span>
             </div>
-          `}).join('');
+          `;
+        }).join('');
       }
     }
     function closeCheckoutModal() {
-      document.getElementById('checkout-modal').classList.add('hidden');
+      const modal = document.getElementById('checkout-modal');
+      if (modal) modal.classList.add('hidden');
     }
     function loadProducts() {
       const grid = document.getElementById('product-grid');
@@ -4078,6 +4079,10 @@
       const emailEl = document.getElementById('display-email');
       const contactEl = document.getElementById('display-contact');
 
+      if (!nameText || !statusText || !avatarBox || !statusBadge) {
+        return;
+      }
+
       const normalizeDisplayValue = (value) => {
         if (value === null || value === undefined) return '';
         const text = String(value).trim();
@@ -4096,9 +4101,9 @@
         avatarBox.style.borderColor = '#e2e8f0';
         if (extraInfo) {
           extraInfo.classList.remove('hidden');
-          schoolIdEl.textContent = '—';
-          yearEl.textContent = '—';
-          courseEl.textContent = 'Guest Transaction';
+          if (schoolIdEl) schoolIdEl.textContent = '—';
+          if (yearEl) yearEl.textContent = '—';
+          if (courseEl) courseEl.textContent = 'Guest Transaction';
           if (emailEl) emailEl.textContent = '—';
           if (contactEl) contactEl.textContent = '—';
         }
@@ -4155,9 +4160,9 @@
             );
             const emailValue = normalizeDisplayValue(student.email || student.student_email || student.email_address);
             const contactValue = normalizeDisplayValue(student.contact_number || student.contactNumber || student.phone || student.mobile || student.phone_number || student.contact);
-            schoolIdEl.textContent = studentIdValue || '—';
-            yearEl.textContent = yearValue || '—';
-            courseEl.textContent = courseValue || '—';
+            if (schoolIdEl) schoolIdEl.textContent = studentIdValue || '—';
+            if (yearEl) yearEl.textContent = yearValue || '—';
+            if (courseEl) courseEl.textContent = courseValue || '—';
             if (emailEl) emailEl.value = emailValue || '';
             const tuitionEmailInput = document.getElementById('tuition-student-email');
             if (tuitionEmailInput && !tuitionEmailInput.value.trim()) {
@@ -4196,34 +4201,45 @@
     }
     function showReceipt(receipt) {
       if (!receipt) return;
-      
+
       const receiptCard = document.getElementById('receipt-card');
       const checkoutForm = document.querySelector('.checkout-form');
-      
-      if (receiptCard) receiptCard.classList.remove('hidden'); // Ensure receipt card is shown
-      if (checkoutForm) checkoutForm.classList.add('hidden'); // Hide form to focus on confirmation
 
-      document.getElementById('receipt-number').textContent = receipt.transaction_number;
-      document.getElementById('receipt-status').textContent = receipt.payment_status;
-      document.getElementById('receipt-date').textContent = receipt.created_at;
-      document.getElementById('receipt-subtotal').textContent = formatCurrency(receipt.subtotal);
-      document.getElementById('receipt-discount').textContent = formatCurrency(receipt.discount_amount);
-      document.getElementById('receipt-total').textContent = formatCurrency(receipt.total_amount);
-      document.getElementById('receipt-paid').textContent = formatCurrency(receipt.payment_received);
-      document.getElementById('receipt-change').textContent = formatCurrency(receipt.change_amount);
+      if (receiptCard) receiptCard.classList.remove('hidden');
+      if (checkoutForm) checkoutForm.classList.add('hidden');
 
+      const receiptNumberEl = document.getElementById('receipt-number');
+      const receiptStatusEl = document.getElementById('receipt-status');
+      const receiptDateEl = document.getElementById('receipt-date');
+      const receiptSubtotalEl = document.getElementById('receipt-subtotal');
+      const receiptDiscountEl = document.getElementById('receipt-discount');
+      const receiptTotalEl = document.getElementById('receipt-total');
+      const receiptPaidEl = document.getElementById('receipt-paid');
+      const receiptChangeEl = document.getElementById('receipt-change');
       const receiptItems = document.getElementById('receipt-items');
-      receiptItems.innerHTML = '';
-      receipt.items.forEach(item => {
-        const unit = item.unit_name ? ` ${item.unit_name}` : '';
-        const itemLabel = item.displayName || item.display_name || item.product_name || 'Item';
-        const entry = document.createElement('div');
-        entry.className = 'receipt-item-row';
-        entry.innerHTML = `<span>${itemLabel} x ${item.quantity}${unit}</span><strong>${formatCurrency(item.total)}</strong>`;
-        receiptItems.appendChild(entry);
-      });
-      
-      // Ensure modal is scrolled to the top to see the success message and QR
+
+      if (receiptNumberEl) receiptNumberEl.textContent = receipt.transaction_number || '—';
+      if (receiptStatusEl) receiptStatusEl.textContent = receipt.payment_status || '—';
+      if (receiptDateEl) receiptDateEl.textContent = receipt.created_at || '—';
+      if (receiptSubtotalEl) receiptSubtotalEl.textContent = formatCurrency(receipt.subtotal || 0);
+      if (receiptDiscountEl) receiptDiscountEl.textContent = formatCurrency(receipt.discount_amount || 0);
+      if (receiptTotalEl) receiptTotalEl.textContent = formatCurrency(receipt.total_amount || 0);
+      if (receiptPaidEl) receiptPaidEl.textContent = formatCurrency(receipt.payment_received || 0);
+      if (receiptChangeEl) receiptChangeEl.textContent = formatCurrency(receipt.change_amount || 0);
+
+      if (receiptItems) {
+        receiptItems.innerHTML = '';
+        const items = Array.isArray(receipt.items) ? receipt.items : [];
+        items.forEach(item => {
+          const unit = item.unit_name ? ` ${item.unit_name}` : '';
+          const itemLabel = item.displayName || item.display_name || item.product_name || 'Item';
+          const entry = document.createElement('div');
+          entry.className = 'receipt-item-row';
+          entry.innerHTML = `<span>${itemLabel} x ${item.quantity}${unit}</span><strong>${formatCurrency(item.total || 0)}</strong>`;
+          receiptItems.appendChild(entry);
+        });
+      }
+
       const modal = document.getElementById('checkout-modal');
       if (modal) modal.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -4476,7 +4492,7 @@
 
     function printReceipt() {
       const receiptCard = document.getElementById('receipt-card');
-      if (receiptCard.classList.contains('hidden')) {
+      if (!receiptCard || receiptCard.classList.contains('hidden')) {
         alert('No receipt available to print.');
         return;
       }
@@ -5571,80 +5587,85 @@
         });
     }
     function filterRenewals() {
-      const query = document.getElementById('renewal-search').value.toLowerCase();
-      const dateTo = document.getElementById('renewal-date-to').value;
-      
+      const searchInput = document.getElementById('renewal-search');
+      const dateToInput = document.getElementById('renewal-date-to');
+      const query = (searchInput?.value || '').toLowerCase();
+      const dateTo = dateToInput?.value || '';
+
       const filtered = pendingRenewals.filter(item => {
-        const studentName = `${item.first_name} ${item.last_name}`.toLowerCase();
-        const matchesQuery = studentName.includes(query) || 
-                            item.student_id.toLowerCase().includes(query) || 
-                            item.product_name.toLowerCase().includes(query);
-        
+        const studentName = `${item.first_name || ''} ${item.last_name || ''}`.toLowerCase();
+        const studentId = String(item.student_id || '').toLowerCase();
+        const productName = String(item.product_name || '').toLowerCase();
+        const matchesQuery = studentName.includes(query) || studentId.includes(query) || productName.includes(query);
+
         let matchesDate = true;
         if (dateTo) {
-          const itemDate = new Date(item.return_date).toISOString().split('T')[0];
-          matchesDate = itemDate <= dateTo;
+          const itemDate = new Date(item.return_date || item.rental_date || 0);
+          const normalizedItemDate = isNaN(itemDate.getTime()) ? '' : itemDate.toISOString().split('T')[0];
+          matchesDate = normalizedItemDate ? normalizedItemDate <= dateTo : true;
         }
         return matchesQuery && matchesDate;
       });
       renderPendingRenewals(filtered);
     }
     function renderPendingRenewals(data) {
-          const body = document.getElementById('renewals-body');
-          const empty = document.getElementById('renewals-empty');
-          const content = document.getElementById('renewals-content');
-          const count = document.getElementById('renewal-count');
-          
-          body.innerHTML = '';
-          if (!data || data.length === 0) {
-            content.style.display = 'none';
-            empty.classList.remove('hidden');
-            count.textContent = '0 pending';
-            return;
-          }
-          
-          content.style.display = 'block';
-          empty.classList.add('hidden');
-          count.textContent = `${data.length} pending`;
-          
-          data.forEach(item => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td>${item.first_name} ${item.last_name} (${item.student_id})</td>
-              <td>${item.product_name}</td>
-              <td>${item.quantity}</td>
-              <td>${new Date(item.rental_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}</td>
-              <td>${new Date(item.return_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}</td>
-              <td>
-                <div style="display: flex; gap: 8px;">
-                  <button class="btn btn-primary" onclick="handleRenewal(${item.rental_id}, 'approve')">Approve</button>
-                  <button class="btn btn-danger" onclick="handleRenewal(${item.rental_id}, 'reject')">Reject</button>
-                </div>
-              </td>
-            `;
-            body.appendChild(tr);
-          });
-    }
+      const body = document.getElementById('renewals-body');
+      const empty = document.getElementById('renewals-empty');
+      const content = document.getElementById('renewals-content');
+      const count = document.getElementById('renewal-count');
 
+      if (!body || !empty || !content) return;
+
+      body.innerHTML = '';
+      if (!data || data.length === 0) {
+        content.style.display = 'none';
+        empty.classList.remove('hidden');
+        if (count) count.textContent = '0 pending';
+        return;
+      }
+
+      content.style.display = 'block';
+      empty.classList.add('hidden');
+      if (count) count.textContent = `${data.length} pending`;
+
+      data.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.first_name || ''} ${item.last_name || ''} (${item.student_id || 'N/A'})</td>
+          <td>${item.product_name || '—'}</td>
+          <td>${item.quantity || 0}</td>
+          <td>${item.rental_date ? new Date(item.rental_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }) : '—'}</td>
+          <td>${item.return_date ? new Date(item.return_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }) : '—'}</td>
+          <td>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-primary" onclick="handleRenewal(${item.rental_id}, 'approve')">Approve</button>
+              <button class="btn btn-danger" onclick="handleRenewal(${item.rental_id}, 'reject')">Reject</button>
+            </div>
+          </td>
+        `;
+        body.appendChild(tr);
+      });
+    }
 
     let pendingRenewalSortAsc = true;
     function sortPendingRenewalsByDate() {
       pendingRenewalSortAsc = !pendingRenewalSortAsc;
       pendingRenewals.sort((a, b) => {
-        const dateA = new Date(a.rental_date);
-        const dateB = new Date(b.rental_date);
+        const dateA = new Date(a.rental_date || 0);
+        const dateB = new Date(b.rental_date || 0);
         return pendingRenewalSortAsc ? dateA - dateB : dateB - dateA;
       });
       const icon = document.getElementById('sort-icon-renewal-date');
       if (icon) {
         icon.className = pendingRenewalSortAsc ? 'fas fa-sort-up' : 'fas fa-sort-down';
       }
-      const query = document.getElementById('renewal-search').value.toLowerCase();
+      const searchInput = document.getElementById('renewal-search');
+      const query = (searchInput?.value || '').toLowerCase();
       const filtered = pendingRenewals.filter(item => {
-        const studentName = `${item.first_name} ${item.last_name}`.toLowerCase();
-        return studentName.includes(query) || 
-              item.student_id.toLowerCase().includes(query) || 
-              item.product_name.toLowerCase().includes(query);
+        const studentName = `${item.first_name || ''} ${item.last_name || ''}`.toLowerCase();
+        const studentId = String(item.student_id || '').toLowerCase();
+        const productName = String(item.product_name || '').toLowerCase();
+        return studentName.includes(query) || studentId.includes(query) || productName.includes(query);
       });
       renderPendingRenewals(filtered);
     }
@@ -5807,7 +5828,8 @@
     }
 
     function closeViewTxnModal() {
-      document.getElementById('view-txn-modal').classList.add('hidden');
+      const modal = document.getElementById('view-txn-modal');
+      if (modal) modal.classList.add('hidden');
     }
 
     function isMeaningfulDetailValue(value) {
@@ -5999,12 +6021,14 @@
     }
 
     function openVoidedReportModal() {
-      document.getElementById('voided-report-modal').classList.remove('hidden');
+      const modal = document.getElementById('voided-report-modal');
+      if (modal) modal.classList.remove('hidden');
       loadVoidedTransactions();
     }
 
     function closeVoidedReportModal() {
-      document.getElementById('voided-report-modal').classList.add('hidden');
+      const modal = document.getElementById('voided-report-modal');
+      if (modal) modal.classList.add('hidden');
     }
 
     async function loadVoidedTransactions() {
@@ -6219,29 +6243,52 @@
 
     function openPartialReturnModal(rentalId, currentQuantity, productName, studentName) {
       currentRentalForReturn = { rentalId, currentQuantity, productName, studentName };
-      document.getElementById('return-rental-id').value = rentalId;
-      document.getElementById('return-student-name').value = studentName;
-      document.getElementById('return-product-name').value = productName;
-      document.getElementById('return-current-quantity').value = currentQuantity;
-      document.getElementById('return-quantity-input').max = currentQuantity; // Set max for input
-      document.getElementById('return-quantity-input').value = currentQuantity; // Default to full return
-      document.getElementById('return-notes').value = '';
-      document.getElementById('partial-return-modal').classList.remove('hidden');
+      const rentalIdInput = document.getElementById('return-rental-id');
+      const studentNameInput = document.getElementById('return-student-name');
+      const productNameInput = document.getElementById('return-product-name');
+      const currentQuantityInput = document.getElementById('return-current-quantity');
+      const returnQuantityInput = document.getElementById('return-quantity-input');
+      const notesInput = document.getElementById('return-notes');
+      const modal = document.getElementById('partial-return-modal');
+
+      if (rentalIdInput) rentalIdInput.value = rentalId;
+      if (studentNameInput) studentNameInput.value = studentName;
+      if (productNameInput) productNameInput.value = productName;
+      if (currentQuantityInput) currentQuantityInput.value = currentQuantity;
+      if (returnQuantityInput) {
+        returnQuantityInput.max = currentQuantity;
+        returnQuantityInput.value = currentQuantity;
+      }
+      if (notesInput) notesInput.value = '';
+      if (modal) modal.classList.remove('hidden');
     }
 
     function closePartialReturnModal() {
-      document.getElementById('partial-return-modal').classList.add('hidden');
-      document.getElementById('partial-return-form').reset();
+      const modal = document.getElementById('partial-return-modal');
+      const form = document.getElementById('partial-return-form');
+      if (modal) modal.classList.add('hidden');
+      if (form) form.reset();
       currentRentalForReturn = {};
     }
 
     // Form submission for Partial Return
-    document.getElementById('partial-return-form').addEventListener('submit', function(e) {
+    document.getElementById('partial-return-form')?.addEventListener('submit', function(e) {
       e.preventDefault();
-      const rentalId = document.getElementById('return-rental-id').value;
-      const returnedQuantity = parseInt(document.getElementById('return-quantity-input').value, 10);
-      const notes = document.getElementById('return-notes').value.trim();
-      const currentQuantity = parseInt(document.getElementById('return-current-quantity').value, 10);
+      const form = this;
+      const rentalIdInput = document.getElementById('return-rental-id');
+      const quantityInput = document.getElementById('return-quantity-input');
+      const currentQuantityInput = document.getElementById('return-current-quantity');
+      const notesInput = document.getElementById('return-notes');
+
+      if (!rentalIdInput || !quantityInput || !currentQuantityInput) {
+        alert('The return form is unavailable right now.');
+        return;
+      }
+
+      const rentalId = rentalIdInput.value;
+      const returnedQuantity = parseInt(quantityInput.value, 10);
+      const notes = notesInput?.value.trim() || '';
+      const currentQuantity = parseInt(currentQuantityInput.value, 10);
 
       if (returnedQuantity <= 0 || returnedQuantity > currentQuantity) {
         alert(`Quantity to return must be between 1 and ${currentQuantity}.`);
@@ -6252,19 +6299,23 @@
         return;
       }
 
-      const submitBtn = this.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+      }
 
-      fetch(`${API_ROOT}/process_rental_return.php`, { // This will be a new backend endpoint
+      fetch(`${API_ROOT}/process_rental_return.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rental_id: rentalId, returned_quantity: returnedQuantity, notes: notes })
       })
       .then(res => res.json())
       .then(result => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Process Return';
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Process Return';
+        }
         if (result.success) {
           alert(result.message);
           loadProducts();
@@ -6274,8 +6325,10 @@
         closePartialReturnModal();
       })
       .catch(err => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Process Return';
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Process Return';
+        }
         console.error('Return Error:', err);
         alert('An error occurred while processing the return.');
       });
@@ -6636,14 +6689,17 @@
 
     // Maintain focus on hardware scanner input while scanner modal is open,
     // but allow manual order entry to take focus when visible.
-    document.getElementById('hardware-scan-input').addEventListener('blur', function() {
-      const modal = document.getElementById('qr-modal');
-      const manualOverlay = document.getElementById('manual-entry-overlay');
-      const isManualOpen = manualOverlay && !manualOverlay.classList.contains('hidden');
-      if (modal && !modal.classList.contains('hidden') && !isManualOpen) {
-        setTimeout(() => this.focus(), 100);
-      }
-    });
+    const hardwareScanInput = document.getElementById('hardware-scan-input');
+    if (hardwareScanInput) {
+      hardwareScanInput.addEventListener('blur', function() {
+        const modal = document.getElementById('qr-modal');
+        const manualOverlay = document.getElementById('manual-entry-overlay');
+        const isManualOpen = manualOverlay && !manualOverlay.classList.contains('hidden');
+        if (modal && !modal.classList.contains('hidden') && !isManualOpen) {
+          setTimeout(() => this.focus(), 100);
+        }
+      });
+    }
 
     async function loadStudentList() { // Made async
       try {
