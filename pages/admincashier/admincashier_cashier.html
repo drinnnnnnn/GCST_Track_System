@@ -96,6 +96,52 @@
       position: relative;
       overflow: hidden;
       background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+      border: 1px solid #bbf7d0;
+      border-radius: 14px;
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.06);
+      padding: 10px 12px;
+      margin-top: 8px;
+    }
+
+    .receipt-countdown-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #22c55e, #10b981);
+      color: #ffffff;
+      box-shadow: 0 6px 14px rgba(22, 163, 74, 0.16);
+      flex-shrink: 0;
+      font-size: 0.9rem;
+    }
+
+    .receipt-countdown-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #15803d;
+      opacity: 0.9;
+      margin-bottom: 1px;
+      font-weight: 700;
+    }
+
+    .receipt-countdown-track {
+      margin-top: 8px;
+      width: 100%;
+      height: 8px;
+      background: #dcfce7;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.03);
+    }
+
+    .receipt-countdown-progress {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e, #10b981);
+      transition: width 1s linear;
     }
 
     .receipt-countdown-badge {
@@ -533,6 +579,33 @@
     }
     .receipt-actions .btn {
       flex: 1 1 160px;
+    }
+    .receipt-generate-feedback {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 18px;
+      border-radius: 18px;
+    }
+    .receipt-generate-feedback.hidden {
+      display: none;
+    }
+    .receipt-generate-feedback-track {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: #dcfce7;
+      overflow: hidden;
+      border: 1px solid #bbf7d0;
+    }
+    .receipt-generate-feedback-fill {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #22c55e 0%, #10b981 100%);
+      transition: width 1s linear;
     }
     .receipt-preview-card {
       margin-top: 6px;
@@ -2284,7 +2357,7 @@
                     <div style="font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: #15803d; opacity: 0.9; margin-bottom: 2px;">Auto refresh</div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                       <span>This receipt was generated successfully.</span>
-                      <span class="receipt-countdown-badge" id="tuition-countdown-seconds">5</span>
+                      <span class="receipt-countdown-badge" id="tuition-countdown-seconds">2</span>
                       <span>seconds remaining</span>
                     </div>
                   </div>
@@ -2497,20 +2570,28 @@
             <h3 style="font-weight: 800; color: #111827; margin: 0;">Transaction Successful</h3>
             <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">A digital receipt has been emailed to the student.</p>
 
-            <!-- Professional Reload Countdown UI -->
-            <div id="reload-countdown-container" style="display: none; margin-top: 24px; padding: 20px; background: #f0fdf4; border-radius: 20px; border: 1px solid #dcfce7; box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.1);">
-                <p style="font-size: 0.95rem; font-weight: 700; color: #166534; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="fas fa-sync-alt fa-spin" style="font-size: 0.8rem; opacity: 0.7;"></i>
-                    Syncing system data in <span id="countdown-seconds" style="color: #15803d; font-size: 1.1rem; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); display: inline-block;">5</span>s
-                </p>
-                <div style="width: 100%; height: 8px; background: #dcfce7; border-radius: 10px; overflow: hidden; margin-bottom: 16px; border: 1px solid rgba(0,0,0,0.03);">
-                    <div id="reload-progress-bar" style="width: 100%; height: 100%; background: linear-gradient(90deg, #22c55e, #10b981); transition: width 1s linear;"></div>
+            <div id="reload-countdown-container" class="receipt-countdown-card" style="display: none; text-align: left;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px; color: #166534; font-weight: 700; font-size: 0.9rem; flex: 1; min-width: 220px;">
+                  <div class="receipt-countdown-icon">
+                    <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                  </div>
+                  <div>
+                    <div class="receipt-countdown-label">Auto refresh</div>
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 0.86rem;">
+                      <span>Refreshing in</span>
+                      <span class="receipt-countdown-badge" id="countdown-seconds">5</span>
+                      <span>s</span>
+                    </div>
+                  </div>
                 </div>
-                <div style="display: flex; gap: 10px; justify-content: center;">
-                    <button onclick="window.location.reload()" class="btn btn-sm" style="background: #ffffff; color: #15803d; border-color: #bbf7d0; font-weight: 700; border-radius: 12px; padding: 10px 20px;">
-                        <i class="fas fa-bolt"></i> Reload Now
-                    </button>
-                </div>
+                <button onclick="window.location.reload()" class="btn btn-sm" style="background: #ffffff; color: #15803d; border: 1px solid #bbf7d0; font-weight: 700; border-radius: 10px; padding: 7px 12px; font-size: 0.8rem;">
+                  <i class="fas fa-bolt"></i> Reload
+                </button>
+              </div>
+              <div class="receipt-countdown-track">
+                <div id="reload-progress-bar" class="receipt-countdown-progress"></div>
+              </div>
             </div>
           </div>
 
@@ -3545,6 +3626,24 @@
       closeDeleteConfirmationModal();
     }
 
+    function showReceiptGenerateFeedback() {
+      const feedback = document.getElementById('receipt-generate-feedback');
+      const feedbackText = document.getElementById('receipt-generate-feedback-text');
+      const fill = document.getElementById('receipt-generate-feedback-fill');
+      if (!feedback) return;
+
+      if (feedbackText) {
+        feedbackText.textContent = currentReceiptMode === 'tuition'
+          ? 'Generating tuition receipt...'
+          : 'Generating payment details...';
+      }
+      if (fill) {
+        fill.style.width = '100%';
+      }
+
+      feedback.classList.remove('hidden');
+    }
+
     function openTuitionReceiptConfirmationModal() {
       const modal = document.getElementById('tuition-receipt-confirm-modal');
       if (!modal) return;
@@ -3561,6 +3660,7 @@
 
     function confirmGenerateTuitionReceipt() {
       closeTuitionReceiptConfirmationModal();
+      showReceiptGenerateFeedback();
       generateTuitionReceipt();
     }
 
@@ -4132,19 +4232,26 @@
      * Initiates a dynamic countdown for automatic page reload.
      * Locks the UI to prevent double-processing while providing visual progress.
      */
-    function startReloadCountdown(seconds) {
+    function startReloadCountdown(seconds = 5) {
+      const countdownContainer = document.getElementById('reload-countdown-container');
       const secondsEl = document.getElementById('countdown-seconds');
       const progressBar = document.getElementById('reload-progress-bar');
       const completeButton = document.getElementById('complete-sale');
       const closeBtn = document.querySelector('#checkout-modal .panel-header button');
       
+      if (countdownContainer) {
+        countdownContainer.style.display = 'block';
+      }
       if (completeButton) {
         completeButton.disabled = true;
         completeButton.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Refreshing System...';
       }
       if (closeBtn) closeBtn.style.visibility = 'hidden'; 
 
-      let remaining = seconds;
+      let remaining = Number.isFinite(seconds) && seconds > 0 ? seconds : 5;
+      if (secondsEl) {
+        secondsEl.textContent = remaining;
+      }
       if (progressBar) progressBar.style.width = '100%';
 
       const timer = setInterval(() => {
@@ -4156,7 +4263,7 @@
           secondsEl.classList.add('countdown-pulse');
         }
         if (progressBar) {
-          progressBar.style.width = ((remaining / seconds) * 100) + '%';
+          progressBar.style.width = `${Math.max(0, (remaining / Number(remaining <= 0 ? 1 : seconds)) * 100)}%`;
         }
         if (remaining <= 0) {
           clearInterval(timer);
@@ -4176,7 +4283,7 @@
       }
     }
 
-    function startTuitionReceiptReloadCountdown(seconds = 5) {
+    function startTuitionReceiptReloadCountdown(seconds = 2) {
       const countdownContainer = document.getElementById('tuition-reload-countdown');
       const secondsEl = document.getElementById('tuition-countdown-seconds');
       const progressBar = document.getElementById('tuition-reload-progress-bar');
@@ -4184,7 +4291,7 @@
 
       resetTuitionReceiptReloadCountdown();
       countdownContainer.style.display = 'block';
-      let remaining = Number.isFinite(seconds) && seconds > 0 ? seconds : 5;
+      let remaining = Number.isFinite(seconds) && seconds > 0 ? seconds : 2;
       secondsEl.textContent = remaining;
       progressBar.style.width = '100%';
 
@@ -4787,7 +4894,7 @@
 
       document.getElementById('tuition-receipt-preview').classList.remove('hidden');
       await sendTuitionReceiptEmail();
-      startTuitionReceiptReloadCountdown(5);
+      startTuitionReceiptReloadCountdown(2);
     }
 
     async function saveTuitionReceipt(payload) {
@@ -4866,8 +4973,9 @@
       const hasBaseFields = /^[0-9]{6}$/.test(provisional) && studentName && !isNaN(amount) && amount > 0 && rep;
       const hasPaymentMethod = paymentMethod !== 'Check' || checkNumber;
       const hasTuitionExtras = !isTuition || (studentId && !isNaN(totalPayment) && totalPayment > 0 && /^[0-9]+$/.test(orNumber));
+      const shouldHideGenerateButton = !(hasBaseFields && hasPaymentMethod && hasTuitionExtras);
 
-      generateBtn.classList.toggle('hidden', hasBaseFields && hasPaymentMethod && hasTuitionExtras);
+      generateBtn.classList.toggle('hidden', shouldHideGenerateButton);
     }
 
     function updateTuitionBalance() {
