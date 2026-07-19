@@ -6,6 +6,19 @@ requireAuth(['admincashier', 'superadmin', 'student', 'user']);
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/db_connect.php';
 
+function buildTransactionStatusText($paymentStatus, $receiptCategory = '', $balance = null) {
+    $status = strtolower(trim((string)$paymentStatus));
+    if ($balance !== null && is_numeric($balance) && floatval($balance) <= 0.0) {
+        return 'Fully Paid';
+    }
+    if ($status === 'pending') return 'Pending';
+    if ($status === 'paid') {
+        return 'Paid';
+    }
+    if ($status === 'voided') return 'Voided';
+    return $paymentStatus !== null ? ucwords($status) : '—';
+}
+
 try {
     $role = $_SESSION['role'];
     $session_student_id = $_SESSION['student_id'] ?? null;
@@ -58,6 +71,8 @@ try {
         $where .= " AND ct.payment_status = 'paid'";
     } elseif ($normalizedStatus === 'pending') {
         $where .= " AND ct.payment_status = 'pending'";
+    } elseif ($normalizedStatus === 'fully_paid' || $normalizedStatus === 'fully paid') {
+        $where .= " AND ct.payment_status = 'paid' AND tr.balance <= 0.0";
     } elseif ($normalizedStatus === 'tuition fee') {
         $where .= " AND (ct.receipt_category = 'Tuition Receipt' OR ct.receipt_category = 'Tuition Fee Receipt' OR ct.receipt_category = 'Tuition Fee')";
     } elseif ($normalizedStatus === 'medical receipt') {
@@ -74,16 +89,19 @@ try {
     $countResult = $conn->query("SELECT COUNT(*) as total 
                                 FROM cashier_transactions ct 
                                 LEFT JOIN users u ON ct.user_id = u.id 
-                                LEFT JOIN admincashier_acc ac ON ct.cashier_id = ac.id $where");
+                                LEFT JOIN admincashier_acc ac ON ct.cashier_id = ac.id 
+                                LEFT JOIN tuition_receipts tr ON (tr.transaction_number = ct.transaction_number OR tr.receipt_number = ct.receipt_number) $where");
     $totalRows = $countResult->fetch_assoc()['total'];
     $totalPages = ceil($totalRows / $limit);
 
     // Fetch transactions
         $sql = "SELECT ct.*, u.student_id, u.first_name AS user_first_name, u.last_name AS user_last_name,
-                 CONCAT(ac.first_name, ' ', ac.last_name) as cashier_name
+                 CONCAT(ac.first_name, ' ', ac.last_name) as cashier_name,
+                 tr.balance AS tuition_balance
              FROM cashier_transactions ct
              LEFT JOIN users u ON ct.user_id = u.id
              LEFT JOIN admincashier_acc ac ON ct.cashier_id = ac.id
+             LEFT JOIN tuition_receipts tr ON (tr.transaction_number = ct.transaction_number OR tr.receipt_number = ct.receipt_number)
              $where
              ORDER BY ct.created_at DESC
              LIMIT $limit OFFSET $offset";
@@ -100,6 +118,7 @@ try {
                 $row['student_name'] = $full;
             }
         }
+        $row['payment_status_text'] = buildTransactionStatusText($row['payment_status'] ?? null, $row['receipt_category'] ?? '', $row['tuition_balance'] ?? null);
         $txns[] = $row;
     }
 

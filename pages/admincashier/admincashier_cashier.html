@@ -17,16 +17,18 @@
 
     .cashier-layout {
       display: grid; 
-      grid-template-columns: 1fr 420px;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
       gap: 24px;
       margin-top: 20px;
       align-items: stretch;
-      flex-wrap: wrap; /* Allow wrapping on smaller screens */
+      width: 100%;
     }
     .cashier-sidebar {
       display: flex;
       flex-direction: column;
       gap: 24px;       /* position: sticky; /* Removed sticky for better mobile behavior */ /* top: 20px; */
+      min-width: 0;
+      width: 100%;
     }
     .panel {
       background: #ffffff;
@@ -36,6 +38,8 @@
       border: 1px solid #e5e7eb; /* Consistent border color */
       overflow-y: auto;
       scroll-behavior: smooth;
+      min-width: 0;
+      width: 100%;
       min-height: 0;
       max-height: calc(100vh - 150px);
       display: flex; /* Make generic panel a flex container by default */
@@ -43,7 +47,7 @@
     }
     .cashier-layout .panel {
       flex: 1; /* Allow product grid to take available space */ /* height: calc(100vh - 220px); */ /* Removed fixed height for flexibility */
-      min-height: 500px;
+      min-height: min(520px, 55vh);
       display: flex;
       flex-direction: column;
       overflow: hidden; /* This panel contains the product grid, which has its own scroll */
@@ -346,12 +350,6 @@
       box-shadow: 0 24px 50px rgba(15, 23, 42, 0.14);
       background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
     }
-    .receipt-modal-header {
-      padding: 24px 28px 18px;
-      border-bottom: 1px solid #e2e8f0;
-      background: linear-gradient(90deg, #f8fafc 0%, #f4f8ff 100%);
-      margin-bottom: 0;
-    }
     .receipt-modal-body {
       padding: 22px 28px 28px;
       display: grid;
@@ -365,6 +363,9 @@
       box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
       display: grid;
       gap: 12px;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
     }
     .receipt-card-title {
       display: flex;
@@ -844,7 +845,7 @@
       flex: 1 1 260px;
       max-width: 320px;
       min-width: 220px;
-      min-height: 100%;
+      min-height: 0;
       background: #ffffff;
       border-radius: 18px;
       overflow: hidden;
@@ -858,7 +859,7 @@
       display: flex;
       flex-direction: column;
       flex: 1;
-      height: 100%;
+      min-height: 0;
     }
 
     .product-card-body {
@@ -866,6 +867,7 @@
       display: flex;
       flex-direction: column;
       min-width: 0;
+      min-height: 0;
     }
 
     .product-card * {
@@ -1015,6 +1017,7 @@
       background: linear-gradient(to top, #ffffff 0%, #f8fafc 90%);
       border-top: 1px solid #eef2ff;
       overflow: visible;
+      min-width: 0;
     }
 
     .product-price {
@@ -1166,8 +1169,19 @@
       }
 
       .product-card {
-        flex: 1 1 240px;
+        flex: 1 1 220px;
         max-width: 100%;
+        min-width: 0;
+      }
+
+      .product-image-container {
+        min-height: 160px;
+        max-height: none;
+      }
+
+      .product-card-content,
+      .product-card-body {
+        min-height: 0;
       }
     }
 
@@ -1184,7 +1198,7 @@
       }
 
       .product-image-container {
-        min-height: 200px;
+        min-height: 160px;
         max-height: none;
       }
 
@@ -1193,14 +1207,15 @@
       }
 
       .add-to-cart-btn {
-        min-height: 46px;
-        padding: 0.76rem 0.9rem;
+        min-height: 44px;
+        padding: 0.7rem 0.9rem;
         font-size: 0.88rem;
         border-radius: 10px;
       }
 
       .product-actions {
         padding: 0.75rem 0.85rem 0.85rem;
+        position: static;
       }
 
       .product-price {
@@ -1415,6 +1430,9 @@
     .summary-card {
       display: grid;
       gap: 16px;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
     }
     .summary-row {
       display: grid;
@@ -1511,6 +1529,9 @@
       border-radius: 24px;
       color: #f8fafc;
       box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
     }
     .financial-row {
       display: flex;
@@ -1769,6 +1790,62 @@
     }
 
     /* Responsive Adjustments */
+    @media (max-width: 1440px) {
+      .cashier-layout {
+        grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+        gap: 22px;
+      }
+      .cashier-layout .panel {
+        min-height: min(500px, 50vh);
+      }
+      .cashier-sidebar .panel {
+        min-height: 260px;
+      }
+      .products-grid {
+        gap: 14px;
+        justify-content: flex-start;
+      }
+      .product-card {
+        flex: 1 1 240px;
+        max-width: min(280px, 100%);
+        min-width: 200px;
+      }
+      .product-image-container {
+        min-height: 180px;
+      }
+    }
+
+    @media (max-width: 1366px) {
+      .cashier-layout {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+        gap: 20px;
+      }
+      .cashier-layout .panel,
+      .cashier-sidebar .panel,
+      .summary-card,
+      .receipt-card,
+      .financial-card,
+      .receipt-panel,
+      .checkout-section {
+        min-width: 0;
+        width: 100%;
+      }
+      .product-card {
+        flex: 1 1 220px;
+        max-width: 100%;
+        min-width: 180px;
+      }
+      .product-image-container {
+        min-height: 170px;
+      }
+      .receipt-form-grid {
+        grid-template-columns: 1fr;
+      }
+      .summary-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 1280px) {
       .cashier-layout {
         grid-template-columns: 1fr;
@@ -1779,10 +1856,10 @@
         position: static; /* Remove sticky behavior */
       }
       .cashier-layout .panel {
-        min-height: 400px; /* Adjust min-height for stacked panels */
+        min-height: 380px; /* Adjust min-height for stacked panels */
       }
       .cashier-sidebar .panel {
-        min-height: 300px; /* Adjust min-height for stacked sidebar panels */
+        min-height: 260px; /* Adjust min-height for stacked sidebar panels */
       }
     }
 
@@ -1994,6 +2071,7 @@
                 <option value="all">All Transactions</option>
                 <option value="paid">Paid</option>
                 <option value="pending">Pending</option>
+                <option value="fully_paid">Fully Paid</option>
                 <option value="Tuition Fee">Tuition Fee</option>
                 <option value="Medical Receipt">Medical Receipt</option>
                 <option value="Insurance Receipt">Insurance Receipt</option>
@@ -2039,13 +2117,14 @@
             <button class="btn btn-secondary" onclick="populateTuitionReceiptStorePanel()" style="padding: 6px 10px; font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center;" title="Refresh Payment Receipts" aria-label="Refresh Payment Receipts"><i class="fas fa-sync-alt"></i></button>
           </div>
           <div style="min-width: 160px;">
-              <select id="payment-history-status-filter" class="search-input" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; border-radius: 18px; background: #f8fafc; border: 1px solid #dbeafe;" onchange="populateTuitionReceiptStorePanel(1)" aria-label="Filter payment receipt type">
+              <select id="payment-history-status-filter" class="search-input" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; border-radius: 18px; background: #f8fafc; border: 1px solid #dbeafe;" onchange="populateTuitionReceiptStorePanel(1)" aria-label="Filter payment receipt type or status">
                 <option value="all">All Receipt Types</option>
                 <option value="Tuition Receipt">Tuition Receipt</option>
                 <option value="Medical Receipt">Medical Receipt</option>
                 <option value="Foundation Day Receipt">Foundation Day Receipt</option>
                 <option value="Insurance Receipt">Insurance Receipt</option>
                 <option value="Educational Receipt">Educational Receipt</option>
+                <option value="fully_paid">Fully Paid</option>
               </select>
             </div>
           <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; justify-content: flex-end;">
@@ -2172,18 +2251,9 @@
     </div>
 
     <div id="tuition-modal" class="modal-backdrop hidden receipt-modal-shell" style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10000;">
-      <div class="panel receipt-modal-card">
-        <div id="receipt-studio-header" class="panel-header receipt-modal-header" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%); border-bottom: 1px solid #dbeafe;">
-          <div>
-            <div id="receipt-studio-mode-badge" style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 6px 10px; border-radius: 999px; background: rgba(59, 130, 246, 0.12); color: #2563eb; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">
-              <i id="receipt-studio-mode-icon" class="fas fa-receipt"></i> <span id="receipt-studio-mode-label">Payment Receipt Mode</span>
-            </div>
-            <h2 id="receipt-studio-title" style="margin: 0; font-size: 1.25rem; color: #0f172a;">Payment Receipt</h2>
-            <p id="receipt-studio-subtitle" style="margin: 6px 0 0; color: #64748b; font-size: 0.9rem;">Create a standard payment receipt for customer transactions.</p>
-          </div>
-          <button type="button" class="modal-close" onclick="closeTuitionModal()" style="border:none; background:#f8fafc; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size:1.35rem; cursor:pointer; color:#64748b; border:1px solid #e2e8f0;">×</button>
-        </div>
-        <div class="receipt-modal-body">
+      <div class="panel receipt-modal-card" style="position: relative;">
+        <div class="receipt-modal-body" style="position: relative; padding-top: 30px;">
+          <button type="button" class="modal-close" onclick="closeTuitionModal()" style="position: absolute; top: 18px; right: 18px; border:none; background:#f8fafc; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size:1.35rem; cursor:pointer; color:#64748b; border:1px solid #e2e8f0;">×</button>
           <div class="receipt-card">
             <div class="receipt-card-title"><i class="fas fa-layer-group"></i> Receipt Mode</div>
             <div class="receipt-mode-switch">
@@ -2242,6 +2312,22 @@
                   <option value="4th Year">4th Year</option>
                 </select>
               </div>
+              <div class="receipt-field-group">
+                <label class="receipt-label">Student Type</label>
+                <select id="tuition-student-type" class="search-input receipt-input">
+                  <option value="Regular Student" selected>Regular Student</option>
+                  <option value="Irregular Student">Irregular Student</option>
+                </select>
+              </div>
+              <div class="receipt-field-group">
+                <label class="receipt-label">Semester</label>
+                <select id="tuition-student-semester" class="search-input receipt-input">
+                  <option value="">Select Semester</option>
+                  <option value="1st Semester">1st Semester</option>
+                  <option value="2nd Semester">2nd Semester</option>
+                  <option value="Summer">Summer</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -2259,6 +2345,10 @@
               <div class="receipt-field-group">
                 <label class="receipt-label">Balance (₱)</label>
                 <input id="tuition-balance" type="text" readonly class="search-input receipt-input" placeholder="0.00" style="background: #f8fafc;" />
+                <div id="tuition-balance-loading" style="display:none; margin-top: 6px; font-size: 0.82rem; color: #2563eb;">
+                  <i class="fas fa-circle-notch fa-spin" style="margin-right: 6px;"></i>Loading tuition balance...
+                </div>
+                <div id="tuition-balance-status" style="display:none; margin-top: 6px; font-size: 0.82rem; color: #475569;"></div>
               </div>
               <div class="receipt-field-group">
                 <label class="receipt-label">Remarks</label>
@@ -2379,6 +2469,7 @@
                   <select id="tuition-history-status-filter" class="search-input" style="width: 100%; background: #f8fafc; border: 1px solid #e2e8f0;">
                     <option value="all">All Status</option>
                     <option value="paid">Paid</option>
+                    <option value="fully_paid">Fully Paid</option>
                     <option value="pending">Pending</option>
                   </select>
                 </div>
@@ -2402,7 +2493,9 @@
               <div class="receipt-line" style="justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #f1f5f9; gap: 12px; background: #f9fafb;"><span style="color: #64748b; font-weight: 600;">Student Name</span><strong id="tuition-receipt-name" style="color: #0f172a; text-align: right;"></strong></div>
               <div class="receipt-line" style="justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #f1f5f9; gap: 12px;"><span style="color: #64748b; font-weight: 600;">Course</span><strong id="tuition-receipt-course" style="color: #0f172a; text-align: right;"></strong></div>
               <div class="receipt-line" style="justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #f1f5f9; gap: 12px; background: #f9fafb;"><span style="color: #64748b; font-weight: 600;">Year Level</span><strong id="tuition-receipt-year-level" style="color: #0f172a; text-align: right;"></strong></div>
+              <div class="receipt-line" style="justify-content: space-between; padding: 14px 18px; gap: 12px;"><span style="color: #64748b; font-weight: 600;">Student Type</span><strong id="tuition-receipt-student-type" style="color: #0f172a; text-align: right;"></strong></div>
               <div class="receipt-line" style="justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #f1f5f9; gap: 12px;"><span style="color: #64748b; font-weight: 600;">Receipt Type</span><strong id="tuition-receipt-category-preview" style="color: #0f172a; text-align: right;"></strong></div>
+              <div class="receipt-line" style="justify-content: space-between; padding: 14px 18px; gap: 12px;"><span style="color: #64748b; font-weight: 600;">Status</span><strong id="tuition-receipt-status" style="color: #0369a1; text-align: right;">—</strong></div>
               <div class="receipt-line" style="justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #f1f5f9; gap: 12px; background: #f9fafb;"><span style="color: #64748b; font-weight: 600;">Date & Time</span><strong id="tuition-receipt-datetime" style="color: #0f172a; text-align: right;"></strong></div>
               <div class="receipt-line" style="justify-content: space-between; padding: 14px 18px; gap: 12px;"><span style="color: #64748b; font-weight: 600;">Receipt #</span><strong id="tuition-receipt-provisional" style="color: #0f172a; text-align: right; font-family: monospace; font-size: 0.95rem;"></strong></div>
             </div>
@@ -2754,6 +2847,7 @@
     let activeRentals = [];
     let pendingOrdersCurrentPage = 1;
     let studentList = []; // Global registry for instant name resolution
+    const studentMapById = new Map();
     const tuitionCourseOptions = [
       'BS Information Technology',
       'BS Computer Science',
@@ -2775,6 +2869,7 @@
     let recentPaymentReceiptTransactions = [];
     let txnAutoRefreshInterval = null;
     let pendingAutoRefreshInterval = null;
+    let tuitionStudentIdDebounceTimer = null;
     let isProcessingTransaction = false;
     let filteredProducts = [];
     const AUTO_REFRESH_MS = 30000; // 30 seconds
@@ -4219,7 +4314,7 @@
       const receiptItems = document.getElementById('receipt-items');
 
       if (receiptNumberEl) receiptNumberEl.textContent = receipt.transaction_number || '—';
-      if (receiptStatusEl) receiptStatusEl.textContent = receipt.payment_status || '—';
+      if (receiptStatusEl) receiptStatusEl.textContent = receipt.payment_status_text || receipt.payment_status || '—';
       if (receiptDateEl) receiptDateEl.textContent = receipt.created_at || '—';
       if (receiptSubtotalEl) receiptSubtotalEl.textContent = formatCurrency(receipt.subtotal || 0);
       if (receiptDiscountEl) receiptDiscountEl.textContent = formatCurrency(receipt.discount_amount || 0);
@@ -4602,13 +4697,10 @@
 
     function updateReceiptModeUi() {
       const isTuition = currentReceiptMode === 'tuition';
-      const title = document.getElementById('receipt-studio-title');
-      const subtitle = document.getElementById('receipt-studio-subtitle');
       const previewSubtitle = document.getElementById('tuition-receipt-preview-subtitle');
       const detailsTitle = document.getElementById('receipt-details-card-title');
       const generateBtn = document.getElementById('tuition-generate-btn');
       const hint = document.getElementById('receipt-mode-hint');
-      const header = document.getElementById('receipt-studio-header');
       const modeBadge = document.getElementById('receipt-studio-mode-badge');
       const modeIcon = document.getElementById('receipt-studio-mode-icon');
       const modeLabel = document.getElementById('receipt-studio-mode-label');
@@ -4621,14 +4713,6 @@
       const paymentReceiptTypeSelect = document.getElementById('payment-receipt-type');
       const paymentTypeSelect = document.getElementById('tuition-payment-type');
 
-      if (title) {
-        title.textContent = isTuition ? 'Tuition Fee Receipt' : 'Payment Details';
-      }
-      if (subtitle) {
-        subtitle.textContent = isTuition
-          ? 'Create a tuition fee receipt with breakdown, balance, and official notes.'
-          : 'Create payment details for customer transactions.';
-      }
       if (previewSubtitle) {
         previewSubtitle.textContent = isTuition
           ? 'Official tuition fee receipt summary from GCST Track System'
@@ -4644,12 +4728,6 @@
         hint.textContent = isTuition
           ? 'Tuition fee mode is selected. The receipt will include tuition-specific breakdown details.'
           : 'Payment receipt mode is selected. The receipt will focus on payment details only.';
-      }
-      if (header) {
-        header.style.background = isTuition
-          ? 'linear-gradient(135deg, #fef3c7 0%, #fff7ed 100%)'
-          : 'linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%)';
-        header.style.borderBottom = isTuition ? '1px solid #fde68a' : '1px solid #dbeafe';
       }
       if (modeBadge) {
         modeBadge.style.background = isTuition ? 'rgba(217, 119, 6, 0.14)' : 'rgba(59, 130, 246, 0.12)';
@@ -4794,8 +4872,14 @@
           showValidationError('<i class="fas fa-id-card"></i> Please enter a valid Student ID for Tuition Receipts.');
           return;
         }
-        if (isNaN(totalPayment) || totalPayment <= 0) {
-          showValidationError('<i class="fas fa-calculator"></i> Please enter a valid total payment amount.');
+        const normalizedStudentId = studentId.toLowerCase();
+        const matchedStudent = studentMapById.get(normalizedStudentId) || studentMapById.get(studentId);
+        if (!matchedStudent) {
+          showValidationError('<i class="fas fa-id-card"></i> Student ID not recognized. Please choose a valid registered student.');
+          return;
+        }
+        if (!isNaN(totalPayment) && totalPayment <= 0) {
+          showValidationError('<i class="fas fa-calculator"></i> Please enter a valid total payment amount or leave it blank.');
           return;
         }
         if (!/^[0-9]+$/.test(orNumber)) {
@@ -4818,6 +4902,9 @@
         student_name: name,
         student_email: document.getElementById('tuition-student-email').value.trim() || null,
         student_id: studentId || null,
+        student_year_level: document.getElementById('tuition-student-year-level').value.trim() || null,
+        student_semester: document.getElementById('tuition-student-semester').value.trim() || null,
+        student_type: document.getElementById('tuition-student-type').value.trim() || 'Regular Student',
         payment_method: paymentMethod,
         check_number: checkNumber || null,
         payment_status: 'paid',
@@ -4853,15 +4940,25 @@
       setText('tuition-receipt-name', name);
       setText('tuition-receipt-course', document.getElementById('tuition-student-course').value.trim() || '—');
       setText('tuition-receipt-year-level', document.getElementById('tuition-student-year-level').value.trim() || '—');
+      setText('tuition-receipt-student-type', document.getElementById('tuition-student-type').value.trim() || 'Regular Student');
+      setText('tuition-receipt-semester', document.getElementById('tuition-student-semester').value.trim() || '—');
       setText('tuition-receipt-preview-title', category);
       setText('tuition-receipt-category-preview', category);
       setText('tuition-receipt-preview-subtitle', currentReceiptMode === 'tuition' ? 'Official tuition fee receipt summary from GCST Track System' : 'Official payment receipt summary from GCST Track System');
       setText('tuition-receipt-datetime', dateTime);
       setText('tuition-receipt-provisional', finalReceiptNumber);
       setText('tuition-receipt-amount', '₱' + amount.toFixed(2));
-      setText('tuition-receipt-total-payment', !isNaN(totalPayment) ? '₱' + totalPayment.toFixed(2) : '₱0.00');
+      const receiptStatus = tuitionSaveResult.payment_status_text || (balance <= 0 ? 'Fully Paid' : 'Partial Payment');
+      setText('tuition-receipt-status', receiptStatus);
+      setText('tuition-receipt-total-payment', receiptStatus === 'Fully Paid' ? '₱0.00' : (!isNaN(totalPayment) ? '₱' + totalPayment.toFixed(2) : '₱0.00'));
       setText('tuition-receipt-balance', '₱' + balance.toFixed(2));
       setText('tuition-receipt-or-number', orNumber || '—');
+      if (receiptStatus === 'Fully Paid') {
+        const totalPaymentInput = document.getElementById('tuition-total-payment');
+        if (totalPaymentInput) {
+          totalPaymentInput.value = '';
+        }
+      }
       setText('tuition-receipt-remarks', remarks || '—');
       setText('tuition-receipt-note', note || '—');
       setText('tuition-receipt-type', paymentType);
@@ -4921,6 +5018,11 @@
           body: JSON.stringify(payload)
         });
 
+        if (!response.ok) {
+          const message = await response.text();
+          return { success: false, message: message || `Server error ${response.status}` };
+        }
+
         return await response.json();
       } catch (error) {
         console.error('Tuition receipt save failed:', error);
@@ -4933,6 +5035,8 @@
       document.getElementById('tuition-student-name').value = '';
       document.getElementById('tuition-student-course').value = '';
       document.getElementById('tuition-student-year-level').value = '';
+      document.getElementById('tuition-student-type').value = 'Regular Student';
+      document.getElementById('tuition-student-semester').value = '';
       document.getElementById('tuition-provisional-number').value = '';
       document.getElementById('tuition-amount').value = '';
       document.getElementById('tuition-total-payment').value = '';
@@ -4981,15 +5085,11 @@
       const rep = document.getElementById('tuition-authorized-rep')?.value.trim() || '';
       const paymentMethod = document.getElementById('tuition-form-of-payment')?.value || 'Cash';
       const checkNumber = document.getElementById('tuition-check-number')?.value.trim() || '';
-      const studentId = document.getElementById('tuition-student-id')?.value.trim() || '';
-      const totalPayment = parseFloat(document.getElementById('tuition-total-payment')?.value || '0');
-      const orNumber = document.getElementById('tuition-or-number')?.value.trim() || '';
       const isTuition = currentReceiptMode === 'tuition';
 
       const hasBaseFields = /^[0-9]{6}$/.test(provisional) && studentName && !isNaN(amount) && amount > 0 && rep;
       const hasPaymentMethod = paymentMethod !== 'Check' || checkNumber;
-      const hasTuitionExtras = !isTuition || (studentId && !isNaN(totalPayment) && totalPayment > 0 && /^[0-9]+$/.test(orNumber));
-      const shouldHideGenerateButton = !(hasBaseFields && hasPaymentMethod && hasTuitionExtras);
+      const shouldHideGenerateButton = !(hasBaseFields && hasPaymentMethod);
 
       generateBtn.classList.toggle('hidden', shouldHideGenerateButton);
     }
@@ -5000,7 +5100,7 @@
       const balanceInput = document.getElementById('tuition-balance');
       if (!balanceInput) return;
       if (!isNaN(totalPayment) && !isNaN(amount)) {
-        balanceInput.value = (totalPayment - amount).toFixed(2);
+        balanceInput.value = Math.max(totalPayment - amount, 0).toFixed(2);
       } else if (!isNaN(totalPayment)) {
         balanceInput.value = totalPayment.toFixed(2);
       } else {
@@ -5008,16 +5108,73 @@
       }
     }
 
+    function showTuitionBalanceLoader(show = true) {
+      const loader = document.getElementById('tuition-balance-loading');
+      const status = document.getElementById('tuition-balance-status');
+      if (loader) {
+        loader.style.display = show ? 'block' : 'none';
+      }
+      if (status && show) {
+        status.style.display = 'none';
+      }
+    }
+
+    function setTuitionBalanceStatus(message = '') {
+      const status = document.getElementById('tuition-balance-status');
+      if (!status) return;
+      if (message) {
+        status.textContent = message;
+        status.style.display = 'block';
+      } else {
+        status.style.display = 'none';
+      }
+    }
+
     async function loadTuitionBalanceForStudent(studentId) {
       if (!studentId) {
+        setTuitionBalanceStatus('');
         return;
       }
 
+      showTuitionBalanceLoader(true);
       try {
         const response = await fetch(`${API_ROOT}/get_tuition_balance.php?student_id=${encodeURIComponent(studentId)}`);
-        await response.json();
+        if (!response.ok) {
+          throw new Error(`Server returned ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!data.success || !data.student) {
+          setTuitionBalanceStatus('Unable to retrieve tuition balance.');
+          return;
+        }
+
+        const totalPaymentInput = document.getElementById('tuition-total-payment');
+        const balanceInput = document.getElementById('tuition-balance');
+        const nameInput = document.getElementById('tuition-student-name');
+        const emailInput = document.getElementById('tuition-student-email');
+
+        if (nameInput && !nameInput.value.trim()) {
+          nameInput.value = data.student.full_name || '';
+        }
+        if (emailInput && !emailInput.value.trim()) {
+          emailInput.value = data.student.email || '';
+        }
+        if (totalPaymentInput && !totalPaymentInput.value.trim()) {
+          totalPaymentInput.value = parseFloat(data.student.total_fees || 0).toFixed(2);
+        }
+        if (balanceInput) {
+          balanceInput.value = parseFloat(data.student.tuition_balance || 0).toFixed(2);
+        }
+
+        updateTuitionBalance();
+        const now = new Date();
+        setTuitionBalanceStatus(`Last updated ${now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}`);
       } catch (error) {
         console.error('Failed to load tuition balance:', error);
+        setTuitionBalanceStatus('Failed to refresh tuition balance.');
+      } finally {
+        showTuitionBalanceLoader(false);
       }
     }
 
@@ -5029,22 +5186,28 @@
       state.studentId = value;
 
       if (!value) {
+        const courseSelect = document.getElementById('tuition-student-course');
+        const yearSelect = document.getElementById('tuition-student-year-level');
+        if (courseSelect) courseSelect.value = '';
+        if (yearSelect) yearSelect.value = '';
         return;
       }
 
       const normalized = value.toLowerCase();
-      const student = studentList.find(s => {
-        const idMatch = s.student_id && s.student_id.toLowerCase() === normalized;
-        const numericMatch = String(s.id) === value;
-        return idMatch || numericMatch;
-      });
+      const student = studentMapById.get(normalized) || studentMapById.get(value);
 
       if (student) {
-        document.getElementById('tuition-student-name').value = student.name || `${student.first_name || ''} ${student.last_name || ''}`.trim();
-        const courseValue = student.course || student.program || student.course_program || '';
-        const yearValue = student.year_level || student.yearLevel || student.year_section || student.yearSection || '';
+        const studentNameInput = document.getElementById('tuition-student-name');
         const courseSelect = document.getElementById('tuition-student-course');
         const yearSelect = document.getElementById('tuition-student-year-level');
+        const emailInput = document.getElementById('tuition-student-email');
+
+        if (studentNameInput && !studentNameInput.value.trim()) {
+          studentNameInput.value = student.name || `${student.first_name || ''} ${student.last_name || ''}`.trim();
+        }
+
+        const courseValue = student.course || student.program || student.course_program || '';
+        const yearValue = student.year_level || student.yearLevel || student.year_section || student.yearSection || '';
 
         if (courseSelect) {
           if (courseValue && !Array.from(courseSelect.options).some(o => o.value === courseValue)) {
@@ -5066,19 +5229,27 @@
           yearSelect.value = yearValue;
         }
 
-        const emailInput = document.getElementById('tuition-student-email');
         if (emailInput && !emailInput.value.trim()) {
           emailInput.value = student.email || '';
         }
+
         await loadTuitionBalanceForStudent(student.student_id || String(student.id));
-      } else {
+      } else if (value) {
+        setTuitionBalanceStatus('Student ID not found. Please enter a valid registered student ID.');
+        const studentNameInput = document.getElementById('tuition-student-name');
         const courseSelect = document.getElementById('tuition-student-course');
         const yearSelect = document.getElementById('tuition-student-year-level');
+        const emailInput = document.getElementById('tuition-student-email');
+        const totalPaymentInput = document.getElementById('tuition-total-payment');
+        const balanceInput = document.getElementById('tuition-balance');
+
+        if (studentNameInput) studentNameInput.value = '';
+        if (emailInput) emailInput.value = '';
         if (courseSelect) courseSelect.value = '';
         if (yearSelect) yearSelect.value = '';
+        if (totalPaymentInput) totalPaymentInput.value = '';
+        if (balanceInput) balanceInput.value = '';
       }
-
-      await populateTuitionReceiptStorePanel();
     }
 
     function toggleTuitionFeeFields() {
@@ -5119,7 +5290,7 @@
       };
     }
 
-    async function loadRecentTuitionReceipts(limit = 5, status = 'paid', studentId = '') {
+    async function loadRecentTuitionReceipts(limit = 5, status = 'all', studentId = '') {
       try {
         const params = new URLSearchParams({ limit: String(limit), status: String(status) });
         if (studentId) params.set('student_id', studentId);
@@ -5152,8 +5323,11 @@
       try {
         const normalizedPage = Math.max(1, Number(page) || 1);
         const params = new URLSearchParams({ page: String(normalizedPage), limit: String(limit), status: String(status || 'all') });
+        const normalizedReceiptCategory = String(receiptCategory || 'all').trim().toLowerCase();
         if (studentId) params.set('student_id', studentId);
-        if (receiptCategory && receiptCategory !== 'all') params.set('receipt_category', receiptCategory);
+        if (receiptCategory && receiptCategory !== 'all' && normalizedReceiptCategory !== 'fully_paid' && normalizedReceiptCategory !== 'fully paid') {
+          params.set('receipt_category', receiptCategory);
+        }
         if (search) params.set('search', search);
 
         const response = await fetch(`${API_ROOT}/get_recent_transactions.php?${params.toString()}`);
@@ -5180,11 +5354,12 @@
       return ['payment receipt', 'medical receipt', 'foundation day receipt', 'insurance receipt', 'educational receipt', 'tuition receipt', 'tuition fee receipt'].includes(normalized) || normalized.includes('receipt');
     }
 
-    function getTuitionReceiptHistoryEntries(limit = 3, search = '') {
+    function getTuitionReceiptHistoryEntries(limit = 3, search = '', status = 'all') {
       if (!Array.isArray(recentTuitionTransactions) || recentTuitionTransactions.length === 0) return [];
 
       const tuitionKeywordRegex = /tuition\s*receipt/i;
       const normalizedSearch = (search || '').toString().trim().toLowerCase();
+      const normalizedStatus = (status || 'all').toString().trim().toLowerCase();
       const isTuitionTxn = (txn) => {
         const receiptType = (txn?.receipt_category || txn?.receipt_type || txn?.transaction_type || '').toString();
         return tuitionKeywordRegex.test(receiptType);
@@ -5192,6 +5367,21 @@
 
       const filtered = [...recentTuitionTransactions].filter(txn => {
         if (!isTuitionTxn(txn)) return false;
+        const currentStatus = String(txn.payment_status_text || txn.payment_status || txn.status || '').trim().toLowerCase();
+        const rawStatus = String(txn.payment_status || txn.status || '').trim().toLowerCase();
+
+        if (normalizedStatus !== 'all') {
+          if (normalizedStatus === 'paid') {
+            if (rawStatus !== 'paid') return false;
+          } else if (normalizedStatus === 'fully_paid' || normalizedStatus === 'fully paid') {
+            if (currentStatus !== 'fully paid') return false;
+          } else if (normalizedStatus === 'pending') {
+            if (rawStatus !== 'pending') return false;
+          } else {
+            if (currentStatus !== normalizedStatus && rawStatus !== normalizedStatus) return false;
+          }
+        }
+
         if (!normalizedSearch) return true;
 
         const searchableText = [
@@ -5202,6 +5392,7 @@
           txn.student_name,
           txn.guest_school_id,
           txn.payment_status,
+          txn.payment_status_text,
           txn.cashier_name,
           txn.items
         ]
@@ -5219,7 +5410,7 @@
           date: txn.created_at ? new Date(txn.created_at).toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' }) : '—',
           receiptNumber: txn.transaction_number || txn.id || '—',
           total: parseFloat(txn.total_amount || txn.total || txn.amount || 0) || 0,
-          status: txn.payment_status || txn.status || '—'
+          status: txn.payment_status_text || txn.payment_status || txn.status || '—'
         }));
     }
 
@@ -5229,10 +5420,16 @@
 
       const normalizedSearch = (search || '').toString().trim().toLowerCase();
       const normalizedReceiptCategory = normalizeReceiptTypeFilter(receiptCategory).toLowerCase();
+      const isFullyPaidFilter = normalizedReceiptCategory === 'fully_paid' || normalizedReceiptCategory === 'fully paid';
       const filtered = [...transactions].filter(txn => {
         const receiptCategoryValue = String(txn?.receipt_category || txn?.receipt_type || txn?.transaction_type || '').trim();
-        if (!isPaymentReceiptHistoryCategory(receiptCategoryValue)) return false;
-        if (normalizedReceiptCategory !== 'all' && receiptCategoryValue.toLowerCase() !== normalizedReceiptCategory) return false;
+        const currentStatus = String(txn.payment_status_text || txn.payment_status || txn.status || '').trim().toLowerCase();
+        if (isFullyPaidFilter) {
+          if (currentStatus !== 'fully paid') return false;
+        } else {
+          if (!isPaymentReceiptHistoryCategory(receiptCategoryValue)) return false;
+          if (normalizedReceiptCategory !== 'all' && receiptCategoryValue.toLowerCase() !== normalizedReceiptCategory) return false;
+        }
         if (status !== 'all' && String(txn?.payment_status || '').toLowerCase() !== status.toLowerCase()) return false;
 
         if (studentId) {
@@ -5252,6 +5449,7 @@
           txn.student_name,
           txn.guest_school_id,
           txn.payment_status,
+          txn.payment_status_text,
           txn.cashier_name,
           txn.items
         ].filter(Boolean).join(' ').toLowerCase();
@@ -5274,7 +5472,7 @@
             receiptType: txn.receipt_category || txn.receipt_type || 'Receipt',
             total: parseFloat(txn.total_amount || txn.total || txn.amount || 0) || 0,
             cashier: txn.cashier_name || '—',
-            status: txn.payment_status || txn.status || '—'
+            status: txn.payment_status_text || txn.payment_status || txn.status || '—'
           };
         });
     }
@@ -5311,6 +5509,7 @@
 
       const currentStudentId = document.getElementById('tuition-student-id')?.value.trim() || '';
       const receiptTypeFilter = normalizeReceiptTypeFilter(document.getElementById('payment-history-status-filter')?.value);
+      const tuitionStatusFilter = document.getElementById('tuition-history-status-filter')?.value || 'all';
       const currentSearch = document.getElementById('payment-history-search')?.value.trim() || document.getElementById('tuition-history-search')?.value.trim() || '';
       paymentReceiptCurrentPage = Math.max(1, Number(page) || 1);
 
@@ -5324,23 +5523,28 @@
       }
 
       const [tuitionTransactions, paymentTransactions] = await Promise.all([
-        loadRecentTuitionReceipts(3, 'paid', currentStudentId),
+        loadRecentTuitionReceipts(3, tuitionStatusFilter, currentStudentId),
         loadPaymentReceiptHistory(paymentReceiptCurrentPage, PAYMENT_RECEIPT_PAGE_SIZE, 'all', currentStudentId, receiptTypeFilter, currentSearch)
       ]);
 
       if (historyBody) {
-        const entries = getTuitionReceiptHistoryEntries(3, currentSearch);
+        const tuitionStatusFilter = document.getElementById('tuition-history-status-filter')?.value || 'all';
+        const entries = getTuitionReceiptHistoryEntries(3, currentSearch, tuitionStatusFilter);
         if (entries.length === 0) {
           historyBody.innerHTML = '<tr><td colspan="4" style="padding: 12px 10px; color: #64748b;">No recent transactions available.</td></tr>';
         } else {
-          historyBody.innerHTML = entries.map(entry => `
+          historyBody.innerHTML = entries.map(entry => {
+            const normalizedStatus = String(entry.status || '').toLowerCase();
+            const statusColor = normalizedStatus === 'paid' || normalizedStatus === 'fully paid' ? '#15803d' : '#b45309';
+            return `
             <tr>
               <td style="padding: 8px 10px; color: #334155;">${entry.date}</td>
               <td style="padding: 8px 10px; color: #334155;">${entry.receiptNumber}</td>
               <td style="padding: 8px 10px; text-align: right; color: #0f172a; font-weight: 700;">₱${entry.total.toFixed(2)}</td>
-              <td style="padding: 8px 10px; text-align: right; color: ${entry.status === 'paid' ? '#15803d' : '#b45309'}; font-weight: 700;">${entry.status}</td>
+              <td style="padding: 8px 10px; text-align: right; color: ${statusColor}; font-weight: 700;">${entry.status}</td>
             </tr>
-          `).join('');
+          `;
+          }).join('');
         }
       }
 
@@ -5365,7 +5569,7 @@
               <td><span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; text-transform: uppercase; font-size: 0.7rem;">${highlightMatch(entry.receiptType, currentSearch)}</span></td>
               <td style="font-weight: 700; color: #1e293b; text-align: right;">${formatCurrency(entry.total)}</td>
               <td style="font-size: 0.85rem; color: #4b5563;">${highlightMatch(entry.cashier, currentSearch)}</td>
-              <td><span class="badge ${entry.status === 'paid' ? 'badge-success' : 'badge-warning'}" style="text-transform: uppercase; font-size: 0.75rem;">${highlightMatch(entry.status, currentSearch)}</span></td>
+              <td><span class="badge ${String(entry.status || '').toLowerCase() === 'paid' || String(entry.status || '').toLowerCase() === 'fully paid' ? 'badge-success' : 'badge-warning'}" style="text-transform: uppercase; font-size: 0.75rem;">${highlightMatch(entry.status, currentSearch)}</span></td>
               <td style="text-align: center;"><button class="btn btn-secondary btn-sm" onclick="reprintReceipt('${entry.receiptNumber}', 'receipt')" title="View Details"><i class="fas fa-eye"></i></button></td>
             </tr>
           `).join('');
@@ -5384,40 +5588,52 @@
         .replace(/'/g, '&#039;');
     }
 
+    function getTuitionReceiptText(id, defaultValue = '—') {
+      const element = document.getElementById(id);
+      if (element && typeof element.textContent === 'string') {
+        return element.textContent.trim() || defaultValue;
+      }
+      return defaultValue;
+    }
+
     function buildTuitionReceiptEmailHtml() {
       const signatureImageHtml = currentAdminSignatureImage ? `
             <div style="margin-top: 10px; padding: 8px; background: #f8fbff; border: 1px solid #dbeafe; border-radius: 8px; text-align: center;">
               <p style="margin: 0 0 5px; font-size: 0.62rem; color: #1d4ed8; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;">Approved by</p>
-              <p style="margin: 0 0 4px; font-size: 0.78rem; color: #0f172a; font-weight: 800;">${escapeHtml(document.getElementById('tuition-receipt-admin-signature').textContent || 'Admin Cashier')}</p>
+              <p style="margin: 0 0 4px; font-size: 0.78rem; color: #0f172a; font-weight: 800;">${escapeHtml(getTuitionReceiptText('tuition-receipt-admin-signature', 'Admin Cashier'))}</p>
               <img src="cid:admin_signature" alt="Admin Cashier Signature" style="display: inline-block; width: 82px; max-width: 100%; height: auto; border: 1px solid #dbeafe; border-radius: 6px; background: #ffffff;" />
             </div>
           ` : '';
 
       const details = currentReceiptMode === 'tuition' ? [
-        { label: 'Student Name', value: escapeHtml(document.getElementById('tuition-receipt-name').textContent) },
-        { label: 'Receipt Type', value: escapeHtml(document.getElementById('tuition-receipt-category-preview').textContent) },
-        { label: 'Date & Time', value: escapeHtml(document.getElementById('tuition-receipt-datetime').textContent) },
-        { label: 'Provisional Receipt #', value: escapeHtml(document.getElementById('tuition-receipt-provisional').textContent) },
-        { label: 'Amount Paid', value: escapeHtml(document.getElementById('tuition-receipt-amount').textContent), highlight: true },
-        { label: 'Total Payment', value: escapeHtml(document.getElementById('tuition-receipt-total-payment').textContent) },
-        { label: 'Balance', value: escapeHtml(document.getElementById('tuition-receipt-balance').textContent) },
-        { label: 'O.R.#', value: escapeHtml(document.getElementById('tuition-receipt-or-number').textContent) },
-        { label: 'Remarks', value: escapeHtml(document.getElementById('tuition-receipt-remarks').textContent) },
-        { label: 'Note', value: escapeHtml(document.getElementById('tuition-receipt-note').textContent) },
-        { label: 'Payment Type', value: escapeHtml(document.getElementById('tuition-receipt-type').textContent) },
-        { label: 'Form of Payment', value: escapeHtml(document.getElementById('tuition-receipt-method').textContent) },
-        { label: 'Check Number', value: escapeHtml(document.getElementById('tuition-receipt-check-number').textContent) },
-        { label: 'Authorized Representative', value: escapeHtml(document.getElementById('tuition-receipt-rep').textContent) },
-        { label: 'Admin Cashier', value: escapeHtml(document.getElementById('tuition-receipt-admin-signature').textContent) }
+        { label: 'Student Name', value: escapeHtml(getTuitionReceiptText('tuition-receipt-name')) },
+        { label: 'Course', value: escapeHtml(getTuitionReceiptText('tuition-receipt-course')) },
+        { label: 'Year Level', value: escapeHtml(getTuitionReceiptText('tuition-receipt-year-level')) },
+        { label: 'Semester', value: escapeHtml(getTuitionReceiptText('tuition-receipt-semester')) },
+        { label: 'Receipt Type', value: escapeHtml(getTuitionReceiptText('tuition-receipt-category-preview')) },
+        { label: 'Status', value: escapeHtml(getTuitionReceiptText('tuition-receipt-status')) },
+        { label: 'Date & Time', value: escapeHtml(getTuitionReceiptText('tuition-receipt-datetime')) },
+        { label: 'Provisional Receipt #', value: escapeHtml(getTuitionReceiptText('tuition-receipt-provisional')) },
+        { label: 'Amount Paid', value: escapeHtml(getTuitionReceiptText('tuition-receipt-amount')), highlight: true },
+        { label: 'Total Payment', value: escapeHtml(getTuitionReceiptText('tuition-receipt-total-payment')) },
+        { label: 'Balance', value: escapeHtml(getTuitionReceiptText('tuition-receipt-balance')) },
+        { label: 'O.R.#', value: escapeHtml(getTuitionReceiptText('tuition-receipt-or-number')) },
+        { label: 'Remarks', value: escapeHtml(getTuitionReceiptText('tuition-receipt-remarks')) },
+        { label: 'Note', value: escapeHtml(getTuitionReceiptText('tuition-receipt-note')) },
+        { label: 'Payment Type', value: escapeHtml(getTuitionReceiptText('tuition-receipt-type')) },
+        { label: 'Form of Payment', value: escapeHtml(getTuitionReceiptText('tuition-receipt-method')) },
+        { label: 'Check Number', value: escapeHtml(getTuitionReceiptText('tuition-receipt-check-number')) },
+        { label: 'Authorized Representative', value: escapeHtml(getTuitionReceiptText('tuition-receipt-rep')) },
+        { label: 'Admin Cashier', value: escapeHtml(getTuitionReceiptText('tuition-receipt-admin-signature')) }
       ] : [
-        { label: 'Student Name', value: escapeHtml(document.getElementById('tuition-receipt-name').textContent) },
-        { label: 'Receipt Type', value: escapeHtml(document.getElementById('tuition-receipt-category-preview').textContent) },
-        { label: 'Date & Time', value: escapeHtml(document.getElementById('tuition-receipt-datetime').textContent) },
-        { label: 'Provisional Receipt No.', value: escapeHtml(document.getElementById('tuition-receipt-provisional').textContent) },
-        { label: 'Amount Paid', value: escapeHtml(document.getElementById('tuition-receipt-amount').textContent), highlight: true },
-        { label: 'Payment Type', value: escapeHtml(document.getElementById('tuition-receipt-method').textContent || 'Cash') },
-        { label: 'Authorized Representative', value: escapeHtml(document.getElementById('tuition-receipt-rep').textContent) },
-        { label: 'Admin Cashier', value: escapeHtml(document.getElementById('tuition-receipt-admin-signature').textContent) }
+        { label: 'Student Name', value: escapeHtml(getTuitionReceiptText('tuition-receipt-name')) },
+        { label: 'Receipt Type', value: escapeHtml(getTuitionReceiptText('tuition-receipt-category-preview')) },
+        { label: 'Date & Time', value: escapeHtml(getTuitionReceiptText('tuition-receipt-datetime')) },
+        { label: 'Provisional Receipt No.', value: escapeHtml(getTuitionReceiptText('tuition-receipt-provisional')) },
+        { label: 'Amount Paid', value: escapeHtml(getTuitionReceiptText('tuition-receipt-amount')), highlight: true },
+        { label: 'Payment Type', value: escapeHtml(getTuitionReceiptText('tuition-receipt-method') || 'Cash') },
+        { label: 'Authorized Representative', value: escapeHtml(getTuitionReceiptText('tuition-receipt-rep')) },
+        { label: 'Admin Cashier', value: escapeHtml(getTuitionReceiptText('tuition-receipt-admin-signature')) }
       ];
 
       const detailRows = details.map(detail => `
@@ -5431,7 +5647,7 @@
         <div style="font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 24px; background: #eef2ff; color: #0f172a;">
           <div style="max-width: 680px; margin: auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 24px 70px rgba(15, 23, 42, 0.12); border: 1px solid #e5e7eb;">
             <div style="background: #eef2ff; padding: 26px 24px; text-align: center;">
-              <h2 style="margin: 0; font-size: 1.6rem; color: #1f2937; letter-spacing: -0.01em;">${escapeHtml(document.getElementById('tuition-receipt-category-preview').textContent)}</h2>
+              <h2 style="margin: 0; font-size: 1.6rem; color: #1f2937; letter-spacing: -0.01em;">${escapeHtml(getTuitionReceiptText('tuition-receipt-category-preview', 'Receipt'))}</h2>
               <p style="margin: 10px auto 0; max-width: 520px; font-size: 0.95rem; color: #475569;">A digital copy of your receipt has been generated and securely emailed to your Gmail account.</p>
             </div>
             <div style="padding: 22px 24px; background: #f8fafc;">
@@ -5486,9 +5702,11 @@
       }
 
       try {
-        const paymentMethod = document.getElementById('tuition-receipt-method').textContent;
-        const checkNumber = document.getElementById('tuition-receipt-check-number').textContent;
-        const subject = `${document.getElementById('tuition-receipt-category-preview').textContent} for ${document.getElementById('tuition-receipt-name').textContent} (${paymentMethod}${paymentMethod === 'Check' ? ` - Check #${checkNumber}` : ''})`;
+        const paymentMethod = document.getElementById('tuition-receipt-method')?.textContent || 'Payment';
+        const checkNumber = document.getElementById('tuition-receipt-check-number')?.textContent || '';
+        const receiptCategory = document.getElementById('tuition-receipt-category-preview')?.textContent || 'Receipt';
+        const studentName = document.getElementById('tuition-receipt-name')?.textContent || 'Student';
+        const subject = `${receiptCategory} for ${studentName}${paymentMethod === 'Check' && checkNumber ? ` - Check #${checkNumber}` : ''}`;
         const message = buildTuitionReceiptEmailHtml();
 
         const response = await fetch(`${API_ROOT}/send_tuition_receipt.php`, {
@@ -5790,6 +6008,8 @@
         filteredList = filteredList.filter(txn => txn.payment_status === 'paid');
       } else if (status === 'pending') {
         filteredList = filteredList.filter(txn => txn.payment_status === 'pending');
+      } else if (status === 'fully_paid') {
+        filteredList = filteredList.filter(txn => String(txn.payment_status_text || txn.payment_status || '').toLowerCase() === 'fully paid');
       }
 
       if (filteredList.length === 0) {
@@ -5820,7 +6040,7 @@
           <td><span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; text-transform: uppercase; font-size: 0.7rem;">${highlightMatch(txn.receipt_category || txn.transaction_type, query)}</span></td>
           <td style="font-weight: 700; color: #1e293b;">${formatCurrency(txn.total_amount)}</td>
           <td style="font-size: 0.85rem; color: #4b5563;">${highlightMatch(txn.cashier_name || '', query)}</td>
-          <td><span class="badge ${txn.payment_status === 'paid' ? 'badge-success' : 'badge-warning'}" style="text-transform: uppercase; font-size: 0.75rem;">${highlightMatch(txn.payment_status, query)}</span></td>
+          <td><span class="badge ${String(txn.payment_status_text || txn.payment_status || '').toLowerCase() === 'paid' || String(txn.payment_status_text || txn.payment_status || '').toLowerCase() === 'fully paid' ? 'badge-success' : 'badge-warning'}" style="text-transform: uppercase; font-size: 0.75rem;">${highlightMatch(txn.payment_status_text || txn.payment_status, query)}</span></td>
           <td><button class="btn btn-secondary btn-sm" onclick="reprintReceipt('${txn.transaction_number}', 'cashier')" title="View Details"><i class="fas fa-eye"></i> View</button></td>
         `;
         body.appendChild(tr);
@@ -5955,7 +6175,7 @@
       const studentName = txn.student_name || txn.guest_name;
       const studentId = txn.student_id || txn.guest_school_id;
       const cashierName = txn.cashier_name;
-      const status = String(txn.payment_status || txn.status || '').trim().toUpperCase();
+      const status = String(txn.payment_status_text || txn.payment_status || txn.status || '').trim().toUpperCase();
       const amountPaidValue = txn.amount_paid ?? txn.payment_received ?? txn.total_amount ?? 0;
       const totalPaymentValue = txn.total_payment ?? txn.total_amount ?? txn.amount_paid ?? 0;
       const balanceValue = txn.balance ?? 0;
@@ -6350,11 +6570,22 @@
       loadRecentTransactions();
       await loadRecentTuitionReceipts(3);
       await loadStudentList(); // Await student list loading
-      document.getElementById('tuition-student-id')?.addEventListener('input', () => {
-        handleTuitionStudentIdInput();
-        toggleReceiptGenerateButtonVisibility();
-      });
-      ['tuition-provisional-number', 'tuition-student-name', 'tuition-amount', 'tuition-total-payment', 'tuition-or-number', 'tuition-form-of-payment', 'tuition-check-number', 'tuition-authorized-rep'].forEach((id) => {
+
+      const tuitionStudentIdInput = document.getElementById('tuition-student-id');
+      if (tuitionStudentIdInput) {
+        tuitionStudentIdInput.addEventListener('input', () => {
+          clearTimeout(tuitionStudentIdDebounceTimer);
+          tuitionStudentIdDebounceTimer = setTimeout(async () => {
+            await handleTuitionStudentIdInput();
+            toggleReceiptGenerateButtonVisibility();
+            if (tuitionStudentIdInput.value.trim().length > 0) {
+              await populateTuitionReceiptStorePanel(1);
+            }
+          }, 300);
+        });
+      }
+
+      ['tuition-provisional-number', 'tuition-student-name', 'tuition-amount', 'tuition-total-payment', 'tuition-or-number', 'tuition-form-of-payment', 'tuition-check-number', 'tuition-authorized-rep', 'tuition-student-type', 'tuition-student-semester', 'tuition-student-course', 'tuition-student-year-level'].forEach((id) => {
         const element = document.getElementById(id);
         if (element) {
           element.addEventListener('input', toggleReceiptGenerateButtonVisibility);
@@ -6706,6 +6937,7 @@
         const response = await fetch(`${API_ROOT}/get_students.php`);
         const data = await response.json();
         studentList = Array.isArray(data) ? data : [];
+        studentMapById.clear();
         const datalist = document.getElementById('student-datalist');
         const tuitionDatalist = document.getElementById('tuition-student-id-datalist');
         if (datalist) {
@@ -6716,6 +6948,14 @@
         }
 
         studentList.forEach(student => {
+          const lookupKey = String(student.student_id || '').trim().toLowerCase();
+          const numericIdKey = String(student.id).trim();
+          if (lookupKey) {
+            studentMapById.set(lookupKey, student);
+          }
+          if (numericIdKey) {
+            studentMapById.set(numericIdKey, student);
+          }
           const optionLabel = `${student.name} (${student.student_id || 'ID: ' + student.id})`;
           const studentValue = student.student_id || student.id;
 

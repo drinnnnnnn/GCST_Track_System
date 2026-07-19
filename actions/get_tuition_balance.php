@@ -19,7 +19,7 @@ if ($studentId === '') {
 
 try {
     $stmt = $conn->prepare(
-        'SELECT tf.total_fees, tf.total_paid, tf.balance, tf.payment_status, u.id AS user_id, u.student_id, u.first_name, u.last_name
+        'SELECT tf.total_fees, tf.total_paid, tf.balance, tf.payment_status, u.id AS user_id, u.student_id, u.first_name, u.last_name, u.email
          FROM tuition_fees tf
          JOIN users u ON tf.user_id = u.id
          WHERE u.student_id = ?
@@ -42,6 +42,7 @@ try {
                 'user_id' => $student['user_id'],
                 'student_id' => $student['student_id'],
                 'full_name' => trim($student['first_name'] . ' ' . $student['last_name']),
+                'email' => trim((string)($student['email'] ?? '')),
                 'total_fees' => (float)($student['total_fees'] ?? 0),
                 'total_paid' => (float)($student['total_paid'] ?? 0),
                 'tuition_balance' => (float)($student['balance'] ?? 0),

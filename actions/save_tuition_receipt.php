@@ -28,6 +28,9 @@ $receiptCategory = isset($input['receipt_category']) ? trim((string)$input['rece
 $studentName = isset($input['student_name']) ? trim((string)$input['student_name']) : null;
 $studentEmail = isset($input['student_email']) ? trim((string)$input['student_email']) : null;
 $studentId = isset($input['student_id']) ? trim((string)$input['student_id']) : null;
+$studentYearLevel = isset($input['student_year_level']) ? trim((string)$input['student_year_level']) : null;
+$studentSemester = isset($input['student_semester']) ? trim((string)$input['student_semester']) : null;
+$studentType = isset($input['student_type']) ? trim((string)$input['student_type']) : 'Regular Student';
 $payment_method = isset($input['payment_method']) ? trim((string)$input['payment_method']) : 'Cash';
 $checkNumber = isset($input['check_number']) ? trim((string)$input['check_number']) : null;
 $paymentStatus = isset($input['payment_status']) && in_array($input['payment_status'], ['paid', 'pending'], true) ? $input['payment_status'] : 'paid';
@@ -72,11 +75,16 @@ try {
     $studentName = $conn->real_escape_string($studentName);
     $studentEmail = $conn->real_escape_string($studentEmail);
     $studentId = $conn->real_escape_string($studentId);
+    $studentYearLevel = $studentYearLevel !== '' ? $conn->real_escape_string($studentYearLevel) : null;
+    $studentSemester = $studentSemester !== '' ? $conn->real_escape_string($studentSemester) : null;
+    $studentType = $studentType !== '' ? $conn->real_escape_string($studentType) : 'Regular Student';
     $payment_method = $conn->real_escape_string($payment_method);
     $checkNumber = $conn->real_escape_string($checkNumber);
     $authorizedRep = $conn->real_escape_string($authorizedRep);
     $remarks = $conn->real_escape_string($remarks);
     $note = $conn->real_escape_string($note);
+
+    $isTuitionReceipt = in_array($receiptCategory, ['Tuition Receipt', 'Tuition Fee Receipt'], true);
 
     if ($studentId !== '') {
         $userId = null;
@@ -90,6 +98,10 @@ try {
         }
     } else {
         $userId = null;
+    }
+
+    if ($isTuitionReceipt && ($studentId === '' || $userId === null)) {
+        throw new Exception('A valid student ID and registered user are required for tuition receipts.');
     }
 
     // Generate a unique receipt number if the provided one already exists
@@ -126,28 +138,50 @@ try {
     
     $conn->begin_transaction();
 
+    // Ensure tuition receipt schema includes student year/semester fields.
+    $existingYearLevelColumn = $conn->query("SHOW COLUMNS FROM tuition_receipts LIKE 'student_year_level'");
+    if ($existingYearLevelColumn && $existingYearLevelColumn->num_rows === 0) {
+        $conn->query("ALTER TABLE tuition_receipts ADD COLUMN student_year_level VARCHAR(100) DEFAULT NULL AFTER student_id");
+    }
+    $existingSemesterColumn = $conn->query("SHOW COLUMNS FROM tuition_receipts LIKE 'student_semester'");
+    if ($existingSemesterColumn && $existingSemesterColumn->num_rows === 0) {
+        $conn->query("ALTER TABLE tuition_receipts ADD COLUMN student_semester VARCHAR(100) DEFAULT NULL AFTER student_year_level");
+    }
+    $existingStudentTypeColumn = $conn->query("SHOW COLUMNS FROM tuition_receipts LIKE 'student_type'");
+    if ($existingStudentTypeColumn && $existingStudentTypeColumn->num_rows === 0) {
+        $conn->query("ALTER TABLE tuition_receipts ADD COLUMN student_type VARCHAR(100) DEFAULT 'Regular Student' AFTER student_semester");
+    }
+
     // Insert into separate tuition_receipts table
-    $insertSql = "INSERT INTO tuition_receipts (
-        transaction_number, receipt_number, user_id, student_id, student_name,
-        student_email, cashier_id, receipt_category, amount_paid, total_payment,
-        balance, or_number, check_number, payment_method, payment_type,
-        remarks, note, authorized_rep, payment_status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $insertColumns = [
+        'transaction_number', 'receipt_number', 'user_id', 'student_id', 'student_year_level',
+        'student_semester', 'student_type', 'student_name', 'student_email', 'cashier_id', 'receipt_category',
+        'amount_paid', 'total_payment', 'balance', 'or_number', 'check_number',
+        'payment_method', 'payment_type', 'remarks', 'note', 'authorized_rep', 'payment_status'
+    ];
+    $insertSql = "INSERT INTO tuition_receipts (" . implode(', ', $insertColumns) . ") VALUES (" . implode(', ', array_fill(0, count($insertColumns), '?')) . ")";
+    $expectedPlaceholders = count($insertColumns);
+    if ($expectedPlaceholders !== substr_count($insertSql, '?')) {
+        throw new Exception('Internal error: tuition receipt insert parameter count mismatch.');
+    }
 
     $cashierId = $_SESSION['admin_id'] ?? 0;
     $finalTotalPayment = $totalPayment !== null ? $totalPayment : $paymentReceived;
-    $finalBalance = $balance !== null ? $balance : 0.0;
+    $finalBalance = $balance !== null ? max($balance, 0.0) : 0.0;
 
     $stmt = $conn->prepare($insertSql);
     if (!$stmt) {
         throw new Exception('Failed to prepare save query: ' . $conn->error);
     }
     $stmt->bind_param(
-        'ssisssissddssssssss',
+        'ssissssissdddsssssssss',
         $transactionNumber,
         $receiptNumber,
         $userId,
         $studentId,
+        $studentYearLevel,
+        $studentSemester,
+        $studentType,
         $studentName,
         $studentEmail,
         $cashierId,
@@ -238,7 +272,7 @@ try {
     }
     $historyStmt->close();
 
-    if ($studentId !== '' && $receiptCategory === 'Tuition Receipt' && $userId !== null) {
+    if ($studentId !== '' && in_array($receiptCategory, ['Tuition Receipt', 'Tuition Fee Receipt'], true) && $userId !== null) {
         $feeStmt = $conn->prepare('SELECT total_fees, total_paid, balance FROM tuition_fees WHERE user_id = ? LIMIT 1');
         if ($feeStmt) {
             $feeStmt->bind_param('i', $userId);
@@ -278,17 +312,23 @@ try {
         ob_clean();
     }
 
+    $paymentStatusText = $finalBalance <= 0.0 ? 'Fully Paid' : ($paymentStatus === 'pending' ? 'Pending' : 'Partial Payment');
+
     echo json_encode([
         'success' => true,
         'message' => 'Tuition receipt saved successfully.',
         'transaction_number' => $transactionNumber,
         'transaction_id' => $lastInsertId,
         'receipt_number' => $receiptNumber,
-        'receipt_category' => $receiptCategory
+        'receipt_category' => $receiptCategory,
+        'payment_status' => $paymentStatus,
+        'payment_status_text' => $paymentStatusText,
+        'total_payment' => $finalTotalPayment,
+        'balance' => $finalBalance
     ]);
     exit;
 } catch (Throwable $e) {
-    if (isset($conn) && $conn instanceof mysqli && $conn->errno === 0) {
+    if (isset($conn) && $conn instanceof mysqli) {
         $conn->rollback();
     }
     if (ob_get_length()) {

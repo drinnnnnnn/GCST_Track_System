@@ -75,6 +75,21 @@ try {
              LIMIT $limit OFFSET $offset";
 
     $result = $conn->query($sql);
+
+    function buildPaymentStatusText($paymentStatus, $balance) {
+        $status = strtolower(trim((string)$paymentStatus));
+        if ($balance !== null && is_numeric($balance) && floatval($balance) <= 0.0) {
+            return 'Fully Paid';
+        }
+        if ($status === 'pending') {
+            return 'Pending';
+        }
+        if ($status === 'paid') {
+            return 'Partial Payment';
+        }
+        return $paymentStatus !== null ? ucwords($status) : '—';
+    }
+
     $txns = [];
     while ($row = $result->fetch_assoc()) {
         // If student_name is missing in the receipt row, fallback to linked user name
@@ -86,6 +101,7 @@ try {
                 $row['student_name'] = $full;
             }
         }
+        $row['payment_status_text'] = buildPaymentStatusText($row['payment_status'] ?? null, $row['balance'] ?? null);
         $txns[] = $row;
     }
 

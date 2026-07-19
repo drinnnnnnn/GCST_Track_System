@@ -61,6 +61,19 @@ function resolveUserCourse(mysqli $conn, $userId, $guestSchoolId) {
     return $userCourse;
 }
 
+function buildPaymentStatusText($paymentStatus, $balance = null) {
+    $status = strtolower(trim((string)$paymentStatus));
+    if ($balance !== null && is_numeric($balance) && floatval($balance) <= 0.0) {
+        return 'Fully Paid';
+    }
+    if ($status === 'pending') return 'Pending';
+    if ($status === 'paid') {
+        return $balance !== null ? 'Partial Payment' : 'Paid';
+    }
+    if ($status === 'voided') return 'Voided';
+    return $paymentStatus !== null ? ucwords($status) : '—';
+}
+
 try {
     $transaction = null;
     $resolvedSource = '';
@@ -258,6 +271,8 @@ try {
         $transaction['receipt_type'] = $transaction['receipt_category'] ?? 'Receipt';
         $transaction['transaction_type'] = $transaction['receipt_category'] ?? 'receipt';
     }
+
+    $transaction['payment_status_text'] = buildPaymentStatusText($transaction['payment_status'] ?? null, $transaction['balance'] ?? null);
 
     echo json_encode(['success' => true, 'transaction' => $transaction]);
 } catch (Exception $e) {
