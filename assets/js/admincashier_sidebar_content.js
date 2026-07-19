@@ -469,7 +469,7 @@ export function getSidebarHTML() {
             <div class="brand-text">
                 <span class="brand-subtitle">Granby Colleges of</span>
                 <h2 class="brand-title">Science & Technology</h2>
-                <span class="brand-role">System Super Admin</span>
+                <span class="brand-role">System Cashier Admin</span>
             </div>
         </div>
 

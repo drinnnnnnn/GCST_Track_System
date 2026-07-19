@@ -80,13 +80,12 @@ try {
 
     // 5. Sales History
     $historyQuery = "SELECT t.id, t.created_at as date, t.transaction_number, 
-        GROUP_CONCAT(IFNULL(p.product_name, 'Deleted Product') SEPARATOR ', ') as item, 
+        GROUP_CONCAT(IFNULL(NULLIF(ti.product_name, ''), 'Deleted Product') SEPARATOR ', ') as item, 
         SUM(ti.quantity) as quantity, t.total_amount as amount, 
         t.student_name, 
         COALESCE(u.student_id, t.guest_school_id) as student_id
         FROM cashier_transactions t
         JOIN transaction_items ti ON t.id = ti.cashier_transaction_id
-        LEFT JOIN products p ON ti.product_id = p.product_id
         LEFT JOIN users u ON t.user_id = u.id
         WHERE $dateCondition AND t.payment_status = 'paid'
         GROUP BY t.id, t.created_at, t.transaction_number, t.total_amount, t.student_name, u.student_id, t.guest_school_id
