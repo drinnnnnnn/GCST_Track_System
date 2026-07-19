@@ -91,7 +91,8 @@
         .login-card p { animation-delay: 0.3s; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 35px; }
         .input-box:nth-child(1) { animation-delay: 0.4s; }
         .input-box:nth-child(2) { animation-delay: 0.5s; }
-        .submit-btn { animation-delay: 0.6s; }
+        .input-box:nth-child(3) { animation-delay: 0.6s; }
+        .submit-btn { animation-delay: 0.7s; }
 
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(15px); }
@@ -100,60 +101,53 @@
 
         .input-box {
             position: relative;
-            margin-bottom: 25px;
+            margin-bottom: 24px;
             text-align: left;
         }
 
         .input-box label {
-            font-size: 0.75rem;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.78rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
             color: var(--primary);
-            margin-bottom: 8px;
-            display: block;
-            margin-left: 5px;
         }
 
         .input-box input {
             width: 100%;
-            padding: 14px 18px;
-            padding-right: 50px;
-            background: rgba(255, 255, 255, 0.6);
-            border: 2px solid transparent;
+            padding: 15px 18px;
+            padding-right: 48px;
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(148, 163, 184, 0.35);
             border-radius: 16px;
-            font-size: 0.95rem;
+            font-size: 0.96rem;
             color: var(--text-dark);
             outline: none;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
         }
 
         .input-box input:focus {
             background: #fff;
             border-color: var(--primary);
-            box-shadow: 0 10px 15px -3px var(--primary-glow);
-            transform: translateY(-2px);
+            box-shadow: 0 14px 24px -10px var(--primary-glow);
+            transform: translateY(-1px);
         }
 
         .input-box i {
             position: absolute;
-            right: 18px;
-            bottom: 14px;
-            font-size: 1.3rem;
+            right: 16px;
+            top: 46px;
+            font-size: 1.25rem;
             color: #94a3b8;
             cursor: pointer;
             transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
-            transform-origin: center center;
         }
 
         .input-box i:hover {
             color: var(--primary);
-            transform: scale(1.08) translateY(-1px);
-            opacity: 0.95;
-        }
-
-        .input-box i:active {
-            transform: scale(0.96) translateY(0);
+            transform: scale(1.05);
         }
 
         .tooltip-icon::after {
@@ -165,9 +159,9 @@
             background: rgba(15, 23, 42, 0.95);
             color: #fff;
             font-size: 0.75rem;
-            padding: 6px 10px;
+            padding: 7px 11px;
             border-radius: 10px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            box-shadow: 0 12px 22px rgba(0,0,0,0.14);
             opacity: 0;
             visibility: hidden;
             transform: translateY(8px);
@@ -182,39 +176,9 @@
             transform: translateY(0);
         }
 
-        .tooltip-btn {
-            position: relative;
-        }
-
-        .tooltip-btn::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 110%;
-            left: 50%;
-            transform: translateX(-50%) translateY(6px);
-            white-space: nowrap;
-            background: rgba(15, 23, 42, 0.95);
-            color: #fff;
-            font-size: 0.75rem;
-            padding: 6px 10px;
-            border-radius: 10px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        .tooltip-btn:hover::after {
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(-50%) translateY(0);
-        }
-
         .submit-btn {
             width: 100%;
-            padding: 16px;
+            padding: 16px 18px;
             background: var(--text-dark);
             color: white;
             border: none;
@@ -222,25 +186,37 @@
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
         }
 
         .submit-btn:hover {
             background: var(--primary);
             transform: translateY(-3px);
-            box-shadow: 0 12px 24px var(--primary-glow);
+            box-shadow: 0 16px 34px rgba(79, 70, 229, 0.2);
         }
 
-        /* Status UI */
-        #status-area {
-            display: none;
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            margin-bottom: 20px;
+        .status-card {
+            width: 100%;
+            margin-bottom: 22px;
+            padding: 0 16px;
+            border-radius: 18px;
+            border: 1px solid transparent;
+            font-size: 0.92rem;
             font-weight: 600;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease, opacity 0.35s ease, padding 0.35s ease;
+            opacity: 0;
+            display: block;
         }
+
+        .status-card.visible {
+            max-height: 120px;
+            opacity: 1;
+            padding: 14px 16px;
+        }
+
         .msg-error { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
         .msg-success { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
     </style>
@@ -254,27 +230,26 @@
     <h1 class="animate-item">Admin Login</h1>
     <p class="animate-item">Authorized personnel access only</p>
 
-    <div id="status-area" class="animate-item tooltip-btn" role="status"></div>
+    <div id="status-area" class="status-card animate-item" role="status"></div>
 
     <form action="http://localhost/GCST_Track_System/actions/process_admin_cashier.php" method="POST" id="authForm">
         <div class="input-box animate-item">
-            <label>Username or Email</label>
-            <input type="text" name="email" placeholder="Username or Email" autocomplete="username" required>
+            <label for="email">Username or Email</label>
+            <input id="email" type="text" name="email" placeholder="Username or Email" autocomplete="username" required>
             <i class='bx bxs-envelope'></i>
         </div>
 
         <div class="input-box animate-item">
-            <div style="position: relative;">
-                <label>Password</label>
-                <input type="password" name="password" id="password" placeholder="••••••••" required>
-                <i class='bx bx-hide tooltip-icon' id="toggleBtn" style="cursor: pointer; position: absolute; right: 10px; top: 38px;" data-tooltip="Show or hide password"></i>
-            </div>
+            <label for="password">Password</label>
+            <input id="password" type="password" name="password" placeholder="••••••••" required>
+            <i class='bx bx-hide tooltip-icon' id="toggleBtn" data-tooltip="Show or hide password"></i>
+        </div>
 
-            <div style="position: relative; margin-top: 15px;">
-                <label>Pin</label>
-                <input type="password" name="pin" id="pin" placeholder="••••" maxlength="4" pattern="\d{4}" inputmode="numeric" required>
-                <i class='bx bx-hide tooltip-icon' id="togglePinBtn" style="cursor: pointer; position: absolute; right: 10px; top: 38px;"></i>
-            </div> 
+        <div class="input-box animate-item">
+            <label for="pin">PIN</label>
+            <input id="pin" type="password" name="pin" placeholder="••••" maxlength="4" pattern="\d{4}" inputmode="numeric" required>
+            <i class='bx bx-hide tooltip-icon' id="togglePinBtn" data-tooltip="Show or hide PIN"></i>
+        </div>
 
         <button type="submit" class="submit-btn animate-item" id="loginBtn">
             Sign In
@@ -304,38 +279,37 @@
     const statusArea = document.getElementById("status-area");
 
     if (urlParams.has('error') || urlParams.has('success')) {
-        statusArea.style.display = "block";
+        statusArea.classList.add('visible');
 
         const errorCode = urlParams.get('error');
         const successCode = urlParams.get('success');
 
         if (errorCode === 'wrongpassword') {
-            statusArea.className = "animate-item msg-error";
+            statusArea.classList.add('msg-error');
             statusArea.innerText = "Invalid Password.";
             statusArea.setAttribute('data-tooltip', 'Please verify your password and try again.');
-            alert("Login failed: Invalid Password.");
 
         } else if (errorCode === 'nouser') {
-            statusArea.className = "animate-item msg-error";
+            statusArea.classList.add('msg-error');
             statusArea.innerText = "Authorized account not found.";
             statusArea.setAttribute('data-tooltip', 'Check your username/email and ensure your account exists.');
 
         } else if (errorCode === 'invalid') {
-            statusArea.className = "animate-item msg-error";
+            statusArea.classList.add('msg-error');
             statusArea.innerText = "Invalid credentials. Please check your inputs.";
             statusArea.setAttribute('data-tooltip', 'Make sure username/email, password, and PIN are correct.');
 
         } else if (errorCode === 'suspended') {
-            statusArea.className = "animate-item msg-error";
+            statusArea.classList.add('msg-error');
             statusArea.innerText = "Account suspended.";
             statusArea.setAttribute('data-tooltip', 'Your account is currently suspended. Contact the administrator.');
         } else if (errorCode === 'locked') {
-            statusArea.className = "animate-item msg-error";
+            statusArea.classList.add('msg-error');
             statusArea.innerText = "Account suspended after 4 failed login attempts. Contact the administrator.";
             statusArea.setAttribute('data-tooltip', 'Your account is temporarily locked after too many failed attempts.');
 
         } else if (successCode === '1') {
-            statusArea.className = "animate-item msg-success";
+            statusArea.classList.add('msg-success');
             statusArea.innerText = "Profile verified. Please login.";
             statusArea.setAttribute('data-tooltip', 'Verification successful, you may now sign in.');
         }
