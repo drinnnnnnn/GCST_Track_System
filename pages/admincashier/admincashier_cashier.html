@@ -26,7 +26,7 @@
     .cashier-sidebar {
       display: flex;
       flex-direction: column;
-      gap: 24px;       /* position: sticky; /* Removed sticky for better mobile behavior */ /* top: 20px; */
+      gap: 24px; /* Removed sticky for better mobile behavior */
       min-width: 0;
       width: 100%;
     }
@@ -742,6 +742,7 @@
       flex-wrap: wrap;
       gap: 12px;
       margin-bottom: 18px;
+      align-items: center;
     }
     .search-input {
       flex: 1;
@@ -753,6 +754,20 @@
       font-size: 0.96rem;
       background: #f8fafc;
       transition: all 0.2s ease;
+    }
+    .filter-group .search-input {
+      flex: 0 1 auto;
+      min-width: 145px;
+      max-width: 190px;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: #f8fafc;
+      font-size: 0.92rem;
+    }
+    .filter-group .search-input:focus {
+      background: #fff;
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
     }
     .search-input:focus {
       background: #fff;
@@ -2004,15 +2019,17 @@
         </div>
         <div class="search-group">
           <input id="product-search" class="search-input" type="text" placeholder="Search by name or Category" />
-          <select id="course-filter" class="search-input" style="max-width: 180px;">
-            <option value="All">All Courses</option>
-          </select>
           <button id="qr-scan-btn" class="btn btn-secondary" title="Scan Order QR Code"><i class="fas fa-qrcode"></i> Scan Order</button>
           <button type="button" class="btn btn-secondary" title="Generate Payment Receipt" onclick="openTuitionModal()">
               <i class="fas fa-file-invoice"></i> Payment Receipt
           </button>
         </div>
-        <div class="filter-group" id="category-filters"></div>
+        <div class="filter-group">
+          <select id="course-filter" class="search-input" style="max-width: 180px;">
+            <option value="All">All Courses</option>
+          </select>
+          <div id="category-filters"></div>
+        </div>
         <div id="product-grid" class="products-grid"></div>
         <div id="product-pagination" class="pagination-controls"></div>
       </div>
