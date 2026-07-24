@@ -173,8 +173,14 @@ export function getSidebarHTML() {
     }
 
     if (!document.getElementById('sidebar-overlay')) {
-        const overlayHTML = `<div id="sidebar-overlay" onclick="typeof window.toggleSidebar === 'function' ? window.toggleSidebar() : null"></div>`;
-        document.body.insertAdjacentHTML('beforeend', overlayHTML);
+        const overlay = document.createElement('div');
+        overlay.id = 'sidebar-overlay';
+        overlay.addEventListener('click', () => {
+            if (typeof window.toggleSidebar === 'function') {
+                window.toggleSidebar();
+            }
+        });
+        document.body.appendChild(overlay);
     }
 
     const currentPage = (window.location.pathname || '').split('/').pop().split('?')[0].split('#')[0].toLowerCase();

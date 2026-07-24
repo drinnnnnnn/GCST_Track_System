@@ -8,13 +8,19 @@ const OrderScanner = {
     lastScannedData: null,
     lastScanTime: 0,
 
+    getApiRoot() {
+        if (typeof API_ROOT !== 'undefined' && API_ROOT) return API_ROOT;
+        if (typeof window !== 'undefined' && typeof window.API_ROOT !== 'undefined' && window.API_ROOT) return window.API_ROOT;
+        return window.location.origin + '/GCST_Track_System/actions';
+    },
+
     async open() {
         if (typeof Html5Qrcode === 'undefined') {
             console.error("html5-qrcode library is not loaded.");
             return;
         }
 
-        if (this.isBusy || (this.instance && this.instance.getState() === 2)) return;
+        if (this.isBusy || (this.instance && this.instance.getState && this.instance.getState() === 2)) return;
 
         const modal = document.getElementById('qr-modal');
         if (!modal) return;
@@ -38,8 +44,14 @@ const OrderScanner = {
                 this.instance = new Html5Qrcode("reader");
             }
             
-            // Ensure any previous session is stopped (safety check)
-            if (this.instance.getState() === 2) await this.instance.stop();
+            // Only stop the current session if it is actively running.
+            if (this.instance && typeof this.instance.getState === 'function' && this.instance.getState() === 2) {
+                try {
+                    await this.instance.stop();
+                } catch (stopErr) {
+                    console.warn('Could not stop existing scanner session:', stopErr);
+                }
+            }
 
             await this.instance.start(
                 { facingMode: "environment" },
@@ -158,9 +170,15 @@ const OrderScanner = {
         try {
             if (!txnNumber) return;
 
-            const response = await fetch(`${API_ROOT}/get_order_by_qr.php?transaction_number=${encodeURIComponent(txnNumber)}`, {
+            const apiRoot = this.getApiRoot();
+            const response = await fetch(`${apiRoot}/get_order_by_qr.php?transaction_number=${encodeURIComponent(txnNumber)}`, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
+
+            if (!response.ok) {
+                throw new Error(`Server responded with status ${response.status}`);
+            }
+
             const result = await response.json();
 
             // Handle "Already Paid" as a special success-like state for UI feedback

@@ -333,6 +333,11 @@ function fetchWithError(url, options = {}) {
 window.toggleSidebar = function() {
   const sidebar = document.getElementById('main-sidebar');
   const overlay = document.getElementById('sidebar-overlay');
+
+  if (!sidebar && !overlay) {
+    return;
+  }
+
   sidebar?.classList.toggle('active');
   overlay?.classList.toggle('active');
 }

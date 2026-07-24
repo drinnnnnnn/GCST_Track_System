@@ -12,7 +12,7 @@ export function getSidebarHTML() {
             backdrop?.classList.toggle('active');
             
             if (hamburger) {
-                hamburger.className = isOpen ? 'fas f   a-times' : 'fas fa-bars';
+                hamburger.className = isOpen ? 'fas fa-times' : 'fas fa-bars';
             }
             
             document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -65,8 +65,25 @@ export function getSidebarHTML() {
             window.location.replace('/GCST_Track_System/actions/sign_out.php');
         };
 
+        document.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target && target.id === 'nav-backdrop') {
+                window.closeMobileMenu();
+                return;
+            }
+
+            if (target && target.dataset && target.dataset.action === 'logout') {
+                window.logoutUser();
+                return;
+            }
+
+            if (target && target.id === 'sidebar-logout-modal') {
+                window.closeLogoutModal();
+            }
+        });
+
         window.addEventListener('keydown', (e) => { 
-            if(e.key === 'Escape') window.closeLogoutModal(); 
+            if (e.key === 'Escape') window.closeLogoutModal(); 
         });
     }
 
@@ -74,7 +91,7 @@ export function getSidebarHTML() {
     // Ensure modal exists in body, not just in the sidebar string
     if (!document.getElementById('sidebar-logout-modal')) {
         const modalHTML = `
-        <div id="sidebar-logout-modal" class="logout-modal-overlay" style="display:none;" onclick="if(event.target === this) closeLogoutModal()">
+        <div id="sidebar-logout-modal" class="logout-modal-overlay" style="display:none;">
             <div class="logout-modal-card" role="dialog" aria-modal="true" aria-labelledby="logout-title">
                 <div class="logout-modal-icon">
                     <i class="fas fa-sign-out-alt"></i>
@@ -414,7 +431,7 @@ export function getSidebarHTML() {
                 <a href="user_profile.html" class="nav-item">
                     <i class="fas fa-user-circle"></i> <span>Profile</span>
                 </a>
-                <a href="javascript:void(0)" onclick="logoutUser()" class="nav-item nav-logout">
+                <a href="javascript:void(0)" data-action="logout" class="nav-item nav-logout">
                     <i class="fas fa-sign-out-alt"></i> <span>Log Out</span>
                 </a>
             </div>
