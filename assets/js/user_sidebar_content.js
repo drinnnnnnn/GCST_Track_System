@@ -72,7 +72,8 @@ export function getSidebarHTML() {
                 return;
             }
 
-            if (target && target.dataset && target.dataset.action === 'logout') {
+            const logoutTrigger = target.closest && target.closest('[data-action="logout"]');
+            if (logoutTrigger) {
                 window.logoutUser();
                 return;
             }

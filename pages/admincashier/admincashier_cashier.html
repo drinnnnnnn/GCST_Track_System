@@ -6012,21 +6012,37 @@
       if (empty) empty.classList.add('hidden');
 
       const recentList = Array.isArray(data) ? data : [];
-      const pendingList = getFilteredPendingOrders(query);
-      const mergedList = [...pendingList, ...recentList];
-      const uniqueByTxnNumber = new Map();
-      mergedList.forEach(txn => {
-        const key = txn.transaction_number || txn.id || JSON.stringify(txn);
-        if (!uniqueByTxnNumber.has(key)) {
-          uniqueByTxnNumber.set(key, txn);
-        }
-      });
+      let filteredList = recentList;
 
-      let filteredList = Array.from(uniqueByTxnNumber.values());
+      if (status === 'pending') {
+        const pendingList = getFilteredPendingOrders(query);
+        const mergedList = [
+          ...pendingList,
+          ...recentList.filter(txn => String(txn.payment_status || '').toLowerCase() === 'pending')
+        ];
+        const uniqueByTxnNumber = new Map();
+        mergedList.forEach(txn => {
+          const key = txn.transaction_number || txn.id || JSON.stringify(txn);
+          if (!uniqueByTxnNumber.has(key)) {
+            uniqueByTxnNumber.set(key, txn);
+          }
+        });
+        filteredList = Array.from(uniqueByTxnNumber.values());
+      } else {
+        const uniqueByTxnNumber = new Map();
+        recentList.forEach(txn => {
+          const key = txn.transaction_number || txn.id || JSON.stringify(txn);
+          if (!uniqueByTxnNumber.has(key)) {
+            uniqueByTxnNumber.set(key, txn);
+          }
+        });
+        filteredList = Array.from(uniqueByTxnNumber.values());
+      }
+
       if (status === 'paid') {
-        filteredList = filteredList.filter(txn => txn.payment_status === 'paid');
+        filteredList = filteredList.filter(txn => String(txn.payment_status || '').toLowerCase() === 'paid');
       } else if (status === 'pending') {
-        filteredList = filteredList.filter(txn => txn.payment_status === 'pending');
+        filteredList = filteredList.filter(txn => String(txn.payment_status || '').toLowerCase() === 'pending');
       } else if (status === 'fully_paid') {
         filteredList = filteredList.filter(txn => String(txn.payment_status_text || txn.payment_status || '').toLowerCase() === 'fully paid');
       }

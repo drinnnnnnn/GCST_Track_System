@@ -81,20 +81,31 @@ try {
     // 5. Sales History
     $historyQuery = "SELECT t.id, t.created_at as date, t.transaction_number, 
         GROUP_CONCAT(IFNULL(NULLIF(ti.product_name, ''), 'Deleted Product') SEPARATOR ', ') as item, 
-        SUM(ti.quantity) as quantity, t.total_amount as amount, 
+        SUM(ti.quantity) as quantity,
+        ROUND(SUM(COALESCE(ti.total_item_amount, (ti.quantity * ti.unit_price), 0)), 2) as item_total_amount,
+        COALESCE(MAX(CASE
+            WHEN COALESCE(t.total_amount, 0) > 0 THEN t.total_amount
+            WHEN COALESCE(t.subtotal, 0) > 0 THEN t.subtotal
+            ELSE NULL
+        END), 0) as amount,
         t.student_name, 
         COALESCE(u.student_id, t.guest_school_id) as student_id
         FROM cashier_transactions t
         JOIN transaction_items ti ON t.id = ti.cashier_transaction_id
         LEFT JOIN users u ON t.user_id = u.id
         WHERE $dateCondition AND t.payment_status = 'paid'
-        GROUP BY t.id, t.created_at, t.transaction_number, t.total_amount, t.student_name, u.student_id, t.guest_school_id
+        GROUP BY t.id, t.created_at, t.transaction_number, t.student_name, u.student_id, t.guest_school_id
         ORDER BY t.created_at DESC
         LIMIT $limit";
 
     $historyResult = $conn->query($historyQuery);
     $history = [];
     while ($historyResult && $row = $historyResult->fetch_assoc()) {
+        $amount = (float)($row['amount'] ?? 0);
+        if ($amount <= 0) {
+            $amount = (float)($row['item_total_amount'] ?? 0);
+        }
+
         $history[] = [
             'id' => (int)$row['id'],
             'date' => $row['date'],
@@ -103,7 +114,8 @@ try {
             'student_name' => $row['student_name'] ?? null,
             'item' => $row['item'],
             'quantity' => (int)$row['quantity'],
-            'amount' => (float)$row['amount']
+            'amount' => $amount,
+            'display_amount' => round($amount, 2)
         ];
     }
 

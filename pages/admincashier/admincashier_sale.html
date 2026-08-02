@@ -547,6 +547,41 @@
       return Number.isFinite(numericValue) ? numericValue : fallback;
     }
 
+    function deriveTransactionAmount(items, fallbackAmount = 0) {
+      let total = getSafeNumber(fallbackAmount);
+      if (!Array.isArray(items)) return total;
+
+      items.forEach(item => {
+        const candidateFields = ['total_item_amount', 'total', 'line_total', 'amount', 'total_amount', 'price_total', 'item_total'];
+        let itemAmount = null;
+
+        for (const field of candidateFields) {
+          if (item && item[field] !== undefined && item[field] !== null && item[field] !== '' && !Number.isNaN(Number(item[field]))) {
+            itemAmount = getSafeNumber(item[field]);
+            break;
+          }
+        }
+
+        if (itemAmount === null) {
+          const unitPrice = candidateFields.some(() => false) ? null : null;
+          const priceCandidates = ['unit_price', 'price', 'unitPrice'];
+          const qtyCandidates = ['quantity', 'qty', 'amount_qty'];
+          const unitPriceValue = priceCandidates.reduce((acc, field) => acc ?? (item && item[field] !== undefined && item[field] !== null && item[field] !== '' && !Number.isNaN(Number(item[field])) ? getSafeNumber(item[field]) : null), null);
+          const quantityValue = qtyCandidates.reduce((acc, field) => acc ?? (item && item[field] !== undefined && item[field] !== null && item[field] !== '' && !Number.isNaN(Number(item[field])) ? getSafeNumber(item[field]) : null), null);
+
+          if (unitPriceValue !== null && quantityValue !== null) {
+            itemAmount = unitPriceValue * quantityValue;
+          }
+        }
+
+        if (itemAmount !== null) {
+          total += itemAmount;
+        }
+      });
+
+      return total;
+    }
+
     function formatDate(value) {
       const date = new Date(value);
       return Number.isNaN(date.getTime()) ? '-' : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -850,13 +885,14 @@
             ${studentName ? `<div class="text-xs text-gray-500">${studentName}</div>` : ''}` : '—';
         
         const row = document.createElement('tr');
+        const amountValue = getSafeNumber(entry.display_amount ?? entry.amount ?? entry.total_amount ?? entry.total ?? 0);
         row.innerHTML = `
           <td>${formatDate(entry.date)}</td>
           <td>${displayId}</td>
           <td>${studentInfo}</td>
           <td><div class="product-tag-list">${itemsHtml || '<span class="text-gray-400">No items</span>'}</div></td>
           <td>${getSafeNumber(entry.quantity)}</td>
-          <td>${formatCurrency(getSafeNumber(entry.amount))}</td>
+          <td>${formatCurrency(amountValue)}</td>
           <td style="text-align: center;">
             <button onclick="window.viewReceiptDetails('${internalId}')" class="view-details-btn" title="View Details">
               <i class="fas fa-eye"></i>
@@ -960,7 +996,9 @@
               </div>
               <span class="font-semibold text-gray-700">${formatCurrency(getSafeNumber(item.total_item_amount || item.total))}</span>
             </div>`).join('');
-          content.innerHTML = `<div class="space-y-6"><div class="bg-gray-50 p-4 rounded-xl text-sm"><p>Ref: ${getSafeText(t.transaction_number, 'N/A')}</p><p>Date: ${t.created_at ? new Date(t.created_at).toLocaleString() : 'N/A'}</p><p>Customer: ${getSafeText(t.student_name, 'N/A')} (ID: ${getSafeText(t.student_id || t.guest_school_id || t.user_id, 'N/A')})</p><p>Course: ${getSafeText(t.user_course, 'N/A')}</p><p>Cashier: ${getSafeText(t.cashier_name, 'N/A')}</p></div><div>${itemsHtml || '<p class="text-gray-500 text-sm">No item breakdown available.</p>'}</div><div class="bg-gray-50 p-4 rounded-xl text-sm font-bold"><p>Total: ${formatCurrency(getSafeNumber(t.total_amount))}</p></div></div>`;
+          const totalAmountValue = getSafeNumber(t.display_amount ?? t.total_amount ?? t.amount ?? t.subtotal ?? 0);
+          const derivedAmount = deriveTransactionAmount(items, totalAmountValue);
+          content.innerHTML = `<div class="space-y-6"><div class="bg-gray-50 p-4 rounded-xl text-sm"><p>Ref: ${getSafeText(t.transaction_number, 'N/A')}</p><p>Date: ${t.created_at ? new Date(t.created_at).toLocaleString() : 'N/A'}</p><p>Customer: ${getSafeText(t.student_name, 'N/A')} (ID: ${getSafeText(t.student_id || t.guest_school_id || t.user_id, 'N/A')})</p><p>Course: ${getSafeText(t.user_course, 'N/A')}</p><p>Cashier: ${getSafeText(t.cashier_name, 'N/A')}</p></div><div>${itemsHtml || '<p class="text-gray-500 text-sm">No item breakdown available.</p>'}</div><div class="bg-gray-50 p-4 rounded-xl text-sm font-bold"><p>Total: ${formatCurrency(derivedAmount)}</p></div></div>`;
         } else {
           content.innerHTML = `<div class="text-sm text-red-600">Unable to load transaction details.</div>`;
         }

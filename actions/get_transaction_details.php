@@ -253,6 +253,73 @@ try {
             $itemsStmt->close();
             $transaction['items'] = $items;
         }
+
+        $calculatedTotal = 0.0;
+        foreach ($transaction['items'] as $item) {
+            $itemAmount = null;
+            $candidateFields = [
+                'total_item_amount',
+                'total',
+                'line_total',
+                'amount',
+                'total_amount',
+                'price_total',
+                'item_total',
+            ];
+
+            foreach ($candidateFields as $field) {
+                if (isset($item[$field]) && is_numeric($item[$field])) {
+                    $itemAmount = floatval($item[$field]);
+                    break;
+                }
+            }
+
+            if ($itemAmount === null) {
+                $unitPrice = null;
+                $quantity = null;
+                foreach (['unit_price', 'price', 'unitPrice'] as $priceField) {
+                    if (isset($item[$priceField]) && is_numeric($item[$priceField])) {
+                        $unitPrice = floatval($item[$priceField]);
+                        break;
+                    }
+                }
+                foreach (['quantity', 'qty', 'amount_qty'] as $qtyField) {
+                    if (isset($item[$qtyField]) && is_numeric($item[$qtyField])) {
+                        $quantity = floatval($item[$qtyField]);
+                        break;
+                    }
+                }
+
+                if ($unitPrice !== null && $quantity !== null) {
+                    $itemAmount = $unitPrice * $quantity;
+                }
+            }
+
+            if ($itemAmount !== null) {
+                $calculatedTotal += $itemAmount;
+            }
+        }
+
+        $candidateAmounts = [
+            $transaction['total_amount'] ?? null,
+            $transaction['subtotal'] ?? null,
+            $transaction['payment_received'] ?? null,
+            $transaction['amount_paid'] ?? null,
+            $transaction['total_payment'] ?? null,
+        ];
+
+        foreach ($candidateAmounts as $candidate) {
+            if (is_numeric($candidate) && floatval($candidate) > 0) {
+                $calculatedTotal = floatval($candidate);
+                break;
+            }
+        }
+
+        $transaction['display_amount'] = round($calculatedTotal > 0 ? $calculatedTotal : 0.0, 2);
+        $transaction['total_amount'] = $transaction['display_amount'];
+        $transaction['subtotal'] = isset($transaction['subtotal']) && is_numeric($transaction['subtotal']) && floatval($transaction['subtotal']) > 0
+            ? floatval($transaction['subtotal'])
+            : $transaction['total_amount'];
         $transaction['receipt_type'] = $transaction['receipt_category'] ?? 'Transaction';
     } else {
         $transaction['items'] = [[
