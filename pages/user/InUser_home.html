@@ -265,6 +265,50 @@
     .status-pill.pending { background: #eff6ff; color: #2563eb; }
     .status-pill.expired { background: #fff1f2; color: #e11d48; }
 
+    .quick-actions-panel {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin: 0 0 1rem;
+    }
+
+    .quick-action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      min-height: 78px;
+      padding: 0.8rem;
+      border-radius: 1rem;
+      background: white;
+      color: #0f172a;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-align: center;
+    }
+
+    .quick-action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(37, 99, 235, 0.12);
+      color: #2563eb;
+    }
+
+    .quick-action-btn i {
+      font-size: 1.05rem;
+      color: #2563eb;
+    }
+
+    .quick-action-btn span {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      line-height: 1.2;
+    }
+
     .activity-pagination-btn {
       padding: 8px 16px;
       border-radius: 12px;
@@ -287,6 +331,151 @@
     }
 
     @media (max-width: 768px) {
+      .quick-actions-panel {
+        position: sticky;
+        bottom: 0.75rem;
+        z-index: 20;
+        padding: 0.45rem;
+        background: rgba(248, 250, 252, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        border-radius: 1.2rem;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+        margin-bottom: 1rem;
+      }
+
+      .quick-action-btn {
+        min-height: 74px;
+      }
+
+      .greeting-section {
+        padding: 1.15rem 1rem 1.25rem;
+        margin-bottom: 1rem;
+      }
+
+      .greeting-content h1 {
+        font-size: 1.45rem;
+      }
+
+      .greeting-content p {
+        font-size: 0.9rem;
+      }
+
+      .balance-section {
+        margin-bottom: 1.25rem;
+      }
+
+      .balance-section h2 {
+        font-size: 1.1rem;
+        margin-bottom: 0.9rem;
+      }
+
+      .balance-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.7rem;
+      }
+
+      .balance-card {
+        padding: 0.9rem;
+        min-height: 104px;
+        border-radius: 1rem;
+      }
+
+      .balance-card h3 {
+        font-size: 0.72rem;
+        margin-bottom: 0.35rem;
+      }
+
+      .balance-card .amount {
+        font-size: 1rem;
+      }
+
+      .alert-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+        padding: 1rem;
+        border-radius: 1rem;
+      }
+
+      .alert-section .btn {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .activity-section {
+        border-radius: 1.4rem;
+        padding: 1.2rem;
+        margin-top: 1.25rem;
+      }
+
+      .activity-section h2 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+      }
+
+      .table-container {
+        padding: 0.7rem;
+        border-radius: 1rem;
+      }
+
+      .pending-orders-table {
+        border-spacing: 0;
+        display: block;
+      }
+
+      .pending-orders-table thead {
+        display: none;
+      }
+
+      .pending-orders-table tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .pending-orders-table tr {
+        display: block;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+      }
+
+      .pending-orders-table tr td {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 0.85rem 0.95rem;
+        background: white;
+        border-radius: 0;
+      }
+
+      .pending-orders-table tr td:first-child,
+      .pending-orders-table tr td:last-child {
+        border-radius: 0;
+      }
+
+      .pending-orders-table tr td::before {
+        content: attr(data-label);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #64748b;
+        flex-shrink: 0;
+      }
+
+      .pending-orders-table tr td > span,
+      .pending-orders-table tr td > div,
+      .pending-orders-table tr td > p {
+        width: 100%;
+        text-align: left;
+      }
+
       .rental-card {
         flex-direction: column;
       }
@@ -295,11 +484,6 @@
         width: 100%;
         height: auto;
         aspect-ratio: 16/9;
-      }
-      
-      .alert-section {
-        flex-direction: column;
-        align-items: flex-start;
       }
     }
   </style>
@@ -526,11 +710,11 @@
 
           return `
             <tr>
-              <td style="font-weight: 600; color: #1e293b;">${date}</td>
-              <td style="color: #64748b; font-weight: 500; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${productList}">
+              <td data-label="Order Date" style="font-weight: 600; color: #1e293b;">${date}</td>
+              <td data-label="Product(s)" style="color: #64748b; font-weight: 500; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${productList}">
                 ${productList}
               </td>
-              <td>${statusHtml}</td>
+              <td data-label="Status">${statusHtml}</td>
             </tr>
           `;
         }).join('');

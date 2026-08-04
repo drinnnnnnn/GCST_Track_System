@@ -55,10 +55,10 @@
       background-position: center;
       background-repeat: no-repeat;
       color: white;
-      padding: 50px 60px;
-      border-radius: 3rem;
+      padding: 2rem 1.25rem;
+      border-radius: 1.5rem;
       text-align: center;
-      margin-bottom: 32px;
+      margin-bottom: 1.25rem;
       position: relative;
       overflow: hidden;
       box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
@@ -97,8 +97,8 @@
     /* Quick Link Card Refinement */
     .quick-link-card {
       background: white;
-      border-radius: 2rem;
-      padding: 24px;
+      border-radius: 1.35rem;
+      padding: 1rem;
       text-align: center;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
       text-decoration: none;
@@ -108,6 +108,8 @@
       flex-direction: column;
       height: 100%;
       align-items: center;
+      min-height: 160px;
+      justify-content: center;
     }
 
     .quick-link-card:hover {
@@ -117,15 +119,15 @@
     }
 
     .quick-link-icon {
-      font-size: 1.5rem;
-      width: 56px;
-      height: 56px;
+      font-size: 1.3rem;
+      width: 48px;
+      height: 48px;
       background: #f8fafc;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 1rem;
-      margin-bottom: 16px;
+      margin-bottom: 0.75rem;
       transition: transform 0.3s ease;
     }
 
@@ -163,15 +165,15 @@
     /* Help Guide Styles */
     .help-guide-card {
       background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-      border-radius: 2.5rem;
-      padding: 3rem 2rem;
+      border-radius: 1.4rem;
+      padding: 1.25rem;
       border: 1px solid #e2e8f0;
     }
 
     .step-box {
       background: white;
-      padding: 2rem;
-      border-radius: 1.5rem;
+      padding: 1rem;
+      border-radius: 1.1rem;
       border: 1px solid #f1f5f9;
       position: relative;
       transition: all 0.3s ease;
@@ -377,10 +379,12 @@
     .product-modal {
       width: min(100%, 720px);
       background: white;
-      border-radius: 2rem;
+      border-radius: 1.4rem;
       overflow: hidden;
       box-shadow: 0 35px 80px rgba(15, 23, 42, 0.2);
       animation: fadeInUp 0.32s ease;
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     .modal-header {
@@ -506,6 +510,54 @@
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .welcome-banner {
+        padding: 1.4rem 1rem;
+        border-radius: 1.2rem;
+      }
+      .welcome-banner h1 {
+        font-size: 1.7rem;
+        line-height: 1.15;
+      }
+      .welcome-banner p {
+        font-size: 0.95rem;
+      }
+      .quick-link-card {
+        min-height: 140px;
+      }
+      .help-guide-card {
+        padding: 1rem;
+      }
+      .step-box {
+        padding: 0.9rem;
+      }
+      .modal-backdrop {
+        padding: 0.75rem;
+      }
+      .modal-body,
+      .modal-header,
+      .modal-footer {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      .modal-title {
+        font-size: 1.15rem;
+      }
+      .modal-meta {
+        grid-template-columns: 1fr;
+      }
+      header {
+        padding: 12px 12px 0;
+      }
+      .nav-container {
+        padding: 0.7rem 0.9rem;
+      }
+      main {
+        padding-left: 1rem;
+        padding-right: 1rem;
       }
     }
 
