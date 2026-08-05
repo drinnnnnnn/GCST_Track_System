@@ -64,6 +64,106 @@
         .toast-error { background: #dc2626; }
         .toast-warning { background: #f59e0b; }
         .toast-info { background: #2563eb; }
+
+        .signature-preview-box {
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 0.85rem;
+            margin-top: 0.75rem;
+            max-width: 100%;
+        }
+        .signature-preview-box .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.65rem;
+        }
+        .signature-preview-box .preview-header span {
+            font-size: 0.75rem;
+            color: #475569;
+        }
+        .signature-preview-box .preview-content {
+            width: 100%;
+            min-height: 64px;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.85rem;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            padding: 0.45rem;
+        }
+        .signature-preview-box .preview-content img {
+            max-width: 100%;
+            max-height: 56px;
+            object-fit: contain;
+            border-radius: 0.75rem;
+        }
+        .signature-preview-box .preview-meta {
+            margin-top: 0.55rem;
+            font-size: 0.72rem;
+            color: #64748b;
+        }
+        .modal-subtitle {
+            font-size: 0.85rem;
+            color: #475569;
+            margin-top: -0.25rem;
+        }
+        .modal-fieldset {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        @media (min-width: 768px) {
+            .modal-fieldset { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        .modal-section {
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1rem;
+            background: #fff;
+        }
+        .modal-section-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.9rem;
+        }
+        .filter-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1rem;
+            border-radius: 9999px;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            color: #334155;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+        }
+        .filter-pill:hover {
+            background: #f8fafc;
+        }
+        .filter-pill.active {
+            background: #dc2626;
+            border-color: #dc2626;
+            color: #ffffff;
+        }
+        .filter-pill-count {
+            display: inline-flex;
+            min-width: 1.5rem;
+            justify-content: center;
+            border-radius: 9999px;
+            background: rgba(15, 23, 42, 0.08);
+            padding: 0.1rem 0.45rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
     </style>
 </head>
 
@@ -82,21 +182,46 @@
             </section>
 
             <section class="balance-section mb-8">
-                <div class="balance-cards">
+                <div class="balance-cards grid gap-4 sm:grid-cols-3">
                     <div class="balance-card group relative overflow-hidden bg-white border border-slate-100 rounded-2xl p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-200">
                         <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary transform scale-y-0 group-hover:scale-y-100 transition-transform duration-200"></div>
-                        
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 font-sans">
                                     Total Accounts
                                 </h3>
-                                <p class="text-3xl font-extrabold text-slate-800 tracking-tight font-sans" id="stat-total">
-                                    0
-                                </p>
+                                <p class="text-3xl font-extrabold text-slate-800 tracking-tight font-sans" id="stat-total">0</p>
                             </div>
                             <div class="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary/5 group-hover:text-primary transition-colors duration-200">
                                 <i class="fas fa-users text-base"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="balance-card group relative overflow-hidden bg-white border border-slate-100 rounded-2xl p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-200">
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 transform scale-y-0 group-hover:scale-y-100 transition-transform duration-200"></div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 font-sans">
+                                    Active Accounts
+                                </h3>
+                                <p class="text-3xl font-extrabold text-slate-800 tracking-tight font-sans" id="stat-active">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 transition-colors duration-200">
+                                <i class="fas fa-user-check text-base"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="balance-card group relative overflow-hidden bg-white border border-slate-100 rounded-2xl p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-200">
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-rose-500 transform scale-y-0 group-hover:scale-y-100 transition-transform duration-200"></div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 font-sans">
+                                    Deactivated Accounts
+                                </h3>
+                                <p class="text-3xl font-extrabold text-slate-800 tracking-tight font-sans" id="stat-inactive">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 transition-colors duration-200">
+                                <i class="fas fa-user-slash text-base"></i>
                             </div>
                         </div>
                     </div>
@@ -114,6 +239,11 @@
                         placeholder="Search by name or email..." 
                         class="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 shadow-sm transition-all text-slate-800 placeholder-slate-400"
                     >
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" class="filter-pill active" data-status="all" id="filter-all">All <span class="filter-pill-count" id="filter-count-all">0</span></button>
+                    <button type="button" class="filter-pill" data-status="active" id="filter-active">Active <span class="filter-pill-count" id="filter-count-active">0</span></button>
+                    <button type="button" class="filter-pill" data-status="inactive" id="filter-inactive">Deactive <span class="filter-pill-count" id="filter-count-inactive">0</span></button>
                 </div>
             </section>
 
@@ -157,7 +287,7 @@
     </div>
 
     <div id="admin-modal" class="logout-modal-overlay">
-        <div class="logout-modal-card">
+        <div class="logout-modal-card" style="max-width: 900px; width: min(900px, calc(100vw - 64px)); margin: 0 auto;">
             <div class="logout-modal-icon"><i class="fas fa-user-pen"></i></div>
             <h2 id="modal-title" class="logout-modal-title">Edit Account</h2>
             <p class="text-muted mb-6">Update the account credentials and permissions below.</p>
@@ -165,39 +295,57 @@
             <form id="admin-form" class="space-y-4 text-left" enctype="multipart/form-data">
                 <input type="hidden" id="form-id" name="id">
                 <input type="hidden" id="form-action" name="action" value="update_account">
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold uppercase text-slate-500">Username</label>
-                        <input type="text" id="form-username" name="username" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold uppercase text-slate-500">First Name</label>
-                        <input type="text" id="form-first-name" name="first_name" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold uppercase text-slate-500">Middle Name</label>
-                        <input type="text" id="form-middle-name" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold uppercase text-slate-500">Last Name</label>
-                        <input type="text" id="form-last-name" name="last_name" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold uppercase text-slate-500">Contact Number</label>
-                        <input type="text" id="form-contact-number" name="contact_number" required oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
+
+                <div class="modal-section">
+                    <div class="modal-section-title">Account Information</div>
+                    <div class="modal-subtitle">Update username, personal details, contact number, and email.</div>
+                    <div class="modal-fieldset">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold uppercase text-slate-500">Username</label>
+                            <input type="text" id="form-username" name="username" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold uppercase text-slate-500">First Name</label>
+                            <input type="text" id="form-first-name" name="first_name" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold uppercase text-slate-500">Middle Name</label>
+                            <input type="text" id="form-middle-name" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold uppercase text-slate-500">Last Name</label>
+                            <input type="text" id="form-last-name" name="last_name" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold uppercase text-slate-500">Contact Number</label>
+                            <input type="text" id="form-contact-number" name="contact_number" required oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold uppercase text-slate-500">Email Address</label>
+                            <input type="email" id="form-email" name="email" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
+                        </div>
                     </div>
                 </div>
 
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold uppercase text-slate-500">Email Address</label>
-                    <input type="email" id="form-email" name="email" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
-                </div>
-
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold uppercase text-slate-500">Signature Image</label>
-                    <input type="file" id="form-signature-image" name="signature_image" accept="image/png, image/jpeg" class="w-full text-sm text-slate-600 file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:rounded-lg file:text-slate-700" />
-                    <p class="text-[10px] text-slate-400">Optional. Upload a new signature image for this account.</p>
+                <div class="modal-section">
+                    <div class="modal-section-title">Signature Preview</div>
+                    <div class="modal-subtitle">View the currently saved signature image and replace it if needed.</div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold uppercase text-slate-500">Signature Image</label>
+                        <input type="file" id="form-signature-image" name="signature_image" accept="image/png, image/jpeg" class="w-full text-sm text-slate-600 file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:rounded-lg file:text-slate-700" />
+                        <p class="text-[10px] text-slate-400">Optional. Upload a new signature image to replace the saved one.</p>
+                        <div id="signature-preview-box" class="signature-preview-box hidden">
+                            <div class="preview-header">
+                                <span id="signature-preview-title">Current saved signature</span>
+                                <span id="signature-preview-status">No file selected</span>
+                            </div>
+                            <div id="signature-preview-content" class="preview-content">
+                                <span class="text-[11px] text-slate-400">No signature image is currently saved for this account.</span>
+                            </div>
+                            <div id="signature-preview-meta" class="preview-meta"></div>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-2">The current signature is shown above. Choose a file to preview a replacement.</p>
+                    </div>
                 </div>
 
                 <div class="logout-modal-actions pt-4">
@@ -264,6 +412,7 @@
         let pendingActionId = null;
         let pendingStatus = null;
         const apiPath = '../../actions/process_admin_cashier.php';
+        let selectedStatusFilter = 'all';
 
         window.initializeSuperAdminPage(() => {
             showToast('Loading admin data...', 'info');
@@ -285,6 +434,7 @@
                 const data = await res.json();
                 if (Array.isArray(data)) {
                     allAdmins = data;
+                    updateAdminCounts();
                     document.getElementById('stat-total').textContent = allAdmins.length;
                     applyFilters();
                 } else if (data && data.success === false) {
@@ -314,10 +464,30 @@
                 const email = (a.email || '').toLowerCase();
                 const contactNumber = (a.contact_number || '').toLowerCase();
                 const matchQuery = fullName.includes(query) || username.includes(query) || email.includes(query) || contactNumber.includes(query);
-                return matchQuery;
+                if (!matchQuery) return false;
+
+                if (selectedStatusFilter === 'active') {
+                    return normalizeAdmin(a).isActive;
+                }
+                if (selectedStatusFilter === 'inactive') {
+                    return !normalizeAdmin(a).isActive;
+                }
+                return true;
             });
             
             renderTable(filtered);
+        }
+
+        function updateAdminCounts() {
+            const normalized = allAdmins.map(normalizeAdmin);
+            const activeCount = normalized.filter(a => a.isActive).length;
+            const inactiveCount = normalized.filter(a => !a.isActive).length;
+
+            document.getElementById('stat-active').textContent = activeCount;
+            document.getElementById('stat-inactive').textContent = inactiveCount;
+            document.getElementById('filter-count-all').textContent = allAdmins.length;
+            document.getElementById('filter-count-active').textContent = activeCount;
+            document.getElementById('filter-count-inactive').textContent = inactiveCount;
         }
 
         function escapeHtml(value) {
@@ -421,14 +591,99 @@
             tbody.replaceChildren(fragment);
         }
 
+        let currentSignatureObjectUrl = null;
+
         function setupEvents() {
             document.getElementById('search-bar').oninput = applyFilters;
+            document.getElementById('filter-all').addEventListener('click', () => updateStatusFilter('all'));
+            document.getElementById('filter-active').addEventListener('click', () => updateStatusFilter('active'));
+            document.getElementById('filter-inactive').addEventListener('click', () => updateStatusFilter('inactive'));
             document.getElementById('admin-form').onsubmit = handleFormSubmit;
             document.getElementById('password-form').onsubmit = handlePasswordSubmit;
             document.getElementById('pin-form').onsubmit = handlePinSubmit;
+            const signatureInput = document.getElementById('form-signature-image');
+            if (signatureInput) {
+                signatureInput.onchange = handleSignatureFileChange;
+            }
             document.getElementById('confirm-modal').addEventListener('click', function (e) {
                 if (e.target === this) closeConfirmModal();
             });
+        }
+
+        function updateStatusFilter(status) {
+            selectedStatusFilter = status;
+            document.querySelectorAll('.filter-pill').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.status === status);
+            });
+            applyFilters();
+        }
+
+        function getSignatureImageUrl(imagePath) {
+            if (!imagePath) return null;
+            if (/^https?:\/\//i.test(imagePath)) return imagePath;
+            const normalized = imagePath.replace(/^\/+/, '');
+            return new URL(`../../${normalized}`, window.location.href).href;
+        }
+
+        function handleSignatureFileChange() {
+            const file = this.files[0];
+            const existingPath = this.dataset.existingSignature || null;
+            if (file) {
+                updateSignaturePreview({ file });
+            } else {
+                updateSignaturePreview({ existingPath });
+            }
+        }
+
+        function updateSignaturePreview({ existingPath = null, file = null }) {
+            const box = document.getElementById('signature-preview-box');
+            const title = document.getElementById('signature-preview-title');
+            const status = document.getElementById('signature-preview-status');
+            const content = document.getElementById('signature-preview-content');
+            const meta = document.getElementById('signature-preview-meta');
+
+            if (!box || !title || !status || !content || !meta) return;
+            box.classList.remove('hidden');
+
+            if (currentSignatureObjectUrl) {
+                URL.revokeObjectURL(currentSignatureObjectUrl);
+                currentSignatureObjectUrl = null;
+            }
+
+            if (file) {
+                const objectUrl = URL.createObjectURL(file);
+                currentSignatureObjectUrl = objectUrl;
+                title.textContent = 'New uploaded signature';
+                status.textContent = 'Selected file';
+                content.innerHTML = `<img src="${escapeHtml(objectUrl)}" alt="Selected signature preview" />`;
+                meta.textContent = `${escapeHtml(file.name)} · ${(file.size / 1024).toFixed(1)} KB`;
+                return;
+            }
+
+            if (existingPath) {
+                const imageUrl = getSignatureImageUrl(existingPath);
+                title.textContent = 'Current saved signature';
+                status.textContent = 'Existing file';
+                content.innerHTML = `<img src="${escapeHtml(imageUrl)}" alt="Current signature preview" />`;
+                meta.textContent = 'The current signature image is saved on record. Upload a new file to replace it.';
+                return;
+            }
+
+            title.textContent = 'No signature on file';
+            status.textContent = 'Optional';
+            content.innerHTML = '<span class="text-[11px] text-slate-400 text-center">No signature image is currently saved for this admin account.</span>';
+            meta.textContent = 'Upload a PNG or JPG file to add or replace a signature image.';
+        }
+
+        function resetSignaturePreview() {
+            const box = document.getElementById('signature-preview-box');
+            if (box) {
+                box.classList.add('hidden');
+            }
+            if (currentSignatureObjectUrl) {
+                URL.revokeObjectURL(currentSignatureObjectUrl);
+                currentSignatureObjectUrl = null;
+            }
         }
 
         function showToast(message, type = 'success') {
@@ -543,12 +798,17 @@
             document.getElementById('form-contact-number').value = a.contact_number || '';
             document.getElementById('form-email').value = a.email;
             const signatureInput = document.getElementById('form-signature-image');
-            if (signatureInput) signatureInput.value = '';
+            if (signatureInput) {
+                signatureInput.value = '';
+                signatureInput.dataset.existingSignature = a.signature_image || '';
+            }
+            updateSignaturePreview({ existingPath: a.signature_image || null });
             document.getElementById('admin-modal').classList.add('active');
         }
 
         function closeModal() {
             document.getElementById('admin-modal').classList.remove('active');
+            resetSignaturePreview();
         }
 
         function openPasswordModal(id) {

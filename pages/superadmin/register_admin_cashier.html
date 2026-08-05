@@ -169,13 +169,20 @@
             background: rgba(148, 163, 184, 0.08);
             color: #64748b;
             cursor: pointer;
-            transition: background 0.2s ease, color 0.2s ease;
+            transition: none !important;
+            animation: none !important;
             padding: 0;
         }
 
         .password-toggle:hover {
             color: var(--primary);
             background: rgba(59, 130, 246, 0.12);
+        }
+
+        .password-toggle,
+        .password-toggle i {
+            transition: none !important;
+            animation: none !important;
         }
 
         .password-toggle i {
@@ -309,7 +316,7 @@
         <div class="header-anim animate-item">
             <div class="header-icon"><i class='bx bx-user-plus'></i></div>
             <h1>Create Staff Account</h1>
-            <p class="subtitle">Set up a new administrator or cashier</p>
+            <p class="subtitle">Set up a new administrator cashier</p>
         </div>
 
         <form action="../../actions/process_admin_cashier.php" method="POST" enctype="multipart/form-data" onsubmit="return validateForm(this)">
@@ -346,21 +353,21 @@
                 <div class="input-group">
                     <label for="password" class="sr-only">Password</label>
                     <input type="password" name="password" id="password" placeholder="Password" autocomplete="new-password" required>
-                    <button type="button" class="password-toggle" id="togglePassword" aria-label="Show password">
+                    <button type="button" class="password-toggle" data-target="password" data-label="password" aria-label="Show password" aria-pressed="false">
                         <i class="bx bx-show"></i>
                     </button>
                 </div>
                 <div class="input-group">
                     <label for="confirm_password" class="sr-only">Confirm Password</label>
                     <input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm Password" autocomplete="new-password" required>
-                    <button type="button" class="password-toggle" id="toggleConfirm" aria-label="Show confirmation password">
+                    <button type="button" class="password-toggle" data-target="confirm_password" data-label="confirmation password" aria-label="Show confirmation password" aria-pressed="false">
                         <i class="bx bx-show"></i>
                     </button>
                 </div>
                 <div class="input-group">
                     <label for="pin" class="sr-only">Security PIN</label>
                     <input type="password" name="pin" id="pin" placeholder="Security PIN" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" autocomplete="off" title="Enter a 4-digit security PIN" required>
-                    <button type="button" class="password-toggle" id="togglePin" aria-label="Show PIN">
+                    <button type="button" class="password-toggle" data-target="pin" data-label="PIN" aria-label="Show PIN" aria-pressed="false">
                         <i class="bx bx-show"></i>
                     </button>
                 </div>
@@ -415,25 +422,30 @@
         }
 
 // Toggle visibility function with safety checks
-const setupToggle = (btnId, inputId, label) => {
-    const btn = document.getElementById(btnId);
-    const input = document.getElementById(inputId);
-    if (!btn || !input) return;
+const setupToggle = (button) => {
+    const targetId = button.dataset.target;
+    const label = button.dataset.label || 'password';
+    const input = document.getElementById(targetId);
+    if (!button || !input) return;
 
-    const icon = btn.querySelector('i');
+    const icon = button.querySelector('i');
 
-    btn.addEventListener('click', () => {
-        const isVisible = input.type === 'text';
-        input.type = isVisible ? 'password' : 'text';
-        if (icon) icon.className = isVisible ? 'bx bx-show' : 'bx bx-hide';
-        btn.setAttribute('aria-label', isVisible ? `Show ${label}` : `Hide ${label}`);
+    const updateState = (show) => {
+        input.type = show ? 'text' : 'password';
+        if (icon) icon.className = show ? 'bx bx-hide' : 'bx bx-show';
+        button.setAttribute('aria-label', `${show ? 'Hide' : 'Show'} ${label}`);
+        button.setAttribute('aria-pressed', show ? 'true' : 'false');
+    };
+
+    button.addEventListener('click', (event) => {
+        event.preventDefault();
+        updateState(input.type !== 'text');
     });
+
+    updateState(false);
 };
 
-// Initialize listeners
-setupToggle('togglePassword', 'password', 'password');
-setupToggle('toggleConfirm', 'confirm_password', 'confirmation password');
-setupToggle('togglePin', 'pin', 'PIN');
+document.querySelectorAll('.password-toggle').forEach(setupToggle);
 
         // Form validation
         function validateForm(form) {

@@ -14,10 +14,12 @@ try {
         throw new Exception('Invalid backup ID');
     }
 
-    $success = restoreBackup($backupId);
-    echo json_encode(['success' => $success, 'message' => $success ? 'Backup restored successfully' : 'Failed to restore backup']);
+    $success = deleteBackup($backupId);
+    if (!$success) {
+        throw new Exception('Unable to delete backup');
+    }
+
+    echo json_encode(['success' => true, 'message' => 'Backup deleted successfully']);
 } catch (Exception $e) {
-    http_response_code(400);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
-?>

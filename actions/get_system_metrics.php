@@ -4,8 +4,8 @@ include 'functions.php';
 
 try {
     $metrics = getSystemMetrics();
-    echo json_encode($metrics);
+    echo json_encode(array_merge(['success' => true], $metrics));
 } catch (Exception $e) {
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
 ?>

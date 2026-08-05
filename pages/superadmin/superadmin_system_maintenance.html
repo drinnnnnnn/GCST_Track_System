@@ -60,6 +60,9 @@
         .toast.error { background: #dc2626; }
         .toast.warning { background: #f59e0b; }
         .toast.info { background: #2563eb; }
+        .status.missing { background: #facc15; color: #0f172a; }
+        .status.failed { background: #ef4444; }
+        .status.success { background: #16a34a; }
         .toast-icon {
             width: 32px;
             height: 32px;
@@ -156,6 +159,10 @@
         <div class="greeting-content">
           <h1>Maintenance & Health</h1>
           <p>Monitor health metrics, manage secure database backups, and optimize system performance.</p>
+          <div class="text-sm text-slate-500 mt-2">
+            <p id="lastMetricsUpdated">Metrics refreshed: --</p>
+            <p id="lastBackupsUpdated">Backups refreshed: --</p>
+          </div>
         </div>
       </section>
 
@@ -239,7 +246,7 @@
       <!-- Recent Backups -->
       <section class="products-section mb-10">
         <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Recent Database Snapshots</h2>
+            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Recent Database</h2>
         </div>
         <div class="table-responsive">
           <table class="products-table">
@@ -316,11 +323,11 @@
         impact: 'Medium',
         message: 'This will repair and optimize database tables for better performance.'
       },
-      restoreBackup: {
-        label: 'Restore Backup',
-        endpoint: 'restore_backup.php',
+      deleteBackup: {
+        label: 'Delete Backup',
+        endpoint: 'delete_backup.php',
         impact: 'High',
-        message: 'This will overwrite the current database state with the selected backup.'
+        message: 'This will permanently delete the selected backup file and remove it from records.'
       }
     };
 
@@ -336,7 +343,7 @@
       document.getElementById('maintenanceModalAction').textContent = config.label;
       document.getElementById('maintenanceModalImpact').textContent = `Impact Level: ${config.impact}`;
       document.getElementById('maintenanceModalMessage').textContent = payload?.message || config.message;
-      document.getElementById('maintenanceConfirmBtn').textContent = actionKey === 'restoreBackup' ? 'Restore' : 'Proceed';
+      document.getElementById('maintenanceConfirmBtn').textContent = actionKey === 'deleteBackup' ? 'Delete' : 'Proceed';
       document.getElementById('maintenanceModal').classList.add('active');
       document.getElementById('maintenanceConfirmBtn').focus();
 
@@ -357,9 +364,16 @@
     function executeMaintenanceAction(actionKey) {
       const config = maintenanceActionConfig[actionKey];
       if (!config) return;
-      const callback = actionKey === 'backupDatabase' ? () => loadRecentBackups() : actionKey === 'restoreBackup' ? () => loadRecentBackups() : null;
+      const callback = actionKey === 'backupDatabase'
+        ? () => {
+            loadRecentBackups();
+            showToast('Database backup completed and snapshots refreshed.', 'success');
+          }
+        : actionKey === 'deleteBackup'
+        ? () => loadRecentBackups()
+        : null;
       const button = pendingMaintenancePayload?.button || config.buttonId || null;
-      const options = actionKey === 'restoreBackup' ? {
+      const options = actionKey === 'deleteBackup' ? {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: pendingMaintenancePayload?.backupId })
@@ -373,6 +387,20 @@
         config.label,
         options
       );
+    }
+
+    function updateMetricsRefreshed() {
+      const label = document.getElementById('lastMetricsUpdated');
+      if (!label) return;
+      const now = new Date();
+      label.textContent = `Metrics refreshed: ${now.toLocaleString()}`;
+    }
+
+    function updateBackupsRefreshed() {
+      const label = document.getElementById('lastBackupsUpdated');
+      if (!label) return;
+      const now = new Date();
+      label.textContent = `Backups refreshed: ${now.toLocaleString()}`;
     }
 
     function showToast(message, type = 'success') {
@@ -414,6 +442,7 @@
           document.getElementById('storageUsed').textContent = data.storage_used || 'N/A';
           document.getElementById('activeConnections').textContent = data.active_connections ?? 'N/A';
           document.getElementById('serverLoad').textContent = data.server_load || 'N/A';
+          updateMetricsRefreshed();
           showToast('System metrics refreshed', 'info');
         })
         .catch(err => {
@@ -435,6 +464,7 @@
         .then(data => {
           const tbody = document.getElementById('backupsTableBody');
           tbody.innerHTML = '';
+          updateBackupsRefreshed();
           if (!Array.isArray(data) || data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" class="text-center text-slate-500 py-6">No backups available.</td></tr>';
             return;
@@ -442,11 +472,14 @@
           data.forEach(backup => {
             const date = new Date(backup.backup_date).toLocaleString();
             tbody.innerHTML += `
-              <tr>
+                    <tr>
                 <td class="font-medium text-slate-700">${date}</td>
                 <td class="text-slate-500">${backup.file_size}</td>
-                <td><span class="status ${backup.status === 'success' ? 'in-stock' : 'out-of-stock'}">${backup.status === 'success' ? 'Success' : 'Failed'}</span></td>
-                <td class="text-right"><button type="button" class="btn-success py-1.5 px-3 text-xs" data-backup-id="${backup.id}" data-backup-date="${backup.backup_date}" onclick="restoreBackup(${backup.id}, this)">Restore Snapshot</button></td>
+                <td><span class="status ${backup.status === 'success' ? 'success' : backup.status === 'missing' ? 'missing' : 'failed'}">${backup.status === 'success' ? 'Success' : backup.status === 'missing' ? 'Missing file' : 'Failed'}</span></td>
+                <td class="text-right space-x-1">
+                  <button type="button" class="btn-primary py-1.5 px-3 text-xs" ${backup.file_exists ? '' : 'disabled'} onclick="downloadBackup(${backup.id})">Download</button>
+                  <button type="button" class="btn-danger py-1.5 px-3 text-xs" onclick="deleteBackup(${backup.id}, this)">Delete</button>
+                </td>
               </tr>
             `;
           });
@@ -531,14 +564,16 @@
         });
     }
 
-    // Restore backup via confirmation modal
-    function restoreBackup(backupId, button) {
-      const backupDate = button?.dataset?.backupDate;
-      const formattedDate = backupDate ? new Date(backupDate).toLocaleString() : 'selected backup';
-      openMaintenanceConfirmModal('restoreBackup', {
+    function downloadBackup(backupId) {
+      const url = `../../actions/download_backup.php?id=${encodeURIComponent(backupId)}`;
+      window.location.href = url;
+    }
+
+    function deleteBackup(backupId, button) {
+      openMaintenanceConfirmModal('deleteBackup', {
         backupId,
         button,
-        message: `Restore snapshot from ${formattedDate}? This will overwrite current database state.`
+        message: 'Delete this backup file permanently? This action cannot be undone.'
       });
     }
 

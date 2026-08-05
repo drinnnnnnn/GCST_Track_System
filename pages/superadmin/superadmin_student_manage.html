@@ -102,6 +102,112 @@
         body.modal-open {
             overflow: hidden;
         }
+        /* Review modal enhancements */
+        #review-modal .logout-modal-card {
+            max-width: 1000px;
+            width: min(96vw, 1000px);
+        }
+
+        .review-grid {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 18px;
+            align-items: start;
+        }
+
+        .doc-preview {
+            background: #fff;
+            border: 1px solid #eef2f7;
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .doc-preview img {
+            width: 100%;
+            height: 320px;
+            object-fit: contain;
+            border-radius: 8px;
+            cursor: zoom-in;
+            background: #f8fafc;
+        }
+
+        .doc-preview embed,
+        .doc-preview iframe {
+            width: 100%;
+            height: 260px;
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .doc-toolbar {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 8px;
+        }
+
+        .doc-toolbar a,
+        .doc-toolbar button {
+            font-size: 12px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            border: 1px solid #e6e9ef;
+            background: #ffffff;
+            color: #0f172a;
+            text-decoration: none;
+        }
+
+        /* Lightbox */
+        #lightbox-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(2,6,23,0.75);
+            z-index: 6000;
+            padding: 24px;
+        }
+
+        #lightbox-content {
+            max-width: 96vw;
+            max-height: 96vh;
+            width: auto;
+            height: auto;
+        }
+
+        #lightbox-content img,
+        #lightbox-content iframe,
+        #lightbox-content embed {
+            max-width: 96vw;
+            max-height: 96vh;
+            border-radius: 8px;
+            display: block;
+        }
+
+        #lightbox-close {
+            position: fixed;
+            right: 28px;
+            top: 22px;
+            z-index: 6100;
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            border: none;
+            padding: 10px 12px;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+        /* Documents grid inside review modal */
+        .docs-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        @media (min-width: 720px) {
+            .docs-grid { grid-template-columns: repeat(2, 1fr); }
+            .review-grid { grid-template-columns: 1fr 380px; }
+        }
     </style>
 </head>
 
@@ -129,6 +235,10 @@
                     <div class="balance-card group">
                         <h3>Verified</h3>
                         <p class="amount success" id="stat-verified">0</p>
+                    </div>
+                    <div class="balance-card group">
+                        <h3>Deactivated</h3>
+                        <p class="amount danger" id="stat-deactivated">0</p>
                     </div>
                     <div class="balance-card group">
                         <h3>Pending</h3>
@@ -163,6 +273,18 @@
                 <option value="BS Accountancy">BS Accountancy</option>
             </select>
             
+            <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400 text-xs">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+        <div class="relative w-full max-w-xs md:max-w-md">
+            <select
+                id="filter-status"
+                class="w-full pl-4 pr-11 py-2.5 bg-white border border-slate-200 rounded-xl outline-none transition-all duration-200 text-slate-700 text-sm font-semibold appearance-none cursor-pointer font-sans shadow-sm focus:border-primary focus:ring-4 focus:ring-primary/5">
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="deactivated">Deactivated</option>
+            </select>
             <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400 text-xs">
                 <i class="fas fa-chevron-down"></i>
             </div>
@@ -267,7 +389,7 @@
     </div>
 
     <!-- Modern Student Profile Edit Modal -->
-    <div id="student-modal" class="logout-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="student-modal-title">
+    <div id="student-modal" class="logout-modal-overlay no-click-close" role="dialog" aria-modal="true" aria-labelledby="student-modal-title">
         <div class="logout-modal-card relative">
             <button type="button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600" aria-label="Close edit modal" onclick="closeModal('student-modal')">
                 <i class="fas fa-times"></i>
@@ -389,6 +511,11 @@
     </div>
 
     <!-- Scripts -->
+    <!-- Lightbox overlay for previewing images/PDFs -->
+    <div id="lightbox-overlay" onclick="closeLightbox()" role="dialog" aria-hidden="true">
+        <div id="lightbox-content" onclick="event.stopPropagation()"></div>
+        <button id="lightbox-close" onclick="closeLightbox()" aria-label="Close preview">✕</button>
+    </div>
     <script src="../../assets/js/superadmin.js"></script>
     <script>
         let allStudents = [];
@@ -563,6 +690,7 @@
                     }));
                     document.getElementById('stat-total').textContent = allStudents.length;
                     document.getElementById('stat-verified').textContent = allStudents.filter(s => normalizeStatus(s.status) === 'active').length;
+                    document.getElementById('stat-deactivated').textContent = allStudents.filter(s => normalizeStatus(s.status) === 'suspended').length;
                     document.getElementById('stat-pending').textContent = allStudents.filter(s => normalizeStatus(s.status) === 'pending').length;
                 }
                 applyFilters();
@@ -578,6 +706,7 @@
             
             const query = queryInput.value.toLowerCase();
             const course = document.getElementById('filter-course').value;
+            const statusFilter = document.getElementById('filter-status')?.value || 'all';
             const pwdFilter = document.getElementById('filter-pwd')?.value || 'all';
             
             const filtered = allStudents.filter(s => {
@@ -586,9 +715,11 @@
                 const email = (s.email || '').toLowerCase();
                 const matchQuery = fullName.includes(query) || studentId.includes(query) || email.includes(query);
                 const matchCourse = course === 'all' || s.course === course;
+                const status = normalizeStatus(s.status);
+                const matchStatus = statusFilter === 'all' || (statusFilter === 'active' && status === 'active') || (statusFilter === 'deactivated' && status === 'suspended');
                 const isPwd = Number(s.is_pwd || 0) === 1;
                 const matchPwd = pwdFilter === 'all' || (pwdFilter === 'yes' && isPwd) || (pwdFilter === 'no' && !isPwd);
-                return matchQuery && matchCourse && matchPwd;
+                return matchQuery && matchCourse && matchStatus && matchPwd;
             });
             
             renderTable(filtered);
@@ -692,13 +823,16 @@
 
             if (searchInput) searchInput.oninput = applyFilters;
             if (filterCourse) filterCourse.onchange = applyFilters;
+            const filterStatus = document.getElementById('filter-status');
             const filterPwd = document.getElementById('filter-pwd');
+            if (filterStatus) filterStatus.onchange = applyFilters;
             if (filterPwd) filterPwd.onchange = applyFilters;
             if (studentForm) studentForm.onsubmit = handleFormSubmit;
 
             document.querySelectorAll('.logout-modal-overlay').forEach(modal => {
                 modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
+                    // If overlay has class 'no-click-close', do not close when clicking backdrop
+                    if (e.target === modal && !modal.classList.contains('no-click-close')) {
                         closeModal(modal.id);
                     }
                 });
@@ -806,7 +940,7 @@
 
                 <div class="space-y-4">
                     <label class="text-[10px] font-bold uppercase text-slate-400 tracking-widest block">Submitted Proofs</label>
-                    <div class="grid grid-cols-1 gap-3">
+                    <div class="docs-grid">
                         ${renderDoc(s.school_id_pic, 'School ID Pic')}
                         ${renderDoc(s.reg_form, 'Registration Form')}
                         ${renderDoc(s.payment_scheme, 'Payment Scheme')}
@@ -833,20 +967,47 @@
             const fullPath = '../../' + path;
             const isPdf = path.toLowerCase().endsWith('.pdf');
             return `
-                <div class="p-3 bg-white border border-slate-200 rounded-2xl group hover:border-primary transition-all">
+                <div class="doc-preview group">
                     <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center"><i class="fas ${isPdf ? 'fa-file-pdf text-rose-500' : 'fa-image text-blue-500'} mr-3"></i><span class="text-xs font-bold text-slate-700">${label}</span></div>
-                        <a href="${fullPath}" target="_blank" class="text-[10px] font-bold text-primary hover:underline">Open Full File</a>
+                        <div class="flex items-center"><i class="fas ${isPdf ? 'fa-file-pdf text-rose-500' : 'fa-image text-blue-500'} mr-3"></i><span class="text-sm font-bold text-slate-700">${label}</span></div>
+                        <div class="text-sm font-semibold text-slate-500">${isPdf ? 'PDF' : 'Image'}</div>
                     </div>
                     ${isPdf ? `
-                        <div class="aspect-[16/5] bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100">
-                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">PDF Document Loaded</p>
-                        </div>
+                        <embed src="${fullPath}" type="application/pdf" class="rounded-lg" />
                     ` : `
-                        <img src="${fullPath}" class="w-full h-32 object-cover rounded-lg border border-slate-100 group-hover:opacity-90">
+                        <img src="${fullPath}" alt="${label}" onclick="openLightbox('${fullPath.replace(/'/g, "\\'")}', false)" />
                     `}
+                    <div class="doc-toolbar">
+                        <a href="${fullPath}" target="_blank" rel="noopener" title="Open full file" aria-label="Open full file"><i class="fas fa-external-link-alt"></i></a>
+                        <a href="${fullPath}" download title="Download file" aria-label="Download file"><i class="fas fa-download"></i></a>
+                        ${isPdf ? `<button onclick="openLightbox('${fullPath.replace(/'/g, "\\'")}', true)" title="Preview PDF" aria-label="Preview PDF"><i class="fas fa-eye"></i></button>` : ''}
+                    </div>
                 </div>
             `;
+        }
+
+        function openLightbox(src, isPdf = false) {
+            try {
+                const overlay = document.getElementById('lightbox-overlay');
+                const content = document.getElementById('lightbox-content');
+                if (!overlay || !content) return;
+                content.innerHTML = isPdf
+                    ? `<iframe src="${src}" frameborder="0" style="width:100%;height:80vh;border-radius:8px"></iframe>`
+                    : `<img src="${src}" alt="Preview" />`;
+                overlay.style.display = 'flex';
+                document.body.classList.add('modal-open');
+            } catch (err) {
+                console.error('Lightbox error', err);
+            }
+        }
+
+        function closeLightbox() {
+            const overlay = document.getElementById('lightbox-overlay');
+            const content = document.getElementById('lightbox-content');
+            if (!overlay || !content) return;
+            content.innerHTML = '';
+            overlay.style.display = 'none';
+            document.body.classList.remove('modal-open');
         }
 
         function closeReviewModal() {

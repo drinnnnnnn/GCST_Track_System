@@ -65,7 +65,7 @@ try {
         requireAuth(['superadmin']);
         
         if ($action === 'list') {
-            $query = "SELECT id, username, first_name, last_name, middle_name, email, contact_number, role, status, last_login, login_attempts FROM admincashier_acc ORDER BY created_at DESC";
+            $query = "SELECT id, username, first_name, last_name, middle_name, email, contact_number, role, status, last_login, login_attempts, signature_image FROM admincashier_acc ORDER BY created_at DESC";
             $result = $conn->query($query);
             
             if (!$result) {
