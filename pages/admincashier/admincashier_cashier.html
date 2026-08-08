@@ -608,6 +608,57 @@
       background: linear-gradient(90deg, #22c55e 0%, #10b981 100%);
       transition: width 1s linear;
     }
+    .receipt-loading-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 12000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(2px);
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .receipt-loading-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .receipt-loading-overlay.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+    .receipt-loading-shell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 26px 28px;
+      border-radius: 20px;
+      background: #ffffff;
+      min-width: 280px;
+      max-width: 420px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+    }
+    .receipt-loading-spinner {
+      width: 44px;
+      height: 44px;
+      border: 5px solid rgba(37, 99, 235, 0.2);
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: receipt-loading-spin 1s linear infinite;
+    }
+    .receipt-loading-message {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #0f172a;
+      text-align: center;
+      line-height: 1.4;
+    }
+    @keyframes receipt-loading-spin {
+      to { transform: rotate(360deg); }
+    }
     .receipt-preview-card {
       margin-top: 6px;
       padding: 20px;
@@ -2438,6 +2489,12 @@
             <button id="tuition-generate-btn" type="button" class="btn btn-primary btn-sm receipt-actions-btn" onclick="openTuitionReceiptConfirmationModal()">Generate Receipt</button>
             <button id="tuition-clear-btn" type="button" class="btn btn-secondary btn-sm receipt-actions-btn" onclick="clearTuitionForm()">Clear</button>
           </div>
+          <div id="tuition-receipt-loading-overlay" class="receipt-loading-overlay hidden" aria-live="polite" aria-busy="true">
+            <div class="receipt-loading-shell">
+              <div class="receipt-loading-spinner" aria-hidden="true"></div>
+              <div class="receipt-loading-message">Generating receipt, please wait...</div>
+            </div>
+          </div>
 
           <!-- Tuition Receipt Preview Section -->
           <div id="tuition-receipt-preview" class="receipt-panel hidden receipt-preview-card" style="display:none !important; visibility:hidden !important; pointer-events:none;" aria-hidden="true">
@@ -2519,8 +2576,8 @@
             </div>
             <div style="display: grid; gap: 0; margin-bottom: 20px; background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border-radius: 18px; overflow: hidden; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); border: 1px solid #dbeafe;">
               <div class="receipt-line" style="justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(191, 219, 254, 0.5); gap: 12px;"><span style="color: #0c4a6e; font-weight: 600;">Amount Paid</span><strong id="tuition-receipt-amount" style="color: #0369a1; font-size: 1.05rem;"></strong></div>
-              <div class="receipt-line" style="justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(191, 219, 254, 0.5); gap: 12px;"><span style="color: #0c4a6e; font-weight: 600;">Total Payment</span><strong id="tuition-receipt-total-payment" style="color: #0369a1;">—</strong></div>
-              <div class="receipt-line" style="justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(191, 219, 254, 0.5); gap: 12px;"><span style="color: #0c4a6e; font-weight: 600;">Balance</span><strong id="tuition-receipt-balance" style="color: #0369a1;">—</strong></div>
+              <div id="tuition-receipt-total-payment-row" class="receipt-line" style="justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(191, 219, 254, 0.5); gap: 12px;"><span style="color: #0c4a6e; font-weight: 600;">Total Payment</span><strong id="tuition-receipt-total-payment" style="color: #0369a1;">—</strong></div>
+              <div id="tuition-receipt-balance-row" class="receipt-line" style="justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(191, 219, 254, 0.5); gap: 12px;"><span style="color: #0c4a6e; font-weight: 600;">Balance</span><strong id="tuition-receipt-balance" style="color: #0369a1;">—</strong></div>
               <div class="receipt-line" style="justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(191, 219, 254, 0.5); gap: 12px;"><span style="color: #0c4a6e; font-weight: 600;">O.R. #</span><strong id="tuition-receipt-or-number" style="color: #0369a1; font-family: monospace;">—</strong></div>
               <div class="receipt-line" style="justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(191, 219, 254, 0.5); gap: 12px;"><span style="color: #0c4a6e; font-weight: 600;">Payment Type</span><strong id="tuition-receipt-type" style="color: #0369a1;"></strong></div>
               <div class="receipt-line" style="justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(191, 219, 254, 0.5); gap: 12px;"><span style="color: #0c4a6e; font-weight: 600;">Form of Payment</span><strong id="tuition-receipt-method" style="color: #0369a1;"></strong></div>
@@ -3754,6 +3811,26 @@
       feedback.classList.remove('hidden');
     }
 
+    function showReceiptLoadingOverlay() {
+      const overlay = document.getElementById('tuition-receipt-loading-overlay');
+      if (!overlay) return;
+      const message = overlay.querySelector('.receipt-loading-message');
+      if (message) {
+        message.textContent = currentReceiptMode === 'tuition'
+          ? 'Generating tuition receipt, please wait...'
+          : 'Generating payment details, please wait...';
+      }
+      overlay.classList.remove('hidden');
+      overlay.classList.add('active');
+    }
+
+    function hideReceiptLoadingOverlay() {
+      const overlay = document.getElementById('tuition-receipt-loading-overlay');
+      if (!overlay) return;
+      overlay.classList.add('hidden');
+      overlay.classList.remove('active');
+    }
+
     function openTuitionReceiptConfirmationModal() {
       const modal = document.getElementById('tuition-receipt-confirm-modal');
       if (!modal) return;
@@ -3770,7 +3847,7 @@
 
     function confirmGenerateTuitionReceipt() {
       closeTuitionReceiptConfirmationModal();
-      showReceiptGenerateFeedback();
+      showReceiptLoadingOverlay();
       generateTuitionReceipt();
     }
 
@@ -4783,6 +4860,14 @@
       if (paymentReceiptTypeGroup) {
         paymentReceiptTypeGroup.style.display = isTuition ? 'none' : 'block';
       }
+      const totalPaymentRow = document.getElementById('tuition-receipt-total-payment-row');
+      const balanceRow = document.getElementById('tuition-receipt-balance-row');
+      if (totalPaymentRow) {
+        totalPaymentRow.style.display = isTuition ? '' : 'none';
+      }
+      if (balanceRow) {
+        balanceRow.style.display = isTuition ? '' : 'none';
+      }
       if (paymentReceiptTypeSelect && !isTuition) {
         syncReceiptTypeSelection();
       }
@@ -4844,9 +4929,10 @@
     }
 
     async function generateTuitionReceipt() {
-      const studentId = document.getElementById('tuition-student-id').value.trim();
-      const name = document.getElementById('tuition-student-name').value.trim();
-      const provisional = document.getElementById('tuition-provisional-number').value.trim();
+      try {
+        const studentId = document.getElementById('tuition-student-id').value.trim();
+        const name = document.getElementById('tuition-student-name').value.trim();
+        const provisional = document.getElementById('tuition-provisional-number').value.trim();
       const category = getActiveReceiptCategory();
       const amount = parseFloat(document.getElementById('tuition-amount').value);
       const totalPayment = parseFloat(document.getElementById('tuition-total-payment').value);
@@ -5026,7 +5112,10 @@
       document.getElementById('tuition-receipt-preview').classList.remove('hidden');
       await sendTuitionReceiptEmail();
       startTuitionReceiptReloadCountdown(2);
+    } finally {
+      hideReceiptLoadingOverlay();
     }
+  }
 
     async function saveTuitionReceipt(payload) {
       try {
@@ -5665,9 +5754,10 @@
       return `
         <div style="font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 24px; background: #eef2ff; color: #0f172a;">
           <div style="max-width: 680px; margin: auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 24px 70px rgba(15, 23, 42, 0.12); border: 1px solid #e5e7eb;">
-            <div style="background: #eef2ff; padding: 26px 24px; text-align: center;">
-              <h2 style="margin: 0; font-size: 1.6rem; color: #1f2937; letter-spacing: -0.01em;">${escapeHtml(getTuitionReceiptText('tuition-receipt-category-preview', 'Receipt'))}</h2>
-              <p style="margin: 10px auto 0; max-width: 520px; font-size: 0.95rem; color: #475569;">A digital copy of your receipt has been generated and securely emailed to your Gmail account.</p>
+            <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 26px 24px; text-align: center; color: #ffffff;">
+              <p style="margin: 0 0 8px; font-size: 0.82rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255, 255, 255, 0.88); font-weight: 700;">Granby Colleges of Science and Technology</p>
+              <h2 style="margin: 0; font-size: 1.6rem; color: #ffffff; letter-spacing: -0.01em;">${escapeHtml(getTuitionReceiptText('tuition-receipt-category-preview', 'Receipt'))}</h2>
+              <p style="margin: 10px auto 0; max-width: 520px; font-size: 0.95rem; color: rgba(255, 255, 255, 0.85);">A digital copy of your receipt has been generated and securely emailed to your Gmail account.</p>
             </div>
             <div style="padding: 22px 24px; background: #f8fafc;">
               ${detailRows}
@@ -6233,8 +6323,10 @@
           createDetailRow('Student Name', studentName),
           createDetailRow('Student ID', studentId),
           createDetailRow('Amount Paid', amountPaidValue, value => formatCurrency(value)),
-          createDetailRow('Total Payment', totalPaymentValue, value => formatCurrency(value)),
-          createDetailRow('Balance', balanceValue, value => formatCurrency(value)),
+          ...(isTuitionReceipt ? [
+            createDetailRow('Total Payment', totalPaymentValue, value => formatCurrency(value)),
+            createDetailRow('Balance', balanceValue, value => formatCurrency(value))
+          ] : []),
           createDetailRow('O.R. #', orNumber),
           createDetailRow('Payment Type', paymentType),
           createDetailRow('Form of Payment', paymentMethod),

@@ -309,6 +309,7 @@ try {
         total_amount, payment_received, change_amount, payment_status, payment_method, check_number, is_expired 
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE 
+        id = LAST_INSERT_ID(id),
         receipt_number = VALUES(receipt_number),
         receipt_category = VALUES(receipt_category),
         cashier_id = VALUES(cashier_id),
@@ -333,8 +334,19 @@ try {
     if (!$insertStmt->execute()) {
         throw new Exception('Could not save transaction: ' . $insertStmt->error);
     }
-    $cashierTransactionId = $conn->insert_id; // Get the ID of the newly inserted cashier_transaction
+    $cashierTransactionId = $conn->insert_id; // Get the ID of the newly inserted or updated cashier_transaction
     $insertStmt->close();
+
+    if (!$cashierTransactionId && $transactionNumber) {
+        $idStmt = $conn->prepare('SELECT id FROM cashier_transactions WHERE transaction_number = ? LIMIT 1');
+        if ($idStmt) {
+            $idStmt->bind_param('s', $transactionNumber);
+            $idStmt->execute();
+            $idStmt->bind_result($cashierTransactionId);
+            $idStmt->fetch();
+            $idStmt->close();
+        }
+    }
 
     // If we updated an existing record, clear out old transaction_items before adding new ones
     if ($originalTxnNumber && $cashierTransactionId) {
