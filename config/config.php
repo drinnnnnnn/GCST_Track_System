@@ -36,10 +36,10 @@ if (!defined('SMTP_SECURE')) {
 }
 
 if (!defined('SMTP_USER')) {
-    define('SMTP_USER', 'aldrinbautista0425@gmail.com'); // Full email required for authentication
+    define('SMTP_USER', 'aldrinaprao0@gmail.com'); // Full email required for authentication
 }
 if (!defined('SMTP_PASS')) {
-    define('SMTP_PASS', 'kmmlwgyxoaqvglfm');   // Update this with your 16-character App Password
+    define('SMTP_PASS', 'ralevjptodtixjzs');   // Update this with your 16-character App Password
 }
 if (!defined('MAIL_FROM')) {
     define('MAIL_FROM', 'no-reply@mail.com');

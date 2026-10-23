@@ -45,7 +45,7 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
         if (filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
         try {
             // 1. Validate Configuration
-            if (!defined('SMTP_USER') || SMTP_USER === 'your-email@gmail.com' || empty(SMTP_PASS) || SMTP_PASS === 'your-app-password') {
+            if (!defined('SMTP_USER') || SMTP_USER === 'aldrinaprao0@gmail.com' || empty(SMTP_PASS) || SMTP_PASS === 'ralevjptodtixjzs') {
                 throw new Exception("SMTP service is currently unavailable (Configuration missing).");
             }
 

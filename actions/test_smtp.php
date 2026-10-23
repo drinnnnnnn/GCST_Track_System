@@ -12,7 +12,7 @@ require_once __DIR__ . '/email_helpers.php';
 header('Content-Type: application/json');
 
 $testEmail = env('SMTP_USERNAME');
-$subject = "GCST Track System - SMTP Test Email";
+$subject = "Track System - SMTP Test Email";
 $message = "<h1>SMTP Connection Success!</h1><p>This is a test email sent from the GCST Track System to verify your Gmail SMTP settings.</p><p>Time: " . date('Y-m-d H:i:s') . "</p>";
 
 $result = sendEmailWithLog($conn, $testEmail, $subject, $message, 'SMTP Test');
