@@ -481,13 +481,19 @@
     #tuition-amount::-webkit-inner-spin-button,
     #tuition-amount::-webkit-outer-spin-button,
     #tuition-total-payment::-webkit-inner-spin-button,
-    #tuition-total-payment::-webkit-outer-spin-button {
+    #tuition-total-payment::-webkit-outer-spin-button,
+    #cash-received::-webkit-inner-spin-button,
+    #cash-received::-webkit-outer-spin-button,
+    #discount-percent::-webkit-inner-spin-button,
+    #discount-percent::-webkit-outer-spin-button {
       -webkit-appearance: none;
       margin: 0;
     }
 
     #tuition-amount,
-    #tuition-total-payment {
+    #tuition-total-payment,
+    #cash-received,
+    #discount-percent {
       -moz-appearance: textfield;
     }
     .receipt-textarea {
@@ -3225,7 +3231,7 @@
               </div>
               <div class="receipt-field-group">
                 <label class="receipt-label">Amount Paying Now (₱)</label>
-                <input id="tuition-amount" type="number" min="0" step="0.01" class="search-input receipt-input" placeholder="0.00" oninput="updateTuitionBalance()" title="Enter the amount of payment to be made in this transaction" />
+                <input id="tuition-amount" type="number" min="0" step="0.01" class="search-input receipt-input" placeholder="0" oninput="updateTuitionBalance()" title="Enter the amount of payment to be made in this transaction" />
               </div>
               <div class="receipt-field-group">
                 <label class="receipt-label">Course</label>
@@ -3276,7 +3282,7 @@
             <div class="receipt-form-grid">
               <div class="receipt-field-group">
                 <label class="receipt-label">Total Fees Due (₱)</label>
-                <input id="tuition-total-payment" type="number" min="0" step="0.01" class="search-input receipt-input" placeholder="0.00" oninput="updateTuitionBalance()" title="Total outstanding tuition fees for the student" />
+                <input id="tuition-total-payment" type="number" min="0" step="0.01" class="search-input receipt-input" placeholder="0" oninput="updateTuitionBalance()" title="Total outstanding tuition fees for the student" />
               </div>
               <div class="receipt-field-group">
                 <label class="receipt-label">O.R.#</label>
@@ -3284,7 +3290,7 @@
               </div>
               <div class="receipt-field-group">
                 <label class="receipt-label">Remaining Balance (₱)</label>
-                <input id="tuition-balance" type="text" readonly class="search-input receipt-input" placeholder="0.00" style="background: #f8fafc;" title="Auto-calculated: Total Fees Due - Amount Paying Now" />
+                <input id="tuition-balance" type="text" readonly class="search-input receipt-input" placeholder="0" style="background: #f8fafc;" title="Auto-calculated: Total Fees Due - Amount Paying Now" />
                 <div id="tuition-balance-loading" style="display:none; margin-top: 6px; font-size: 0.82rem; color: #2563eb;">
                   <i class="fas fa-circle-notch fa-spin" style="margin-right: 6px;"></i>Loading tuition balance...
                 </div>
@@ -3567,7 +3573,7 @@
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <span>Apply Discount</span>
                     <div style="display: flex; align-items: center; background: rgba(255,255,255,0.15); border-radius: 8px; padding: 2px 8px;">
-                      <input id="discount-percent" type="number" min="0" max="100" value="0" style="width: 45px; border: none; background: transparent; color: white; text-align: right; font-weight: 700; outline: none;" />
+                      <input id="discount-percent" type="number" min="0" max="100" step="1" inputmode="numeric" value="0" style="width: 45px; border: none; background: transparent; color: white; text-align: right; font-weight: 700; outline: none;" />
                       <span style="font-size: 0.8rem; margin-left: 2px;">%</span>
                     </div>
                 </div>
@@ -3585,7 +3591,7 @@
                 <label class="checkout-label" style="margin-bottom: 0;">Cash Received</label>
                 <div style="position: relative;">
                     <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; font-weight: 600;">₱</span>
-                    <input id="cash-received" type="number" min="0" step="0.01" placeholder="0.00" class="search-input" style="padding-left: 30px; background: #fff;" />
+                    <input id="cash-received" type="number" min="0" step="1" inputmode="numeric" placeholder="0" class="search-input" style="padding-left: 30px; background: #fff;" />
                 </div>
             </div>
           </div>
@@ -8039,12 +8045,28 @@
       discountPercentInput.addEventListener('input', () => {
         updateTransactionSettings();
       });
+      discountPercentInput.addEventListener('wheel', (event) => {
+        event.preventDefault();
+      }, { passive: false });
+      discountPercentInput.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'PageUp' || event.key === 'PageDown') {
+          event.preventDefault();
+        }
+      });
     }
 
     const cashReceivedInput = document.getElementById('cash-received');
     if (cashReceivedInput) {
       cashReceivedInput.addEventListener('input', () => {
         updateTransactionSettings();
+      });
+      cashReceivedInput.addEventListener('wheel', (event) => {
+        event.preventDefault();
+      }, { passive: false });
+      cashReceivedInput.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'PageUp' || event.key === 'PageDown') {
+          event.preventDefault();
+        }
       });
     }
 
@@ -8151,12 +8173,25 @@
 
     const cashInput = document.getElementById('cash-received');
     if (cashInput) {
+      cashInput.addEventListener('wheel', (event) => {
+        event.preventDefault();
+      }, { passive: false });
+      cashInput.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'PageUp' || event.key === 'PageDown') {
+          event.preventDefault();
+        }
+      });
       cashInput.addEventListener('focus', function() {
         if (parseFloat(this.value || 0) === 0) this.value = '';
       });
       cashInput.addEventListener('blur', function() {
         if (this.value !== '') {
-          this.value = parseFloat(this.value).toFixed(2);
+          const numericValue = Number.parseFloat(this.value);
+          if (Number.isFinite(numericValue)) {
+            this.value = String(Math.max(0, Math.round(numericValue)));
+          } else {
+            this.value = '';
+          }
         }
         updateTransactionSettings();
       });
