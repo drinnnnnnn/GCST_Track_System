@@ -9,8 +9,8 @@
 
     <style>
         :root {
-            --primary: #5d83e2;
-            --primary-glow: rgba(93, 131, 226, 0.4);
+            --primary: #315d96;
+            --primary-glow: rgba(49, 93, 150, 0.18);
             --text-dark: #1f2b45;
             --text-muted: #5b6c8f;
             --glass: rgba(255, 255, 255, 0.85);
@@ -31,39 +31,25 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(-45deg, #c9d6ff, #eef4ff, #aec0ff, #ffffff);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            background:
+                linear-gradient(rgba(242, 244, 247, 0.68), rgba(242, 244, 247, 0.68)),
+                url('../assets/images/bg/Granby.jpg') center / cover no-repeat fixed;
             overflow-x: hidden;
             padding: 24px;
             color: var(--text-dark);
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* Main Login Container */
         .container {
             position: relative;
             width: 100%;
-            max-width: 500px;
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 34px;
-            box-shadow: 0 24px 60px rgba(35, 75, 155, 0.12);
-            padding: 48px 40px;
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            animation: cardEntrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            max-width: 410px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 16px 40px rgba(23, 32, 51, 0.12);
+            padding: 34px 36px 30px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-top: 3px solid var(--primary);
             z-index: 10;
-        }
-
-        @keyframes cardEntrance {
-            from { opacity: 0; transform: scale(0.9) translateY(30px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         /* Global Modal Styling */
@@ -103,15 +89,22 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
-            margin-bottom: 32px;
+            gap: 12px;
+            margin-bottom: 26px;
             text-align: center;
+        }
+
+        .school-logo {
+            display: block;
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
         }
 
         .header-icon {
             width: 80px; height: 80px;
             display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, #5d83e2, #7ea0f0);
+            background: linear-gradient(135deg, #315d96, #4776ad);
             border-radius: 24px; color: #ffffff; font-size: 40px;
             box-shadow: 0 15px 35px var(--primary-glow);
             animation: iconPulse 3s infinite ease-in-out;
@@ -122,35 +115,45 @@
             50% { transform: scale(1.05); }
         }
 
-        .input-box { position: relative; margin-bottom: 20px; }
+        .form-header h1 {
+            font-size: 1.9rem;
+            line-height: 1.2;
+            letter-spacing: -0.04em;
+        }
+
+        .form-header p {
+            margin-top: 5px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .input-box { position: relative; margin-bottom: 18px; }
 
         .input-box input {
-            width: 100%; padding: 16px 50px 16px 20px;
-            background: rgba(255, 255, 255, 0.6);
-            border-radius: 16px; border: 1.5px solid #e7ecff;
-            outline: none; font-size: 15px; color: var(--text-dark);
-            font-weight: 500; transition: all 0.3s ease;
+            width: 100%; height: 48px; padding: 12px 46px 12px 14px;
+            background: #ffffff;
+            border-radius: 10px; border: 1px solid #d9dee7;
+            outline: none; font-size: 0.95rem; color: var(--text-dark);
+            font-weight: 500; transition: border-color 0.18s ease, box-shadow 0.18s ease;
         }
 
         .input-box input:focus {
-            background: #fff; border-color: var(--primary);
-            box-shadow: 0 10px 20px -5px var(--primary-glow);
-            transform: translateY(-2px);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
         }
 
-        .input-box i { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 22px; color: #94a3b8; }
+        .input-box i { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 20px; color: #8792a2; }
         .toggle-password { cursor: pointer; z-index: 10; }
 
         .btn {
-            width: 100%; height: 56px;
-            background: var(--text-dark); border-radius: 16px; border: none;
-            cursor: pointer; font-size: 16px; color: #fff; font-weight: 700;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 10px 20px rgba(31, 43, 69, 0.2);
-            margin-top: 10px;
+            width: 100%; height: 50px;
+            background: var(--text-dark); border-radius: 10px; border: none;
+            cursor: pointer; font-size: 0.98rem; color: #fff; font-weight: 600;
+            transition: background 0.18s ease;
+            margin-top: 6px;
         }
 
-        .btn:hover { background: var(--primary); transform: translateY(-3px); box-shadow: 0 15px 30px var(--primary-glow); }
+        .btn:hover { background: var(--primary); }
 
         .signup-link { text-align: center; margin-top: 24px; font-size: 14px; color: var(--text-muted); }
         .signup-link a { color: var(--primary); font-weight: 700; cursor: pointer; }
@@ -195,7 +198,7 @@
         <!-- Main Login Form -->
         <form action="http://localhost/GCST_Track_System/actions/log_in.php" method="POST" onsubmit="return validateForm(this)">
             <div class="form-header header-anim animate-item">
-                <div class="header-icon"><i class='bx bxs-graduation'></i></div>
+                <img class="school-logo" src="../assets/images/icons/granby_logo.png" alt="Granby Colleges of Science and Technology">
                 <div>
                     <h1>Sign In</h1>
                     <p>Enter your student credentials to continue</p>

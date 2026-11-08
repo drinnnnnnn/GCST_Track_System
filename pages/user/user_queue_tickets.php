@@ -838,7 +838,7 @@
         </div>
         <h3 class="text-2xl font-semibold text-slate-900 mb-4">Queue Reminder</h3>
         <p class="text-slate-500 leading-relaxed mb-8">
-          Reminder: Kindly monitor your queue ticket status at the kiosk regularly, as no separate reminders will be issued. Please ensure you are properly in line and wait for your turn accordingly.
+          Reminder: Kindly monitor your queue ticket status at the kiosk monitor, as no separate reminders will be issued. Please ensure you are properly in line and wait for your turn accordingly.
         </p>
         <button onclick="closeQueueModal()" class="w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl font-semibold text-base tracking-wide transition-all duration-300 shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/30 hover:-translate-y-1 active:scale-95 active:translate-y-0 focus:outline-none focus:ring-4 focus:ring-blue-500/40">
           Got it, thanks!

@@ -755,7 +755,7 @@
         <div class="step-box">
           <div class="step-number" style="background: #6366f1;">4</div>
           <h4 class="font-bold text-slate-800 mb-2">Join the Queue</h4>
-          <p class="text-sm text-slate-500 leading-relaxed">Need to see the Registrar or Cashier? Simply generate a <strong>Queue Ticket</strong> at the kiosk and receive real-time notifications when it’s your turn.</p>
+          <p class="text-sm text-slate-500 leading-relaxed">Need to see the Registrar or Cashier? Simply generate a <strong>Queue Ticket</strong> at the kiosk monitor and receive real-time notifications when it’s your turn.</p>
         </div>
       </div>
     </section>

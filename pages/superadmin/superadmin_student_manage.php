@@ -529,7 +529,7 @@
         <div id="lightbox-content" onclick="event.stopPropagation()"></div>
         <button id="lightbox-close" onclick="closeLightbox()" aria-label="Close preview">✕</button>
     </div>
-    <script src="../../assets/js/superadmin.js"></script>
+    <script src="../../assets/js/superadmin.js?v=<?= filemtime(__DIR__ . '/../../assets/js/superadmin.js') ?>" data-sidebar-version="<?= filemtime(__DIR__ . '/../../assets/js/superadmin_sidebar_content.js') ?>"></script>
     <script>
         let allStudents = [];
         let pendingConfirmAction = null;

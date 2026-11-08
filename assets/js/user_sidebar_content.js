@@ -125,7 +125,7 @@ export function getSidebarHTML() {
                 <p class="logout-modal-text">Are you sure you want to end your session? Make sure all your activities are saved.</p>
                 <div class="logout-modal-actions">
                     <button onclick="closeLogoutModal()" class="btn-modal btn-modal-cancel">Stay</button>
-                    <button onclick="performLogout()" class="btn-modal btn-modal-confirm">Confirm</button>
+                    <button onclick="performLogout()" class="btn-modal btn-modal-confirm">Sign Out</button>
                 </div>
             </div>
         </div>`;

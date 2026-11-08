@@ -436,7 +436,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="../../assets/js/superadmin.js"></script>
+  <script src="../../assets/js/superadmin.js?v=<?= filemtime(__DIR__ . '/../../assets/js/superadmin.js') ?>" data-sidebar-version="<?= filemtime(__DIR__ . '/../../assets/js/superadmin_sidebar_content.js') ?>"></script>
   <script>
     window.initializeSuperAdminPage(() => {
         loadSystemMetrics();

@@ -232,6 +232,12 @@ try {
                 exit();
             }
 
+            if (!preg_match('/^\d{4}$/', $pin)) {
+                if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'PIN must contain exactly 4 digits'], 400);
+                header('Location: ../pages/sign_in_admin_cashier.php?error=invalidpin');
+                exit();
+            }
+
             $stmt = $conn->prepare('SELECT id, username, last_name, first_name, middle_name, password, pin, status FROM admincashier_acc WHERE email = ? OR username = ? LIMIT 1');
             $stmt->bind_param('ss', $identifier, $identifier);
             $stmt->execute();

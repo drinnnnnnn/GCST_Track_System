@@ -4,27 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Admin Sign In</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
         :root {
-            --primary: #dc2626;         
-            --primary-hover: #b91c1c;   
-            --primary-subtle: #fef2f2; 
-            --text-main: #0f172a;      
-            --text-muted: #64748b;      
+            --primary: #b4232d;
+            --primary-hover: #941b23;
+            --text-main: #172033;
+            --text-muted: #667085;
             --white: #ffffff;
             --error: #dc2626;
             --error-bg: #fef2f2;
-            --error-border: #fecaca;   
+            --error-border: #fecaca;
             --success: #15803d;
             --success-bg: #f0fdf4;
             --success-border: #dcfce7;
-            --border-color: #cbd5e1;  
-            --input-bg: #f8fafc;
-            --accent-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+            --field-border: #d7dce4;
         }
 
         * {
@@ -39,95 +35,66 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #f8f7f7; 
-            background: radial-gradient(circle at center, #ffffff 0%, #f1f1f1 100%);
-            padding: 20px;
-        }
-
-        @keyframes cardReveal {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
+            padding: 24px;
+            overflow-y: auto;
+            background:
+                linear-gradient(rgba(242, 244, 247, 0.62), rgba(242, 244, 247, 0.62)),
+                url('../assets/images/bg/Granby.jpg') center / cover no-repeat fixed;
         }
 
         .login-card {
             width: 100%;
-            max-width: 440px;
-            padding: 3.5rem 2.5rem;
-            background: var(--white);
-            border-radius: 20px;
-            border: 1px solid #e2e8f0;
-            border-top: 4px solid #dc2626; 
-            box-shadow: 
-                0 1px 3px rgba(15, 23, 42, 0.02),
-                0 10px 30px -5px rgba(220, 38, 38, 0.1);
-            animation: cardReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            max-width: 390px;
+            padding: 30px 32px 28px;
+            background: rgba(255, 255, 255, 0.97);
+            border: 1px solid rgba(215, 220, 228, 0.8);
+            border-top: 3px solid var(--primary);
+            border-radius: 16px;
+            box-shadow: 0 12px 30px rgba(23, 32, 51, 0.12);
         }
 
         .logo-container {
             text-align: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 14px;
         }
 
-        .header-icon {
-            width: 56px;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #ef4444, #b91c1c); 
-            border-radius: 14px;
-            color: var(--white);
-            font-size: 26px;
-            margin: 0 auto 1.5rem;
-            transition: transform 0.2s ease;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-        }
-
-        .header-icon:hover {
-            transform: translateY(-2px);
+        .school-logo {
+            display: block;
+            width: 58px;
+            height: 58px;
+            object-fit: contain;
+            margin: 0 auto;
         }
 
         .login-card h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.75rem;
+            font-size: 1.7rem;
             font-weight: 700;
             color: var(--text-main);
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             text-align: center;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.035em;
         }
 
         .login-card p.subtitle {
             color: var(--text-muted);
             font-size: 0.9rem;
-            margin-bottom: 2.5rem;
+            margin-bottom: 24px;
             text-align: center;
-            font-weight: 500;
             line-height: 1.4;
         }
         
         .input-box {
             position: relative;
-            margin-bottom: 1.5rem;
+            margin-bottom: 16px;
             text-align: left;
-            transition: transform 0.2s ease;
         }
 
         .input-box label {
-            font-size: 0.70rem; /* Slightly smaller for a modern look */
-            font-weight: 700;
-            color: #475569; /* Slightly softer text for better contrast */
-            margin-bottom: 10px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 6px;
             display: block;
-            text-transform: uppercase;
-            letter-spacing: 0.8px; /* Slightly wider spacing for authority */
-            transition: color 0.2s ease;
-        }
-
-        /* Red Accent Trigger: When input is focused, the label turns red */
-        .input-box input:focus + label,
-        .input-box:focus-within label {
-            color: #dc2626;
         }
 
         .input-wrapper {
@@ -138,14 +105,19 @@
 
         .input-box input {
             width: 100%;
-            padding: 14px 16px 14px 44px;
-            background: var(--input-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            font-size: 0.95rem;
+            height: 46px;
+            padding: 11px 14px;
+            background: #ffffff;
+            border: 1px solid var(--field-border);
+            border-radius: 8px;
+            font-size: 0.94rem;
             color: var(--text-main);
             outline: none;
-            transition: all 0.2s ease;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .input-box input#password {
+            padding-right: 44px;
         }
 
         .input-box input::placeholder {
@@ -153,32 +125,18 @@
         }
 
         .input-box input:focus {
-            background: var(--white);
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        .input-box i.input-icon {
-            position: absolute;
-            left: 14px;
-            font-size: 1.25rem;
-            color: #94a3b8;
-            pointer-events: none;
-            transition: color 0.2s ease;
-        }
-
-        .input-box input:focus ~ i.input-icon {
-            color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(180, 35, 45, 0.09);
         }
 
         .input-box #toggleBtn {
             position: absolute;
-            right: 14px;
-            font-size: 1.25rem;
+            right: 12px;
+            font-size: 1.1rem;
             color: var(--text-muted);
             cursor: pointer;
-            transition: color 0.2s ease;
-            padding: 4px;
+            transition: color 0.18s ease;
+            padding: 5px;
         }
 
         .input-box #toggleBtn:hover {
@@ -186,24 +144,23 @@
         }
 
         .pin-input {
-            letter-spacing: 0.9rem;
+            letter-spacing: 0.45rem;
             text-align: center;
             font-weight: 700;
-            padding-left: 24px !important;
         }
 
         .submit-btn {
-            margin-top: 0.5rem;
+            margin-top: 2px;
             width: 100%;
-            padding: 14px;
-            background: var(--text-main);
+            padding: 13px 18px;
+            background: #202a3a;
             color: var(--white);
             border: none;
-            border-radius: 12px;
-            font-size: 0.95rem;
+            border-radius: 8px;
+            font-size: 0.94rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: background 0.18s ease;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -211,11 +168,16 @@
 
         .submit-btn:hover {
             background: var(--primary);
-            box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.25);
         }
 
         .submit-btn:active {
-            transform: scale(0.99);
+            background: var(--primary-hover);
+        }
+
+        .submit-btn:focus-visible,
+        .input-box input:focus-visible {
+            outline: 3px solid rgba(180, 35, 45, 0.2);
+            outline-offset: 2px;
         }
 
         #status-area {
@@ -226,17 +188,14 @@
             margin-bottom: 1.5rem;
             font-weight: 600;
             line-height: 1.5;
-            animation: cardReveal 0.2s ease;
+            animation: none;
         }
         .msg-error { background: var(--error-bg); color: var(--error); border: 1px solid var(--error-border); }
         .msg-success { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
 
         @media (max-width: 480px) {
             .login-card {
-                padding: 2.5rem 1.5rem;
-                margin: 1rem;
-                border: none;
-                box-shadow: none;
+                padding: 28px 22px 24px;
             }
         }
     </style>
@@ -245,10 +204,10 @@
 
 <div class="login-card">
     <div class="logo-container">
-        <div class="header-icon"><i class='bx bx-shield-quarter'></i></div>
+        <img class="school-logo" src="../assets/images/icons/granby_logo.png" alt="Granby Colleges of Science and Technology">
     </div>
-    <h1>Super Admin Login</h1>
-    <p class="subtitle">Authorized personnel access only</p>
+    <h1>Super Admin Sign In</h1>
+    <p class="subtitle">Sign in with your super administrator account.</p>
     
     <div id="status-area"></div>
 
@@ -258,7 +217,6 @@
                 <label for="email">Account</label>
                 <div class="input-wrapper">
                     <input type="text" name="email" id="email" placeholder="Username or Email" required autocomplete="username">
-                    <i class='bx bxs-user-pin input-icon'></i>
                 </div>
             </div>
 
@@ -266,7 +224,6 @@
                 <label for="password">Password</label>
                 <div class="input-wrapper">
                     <input type="password" name="password" id="password" placeholder="••••••••" required autocomplete="current-password">
-                    <i class='bx bxs-lock-open-alt input-icon'></i>
                     <i class='bx bx-show' id="toggleBtn"></i>
                 </div>
             </div>
@@ -275,13 +232,12 @@
                 <label for="pin">Security PIN (4 Digits)</label>
                 <div class="input-wrapper">
                     <input type="password" name="pin" id="pin" class="pin-input" placeholder="••••" maxlength="4" required pattern="\d{4}" inputmode="numeric" autocomplete="one-time-code">
-                    <i class='bx bxs-key input-icon'></i>
                 </div>
             </div>
 
             <div class="btn-group">
                 <button type="submit" class="submit-btn" id="loginBtn">
-                    Authorize Access
+                    Sign In
                 </button>
             </div>
         </form>

@@ -4,6 +4,8 @@
  */
 
 const SuperAdmin = (function() {
+    const sidebarContentVersion = document.currentScript?.dataset.sidebarVersion || '';
+
     // Core Configuration & State
     const CONFIG = {
         BASE_PATH: '/GCST_Track_System',
@@ -232,7 +234,7 @@ const SuperAdmin = (function() {
     async function autoLoadSidebar() {
         if (!elements.sidebarContainer) return;
         try {
-            const { getSidebarHTML } = await import('./superadmin_sidebar_content.js');
+            const { getSidebarHTML } = await import(`./superadmin_sidebar_content.js?v=${encodeURIComponent(sidebarContentVersion)}`);
             elements.sidebarContainer.innerHTML = getSidebarHTML();
             window.syncDarkModeToggle?.();
 
@@ -371,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // (e.g. static error pages or simple views)
         const sidebarFile = window.location.pathname.includes('superadmin') ? 'superadmin_sidebar_content.js' : null;
         if (sidebarFile) {
-            import(`./${sidebarFile}`).then(m => {
+            import(`./${sidebarFile}?v=${encodeURIComponent(sidebarContentVersion)}`).then(m => {
                 container.innerHTML = m.getSidebarHTML();
                 window.syncDarkModeToggle?.();
                 window.setSidebarMinimized?.(localStorage.getItem('sidebar-minimized') === 'true', false);

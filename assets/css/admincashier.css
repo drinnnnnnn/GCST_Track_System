@@ -997,12 +997,14 @@ main {
 .sidebar-link:hover { background: var(--surface-soft); color: var(--primary); transform: translateX(5px); }
 .sidebar-link:hover i { transform: scale(1.1); }
 .sidebar.minimized .sidebar-link:hover { transform: none; }
-.sidebar-link.active { 
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
-  color: white !important; 
-  box-shadow: 0 10px 20px -5px rgba(102, 126, 234, 0.4), inset 0 0 0 1px rgba(255,255,255,0.1); 
+body:not(.dark-mode) #main-sidebar.sidebar .sidebar-link.active {
+  background: #f0f4f7 !important;
+  color: #66809a !important;
+  box-shadow: none !important;
 }
-.sidebar-link.active i { color: white; }
+body:not(.dark-mode) #main-sidebar.sidebar .sidebar-link.active i {
+  color: #66809a !important;
+}
 
 .sidebar-badge {
   background: var(--danger);

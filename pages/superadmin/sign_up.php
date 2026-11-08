@@ -11,11 +11,11 @@
 
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-glow: rgba(79, 70, 229, 0.4);
+            --primary: #315d96;
+            --primary-glow: rgba(49, 93, 150, 0.15);
             --text-dark: #0f172a;
             --text-muted: #64748b;
-            --glass: rgba(255, 255, 255, 0.85);
+            --field-border: #d7dce4;
         }
 
         * {
@@ -31,149 +31,116 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(-45deg, #c9d6ff, #e2e2e2, #aec0ff, #f0f2f5);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            background:
+                linear-gradient(rgba(242, 244, 247, 0.68), rgba(242, 244, 247, 0.68)),
+                url('../../assets/images/bg/Granby.jpg') center / cover no-repeat fixed;
             padding: 24px;
             overflow-x: hidden;
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .container {
+        .signup-card {
             width: 100%;
-            max-width: 540px;
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            border-radius: 34px;
-            box-shadow: 0 24px 60px rgba(35, 75, 155, 0.12);
-            padding: 40px;
+            max-width: 760px;
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            border-top: 3px solid var(--primary);
+            border-radius: 20px;
+            box-shadow: 0 16px 40px rgba(23, 32, 51, 0.12);
+            padding: 30px 34px 26px;
             position: relative;
-            animation: cardEntrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        @keyframes cardEntrance {
-            from { opacity: 0; transform: scale(0.9) translateY(30px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        /* Header & Floating Icon */
         .form-header {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 22px;
         }
 
-        .header-icon {
-            width: 72px;
-            height: 72px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, var(--primary), #764ba2);
-            border-radius: 22px;
-            color: #ffffff;
-            font-size: 35px;
-            margin: 0 auto 15px;
-            box-shadow: 0 12px 25px var(--primary-glow);
-            animation: iconFloat 3s ease-in-out infinite;
-        }
-
-        @keyframes iconFloat {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
+        .school-logo {
+            display: block;
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            margin: 0 auto 12px;
         }
 
         h1 {
-            font-size: 28px;
-            font-weight: 800;
+            font-size: 25px;
+            font-weight: 700;
             color: var(--text-dark);
-            letter-spacing: -1px;
-            margin-bottom: 8px;
+            letter-spacing: -0.04em;
+            margin-bottom: 5px;
         }
 
         .subtitle {
             color: var(--text-muted);
-            font-size: 14.5px;
+            font-size: 14px;
             line-height: 1.5;
         }
 
-        /* Scrollable Form Section */
         .register-scroll {
-            max-height: 400px;
+            max-height: min(52vh, 440px);
             overflow-y: auto;
-            padding-right: 10px;
-            margin-bottom: 20px;
+            padding: 0 8px 0 0;
+            margin-bottom: 16px;
         }
 
         .register-scroll::-webkit-scrollbar { width: 5px; }
         .register-scroll::-webkit-scrollbar-thumb { 
-            background: #cbd5e1; 
-            border-radius: 10px; 
+            background: #cbd5e1;
+            border-radius: 8px;
         }
 
         .input-box {
             position: relative;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
         .input-box input {
             width: 100%;
-            padding: 14px 45px 14px 18px;
-            background: rgba(255, 255, 255, 0.6);
-            border: 2px solid transparent;
-            border-radius: 14px;
-            font-size: 15px;
+            height: 46px;
+            padding: 11px 44px 11px 14px;
+            background: #ffffff;
+            border: 1px solid var(--field-border);
+            border-radius: 9px;
+            font-size: 14px;
             color: var(--text-dark);
             font-weight: 500;
             outline: none;
-            transition: all 0.3s ease;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease;
         }
 
         .input-box input:focus {
-            background: #fff;
             border-color: var(--primary);
-            box-shadow: 0 8px 15px -3px var(--primary-glow);
-            transform: translateY(-2px);
+            box-shadow: 0 0 0 3px var(--primary-glow);
         }
 
-        /* Custom File Input Styling */
         .input-box input[type="file"] {
-            padding: 9px 45px 9px 12px;
+            padding: 6px 40px 6px 10px;
             font-size: 13px;
-            display: flex;
-            align-items: center;
         }
 
         .input-box input[type="file"]::file-selector-button {
-            background: var(--text-dark);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 10px;
+            background: #eef3f8;
+            color: var(--text-dark);
+            border: 1px solid var(--field-border);
+            padding: 6px 11px;
+            border-radius: 6px;
             font-size: 12px;
-            font-weight: 700;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin-right: 12px;
+            margin-right: 10px;
         }
 
         .input-box input[type="file"]::file-selector-button:hover {
-            background: var(--primary);
-            box-shadow: 0 4px 10px var(--primary-glow);
+            background: #e4edf7;
         }
 
         .pwd-upload-section {
             display: none;
-            padding: 14px;
-            background: rgba(79, 70, 229, 0.05);
-            border-radius: 14px;
-            border: 1px dashed rgba(79, 70, 229, 0.25);
+            padding: 12px;
+            background: #f5f8fb;
+            border-radius: 9px;
+            border: 1px solid #dfe7ef;
         }
 
         .pwd-upload-note {
@@ -190,70 +157,85 @@
         .pwd-upload-group label {
             display: block;
             font-size: 12px;
-            font-weight: 700;
+            font-weight: 600;
             color: var(--text-muted);
             margin-bottom: 5px;
-            margin-left: 5px;
         }
 
         .preview-box {
-            margin-top: 8px;
             display: none;
+            margin-top: 8px;
         }
 
         .preview-box img {
             width: 100%;
             max-height: 220px;
             object-fit: cover;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            background: #fff;
+            border-radius: 8px;
+            border: 1px solid var(--field-border);
+        }
+
+        .register-scroll select {
+            height: 46px !important;
+            padding-left: 14px !important;
+            padding-right: 40px !important;
+            background-color: #ffffff !important;
+            border: 1px solid var(--field-border) !important;
+            border-radius: 9px !important;
+            box-shadow: none !important;
+            font-size: 14px !important;
+            color: var(--text-dark) !important;
+        }
+
+        .register-scroll select:focus {
+            outline: none !important;
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px var(--primary-glow) !important;
+        }
+
+        .register-scroll > .relative {
+            margin-bottom: 12px !important;
         }
 
         .input-box i {
             position: absolute;
-            right: 18px;
+            right: 14px;
             top: 50%;
             transform: translateY(-50%);
-            font-size: 20px;
-            color: #94a3b8;
-            transition: 0.3s;
+            font-size: 19px;
+            color: #8792a2;
         }
 
         .toggle-password { cursor: pointer; z-index: 5; }
         .toggle-password:hover { color: var(--primary); }
 
-        /* Buttons & Footer */
         .btn {
             width: 100%;
-            padding: 16px;
-            background: var(--text-dark);
+            padding: 14px 16px;
+            background: #202a3a;
             color: white;
             border: none;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 700;
+            border-radius: 9px;
+            font-size: 15px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: background 0.18s ease;
         }
 
         .btn:hover {
             background: var(--primary);
-            transform: translateY(-3px);
-            box-shadow: 0 12px 24px var(--primary-glow);
         }
 
         .signin-link {
             text-align: center;
-            margin-top: 22px;
-            font-size: 14px;
+            margin-top: 18px;
+            font-size: 13px;
             color: var(--text-muted);
         }
 
         .signin-link a {
             color: var(--primary);
-            font-weight: 700;
+            font-weight: 600;
         }
 
         /* Toast / Messages */
@@ -265,28 +247,35 @@
             min-width: 280px;
             background: var(--primary);
             color: white;
-            padding: 14px 22px;
-            border-radius: 16px;
-            font-weight: 700;
-            box-shadow: 0 18px 34px var(--primary-glow);
+            padding: 13px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            box-shadow: 0 8px 22px rgba(23, 32, 51, 0.14);
             opacity: 0;
             transition: 0.4s;
             z-index: 1000;
         }
 
         .floating-message.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-        .floating-message.error { background: #ef4444; box-shadow: 0 18px 34px rgba(239, 68, 68, 0.3); }
+        .floating-message.error { background: #dc2626; }
 
-        /* Animation Classes */
-        .animate-item { opacity: 0; animation: fadeInUp 0.5s ease forwards; }
-        .header-anim { animation-delay: 0.1s; }
-        .form-anim { animation-delay: 0.2s; }
-        .btn-anim { animation-delay: 0.3s; }
-        .footer-anim { animation-delay: 0.4s; }
+        .animate-item {
+            opacity: 1;
+            animation: none;
+        }
 
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
+        @media (max-width: 600px) {
+            body {
+                padding: 14px;
+            }
+
+            .signup-card {
+                padding: 24px 18px 20px;
+            }
+
+            .register-scroll {
+                max-height: 52vh;
+            }
         }
     </style>
 </head>
@@ -294,13 +283,13 @@
 <body>
     <div id="floating-message" class="floating-message" role="status" aria-live="polite"></div>
 
-    <div class="container">
+    <div class="signup-card">
         <form action="../../actions/sign_up.php" method="POST" enctype="multipart/form-data" onsubmit="return validateForm(this)">
             <!-- Hint for PHP maximum file size (5MB) -->
             <input type="hidden" name="MAX_FILE_SIZE" value="5242880">
             
             <div class="form-header header-anim animate-item">
-                <div class="header-icon"><i class='bx bxs-user-circle'></i></div>
+                <img class="school-logo" src="../../assets/images/icons/granby_logo.png" alt="Granby Colleges of Science and Technology">
                 <h1>Sign Up</h1>
                 <p class="subtitle">Create a new account and manage your library profile easily.</p>
             </div>
