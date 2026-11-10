@@ -497,13 +497,14 @@
     .inventory-card img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
       object-position: center;
-      transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 8px;
+      transition: transform 0.3s ease;
     }
 
     .inventory-card:hover img { 
-      transform: scale(1.12); 
+      transform: scale(1.02);
     }
 
     .inventory-card-body {
@@ -2094,6 +2095,7 @@
             // Add Product Panel Controls
             document.getElementById('btn-open-add-product')?.addEventListener('click', () => this.showAddProductForm());
             document.getElementById('btn-close-add-product')?.addEventListener('click', () => this.toggleAddPanel(false));
+            toggleCategoryFields('new', document.getElementById('new-product-category')?.value || '');
             
             const btnResetNew = document.getElementById('btn-reset-new-product');
             if (btnResetNew) {
@@ -2125,7 +2127,7 @@
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     const preview = document.getElementById('new-product-image-preview');
-                    if (preview) preview.innerHTML = `<img src="${event.target.result}" style="height:100%;width:100%;object-fit:cover;" />`;
+                    if (preview) preview.innerHTML = `<img src="${event.target.result}" style="height:100%;width:100%;object-fit:contain;" />`;
                 };
                 reader.readAsDataURL(file);
             });
@@ -2749,6 +2751,13 @@
                 console.log('Server Response:', result);
                 if (result && result.success) {
                     this.toggleAddPanel(false);
+                    this.state.filter.query = '';
+                    this.state.filter.category = result.product?.product_category || 'All';
+                    this.state.filter.course = 'All';
+                    this.state.filter.lowStock = false;
+                    if (this.ui.search) this.ui.search.value = '';
+                    const courseFilter = document.getElementById('course-filter');
+                    if (courseFilter) courseFilter.value = 'All';
                     await this.refreshData();
                     this.syncChannel.postMessage('refresh_inventory');
                     this.triggerFeedback(result.product.product_id);
@@ -2924,6 +2933,13 @@
         if (book) book.classList.toggle('hidden', !isBook);
         if (ext) ext.classList.toggle('hidden', !isBook);
         if (unif) unif.classList.toggle('hidden', !isUnif);
+        if (context === 'new') {
+            [book, unif].forEach((section) => {
+                section?.querySelectorAll('input, select, textarea').forEach((field) => {
+                    field.disabled = section.classList.contains('hidden');
+                });
+            });
+        }
         if (unifSummary) unifSummary.classList.toggle('hidden', !isUnif);
         if (bookSummary) bookSummary.classList.toggle('hidden', !isBook);
     }

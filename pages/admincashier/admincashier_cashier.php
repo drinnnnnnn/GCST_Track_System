@@ -1020,13 +1020,13 @@
       width: 100%;
       height: 100%;
       display: block;
-      object-fit: cover;
+      object-fit: contain;
       object-position: center;
       transition: transform 0.35s ease, filter 0.35s ease;
     }
 
     .product-card:hover .product-image-container img {
-      transform: scale(1.05);
+      transform: none;
       filter: brightness(1.02);
     }
 
@@ -2371,7 +2371,7 @@
       min-width: 0;
       min-height: 0;
       height: auto !important;
-      align-self: start;
+      align-self: stretch;
       border-radius: 12px;
       box-shadow: 0 5px 16px rgba(15, 23, 42, 0.06);
     }
