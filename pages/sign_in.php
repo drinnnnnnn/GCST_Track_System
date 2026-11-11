@@ -206,7 +206,7 @@
             </div>
 
             <div class="input-box input-anim-1 animate-item">
-                <input type="text" name="student_id" placeholder="Student ID Number" required>
+                <input type="text" name="student_id" placeholder="Student ID Number" autocapitalize="characters" spellcheck="false" oninput="this.value = this.value.toUpperCase()" required>
                 <i class='bx bxs-id-card'></i>
             </div>
 

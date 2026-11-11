@@ -617,7 +617,7 @@
   </main>
 
   <!-- Scripts -->
-  <script src="../../assets/js/user.js"></script>
+  <script src="../../assets/js/user.js?v=20261111-logout-stay-fix"></script>
   <script>
     let allRentals = [];
     let currentFilter = 'all';

@@ -368,6 +368,82 @@
             background: #0f172a;
         }
 
+        html.embedded-registration,
+        html.embedded-registration body {
+            height: 100%;
+        }
+
+        html.embedded-registration body {
+            min-height: 0;
+            padding: 0;
+            align-items: stretch;
+            background: transparent;
+            animation: none;
+        }
+
+        html.embedded-registration .container {
+            width: 100%;
+            max-width: none;
+            height: 100%;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+            padding: 38px 42px 28px;
+            animation: none;
+        }
+
+        html.embedded-registration .container form {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        html.embedded-registration .form-fields {
+            flex: 1;
+            min-height: 0;
+            max-height: none;
+        }
+
+        html.embedded-registration .footer-anim {
+            display: none;
+        }
+
+        html.embedded-registration .input-group input {
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+        }
+
+        html.embedded-registration .container form > button[type="submit"] {
+            border: 0;
+            border-radius: 12px;
+            background: #dc2626;
+            color: #ffffff;
+            box-shadow: 0 10px 20px rgba(220, 38, 38, 0.2);
+        }
+
+        html.embedded-registration .header-icon {
+            animation: none;
+        }
+
+        html.dark-mode.embedded-registration .input-group input {
+            border-color: #475569;
+            background: #172235;
+        }
+
+        @media (max-width: 520px) {
+            html.embedded-registration .container {
+                padding: 40px 20px 24px;
+            }
+
+            html.embedded-registration h1 {
+                font-size: 23px;
+            }
+        }
+
         /* Staggered Entrance Animations */
         .animate-item {
             opacity: 0;
@@ -462,6 +538,15 @@
 
     <script>
         const toastContainer = document.getElementById('toastContainer');
+        const isEmbeddedRegistration = window.self !== window.top;
+
+        if (isEmbeddedRegistration) {
+            document.documentElement.classList.add('embedded-registration');
+            document.querySelector('.signin-link a')?.addEventListener('click', event => {
+                event.preventDefault();
+                window.parent.closeStaffRegistrationModal?.();
+            });
+        }
 
         function showToast(message, type = 'success') {
             const validTypes = ['success', 'error', 'warning', 'info'];

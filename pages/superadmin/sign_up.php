@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+<?php $isModal = ($_GET['modal'] ?? '') === '1'; ?>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -38,6 +39,15 @@
             overflow-x: hidden;
         }
 
+        body.modal-embed {
+            height: 100vh;
+            min-height: 0;
+            padding: 0;
+            align-items: center;
+            background: transparent;
+            overflow: hidden;
+        }
+
         .signup-card {
             width: 100%;
             max-width: 760px;
@@ -48,6 +58,43 @@
             box-shadow: 0 16px 40px rgba(23, 32, 51, 0.12);
             padding: 30px 34px 26px;
             position: relative;
+        }
+
+        .modal-embed .signup-card {
+            display: flex;
+            flex-direction: column;
+            max-height: 100vh;
+            overflow: hidden;
+        }
+
+        .modal-embed .signup-card > form {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .embedded-signup-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 2;
+            display: grid;
+            place-items: center;
+            width: clamp(32px, 2.75vw, 36px);
+            height: clamp(32px, 2.75vw, 36px);
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            color: #475569;
+            font-size: 23px;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: none;
+        }
+
+        .embedded-signup-close:hover {
+            color: #0f172a;
         }
 
         .form-header {
@@ -82,6 +129,12 @@
             overflow-y: auto;
             padding: 0 8px 0 0;
             margin-bottom: 16px;
+        }
+
+        .modal-embed .register-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            max-height: none;
         }
 
         .register-scroll::-webkit-scrollbar { width: 5px; }
@@ -276,17 +329,24 @@
             .register-scroll {
                 max-height: 52vh;
             }
+
         }
     </style>
 </head>
 
-<body>
+<body class="<?= $isModal ? 'modal-embed' : '' ?>">
     <div id="floating-message" class="floating-message" role="status" aria-live="polite"></div>
 
     <div class="signup-card">
+        <?php if ($isModal): ?>
+            <button type="button" class="embedded-signup-close" aria-label="Close sign-up form" onclick="window.parent.closeSignupModal()">×</button>
+        <?php endif; ?>
         <form action="../../actions/sign_up.php" method="POST" enctype="multipart/form-data" onsubmit="return validateForm(this)">
             <!-- Hint for PHP maximum file size (5MB) -->
             <input type="hidden" name="MAX_FILE_SIZE" value="5242880">
+            <?php if ($isModal): ?>
+                <input type="hidden" name="signup_return" value="modal">
+            <?php endif; ?>
             
             <div class="form-header header-anim animate-item">
                 <img class="school-logo" src="../../assets/images/icons/granby_logo.png" alt="Granby Colleges of Science and Technology">
@@ -296,7 +356,7 @@
 
             <div class="register-scroll form-anim animate-item">
                 <div class="input-box">
-                    <input type="text" name="student_id" placeholder="Student ID (GC-XXXXXX)" required pattern="^GC-\d{6}$" title="Format: GC-XXXXXX">
+                    <input type="text" name="student_id" placeholder="Student ID (GC-XXXXXX)" autocapitalize="characters" spellcheck="false" oninput="this.value = this.value.toUpperCase()" required pattern="^GC-\d{6}$" title="Format: GC-XXXXXX">
                     <i class='bx bxs-id-card'></i>
                 </div>
 
@@ -445,7 +505,7 @@
             <button type="submit" class="btn btn-anim animate-item">Register Account</button>
 
             <div class="signin-link footer-anim animate-item">
-                Already have an account? <a href="../../pages/sign_in.php">Go to Sign In</a>
+                Already have an account? <a href="../../pages/sign_in.php" <?= $isModal ? 'onclick="parent.openLoginModalFromSignup(); return false;"' : '' ?>>Go to Sign In</a>
             </div>
         </form>
     </div>
@@ -604,6 +664,14 @@
                 this.classList.toggle('bx-hide', isPass);
             });
         });
+
+        if (window.parent !== window) {
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && typeof window.parent.closeSignupModal === 'function') {
+                    window.parent.closeSignupModal();
+                }
+            });
+        }
     </script>
 </body>
 </html>

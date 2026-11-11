@@ -2974,17 +2974,10 @@
               <span class="cart-header-meta"><strong id="cart-item-count">0</strong> items</span>
             </div>
             <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
-              <button id="delete-selected-cart" class="btn btn-danger btn-sm hidden" onclick="deleteSelectedCartItems()"><i class="fas fa-minus-circle"></i> Remove Selected</button>
               <button id="clear-cart" class="btn btn-secondary btn-sm" type="button" title="Clear cart"><i class="fas fa-trash-alt"></i> Clear</button>
             </div>
           </div>
           <div id="cart-content" style="flex: 1; overflow-y: auto; margin-bottom: 16px;">
-            <div class="summary-row" style="margin-bottom: 12px; padding: 0 4px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <input type="checkbox" id="select-all-cart" onchange="toggleSelectAllCart(this.checked)" style="width: 18px; height: 18px; cursor: pointer; accent-color: #4f46e5;">
-                <span style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Select All Cart Items</span>
-              </div>
-            </div>
             <div id="cart-list" class="cart-list"></div>
           </div>
           <div id="cart-empty" class="empty-state">Cart is empty.</div>
@@ -3642,9 +3635,7 @@
           </div>
 
           <div class="receipt-line"><span>Transaction #</span><strong id="receipt-number" class="receipt-id"></strong></div>
-          <div class="receipt-line"><span>Status</span><strong id="receipt-status"></strong></div>
-          <div class="receipt-line"><span>Date</span><strong id="receipt-date"></strong></div>
-          
+
           <div id="receipt-items" class="receipt-item-list"></div>
           <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
               <div class="receipt-line"><span>Subtotal</span><strong id="receipt-subtotal"></strong></div>
@@ -5423,8 +5414,6 @@
       if (checkoutForm) checkoutForm.classList.add('hidden');
 
       const receiptNumberEl = document.getElementById('receipt-number');
-      const receiptStatusEl = document.getElementById('receipt-status');
-      const receiptDateEl = document.getElementById('receipt-date');
       const receiptSubtotalEl = document.getElementById('receipt-subtotal');
       const receiptDiscountEl = document.getElementById('receipt-discount');
       const receiptTotalEl = document.getElementById('receipt-total');
@@ -5433,8 +5422,6 @@
       const receiptItems = document.getElementById('receipt-items');
 
       if (receiptNumberEl) receiptNumberEl.textContent = receipt.transaction_number || '—';
-      if (receiptStatusEl) receiptStatusEl.textContent = receipt.payment_status_text || receipt.payment_status || '—';
-      if (receiptDateEl) receiptDateEl.textContent = receipt.created_at || '—';
       if (receiptSubtotalEl) receiptSubtotalEl.textContent = formatCurrency(receipt.subtotal || 0);
       if (receiptDiscountEl) receiptDiscountEl.textContent = formatCurrency(receipt.discount_amount || 0);
       if (receiptTotalEl) receiptTotalEl.textContent = formatCurrency(receipt.total_amount || 0);

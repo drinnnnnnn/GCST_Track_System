@@ -199,10 +199,40 @@
     }
 
     .help-hint {
+      position: relative;
       color: var(--primary);
       font-weight: 600;
       border-bottom: 1px dashed var(--primary);
       cursor: help;
+    }
+
+    .help-hint::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      z-index: 20;
+      left: 50%;
+      bottom: calc(100% + 0.55rem);
+      width: max-content;
+      max-width: min(18rem, calc(100vw - 2rem));
+      padding: 0.5rem 0.65rem;
+      border-radius: 0.4rem;
+      background: var(--slate-900);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 400;
+      line-height: 1.4;
+      white-space: normal;
+      text-align: left;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, 0.25rem);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .help-hint:hover::after,
+    .help-hint:focus::after {
+      opacity: 1;
+      transform: translate(-50%, 0);
     }
 
     .products-panel {
@@ -659,6 +689,236 @@
       justify-content: space-between;
       align-items: center;
     }
+
+    .login-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      background: rgba(15, 23, 42, 0.48);
+      backdrop-filter: blur(8px);
+    }
+
+    .login-modal-backdrop.open {
+      display: flex;
+    }
+
+    .login-modal {
+      position: relative;
+      width: min(100%, 410px);
+      max-height: calc(100vh - 2.5rem);
+      overflow-y: auto;
+      padding: 2rem 2rem 1.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-top: 3px solid #315d96;
+      border-radius: 1.25rem;
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.24);
+      color: #1f2b45;
+      text-align: center;
+      animation: loginModalIn 0.22s ease-out;
+    }
+
+    @keyframes loginModalIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .login-modal-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 2.25rem;
+      height: 2.25rem;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: #64748b;
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .login-modal-close:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .login-modal-logo {
+      width: 3.5rem;
+      height: 3.5rem;
+      margin: 0 auto 0.6rem;
+      object-fit: contain;
+    }
+
+    .login-modal h2 {
+      margin: 0;
+      font-size: 1.65rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+
+    .login-modal-subtitle {
+      margin: 0.25rem 0 1.35rem;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    .login-error {
+      display: none;
+      margin: 0 0 1rem;
+      padding: 0.75rem 0.9rem;
+      border: 1px solid #fecaca;
+      border-radius: 0.75rem;
+      background: #fef2f2;
+      color: #b91c1c;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    .login-error.visible {
+      display: block;
+    }
+
+    .login-input-wrap {
+      position: relative;
+      margin-bottom: 0.8rem;
+    }
+
+    .login-input-wrap input {
+      width: 100%;
+      height: 2.8rem;
+      padding: 0 2.8rem 0 0.85rem;
+      border: 1px solid #d5dce7;
+      border-radius: 0.65rem;
+      outline: none;
+      background: white;
+      color: #1f2b45;
+      font: inherit;
+      font-size: 0.9rem;
+    }
+
+    .login-input-wrap input:focus {
+      border-color: #315d96;
+      box-shadow: 0 0 0 3px rgba(49, 93, 150, 0.14);
+    }
+
+    .login-input-wrap i {
+      position: absolute;
+      top: 50%;
+      right: 0.9rem;
+      color: #8792a2;
+      transform: translateY(-50%);
+    }
+
+    .login-password-toggle {
+      position: absolute;
+      top: 50%;
+      right: 0.65rem;
+      display: flex;
+      width: 1.75rem;
+      height: 1.75rem;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      transform: translateY(-50%);
+    }
+
+    .login-password-toggle i {
+      position: static;
+      transform: none;
+    }
+
+    .login-forgot {
+      display: block;
+      margin: 0.1rem 0 1.25rem;
+      color: #315d96;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .login-submit {
+      width: 100%;
+      min-height: 2.8rem;
+      border: 0;
+      border-radius: 0.65rem;
+      background: #1f2b45;
+      color: white;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.18s ease;
+    }
+
+    .login-submit:hover {
+      background: #315d96;
+    }
+
+    .login-signup {
+      margin: 1.2rem 0 0;
+      color: #64748b;
+      font-size: 0.85rem;
+    }
+
+    .login-signup a {
+      color: #315d96;
+      font-weight: 700;
+    }
+
+    .signup-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      background: rgba(15, 23, 42, 0.48);
+      backdrop-filter: blur(8px);
+    }
+
+    .signup-modal-backdrop.open {
+      display: flex;
+    }
+
+    .signup-modal {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: min(100%, 760px);
+      height: min(92vh, 800px);
+      overflow: hidden;
+      animation: none;
+    }
+
+    .signup-modal iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: transparent;
+    }
+
+    @media (max-width: 480px) {
+      .login-modal {
+        padding: 1.75rem 1.25rem 1.5rem;
+      }
+
+      .signup-modal-backdrop {
+        padding: 0.6rem;
+      }
+
+      .signup-modal {
+        width: 100%;
+        height: 94vh;
+      }
+    }
   </style>
 </head>
 
@@ -676,9 +936,9 @@
       </div>
       
       <nav class="flex items-center space-x-2">
-        <a href="../../pages/sign_in.php" class="p-3 text-slate-600 hover:text-blue-600 transition-colors" title="Sign In">
+        <button type="button" class="p-3 text-slate-600 hover:text-blue-600 transition-colors" title="Sign In" aria-label="Open sign-in form" aria-haspopup="dialog" aria-controls="login-modal" onclick="openLoginModal()">
           <i class="fas fa-sign-in-alt text-lg"></i>
-        </a>
+        </button>
         <a href="#footer" class="p-3 bg-slate-900 text-white rounded-xl hover:bg-blue-600 transition-all shadow-md" title="About Us">
           <i class="fas fa-circle-info"></i>
         </a>
@@ -737,25 +997,25 @@
         <div class="step-box">
           <div class="step-number">1</div>
           <h4 class="font-bold text-slate-800 mb-2">Check Dashboard</h4>
-          <p class="text-sm text-slate-500 leading-relaxed">Visit your <span class="help-hint" title="Summarizes your pending orders, and queue position.">Home Dashboard</span> to see real-time updates on your account status.</p>
+          <p class="text-sm text-slate-500 leading-relaxed">Visit your <span class="help-hint" data-tooltip="Summarizes your pending orders, and queue position." tabindex="0">Home Dashboard</span> to see real-time updates on your account status.</p>
         </div>
         <!-- Step 2 -->
         <div class="step-box">
           <div class="step-number" style="background: var(--emerald-600);">2</div>
           <h4 class="font-bold text-slate-800 mb-2">Browse Products</h4>
-          <p class="text-sm text-slate-500 leading-relaxed">Go to <span class="help-hint" title="We sell Books, Uniform Fabrics, and Accessories.">Browse Products</span> to purchase fabric uniform and accessories. Add items to your cart and proceed to checkout.</p>
+          <p class="text-sm text-slate-500 leading-relaxed">Go to <span class="help-hint" data-tooltip="We sell Books, Uniform Fabrics, and Accessories." tabindex="0">Browse Products</span> to purchase fabric uniform and accessories. Add items to your cart and proceed to checkout.</p>
         </div>
         <!-- Step 3 -->
         <div class="step-box">
           <div class="step-number" style="background: var(--amber-600);">3</div>
           <h4 class="font-bold text-slate-800 mb-2">Show QR Ticket</h4>
-          <p class="text-sm text-slate-500 leading-relaxed">Upon checkout, the system generates a <span class="help-hint" title="This QR code links to your order. The cashier will scan it to verify your items.">QR Code</span>. Present this to the cashier to complete your payment.</p>
+          <p class="text-sm text-slate-500 leading-relaxed">Upon checkout, the system generates a <span class="help-hint" data-tooltip="This QR code links to your order. The cashier will scan it to verify your items." tabindex="0">QR Code</span>. Present this to the cashier to complete your payment.</p>
         </div>
         <!-- Step 4 -->
         <div class="step-box">
           <div class="step-number" style="background: #6366f1;">4</div>
           <h4 class="font-bold text-slate-800 mb-2">Join the Queue</h4>
-          <p class="text-sm text-slate-500 leading-relaxed">Need to see the Registrar or Cashier? Simply generate a <strong>Queue Ticket</strong> at the kiosk monitor and receive real-time notifications when it’s your turn.</p>
+          <p class="text-sm text-slate-500 leading-relaxed">Need to see the Registrar or Cashier? Simply generate a <strong class="help-hint" data-tooltip="Get a place in line and receive notifications when it’s your turn." tabindex="0">Queue Ticket</strong> at the kiosk monitor and receive real-time notifications when it’s your turn.</p>
         </div>
       </div>
     </section>
@@ -828,6 +1088,40 @@
     </section>
   </main>
 
+  <div id="login-modal" class="login-modal-backdrop" aria-hidden="true" onclick="closeLoginModal(event)">
+    <section class="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title" onclick="event.stopPropagation()">
+      <button type="button" class="login-modal-close" aria-label="Close sign-in form" onclick="closeLoginModal()">×</button>
+      <img class="login-modal-logo" src="../../assets/images/icons/granby_logo.png" alt="Granby Colleges of Science and Technology">
+      <h2 id="login-modal-title">Sign In</h2>
+      <p class="login-modal-subtitle">Enter your student credentials to continue</p>
+      <p id="login-error" class="login-error" role="alert"></p>
+
+      <form action="../../actions/log_in.php" method="POST">
+        <input type="hidden" name="login_return" value="home">
+        <div class="login-input-wrap">
+          <input type="text" name="student_id" placeholder="Student ID Number" aria-label="Student ID Number" autocomplete="username" autocapitalize="characters" spellcheck="false" oninput="this.value = this.value.toUpperCase()" required>
+          <i class="fas fa-id-card" aria-hidden="true"></i>
+        </div>
+        <div class="login-input-wrap">
+          <input type="password" name="password" id="home-login-password" placeholder="Password" aria-label="Password" autocomplete="current-password" required>
+          <button type="button" class="login-password-toggle" aria-label="Show password" onclick="toggleHomeLoginPassword()">
+            <i id="home-login-password-icon" class="fas fa-eye" aria-hidden="true"></i>
+          </button>
+        </div>
+        <a class="login-forgot" href="../sign_in.php">Forgot Password?</a>
+        <button type="submit" class="login-submit">Sign In</button>
+      </form>
+
+      <p class="login-signup">Don't have an account? <a href="../superadmin/sign_up.php?modal=1" onclick="openSignupModal(); return false;">Sign Up</a></p>
+    </section>
+  </div>
+
+  <div id="signup-modal" class="signup-modal-backdrop" aria-hidden="true" onclick="closeSignupModal(event)">
+    <section class="signup-modal" role="dialog" aria-modal="true" aria-label="Student sign-up form" onclick="event.stopPropagation()">
+      <iframe id="signup-modal-frame" title="Student sign-up form" data-src="../superadmin/sign_up.php?modal=1"></iframe>
+    </section>
+  </div>
+
   <!-- Footer -->
   <footer id="footer" class="py-6 border-t border-slate-300 mt-12 text-center">
     <img src="../../assets/images/icons/granby_logo.png" class="w-8 h-8 grayscale opacity-50 inline-block mb-4">
@@ -835,6 +1129,86 @@
   </footer>
 
   <script>
+    const loginModal = document.getElementById('login-modal');
+    const signupModal = document.getElementById('signup-modal');
+    const signupFrame = document.getElementById('signup-modal-frame');
+    const signupTrigger = document.querySelector('.login-signup a');
+    const loginTrigger = document.querySelector('[aria-controls="login-modal"]');
+
+    function openLoginModal() {
+      loginModal.classList.add('open');
+      loginModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      loginModal.querySelector('input[name="student_id"]').focus();
+    }
+
+    function closeLoginModal(event) {
+      if (event && event.target !== event.currentTarget) return;
+      loginModal.classList.remove('open');
+      loginModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      loginTrigger.focus();
+    }
+
+    function openSignupModal() {
+      loginModal.classList.remove('open');
+      loginModal.setAttribute('aria-hidden', 'true');
+      if (!signupFrame.hasAttribute('src')) {
+        signupFrame.src = signupFrame.dataset.src;
+      }
+      signupModal.classList.add('open');
+      signupModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSignupModal(event) {
+      if (event && event.target !== event.currentTarget) return;
+      signupModal.classList.remove('open');
+      signupModal.setAttribute('aria-hidden', 'true');
+      loginModal.classList.add('open');
+      loginModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      signupTrigger.focus();
+    }
+
+    function openLoginModalFromSignup() {
+      closeSignupModal();
+      openLoginModal();
+    }
+
+    function toggleHomeLoginPassword() {
+      const password = document.getElementById('home-login-password');
+      const icon = document.getElementById('home-login-password-icon');
+      const isVisible = password.type === 'text';
+      password.type = isVisible ? 'password' : 'text';
+      icon.classList.toggle('fa-eye', isVisible);
+      icon.classList.toggle('fa-eye-slash', !isVisible);
+      document.querySelector('.login-password-toggle').setAttribute('aria-label', isVisible ? 'Show password' : 'Hide password');
+    }
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        if (signupModal.classList.contains('open')) {
+          closeSignupModal();
+        } else if (loginModal.classList.contains('open')) {
+          closeLoginModal();
+        }
+      }
+    });
+
+    const loginErrors = {
+      invalid: 'Incorrect student ID or password. Please try again.',
+      pending: 'Your account is pending approval. Please check back later.',
+      rejected: 'Your registration was rejected. Please contact the administrative office.',
+      suspended: 'Your account is suspended. Please contact support.'
+    };
+    const loginError = new URLSearchParams(window.location.search).get('login_error');
+    if (loginError && Object.prototype.hasOwnProperty.call(loginErrors, loginError)) {
+      document.getElementById('login-error').textContent = loginErrors[loginError];
+      document.getElementById('login-error').classList.add('visible');
+      openLoginModal();
+    }
+
     const API_PRODUCTS = '../../actions/get_admincashier_products.php';
     const productsGrid = document.getElementById('products-grid');
     const productsLoading = document.getElementById('products-loading');

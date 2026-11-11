@@ -10,9 +10,12 @@ new SuperAdminModel();
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $student_id_input = trim($_POST['student_id'] ?? '');
     $password_input = trim($_POST['password'] ?? '');
+    $loginErrorRedirect = ($_POST['login_return'] ?? '') === 'home'
+        ? '../pages/user/user_home.php?login_error='
+        : 'http://localhost/GCST_Track_System/pages/sign_in.php?error=';
 
     if ($student_id_input === '' || $password_input === '') {
-        header("Location: http://localhost/GCST_Track_System/pages/sign_in.php?error=invalid");
+        header("Location: " . $loginErrorRedirect . "invalid");
         exit();
     }
 
@@ -31,17 +34,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $normalizedStatus = strtolower(trim($status));
         if ($normalizedStatus === 'pending') {
-            header("Location: http://localhost/GCST_Track_System/pages/sign_in.php?error=pending");
+            header("Location: " . $loginErrorRedirect . "pending");
             exit();
         }
 
         if ($normalizedStatus === 'rejected') {
-            header("Location: http://localhost/GCST_Track_System/pages/sign_in.php?error=rejected");
+            header("Location: " . $loginErrorRedirect . "rejected");
             exit();
         }
 
         if ($normalizedStatus === 'suspended') {
-            header("Location: http://localhost/GCST_Track_System/pages/sign_in.php?error=suspended");
+            header("Location: " . $loginErrorRedirect . "suspended");
             exit();
         }
 
@@ -67,11 +70,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             header("Location: http://localhost/GCST_Track_System/pages/user/InUser_home.php");
             exit();
         } else {
-            header("Location: http://localhost/GCST_Track_System/pages/sign_in.php?error=invalid");
+            header("Location: " . $loginErrorRedirect . "invalid");
             exit();
         }
     } else {
-        header("Location: http://localhost/GCST_Track_System/pages/sign_in.php?error=invalid");
+        header("Location: " . $loginErrorRedirect . "invalid");
         exit();
     }
 

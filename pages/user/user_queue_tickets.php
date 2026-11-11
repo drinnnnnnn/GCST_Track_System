@@ -893,7 +893,7 @@
     </div>
   </div>
 
-  <script src="../../assets/js/user.js"></script>
+  <script src="../../assets/js/user.js?v=20261111-logout-stay-fix"></script>
   <script>
     let allTickets = [];
     let currentFilter = 'all';
@@ -1211,6 +1211,7 @@
       const statusEl = document.getElementById('latest-ticket-status');
       const pwdBadgeEl = document.getElementById('latest-ticket-pwd-badge');
       const actionsEl = document.getElementById('latest-ticket-actions');
+      const emailButton = actionsEl?.querySelector('.btn-email');
       const cancelButton = actionsEl?.querySelector('.btn-danger');
 
       if (!ticket) {
@@ -1249,8 +1250,12 @@
       }
 
       if (actionsEl) actionsEl.classList.remove('hidden');
+      const normalizedStatus = String(ticket.status || 'waiting').toLowerCase();
+      if (emailButton) {
+        emailButton.classList.toggle('hidden', normalizedStatus === 'cancelled');
+      }
       if (cancelButton) {
-        const canCancel = (ticket.status === 'waiting' || ticket.status === 'serving');
+        const canCancel = (normalizedStatus === 'waiting' || normalizedStatus === 'serving');
         cancelButton.classList.toggle('hidden', !canCancel);
       }
 

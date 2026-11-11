@@ -366,7 +366,7 @@ async function autoLoadSidebar() {
   if (!container) return;
 
   try {
-    const { getSidebarHTML } = await import('../../assets/js/user_sidebar_content.js');
+    const { getSidebarHTML } = await import('../../assets/js/user_sidebar_content.js?v=20261111-logout-stay-fix');
     if (container) {
       container.innerHTML = getSidebarHTML();
       window.syncUserDarkModeToggle?.();
@@ -395,7 +395,7 @@ async function autoLoadSidebar() {
         if (btn) {
           btn.onclick = (e) => {
             e.preventDefault();
-            if (typeof window.logoutUser === 'function') window.logoutUser();
+            if (typeof window.logoutUser === 'function') window.logoutUser(btn);
           };
         }
       });

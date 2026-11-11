@@ -1264,11 +1264,11 @@ button:focus-visible { box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.3); }
 .sidebar-link:hover i { transform: scale(1.1); }
 .sidebar.minimized .sidebar-link:hover { transform: none; }
 .sidebar-link.active { 
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
-  color: white !important; 
-  box-shadow: 0 8px 16px -4px rgba(220, 38, 38, 0.4); 
+  background: #fce8e8;
+  color: #991b1b;
+  box-shadow: none;
 }
-.sidebar-link.active i { color: white; }
+.sidebar-link.active i { color: #991b1b; }
 
 .sidebar-footer { margin-top: auto; padding-top: 1.5rem; border-top: 1px solid var(--border-soft); }
 
@@ -1860,21 +1860,16 @@ main,
 }
 
 .sidebar-link.active {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
-  box-shadow: 0 9px 18px rgba(220, 38, 38, 0.22);
+  background: #fce8e8;
+  color: #991b1b;
+  box-shadow: none;
 }
 
 .sidebar-link.active::after {
-  content: '';
-  position: absolute;
-  right: 0.55rem;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #fff;
+  content: none;
 }
 
-.sidebar-link:hover { transform: translateX(3px); }
+.sidebar-link:hover { transform: none; }
 
 button:focus-visible,
 a:focus-visible,

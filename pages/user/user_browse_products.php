@@ -165,7 +165,7 @@
     .modal-card {
       background: white;
       width: 100%;
-      max-width: 1000px;
+      max-width: 1100px;
       max-height: 95vh;
       position: relative;
       border-radius: 1.5rem;
@@ -413,7 +413,29 @@
       gap: 2rem;
     }
     @media (min-width: 768px) {
-      .modal-grid { grid-template-columns: 400px 1fr; gap: 3rem; }
+      .modal-grid { grid-template-columns: minmax(0, 460px) minmax(0, 1fr); gap: 3rem; }
+    }
+
+    .modal-product-image-frame {
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      border-radius: 1.5rem;
+      background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
+      box-shadow: inset 0 1px 5px rgba(15, 23, 42, 0.06);
+    }
+
+    #modal-p-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 1rem;
+      filter: contrast(1.04) saturate(1.08);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-product-image-frame:hover #modal-p-image {
+      transform: scale(1.04);
     }
 
     .modal-close-btn {
@@ -618,6 +640,50 @@
       box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
     }
 
+    .course-filter-wrap {
+      position: relative;
+      display: inline-flex;
+    }
+
+    .course-filter {
+      appearance: none;
+      padding: 12px 42px 12px 24px;
+      border: 2px solid #f1f5f9;
+      background: white;
+      color: #64748b;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .course-filter:hover,
+    .course-filter:focus {
+      border-color: #2563eb;
+      color: #2563eb;
+      outline: none;
+    }
+
+    .course-filter-icon {
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+      pointer-events: none;
+    }
+
+    body.dark-mode .course-filter {
+      background: var(--surface-soft);
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    body.dark-mode .course-filter-icon {
+      color: var(--text);
+    }
+
     .cart-panel {
       background: #ffffff;
       border-radius: 2.5rem;
@@ -743,6 +809,21 @@
         padding: 10px 8px;
         white-space: nowrap;
         font-size: 0.78rem;
+      }
+
+      .course-filter-wrap {
+        width: 100%;
+      }
+
+      .course-filter {
+        width: 100%;
+        padding: 10px 30px;
+        font-size: 0.78rem;
+        text-align: center;
+      }
+
+      .course-filter-icon {
+        right: 14px;
       }
 
       .availability-toggle {
@@ -1196,6 +1277,12 @@
           <button class="filter-btn" data-category="books" onclick="filterByCategory('books', this)">Books</button>
           <button class="filter-btn" data-category="uniform fabrics" onclick="filterByCategory('uniform fabrics', this)">Uniform Fabrics</button>
           <button class="filter-btn" data-category="accessories" onclick="filterByCategory('accessories', this)">Accessories</button>
+          <label class="course-filter-wrap">
+            <select id="course-filter" class="course-filter" aria-label="Filter products by course" onchange="loadProducts()">
+              <option value="All">All Courses</option>
+            </select>
+            <i class="fas fa-chevron-down course-filter-icon" aria-hidden="true"></i>
+          </label>
         </div>
       </div>
     </div>
@@ -1274,8 +1361,8 @@
         <div class="modal-grid">
           <!-- Left: Image Section -->
           <div class="space-y-4 md:space-y-6">
-            <div class="rounded-2xl md:rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 aspect-square">
-              <img id="modal-p-image" src="" alt="" class="w-full h-full object-cover transition-transform duration-700 hover:scale-110">
+            <div class="modal-product-image-frame">
+              <img id="modal-p-image" src="" alt="">
             </div>
             
             <div class="p-4 md:p-6 bg-slate-50 rounded-2xl md:rounded-3xl border border-slate-100">
@@ -1388,13 +1475,14 @@
     </div>
   </div>
 
-  <script src="../../assets/js/user.js"></script>
+  <script src="../../assets/js/user.js?v=20261111-logout-stay-fix"></script>
   <script>
     let allProducts = [];
     let currentCategory = 'all';
     let currentSearch = '';
     let currentStudentId = null; // Variable to store the logged-in student's ID
     let cart = [];
+    let courseOptionsLoaded = false;
 
     function normalizeCategory(value) {
       return (value || 'uncategorized').toString().toLowerCase();
@@ -1412,6 +1500,24 @@
 
     function getEffectiveBuyPrice(product) {
       return Math.max(0, parseFloat(product.buy_price ?? product.price ?? 0) || 0);
+    }
+
+    function populateCourseFilter(products) {
+      const filter = document.getElementById('course-filter');
+      if (!filter || courseOptionsLoaded) return;
+
+      const courses = [...new Set(products
+        .map(product => (product.course_program || product.uniform_course || product.book_course || '').trim())
+        .filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+      courses.forEach(course => {
+        const option = document.createElement('option');
+        option.value = course;
+        option.textContent = course;
+        filter.appendChild(option);
+      });
+      courseOptionsLoaded = true;
     }
 
     function filterByCategory(category, button) {
@@ -2139,6 +2245,9 @@
         const url = '../../actions/get_products.php' + (query.toString() ? `?${query.toString()}` : '');
         const productsData = await fetchWithError(url);
         allProducts = Array.isArray(productsData) ? productsData : (productsData?.products || []);
+        if (courseFilter === 'All' && currentCategory === 'all' && !currentSearch.trim() && !document.getElementById('stock-toggle')?.checked) {
+          populateCourseFilter(allProducts);
+        }
       } catch (error) {
         console.error('Failed to load products:', error);
         allProducts = [];

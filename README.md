@@ -7,4 +7,4 @@ Admin/Cashier
 http://localhost/GCST_Track_System/pages/sign_in_admin_cashier.php
 
 User
-http://localhost/GCST_Track_System/pages/sign_in.php
+http://localhost/GCST_Track_System/pages/user/user_home.php

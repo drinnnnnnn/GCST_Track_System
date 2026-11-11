@@ -3,9 +3,9 @@
  * Refactored for modularity, performance, and maintainability.
  */
 
-const SuperAdmin = (function() {
-    const sidebarContentVersion = document.currentScript?.dataset.sidebarVersion || '';
+const sidebarContentVersion = document.currentScript?.dataset.sidebarVersion || '';
 
+const SuperAdmin = (function() {
     // Core Configuration & State
     const CONFIG = {
         BASE_PATH: '/GCST_Track_System',

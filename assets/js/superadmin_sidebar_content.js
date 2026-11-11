@@ -159,6 +159,52 @@ export function getSidebarHTML() {
             }
         };
 
+        let staffRegistrationTrigger = null;
+        let bodyOverflowBeforeStaffModal = '';
+
+        window.openStaffRegistrationModal = function(event) {
+            const modal = document.getElementById('staff-registration-modal');
+            const frame = document.getElementById('staff-registration-frame');
+            const registrationLink = document.querySelector('[data-open-staff-registration]');
+            if (!modal || !frame || !registrationLink) return true;
+
+            event?.preventDefault();
+            staffRegistrationTrigger = event?.currentTarget || registrationLink;
+            window.handleSidebarLinkClick();
+            bodyOverflowBeforeStaffModal = document.body.style.overflow;
+
+            const registrationUrl = new URL(registrationLink.href);
+            registrationUrl.searchParams.set('popup', '1');
+            frame.src = registrationUrl.toString();
+            modal.hidden = false;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            modal.querySelector('.staff-registration-close')?.focus();
+            return false;
+        };
+
+        window.closeStaffRegistrationModal = function() {
+            const modal = document.getElementById('staff-registration-modal');
+            const frame = document.getElementById('staff-registration-frame');
+            if (!modal?.classList.contains('active')) return;
+
+            modal.classList.remove('active');
+            modal.hidden = true;
+            if (frame) frame.src = 'about:blank';
+            document.body.style.overflow = bodyOverflowBeforeStaffModal;
+            staffRegistrationTrigger?.focus();
+        };
+
+        window.__staffRegistrationModalKeydownBound = false;
+        if (!window.__staffRegistrationModalKeydownBound) {
+            window.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && document.getElementById('staff-registration-modal')?.classList.contains('active')) {
+                    window.closeStaffRegistrationModal();
+                }
+            });
+            window.__staffRegistrationModalKeydownBound = true;
+        }
+
         // Global utility to initialize lock screen events
         window.initLockScreenEvents = function() {
             const pinInput = document.getElementById('lock-screen-pin');
@@ -291,13 +337,97 @@ export function getSidebarHTML() {
         z-index: 1000;
         display: flex;
         flex-direction: column;
-        padding: 1rem 0.9rem;
-        border-right: 1px solid rgba(var(--border-rgb), 0.18);
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(18px) saturate(170%);
-        -webkit-backdrop-filter: blur(18px) saturate(170%);
-        transition: width 0.35s ease, transform 0.35s ease, background 0.25s ease;
+        padding: 1.25rem 1rem;
+        border-right: 1px solid #e5e7eb;
+        background: #ffffff;
+        transition: width 0.25s ease, transform 0.25s ease, background 0.2s ease;
         overflow: hidden;
+    }
+
+    #staff-registration-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 1300;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1.25rem;
+        background: rgba(15, 23, 42, 0.56);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+    }
+
+    #staff-registration-modal.active {
+        display: flex;
+    }
+
+    .staff-registration-dialog {
+        position: relative;
+        width: min(680px, 100%);
+        height: min(820px, calc(100vh - 2.5rem));
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: 22px;
+        background: #ffffff;
+        box-shadow: 0 28px 80px rgba(15, 23, 42, 0.28);
+        animation: staffRegistrationEnter 0.2s ease-out;
+    }
+
+    .staff-registration-frame {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: transparent;
+    }
+
+    .staff-registration-close {
+        position: absolute;
+        top: 0.85rem;
+        right: 0.85rem;
+        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: #475467;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: color 0.16s ease;
+    }
+
+    .staff-registration-close:hover {
+        color: #991b1b;
+    }
+
+    body.dark-mode .staff-registration-dialog {
+        border-color: #374151;
+        background: #1f2937;
+    }
+
+    body.dark-mode .staff-registration-close {
+        color: #e5e7eb;
+    }
+
+    @keyframes staffRegistrationEnter {
+        from { opacity: 0; transform: translateY(8px) scale(0.99); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @media (max-width: 640px) {
+        #staff-registration-modal {
+            padding: 0.5rem;
+        }
+
+        .staff-registration-dialog {
+            width: 100%;
+            height: calc(100vh - 1rem);
+            border-radius: 16px;
+        }
     }
 
     .mobile-sidebar-toggle {
@@ -308,21 +438,20 @@ export function getSidebarHTML() {
         z-index: 1101;
         width: 44px;
         height: 44px;
-        border-radius: 14px;
-        border: 1px solid rgba(var(--border-rgb), 0.18);
-        background: rgba(255, 255, 255, 0.92);
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        background: #ffffff;
         color: var(--text);
         display: inline-flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
-        transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+        transition: background 0.2s ease, border-color 0.2s ease;
     }
 
     .mobile-sidebar-toggle:hover {
-        transform: translateY(-1px);
-        background: rgba(255, 255, 255, 1);
+        background: #f8fafc;
     }
 
     .sidebar-brand {
@@ -331,25 +460,20 @@ export function getSidebarHTML() {
         align-items: center;
         justify-content: space-between;
         gap: 0.75rem;
-        margin: 0.25rem 0 1.1rem;
-        padding: 0.9rem 0.8rem;
-        border-radius: 1rem;
-        background: rgba(255, 255, 255, 0.65);
-        border: 1px solid rgba(var(--border-rgb), 0.12);
+        margin: 0 0 1rem;
+        padding: 0 0.25rem 1.15rem;
+        border-bottom: 1px solid #e5e7eb;
         overflow: visible;
         transition: padding 0.25s ease, margin 0.25s ease;
     }
 
     body.dark-mode .sidebar {
-        background: rgba(31, 41, 55, 0.96);
-        border-right-color: rgba(71, 85, 105, 0.8);
-        box-shadow: 18px 0 40px rgba(0, 0, 0, 0.2);
+        background: #1f2937;
+        border-right-color: #374151;
     }
 
     body.dark-mode .sidebar-brand {
-        background: #273449 !important;
-        border-color: #475569 !important;
-        box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18);
+        border-bottom-color: #374151;
     }
 
     body.dark-mode .sidebar-brand .brand-subtitle,
@@ -369,45 +493,59 @@ export function getSidebarHTML() {
 
     body.dark-mode .sidebar-link i,
     body.dark-mode .nav-section-label {
-        color: #94a3b8;
+        color: #9ca3af;
     }
 
     body.dark-mode .sidebar-link:hover {
-        background: #2d3a4f;
-        color: #f8fafc;
+        background: #273449;
+        color: #f9fafb;
     }
 
-    body.dark-mode .sidebar-link.active,
+    body.dark-mode .sidebar-link.active {
+        background: #512b31;
+        color: #fecaca;
+    }
+
     body.dark-mode .sidebar-link.active i {
-        color: #ffffff;
+        color: #fecaca;
+    }
+
+    body.dark-mode .sidebar-footer {
+        border-top-color: #374151;
+    }
+
+    body.dark-mode .dark-mode-toggle {
+        background: #273449;
+        border-color: #374151;
+        color: #cbd5e1;
+    }
+
+    body.dark-mode .dark-mode-toggle:hover,
+    body.dark-mode .dark-mode-toggle:focus-visible {
+        border-color: #64748b;
+        color: #f9fafb;
     }
 
     body.dark-mode .sidebar.minimized .sidebar-link i {
-        background: rgba(39, 52, 73, 0.9);
-        border-color: rgba(71, 85, 105, 0.8);
+        background: transparent;
+        border-color: transparent;
     }
 
     .brand-content {
         display: flex;
         align-items: center;
-        gap: 0.8rem;
+        gap: 0.7rem;
         min-width: 0;
         flex: 1;
-        padding-top: 1rem;
     }
 
     .brand-logo {
-        width: 46px;
-        height: 46px;
+        width: 44px;
+        height: 44px;
         object-fit: contain;
         flex-shrink: 0;
-        border-radius: 0.75rem;
+        border-radius: 50%;
         background: #ffffff;
-        padding: 0.2rem;
-        border: 1px solid rgba(255, 255, 255, 0.75);
-        
-        /* Pushes the logo down from the top */
-        margin-top: 1rem; 
     }
 
     .brand-text {
@@ -417,12 +555,8 @@ export function getSidebarHTML() {
         min-width: 0;
         gap: 0.1rem;
         overflow: hidden;
-        
-        /* Adds space from the top of the container */
-        padding-top: 1rem; 
     }
 
-    /* Enhances how text behaves inside the brand container */
     .brand-text > * {
         margin: 0;
         line-height: 1.2;
@@ -441,30 +575,30 @@ export function getSidebarHTML() {
     }
 
     .brand-subtitle {
-        font-size: 0.68rem;
+        font-size: 0.62rem;
         font-weight: 700;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
         color: var(--muted);
         line-height: 1;
     }
 
     .brand-title {
-    font-size: clamp(0.7rem, 0.8vw, 0.85rem);
-    font-weight: 800;
-    color: var(--text);
-    letter-spacing: -0.01em; 
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    transition: font-size 0.2s ease;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: 0;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: font-size 0.2s ease;
     }
 
     .brand-role {
-        font-size: 0.67rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
         text-transform: uppercase;
         color: var(--primary);
         line-height: 1;
@@ -504,21 +638,21 @@ export function getSidebarHTML() {
     }
 
     .nav-section-label {
-        margin: 0.75rem 0.75rem 0.35rem;
+        margin: 0.9rem 0.7rem 0.4rem;
         padding: 0;
-        font-size: 0.68rem;
-        font-weight: 800;
+        font-size: 0.67rem;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.12em;
-        color: var(--muted);
-        opacity: 0.78;
+        letter-spacing: 0.08em;
+        color: #7b8494;
+        opacity: 1;
         transition: opacity 0.2s ease;
     }
 
     .sidebar-nav {
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
+        gap: 0.15rem;
         overflow-y: auto;
         padding-right: 0.2rem;
     }
@@ -536,84 +670,91 @@ export function getSidebarHTML() {
     .sidebar-link {
         display: flex;
         align-items: center;
-        gap: 0.95rem;
-        padding: 0.78rem 0.95rem;
-        border-radius: 11px;
-        color: var(--text-muted);
-        font-weight: 600;
-        font-size: 0.86rem;
+        gap: 0.8rem;
+        min-height: 2.85rem;
+        padding: 0.65rem 0.75rem;
+        border-radius: 8px;
+        color: #344054;
+        font-weight: 500;
+        font-size: 0.88rem;
         text-decoration: none;
-        transition: all 0.2s ease;
+        transition: background 0.16s ease, color 0.16s ease;
         position: relative;
         overflow: hidden;
         white-space: nowrap;
     }
     .sidebar-link i {
-        width: 1.2rem;
+        width: 1.25rem;
         text-align: center;
-        font-size: 1rem;
+        font-size: 0.98rem;
+        color: #667085;
         flex-shrink: 0;
     }
     .sidebar-link:hover {
-        background: var(--surface-hover);
-        color: var(--primary-blue);
-        transform: translateX(2px);
+        background: #f5f6f8;
+        color: #202939;
+        transform: none;
+    }
+    .sidebar-link:hover i {
+        color: inherit;
+        transform: none;
     }
     .sidebar-link:focus-visible {
         outline: none;
-        box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.12);
+        box-shadow: inset 0 0 0 2px rgba(185, 28, 28, 0.28);
     }
     .sidebar-link.active {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-        color: #ffffff;
-        box-shadow: 0 9px 18px rgba(220, 38, 38, 0.22);
+        background: #fce8e8;
+        color: #991b1b;
+        font-weight: 600;
     }
     .sidebar-link.active::before {
         content: '';
         position: absolute;
-        left: 0.4rem;
+        left: 0;
         top: 50%;
-        width: 0.25rem;
-        height: 1.25rem;
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 999px;
+        width: 3px;
+        height: 1.15rem;
+        background: #b91c1c;
         transform: translateY(-50%);
     }
 
     .sidebar-footer {
-        padding: 0.5rem 0 0;
+        padding: 0.75rem 0 0;
         margin-top: auto;
+        border-top: 1px solid #e5e7eb;
     }
 
-    .sidebar-theme-control { padding: 0.5rem 0 0; }
+    .sidebar-theme-control { padding: 0.15rem 0 0; }
 
     .dark-mode-toggle {
         width: 100%;
         min-height: 2.5rem;
         display: inline-flex;
         align-items: center;
-        gap: 0.75rem;
-        padding: 0.65rem 0.85rem;
-        border: 1px solid var(--border-soft);
-        border-radius: 0.8rem;
-        background: var(--surface-soft);
-        color: var(--muted);
+        gap: 0.7rem;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: #f8f9fb;
+        color: #475467;
         cursor: pointer;
         font: inherit;
         font-size: 0.8rem;
-        font-weight: 700;
+        font-weight: 500;
         text-align: left;
-        transition: var(--transition);
+        transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
     }
 
     .dark-mode-toggle:hover,
     .dark-mode-toggle:focus-visible {
-        color: var(--primary);
-        border-color: rgba(var(--primary-rgb), 0.35);
+        color: #991b1b;
+        border-color: #d1d5db;
+        background: #f1f3f5;
         outline: none;
     }
 
-    .dark-mode-toggle i { width: 1.1rem; text-align: center; }
+    .dark-mode-toggle i { width: 1.1rem; text-align: center; color: #64748b; }
 
     #main-sidebar.sidebar.minimized .sidebar-theme-control { display: flex; justify-content: center; }
     #main-sidebar.sidebar.minimized .dark-mode-toggle { width: 2.8rem; height: 2.8rem; padding: 0; justify-content: center; }
@@ -622,10 +763,13 @@ export function getSidebarHTML() {
     .btn-logout {
         margin-top: 0.35rem;
         border: 1px solid transparent;
+        color: #344054;
     }
 
     .btn-logout:hover {
-        border-color: rgba(var(--primary-rgb), 0.12);
+        border-color: transparent;
+        background: #f5f6f8;
+        color: #991b1b;
     }
 
     @media (min-width: 1025px) {
@@ -639,6 +783,7 @@ export function getSidebarHTML() {
             justify-content: center;
             margin-bottom: 1rem;
             padding: 0.65rem 0;
+            border-bottom: 0;
         }
 
         .sidebar.minimized .brand-content {
@@ -683,15 +828,15 @@ export function getSidebarHTML() {
             justify-content: center;
             margin: 0;
             font-size: 1.1rem;
-            border-radius: 0.8rem;
-            background: rgba(255, 255, 255, 0.72);
-            border: 1px solid rgba(var(--border-rgb), 0.14);
+            border-radius: 0.65rem;
+            background: transparent;
+            border: 0;
         }
 
         .sidebar.minimized .sidebar-link.active i {
             background: transparent;
             border-color: transparent;
-            color: inherit;
+            color: #991b1b;
         }
 
         .sidebar.minimized .sidebar-footer {
@@ -732,7 +877,7 @@ export function getSidebarHTML() {
             transform: translateX(-100%);
             background: #fff;
             border-radius: 0 1.25rem 1.25rem 0;
-            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
         }
 
         .sidebar.active {
@@ -751,12 +896,12 @@ export function getSidebarHTML() {
         }
 
         .sidebar-brand {
-            padding: 0.8rem 0.7rem;
+            padding: 0 0.25rem 1rem;
         }
 
         .brand-logo {
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
         }
 
         .brand-title {
@@ -1064,7 +1209,7 @@ export function getSidebarHTML() {
             <a href="superadmin_student_manage.php" class="sidebar-link${activeClass('superadmin_student_manage.php')}" title="Manage Students" onclick="handleSidebarLinkClick()">
                 <i class="fas fa-user-graduate"></i> <span>Manage Students</span>
             </a>
-            <a href="register_admin_cashier.php" class="sidebar-link${activeClass('register_admin_cashier.php')}" title="Register Staff" onclick="handleSidebarLinkClick()">
+            <a href="register_admin_cashier.php" data-open-staff-registration class="sidebar-link${activeClass('register_admin_cashier.php')}" title="Register Staff" onclick="return openStaffRegistrationModal(event)">
                 <i class="fas fa-user-plus"></i> <span>Register Staff</span>
             </a>
 
@@ -1095,5 +1240,13 @@ export function getSidebarHTML() {
         </div>
     </div>
 </aside>
+<div id="staff-registration-modal" hidden onclick="if (event.target === this) closeStaffRegistrationModal()">
+    <div class="staff-registration-dialog" role="dialog" aria-modal="true" aria-label="Create staff account">
+        <button type="button" class="staff-registration-close" aria-label="Close staff registration" onclick="closeStaffRegistrationModal()">
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+        <iframe id="staff-registration-frame" class="staff-registration-frame" title="Create staff account"></iframe>
+    </div>
+</div>
 `;
 }

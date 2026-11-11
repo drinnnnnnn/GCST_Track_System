@@ -4,9 +4,10 @@ require_once __DIR__ . '/../config/db_connect.php';
 require_once __DIR__ . '/email_helpers.php';
 
 secureSessionStart();
+$modalSuffix = ($_POST['signup_return'] ?? '') === 'modal' ? '&modal=1' : '';
 
 if (!isset($conn) || $conn->connect_error) {
-    header('Location: ../pages/superadmin/sign_up.php?status=error&show=register');
+    header('Location: ../pages/superadmin/sign_up.php?status=error&show=register' . $modalSuffix);
     exit();
 }
 
@@ -28,27 +29,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $status         = 'pending';
 
     if ($student_id === '' || $last_name === '' || $first_name === '' || $email === '' || $password_raw === '' || $sex === '' || $course === '' || $department === '' || $year_level === '' || $contact_number === '' || $address === '') {
-        header('Location: ../pages/superadmin/sign_up.php?status=invalid&show=register');
+        header('Location: ../pages/superadmin/sign_up.php?status=invalid&show=register' . $modalSuffix);
         exit();
     }
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        header('Location: ../pages/superadmin/sign_up.php?status=invalid_email&show=register');
+        header('Location: ../pages/superadmin/sign_up.php?status=invalid_email&show=register' . $modalSuffix);
         exit();
     }
 
     if ($password_raw !== $confirm_pass) {
-        header('Location: ../pages/superadmin/sign_up.php?status=nomatch&show=register');
+        header('Location: ../pages/superadmin/sign_up.php?status=nomatch&show=register' . $modalSuffix);
         exit();
     }
 
     if (strlen($password_raw) < 8 || !preg_match('/[!@#$%^&*]/', $password_raw)) {
-        header('Location: ../pages/superadmin/sign_up.php?status=weak_password&show=register');
+        header('Location: ../pages/superadmin/sign_up.php?status=weak_password&show=register' . $modalSuffix);
         exit();
     }
 
     if (!preg_match('/^\d{11}$/', $contact_number)) {
-        header('Location: ../pages/superadmin/sign_up.php?status=invalid&show=register');
+        header('Location: ../pages/superadmin/sign_up.php?status=invalid&show=register' . $modalSuffix);
         exit();
     }
 
@@ -124,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     foreach (['school_id_pic', 'reg_form', 'payment_scheme'] as $key) {
         if (!$upload_file($key, $allowed_extensions, $allowed_mimes, true)) {
-            header('Location: ../pages/superadmin/sign_up.php?status=' . $upload_error . '&show=register');
+            header('Location: ../pages/superadmin/sign_up.php?status=' . $upload_error . '&show=register' . $modalSuffix);
             exit();
         }
     }
@@ -134,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pwd_allowed_mimes = ['image/jpeg', 'image/png'];
         foreach (['pwd_front', 'pwd_back'] as $key) {
             if (!$upload_file($key, $pwd_allowed_ext, $pwd_allowed_mimes, true)) {
-                header('Location: ../pages/superadmin/sign_up.php?status=' . $upload_error . '&show=register');
+                header('Location: ../pages/superadmin/sign_up.php?status=' . $upload_error . '&show=register' . $modalSuffix);
                 exit();
             }
         }
@@ -147,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($result->num_rows > 0) {
         $check_stmt->close();
-        header('Location: ../pages/superadmin/sign_up.php?status=exists&show=register');
+        header('Location: ../pages/superadmin/sign_up.php?status=exists&show=register' . $modalSuffix);
         exit();
     }
 
@@ -227,7 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $stmt->close();
         $check_stmt->close();
-        header('Location: ../pages/superadmin/sign_up.php?status=success&show=register');
+        header('Location: ../pages/superadmin/sign_up.php?status=success&show=register' . $modalSuffix);
         exit();
     }
 

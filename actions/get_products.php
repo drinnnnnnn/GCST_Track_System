@@ -16,6 +16,7 @@ if ($conn->connect_error) {
 // Capture filters from GET request
 $category = $_GET['category'] ?? '';
 $search = $_GET['search'] ?? '';
+$courseProgram = trim($_GET['course_program'] ?? '');
 $availableOnly = isset($_GET['available_only']) && $_GET['available_only'] === '1';
 
 // Base Query
@@ -24,7 +25,7 @@ $sql = "SELECT product_id, product_name, product_category, product_description,
                COALESCE(buy_price, price, 0.00) AS buy_price,
                rent_price, barcode,
                book_author AS author, book_pages AS pages, 
-               COALESCE(uniform_course, book_course) AS course_program,
+               COALESCE(NULLIF(uniform_course, ''), book_course) AS course_program,
                uniform_type, uniform_material AS material_type,
                uniform_upper_fabric, uniform_lower_fabric,
                book_publication_year AS publish_year, book_subject
@@ -40,6 +41,13 @@ if (!empty($category) && $category !== 'all') {
     $params[] = "%$searchCat%";
     $params[] = "%$baseCat%";
     $types .= "ss";
+}
+
+// Apply Course Filter
+if ($courseProgram !== '') {
+    $sql .= " AND LOWER(TRIM(COALESCE(NULLIF(uniform_course, ''), book_course, ''))) = LOWER(?)";
+    $params[] = $courseProgram;
+    $types .= "s";
 }
 
 // Apply Search Filter
