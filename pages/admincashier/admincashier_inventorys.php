@@ -602,6 +602,7 @@
       gap: 18px;
       position: sticky;
       top: 20px; /* Keeps the details panel visible while scrolling the inventory list */
+      min-width: 0;
     }
 
     @media screen and (max-width: 1200px) {
@@ -614,10 +615,11 @@
       background: var(--panel-bg);
       background: var(--surface);
       border-radius: 24px;
-      padding: 24px;
+      padding: clamp(14px, 1.5vw, 22px);
       border: 1px solid #f0f4ff;
       box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
       overflow: hidden; /* Changed to hidden to manage internal scroll via details */
+      min-width: 0;
     }
 
     .panel-card h2 {
@@ -663,12 +665,34 @@
 
     .product-details {
       display: grid;
-      gap: 16px;
+      gap: 12px;
       animation: slideInRight 0.4s ease-out;
       max-height: calc(100vh - 152px);
       overflow-y: auto;
+      overflow-x: hidden;
       padding: 0 6px 4px 0;
       scrollbar-width: thin;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    .product-details > *,
+    .product-details .form-group,
+    .product-details .grid {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .product-details .grid.grid-cols-2 {
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 135px), 1fr));
+      gap: 10px;
+    }
+
+    .product-details #detail-book-fields > .grid {
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr));
+      gap: 12px;
     }
 
     .product-details > [id$="-summary"] {
@@ -872,6 +896,13 @@
       margin-bottom: 4px; /* Space below this section */
       padding: 2px 0 10px;
       border-bottom: 1px solid #eef2f7;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .product-info-header .product-meta {
+      flex-wrap: wrap;
+      gap: 6px;
     }
 
     .product-info-header .image-preview {
@@ -914,16 +945,19 @@
     .product-details input,
     .product-details select,
     .product-details textarea {
-      min-height: 44px;
-      padding: 11px 13px;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      min-height: 40px;
+      padding: 9px 11px;
       border-width: 1px;
-      border-radius: 12px;
-      font-size: 0.9rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
     }
 
     .product-details input[type="file"] {
-      min-height: 42px;
-      padding: 8px 10px;
+      min-height: 38px;
+      padding: 7px 8px;
       background: #f8fafc;
     }
 
@@ -1324,8 +1358,7 @@
       border-color: #334155 !important;
     }
 
-    body.dark-mode .content-wrapper #detail-uniform-summary,
-    body.dark-mode .content-wrapper #detail-book-summary {
+    body.dark-mode .content-wrapper #detail-uniform-summary {
       background: #1e293b !important;
       border-color: #475569 !important;
     }
@@ -1654,38 +1687,6 @@
                   <div class="flex justify-between">
                     <span class="text-slate-400">Price Per Yard:</span>
                     <span id="disp-uniform-price" class="text-indigo-600 font-bold"></span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Read-only Book Summary Section -->
-              <div id="detail-book-summary" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-2">
-                <div class="flex items-center gap-2 mb-3">
-                  <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">
-                    <i class="fas fa-book"></i>
-                  </div>
-                  <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Book Information</h4>
-                </div>
-                <div class="space-y-2.5 text-xs font-medium">
-                  <div class="flex justify-between pb-2 border-b border-slate-100">
-                    <span class="text-slate-400">Title:</span>
-                    <span id="disp-book-title" class="text-slate-700"></span>
-                  </div>
-                  <div class="flex justify-between pb-2 border-b border-slate-100">
-                    <span class="text-slate-400">Author:</span>
-                    <span id="disp-book-author" class="text-slate-700"></span>
-                  </div>
-                  <div class="flex justify-between pb-2 border-b border-slate-100">
-                    <span class="text-slate-400">Pages:</span>
-                    <span id="disp-book-pages" class="text-slate-700"></span>
-                  </div>
-                  <div class="flex justify-between pb-2 border-b border-slate-100">
-                    <span class="text-slate-400">Course/Subject:</span>
-                    <span id="disp-book-course" class="text-slate-700"></span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-400">Publish Year:</span>
-                    <span id="disp-book-year" class="text-slate-700"></span>
                   </div>
                 </div>
               </div>
@@ -2555,19 +2556,6 @@
             document.getElementById('detail-lower-fabric-input').value = p.uniform_lower_fabric || '';
             document.getElementById('detail-material-input').value = p.material_type || p.uniform_material || '';
 
-            // Populate Read-only Display Summary
-            const bookTitleDisp = document.getElementById('disp-book-title');
-            const bookAuthorDisp = document.getElementById('disp-book-author');
-            const bookPagesDisp = document.getElementById('disp-book-pages');
-            const bookCourseDisp = document.getElementById('disp-book-course');
-            const bookYearDisp = document.getElementById('disp-book-year');
-
-            if (bookTitleDisp) bookTitleDisp.textContent = p.product_name || 'N/A';
-            if (bookAuthorDisp) bookAuthorDisp.textContent = p.book_author || 'N/A';
-            if (bookPagesDisp) bookPagesDisp.textContent = p.book_pages || 'N/A';
-            if (bookCourseDisp) bookCourseDisp.textContent = (p.book_course && p.book_subject) ? `${p.book_course} / ${p.book_subject}` : (p.book_course || p.book_subject || 'N/A');
-            if (bookYearDisp) bookYearDisp.textContent = p.book_publication_year || 'N/A';
-
             const courseDisp = document.getElementById('disp-uniform-course');
             const typeDisp = document.getElementById('disp-uniform-type');
             const upperFabricDisp = document.getElementById('disp-uniform-upper-fabric');
@@ -2928,7 +2916,6 @@
         const ext = document.getElementById(`${pfx}ext-fields`);
         const unif = document.getElementById(`${pfx}uniform-fields`);
         const unifSummary = document.getElementById('detail-uniform-summary');
-        const bookSummary = document.getElementById('detail-book-summary');
         
         if (book) book.classList.toggle('hidden', !isBook);
         if (ext) ext.classList.toggle('hidden', !isBook);
@@ -2941,7 +2928,6 @@
             });
         }
         if (unifSummary) unifSummary.classList.toggle('hidden', !isUnif);
-        if (bookSummary) bookSummary.classList.toggle('hidden', !isBook);
     }
 
     function toggleFabricCombination(context, type) {

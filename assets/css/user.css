@@ -1211,6 +1211,10 @@
       color: #bfdbfe !important;
     }
 
+    body.dark-mode .nav-item.active i {
+      color: #bfdbfe !important;
+    }
+
     body.dark-mode .nav-logout { color: #f87171 !important; }
     body.dark-mode .nav-logout:hover { background: rgba(239, 68, 68, 0.16) !important; }
 

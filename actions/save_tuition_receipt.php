@@ -30,7 +30,7 @@ $studentEmail = isset($input['student_email']) ? trim((string)$input['student_em
 $studentId = isset($input['student_id']) ? trim((string)$input['student_id']) : null;
 $studentYearLevel = isset($input['student_year_level']) ? trim((string)$input['student_year_level']) : null;
 $studentSemester = isset($input['student_semester']) ? trim((string)$input['student_semester']) : null;
-$studentType = isset($input['student_type']) ? trim((string)$input['student_type']) : 'Regular Student';
+$studentType = isset($input['student_type']) ? trim((string)$input['student_type']) : '';
 $payment_method = isset($input['payment_method']) ? trim((string)$input['payment_method']) : 'Cash';
 $checkNumber = isset($input['check_number']) ? trim((string)$input['check_number']) : null;
 $paymentStatus = isset($input['payment_status']) && in_array($input['payment_status'], ['paid', 'pending'], true) ? $input['payment_status'] : 'paid';
@@ -77,7 +77,6 @@ try {
     $studentId = $conn->real_escape_string($studentId);
     $studentYearLevel = $studentYearLevel !== '' ? $conn->real_escape_string($studentYearLevel) : null;
     $studentSemester = $studentSemester !== '' ? $conn->real_escape_string($studentSemester) : null;
-    $studentType = $studentType !== '' ? $conn->real_escape_string($studentType) : 'Regular Student';
     $payment_method = $conn->real_escape_string($payment_method);
     $checkNumber = $conn->real_escape_string($checkNumber);
     $authorizedRep = $conn->real_escape_string($authorizedRep);
@@ -85,6 +84,15 @@ try {
     $note = $conn->real_escape_string($note);
 
     $isTuitionReceipt = in_array($receiptCategory, ['Tuition Receipt', 'Tuition Fee Receipt'], true);
+
+    if ($isTuitionReceipt && !in_array($studentSemester, ['1st Semester', '2nd Semester', 'Summer'], true)) {
+        throw new Exception('Please select a valid semester for the tuition receipt.');
+    }
+    if ($isTuitionReceipt && !in_array($studentType, ['Regular Student', 'Irregular Student'], true)) {
+        throw new Exception('Please select a valid student type for the tuition receipt.');
+    }
+
+    $studentType = $studentType !== '' ? $conn->real_escape_string($studentType) : 'Regular Student';
 
     if ($studentId !== '') {
         $userId = null;

@@ -1963,6 +1963,10 @@
       }
     }
 
+    .receipt-payment-details-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     @media (max-width: 1280px) {
       .cashier-layout {
         grid-template-columns: 1fr;
@@ -1998,6 +2002,9 @@
     }
     @media (max-width: 480px) {
       .products-grid {
+        grid-template-columns: 1fr;
+      }
+      .receipt-payment-details-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -2270,15 +2277,6 @@
       border-bottom: 1px solid #edf1f7;
     }
 
-    .catalog-view-tools {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-left: auto;
-      justify-content: flex-end;
-      flex-shrink: 0;
-    }
-
     .catalog-course-filter {
       flex: 0 0 176px;
       width: 176px;
@@ -2324,33 +2322,6 @@
       font-size: 0.78rem;
       font-weight: 700;
       outline: none;
-    }
-
-    .catalog-view-toggle {
-      display: inline-flex;
-      gap: 2px;
-      padding: 3px;
-      border: 1px solid #dbe2ea;
-      border-radius: 10px;
-      background: #f8fafc;
-    }
-
-    .catalog-view-btn {
-      width: 32px;
-      height: 32px;
-      border: 0;
-      border-radius: 7px;
-      background: transparent;
-      color: #64748b;
-      cursor: pointer;
-      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .catalog-view-btn.active,
-    .catalog-view-btn:hover {
-      background: #315fe8;
-      color: #ffffff;
-      box-shadow: 0 4px 10px rgba(49, 95, 232, 0.18);
     }
 
     .products-grid {
@@ -2413,41 +2384,13 @@
       font-size: 0.76rem;
     }
 
-    .product-list-view {
-      grid-template-columns: 1fr;
-    }
-
-    .product-list-view .product-card {
-      display: grid;
-      grid-template-columns: 112px minmax(0, 1fr) minmax(150px, 190px);
-      align-items: stretch;
-    }
-
-    .product-list-view .product-image-container {
-      aspect-ratio: auto;
-      min-height: 112px;
-      height: 100%;
-      border-radius: 12px 0 0 12px;
-      border-bottom: 0;
-    }
-
-    .product-list-view .product-actions {
-      justify-content: center;
-      border-top: 0;
-      border-left: 1px solid #eef2ff;
-    }
-
     @media (max-width: 900px) {
-      .catalog-view-tools { width: auto; margin-left: auto; justify-content: flex-end; }
       .products-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
     }
 
     @media (max-width: 560px) {
-      .catalog-view-tools { margin-left: auto; }
       .catalog-course-filter { flex-basis: 100%; width: 100%; max-width: 100% !important; }
       .products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-      .product-list-view .product-card { grid-template-columns: 82px minmax(0, 1fr); }
-      .product-list-view .product-actions { grid-column: 1 / -1; border-left: 0; border-top: 1px solid #eef2ff; }
     }
 
     .cashier-layout > .panel:first-child {
@@ -2956,12 +2899,6 @@
             <option value="All">All Courses</option>
           </select>
           <div id="category-filters"></div>
-          <div class="catalog-view-tools" aria-label="Catalog display options">
-            <div class="catalog-view-toggle" role="group" aria-label="Catalog view">
-              <button type="button" class="catalog-view-btn active" data-view="grid" aria-label="Grid view" title="Grid view"><i class="fas fa-grip"></i></button>
-              <button type="button" class="catalog-view-btn" data-view="list" aria-label="List view" title="List view"><i class="fas fa-list"></i></button>
-            </div>
-          </div>
         </div>
         <div id="product-grid" class="products-grid"></div>
         <div id="product-pagination" class="pagination-controls"></div>
@@ -3195,7 +3132,7 @@
     <div id="tuition-modal" class="modal-backdrop hidden receipt-modal-shell" style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10000;">
       <div class="panel receipt-modal-card" style="position: relative;">
         <div class="receipt-modal-body" style="position: relative; padding-top: 30px;">
-          <button type="button" class="modal-close receipt-modal-close" onclick="closeTuitionModal()" style="position: absolute; top: 18px; right: 18px; border:none; background:#f8fafc; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size:1.35rem; cursor:pointer; color:#64748b; border:1px solid #e2e8f0;">×</button>
+          <button type="button" class="modal-close receipt-modal-close" onclick="closeTuitionModal()" style="position: absolute; top: 18px; right: 18px; background: transparent; width: 38px; height: 38px; border: 0; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size:1.35rem; cursor:pointer; color:#64748b;">×</button>
           <div class="receipt-card">
             <div class="receipt-card-title"><i class="fas fa-layer-group"></i> Receipt Mode</div>
             <div class="receipt-mode-switch">
@@ -3251,16 +3188,16 @@
                 </select>
               </div>
               <div id="tuition-student-type-field-group" class="receipt-field-group">
-                <label class="receipt-label">Student Type</label>
-                <select id="tuition-student-type" class="search-input receipt-input">
-                  <option value="Select Student" selected>Select Student Type</option>
+                <label class="receipt-label">Student Type *</label>
+                <select id="tuition-student-type" class="search-input receipt-input" aria-required="true">
+                  <option value="" disabled selected>Select Student Type</option>
                   <option value="Regular Student" >Regular Student</option>
                   <option value="Irregular Student">Irregular Student</option>
                 </select>
               </div>
               <div id="tuition-semester-field-group" class="receipt-field-group">
-                <label class="receipt-label">Semester</label>
-                <select id="tuition-student-semester" class="search-input receipt-input">
+                <label class="receipt-label">Semester *</label>
+                <select id="tuition-student-semester" class="search-input receipt-input" aria-required="true">
                   <option value="">Select Semester</option>
                   <option value="1st Semester">1st Semester</option>
                   <option value="2nd Semester">2nd Semester</option>
@@ -3302,8 +3239,8 @@
 
           <div class="receipt-card">
             <div id="receipt-details-card-title" class="receipt-card-title"><i class="fas fa-receipt"></i> Payment Details</div>
-            <div class="receipt-form-grid">
-              <div id="payment-receipt-type-group" class="receipt-field-group full-width" style="display: none;">
+            <div class="receipt-form-grid receipt-payment-details-grid">
+              <div id="payment-receipt-type-group" class="receipt-field-group" style="display: none;">
                 <label class="receipt-label">Receipt Type</label>
                 <select id="payment-receipt-type" class="search-input receipt-select" onchange="syncReceiptTypeSelection()">
                   <option value="Medical Receipt">Medical Receipt</option>
@@ -3319,7 +3256,7 @@
                   <option value="Full Payment">Full Payment</option>
                 </select>
               </div>
-              <div class="receipt-field-group full-width">
+              <div class="receipt-field-group">
                 <label class="receipt-label">Form of Payment</label>
                 <select id="tuition-form-of-payment" class="search-input receipt-select" onchange="toggleTuitionCheckNumberField()">
                   <option value="Cash">Cash</option>
@@ -3825,7 +3762,6 @@
       currentPage: 1,
       itemsPerPage: 12,
       productSort: 'newest',
-      productView: 'grid',
       transactionType: 'buy',
       discountPercent: 0,
       cashReceived: 0,
@@ -4726,6 +4662,8 @@
     }
 
     function openTuitionReceiptConfirmationModal() {
+      if (!validateTuitionStudentType() || !validateTuitionSemester()) return;
+
       // Populate all transaction review details
       const studentName = document.getElementById('tuition-student-name')?.value || '—';
       const studentId = document.getElementById('tuition-student-id')?.value || '—';
@@ -5781,6 +5719,46 @@
       return category === 'Tuition Receipt' || category === 'Tuition Fee Receipt';
     }
 
+    function validateTuitionSemester() {
+      if (!isTuitionReceiptCategory(getActiveReceiptCategory())) return true;
+
+      const semesterSelect = document.getElementById('tuition-student-semester');
+      if (!semesterSelect) return true;
+
+      semesterSelect.required = true;
+      if (semesterSelect.value) {
+        semesterSelect.setCustomValidity('');
+        return true;
+      }
+
+      semesterSelect.setCustomValidity('Please select a semester.');
+      showValidationError('<i class="fas fa-calendar-alt"></i> Please select a semester before continuing.');
+      semesterSelect.focus({ preventScroll: true });
+      semesterSelect.reportValidity();
+      semesterSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+
+    function validateTuitionStudentType() {
+      if (!isTuitionReceiptCategory(getActiveReceiptCategory())) return true;
+
+      const studentTypeSelect = document.getElementById('tuition-student-type');
+      if (!studentTypeSelect) return true;
+
+      studentTypeSelect.required = true;
+      if (['Regular Student', 'Irregular Student'].includes(studentTypeSelect.value)) {
+        studentTypeSelect.setCustomValidity('');
+        return true;
+      }
+
+      studentTypeSelect.setCustomValidity('Please select a student type.');
+      showValidationError('<i class="fas fa-user-graduate"></i> Please select a student type before continuing.');
+      studentTypeSelect.focus({ preventScroll: true });
+      studentTypeSelect.reportValidity();
+      studentTypeSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+
     function syncReceiptTypeSelection() {
       const select = document.getElementById('payment-receipt-type');
       const categoryInput = document.getElementById('tuition-receipt-category');
@@ -5901,10 +5879,20 @@
       if (semesterField) {
         semesterField.style.display = isTuition ? '' : 'none';
       }
+      const semesterSelect = document.getElementById('tuition-student-semester');
+      if (semesterSelect) {
+        semesterSelect.required = isTuition;
+        if (!isTuition) semesterSelect.setCustomValidity('');
+      }
 
       const studentTypeField = document.getElementById('tuition-student-type-field-group');
       if (studentTypeField) {
         studentTypeField.style.display = isTuition ? '' : 'none';
+      }
+      const studentTypeSelect = document.getElementById('tuition-student-type');
+      if (studentTypeSelect) {
+        studentTypeSelect.required = isTuition;
+        if (!isTuition) studentTypeSelect.setCustomValidity('');
       }
 
       // Hide Partial / Full Payment field in payment receipt mode (always Full Payment in payment mode)
@@ -5977,6 +5965,7 @@
       const checkNumber = document.getElementById('tuition-check-number').value.trim();
       const rep = document.getElementById('tuition-authorized-rep').value.trim();
       const adminSignature = currentAdminName || 'Admin Cashier';
+      if (!validateTuitionStudentType() || !validateTuitionSemester()) return;
       const dateTime = new Date().toLocaleString('en-PH', {
         timeZone: 'Asia/Manila',
         year: 'numeric',
@@ -6046,7 +6035,7 @@
         student_id: studentId || null,
         student_year_level: document.getElementById('tuition-student-year-level').value.trim() || null,
         student_semester: document.getElementById('tuition-student-semester').value.trim() || null,
-        student_type: document.getElementById('tuition-student-type').value.trim() || 'Regular Student',
+        student_type: document.getElementById('tuition-student-type').value.trim(),
         payment_method: paymentMethod,
         check_number: checkNumber || null,
         payment_status: 'paid',
@@ -6089,7 +6078,7 @@
       setText('tuition-receipt-name', name);
       setText('tuition-receipt-course', document.getElementById('tuition-student-course').value.trim() || '—');
       setText('tuition-receipt-year-level', document.getElementById('tuition-student-year-level').value.trim() || '—');
-      setText('tuition-receipt-student-type', document.getElementById('tuition-student-type').value.trim() || 'Regular Student');
+      setText('tuition-receipt-student-type', document.getElementById('tuition-student-type').value.trim() || '—');
       setText('tuition-receipt-semester', document.getElementById('tuition-student-semester').value.trim() || '—');
       setText('tuition-receipt-preview-title', category);
       setText('tuition-receipt-category-preview', category);
@@ -6187,7 +6176,7 @@
       document.getElementById('tuition-student-name').value = '';
       document.getElementById('tuition-student-course').value = '';
       document.getElementById('tuition-student-year-level').value = '';
-      document.getElementById('tuition-student-type').value = 'Regular Student';
+      document.getElementById('tuition-student-type').value = '';
       document.getElementById('tuition-student-semester').value = '';
       document.getElementById('tuition-provisional-number').value = '';
       document.getElementById('tuition-amount').value = '';
@@ -7819,6 +7808,12 @@
           element.addEventListener('change', toggleReceiptGenerateButtonVisibility);
         }
       });
+      document.getElementById('tuition-student-semester')?.addEventListener('change', (event) => {
+        event.target.setCustomValidity('');
+      });
+      document.getElementById('tuition-student-type')?.addEventListener('change', (event) => {
+        event.target.setCustomValidity('');
+      });
       await populateTuitionReceiptStorePanel();
       toggleReceiptGenerateButtonVisibility();
 
@@ -7974,16 +7969,6 @@
       state.productSort = event.target.value;
       state.currentPage = 1;
       renderProducts();
-    });
-
-    document.querySelectorAll('.catalog-view-btn').forEach((button) => {
-      button.addEventListener('click', () => {
-        state.productView = button.dataset.view === 'list' ? 'list' : 'grid';
-        document.querySelectorAll('.catalog-view-btn').forEach((item) => {
-          item.classList.toggle('active', item === button);
-        });
-        document.getElementById('product-grid')?.classList.toggle('product-list-view', state.productView === 'list');
-      });
     });
 
     const activeRentalSearchInput = document.getElementById('active-rental-search');

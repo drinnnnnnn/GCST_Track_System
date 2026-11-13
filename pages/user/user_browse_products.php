@@ -1446,6 +1446,13 @@
           Please review your items before confirming your order.
         </p>
 
+        <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p class="text-sm font-medium text-amber-800">
+            <i class="fas fa-info-circle mr-2"></i>
+            Note: Your order will be validated within 48 hours.
+          </p>
+        </div>
+
         <div class="checkout-summary">
           <div class="checkout-summary-row">
             <span>Items</span>
