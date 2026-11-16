@@ -166,6 +166,53 @@
       touch-action: manipulation;
     }
 
+    .ticket-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      color: #64748b;
+      font-size: 0.875rem;
+    }
+
+    .ticket-pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .ticket-pagination-button {
+      min-width: 2.5rem;
+      min-height: 2.5rem;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      background: #fff;
+      color: #475569;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .ticket-pagination-button:hover:not(:disabled),
+    .ticket-pagination-button.is-current {
+      border-color: #2563eb;
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    .ticket-pagination-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .ticket-pagination-ellipsis {
+      padding: 0 0.25rem;
+    }
+
     .ticket-status {
       display: inline-flex;
       align-items: center;
@@ -199,6 +246,12 @@
       color: #b91c1c;
     }
 
+    #latest-ticket-status {
+      min-width: 0;
+      padding: 5px 10px;
+      font-size: 0.7rem;
+    }
+
     .pwd-badge {
       display: inline-flex;
       align-items: center;
@@ -220,15 +273,49 @@
       user-select: none;
       touch-action: manipulation;
       overflow: visible !important;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      min-height: 300px;
-      max-height: 340px;
+      border-bottom: 1px solid #e2e8f0;
     }
 
     .ticket-history-card:hover {
-      transform: translateY(-2px);
+      background: #f8fafc;
+    }
+
+    body.dark-mode .ticket-history-card {
+      border-bottom-color: #334155;
+    }
+
+    .ticket-history-row {
+      display: grid;
+      grid-template-columns: minmax(110px, 0.75fr) minmax(150px, 1.2fr) minmax(170px, 1.3fr) minmax(100px, 0.75fr) minmax(170px, 1.3fr) minmax(100px, 0.7fr);
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .ticket-history-number-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+
+    .ticket-history-number-block .ticket-number {
+      font-size: 1.2rem;
+      line-height: 1.2;
+    }
+
+    .ticket-history-field p:first-child {
+      margin-bottom: 0.2rem;
+    }
+
+    .ticket-history-field p:last-child {
+      overflow-wrap: anywhere;
+    }
+
+    .ticket-history-status {
+      justify-self: start;
+      min-width: 0;
+      padding: 4px 9px;
+      font-size: 0.65rem;
     }
 
     .ticket-details-toggle {
@@ -236,34 +323,39 @@
       align-items: center;
       justify-content: space-between;
       gap: 0.5rem;
-      margin-top: auto;
-      padding-top: 1rem;
-      padding-right: 0;
-      padding-left: 0;
-      padding-bottom: 0;
-      border-top: 1px solid #f1f5f9;
+      padding: 0;
+      border: 0;
       color: #64748b;
       font-size: 0.72rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.12em;
       position: relative;
-      min-height: 2.5rem;
+      min-height: 2rem;
+      cursor: pointer;
+      width: 100%;
+      background: transparent;
+      font-family: inherit;
+      text-align: left;
+    }
+
+    .ticket-details-toggle:focus-visible {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
     }
 
     .ticket-details-toggle .toggle-icon {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 2rem;
-      height: 2rem;
-      border-radius: 999px;
-      background: #eff6ff;
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 0.5rem;
+      background: #f1f5f9;
       color: #2563eb;
       transition: transform 0.25s ease;
       flex-shrink: 0;
       margin-left: auto;
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
       z-index: 20;
     }
 
@@ -330,6 +422,11 @@
       box-shadow: 0 12px 28px rgba(2, 6, 23, 0.28) !important;
     }
 
+    body.dark-mode .action-panel > .bg-white,
+    body.dark-mode #latest-ticket-card {
+      box-shadow: none !important;
+    }
+
     body.dark-mode .action-panel .text-slate-900,
     body.dark-mode #latest-ticket-card .text-slate-900,
     body.dark-mode #latest-ticket-card .text-slate-800,
@@ -371,6 +468,30 @@
     body.dark-mode #tickets-container > .col-span-full .text-slate-500,
     body.dark-mode #tickets-container > .col-span-full .text-slate-300 {
       color: #a9b7cb !important;
+    }
+
+    body.dark-mode .ticket-pagination {
+      color: #a9b7cb;
+    }
+
+    body.dark-mode .ticket-pagination-button {
+      border-color: #334155;
+      background: #172033;
+      color: #cbd5e1;
+    }
+
+    body.dark-mode .ticket-pagination-button:hover:not(:disabled),
+    body.dark-mode .ticket-pagination-button.is-current {
+      border-color: #60a5fa;
+      background: #1e3a5f;
+      color: #bfdbfe;
+    }
+
+    @media (max-width: 640px) {
+      .ticket-pagination {
+        align-items: flex-start;
+        flex-direction: column;
+      }
     }
 
     @keyframes pulse-light {
@@ -441,6 +562,30 @@
       border-radius: 999px;
     }
 
+    body.dark-mode .ticket-details-toggle .toggle-icon {
+      background: #334155;
+      color: #93c5fd;
+    }
+
+    @media (min-width: 768px) and (max-width: 1199px) {
+      .ticket-history-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+      }
+
+      .ticket-history-purpose,
+      .ticket-details-toggle {
+        grid-column: 2;
+      }
+
+      .ticket-history-number-block {
+        grid-column: 1;
+      }
+
+      .ticket-history-processed {
+        grid-column: 1;
+      }
+    }
+
     @media (max-width: 767px) {
       .balance-section {
         margin-bottom: 1.25rem;
@@ -482,42 +627,6 @@
         font-size: 1rem;
       }
 
-      .action-panel .rounded-\[2rem\] {
-        padding: 1rem !important;
-      }
-
-      .action-panel .rounded-\[2rem\] .flex.items-center.gap-4.mb-8 {
-        gap: 0.7rem;
-        margin-bottom: 1.25rem;
-      }
-
-      .action-panel .rounded-\[2rem\] .w-12.h-12 {
-        width: 2.75rem;
-        height: 2.75rem;
-        flex-shrink: 0;
-      }
-
-      .action-panel .rounded-\[2rem\] h2 {
-        font-size: 1.05rem;
-      }
-
-      .action-panel .rounded-\[2rem\] .grid {
-        gap: 0.85rem;
-        margin-bottom: 1.25rem;
-      }
-
-      .action-panel .rounded-\[2rem\] .form-group {
-        margin-bottom: 0.25rem;
-      }
-
-      .action-panel .rounded-\[2rem\] .pt-8 {
-        padding-top: 1rem;
-      }
-
-      .action-panel .rounded-\[2rem\] #generate-ticket-btn {
-        min-height: 52px;
-      }
-
       .ticket-actions {
         flex-direction: column;
       }
@@ -550,39 +659,42 @@
       }
 
       .ticket-history-card {
-        border-radius: 1.1rem !important;
-        padding: 1rem !important;
-        min-height: 280px !important;
-        max-height: none !important;
+        padding: 0.75rem !important;
       }
 
-      .ticket-history-card .ticket-top {
-        flex-direction: column;
-        align-items: flex-start;
+      .ticket-history-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 0.75rem;
       }
 
-      .ticket-history-card .ticket-meta-grid {
-        grid-template-columns: 1fr;
-        gap: 0.65rem;
+      .ticket-history-number-block,
+      .ticket-history-purpose,
+      .ticket-details-toggle {
+        grid-column: 1 / -1;
       }
 
-      .ticket-history-card .ticket-number {
-        font-size: 1.5rem;
+      .ticket-history-number-block {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .ticket-history-number-block .ticket-number {
+        font-size: 1.1rem;
       }
 
       .ticket-details-toggle {
-        margin-top: 1rem;
-        padding-top: 0.75rem;
-        min-height: 2rem;
+        justify-content: space-between;
+        padding-top: 0.5rem;
+        border-top: 1px solid #e2e8f0;
       }
 
       .ticket-details-toggle span:first-child {
         font-size: 0.65rem;
       }
 
-      .ticket-details-toggle .toggle-icon {
-        width: 1.75rem;
-        height: 1.75rem;
+      .ticket-history-field p:last-child {
+        font-size: 0.7rem;
       }
 
       .ticket-history-card.is-expanded .ticket-details-panel {
@@ -683,64 +795,61 @@
       </div>
     </section>
 
-    <section class="action-panel mb-10">
-      <div class="bg-white rounded-[2rem] p-6 md:p-8 shadow-xl border border-slate-100 relative overflow-hidden">
-        <!-- Background Decoration -->
-        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-bl-full -mr-16 -mt-16 pointer-events-none"></div>
-        
-        <div class="relative z-10">
-          <div class="flex items-center gap-4 mb-8">
-            <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white">
-              <i class="fas fa-plus text-xl"></i>
+    <section class="action-panel mb-8">
+      <div class="bg-white rounded-xl p-4 md:p-5 shadow-sm border border-slate-200">
+        <div>
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+              <i class="fas fa-plus text-base"></i>
             </div>
             <div class="text-left">
-              <h2 class="text-xl font-semibold text-slate-900 tracking-tight">Create Queue Ticket</h2>
-              <p class="text-sm text-slate-500 font-medium italic">Please ensure your information is correct before generating.</p>
+              <h2 class="text-lg font-semibold text-slate-900">Create Queue Ticket</h2>
+              <p class="text-xs text-slate-500">Enter your details to get a place in the queue.</p>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
             <div class="form-group text-left">
-              <label for="student-name-input" class="block text-xs font-semibold text-slate-400 uppercase tracking-[0.15em] mb-3 ml-1">Student Name</label>
-              <div class="relative group">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                  <i class="fas fa-user text-sm"></i>
+              <label for="student-name-input" class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Student Name</label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <i class="fas fa-user text-xs"></i>
                 </div>
                 <input type="text" id="student-name-input" placeholder="Loading name..." 
-                  class="w-full pl-11 pr-4 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-slate-900 font-semibold focus:outline-none focus:border-blue-500 focus:bg-white transition-all duration-300" readonly>
+                  class="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-blue-500" readonly>
               </div>
             </div>
 
             <div class="form-group text-left">
-              <label for="ticket-purpose" class="block text-xs font-semibold text-slate-400 uppercase tracking-[0.15em] mb-3 ml-1">Purpose of Visit</label>
-              <div class="relative group">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                  <i class="fas fa-clipboard-list text-sm"></i>
+              <label for="ticket-purpose" class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Purpose of Visit</label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <i class="fas fa-clipboard-list text-xs"></i>
                 </div>
                 <select id="ticket-purpose" 
-                  class="w-full pl-11 pr-12 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-slate-900 font-semibold focus:outline-none focus:border-blue-500 focus:bg-white transition-all duration-300 appearance-none cursor-pointer">
+                  class="w-full pl-9 pr-10 py-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-blue-500 appearance-none cursor-pointer">
                   <option value="" disabled selected>-- Select Purpose --</option>
                   <option value="Payment">Payment / Cashier</option>
                   <option value="Tuition Payment">Tuition Payment</option>
                   <option value="Inquiry">General Inquiry</option>
                 </select>
-                <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-300">
-                  <i class="fas fa-chevron-down text-xs"></i>
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                  <i class="fas fa-chevron-down text-[10px]"></i>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="flex flex-col md:flex-row items-center justify-between gap-6 pt-8 border-t border-slate-100">
-            <div class="flex items-center gap-2 text-slate-400 order-2 md:order-1">
-              <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <p id="last-updated-text" class="text-[10px] font-semibold uppercase tracking-[0.2em]">
+          <div class="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200">
+            <div class="flex items-center gap-2 text-slate-500 order-2 md:order-1">
+              <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+              <p id="last-updated-text" class="text-[10px] font-medium uppercase tracking-wider">
                 System Active • Last synced: --:--
               </p>
             </div>
             <button id="generate-ticket-btn" 
-              class="w-full md:w-auto px-10 py-4 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl font-semibold transition-all duration-300 active:scale-[0.98] hover:-translate-y-1 flex items-center justify-center gap-3 group">
-              <span class="group-hover:rotate-90 transition-transform duration-300"><i class="fas fa-plus"></i></span>
+              class="w-full md:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+              <span><i class="fas fa-plus"></i></span>
               Generate New Ticket
             </button>
           </div>
@@ -750,16 +859,13 @@
 
     <div id="confirmation-msg" class="confirmation-message"><i class="fas fa-check-circle"></i> <span id="confirmation-text" class="font-semibold">Ticket generated successfully!</span></div>
 
-    <section class="mb-10">
-      <div class="bg-white rounded-[2rem] p-6 md:p-8 shadow-xl border border-slate-100 relative overflow-hidden" id="latest-ticket-card">
-        <!-- Background Decoration -->
-        <div class="absolute bottom-0 left-0 w-32 h-32 bg-blue-50/50 rounded-tr-full -ml-16 -mb-16 pointer-events-none"></div>
-
-        <div class="relative z-10">
-          <div class="flex items-center justify-between gap-4 mb-6">
+    <section class="mb-8">
+      <div class="bg-white rounded-xl p-4 md:p-5 shadow-sm border border-slate-200" id="latest-ticket-card">
+        <div>
+          <div class="flex items-center justify-between gap-3 mb-4">
             <div class="text-left">
-              <h2 class="text-xl font-semibold text-slate-900 tracking-tight">Latest Ticket</h2>
-              <p class="text-sm text-slate-500 font-medium italic">Your most recent queue ticket is shown here.</p>
+              <h2 class="text-lg font-semibold text-slate-900">Latest Ticket</h2>
+              <p class="text-xs text-slate-500">Your most recent queue ticket.</p>
             </div>
             <div class="flex items-center gap-2">
               <span class="pwd-badge hidden" id="latest-ticket-pwd-badge" title="PWD Priority User">♿ PWD</span>
@@ -767,36 +873,36 @@
             </div>
           </div>
 
-          <div class="border-t border-b border-slate-100 py-6 my-6">
-            <div class="flex items-center justify-center gap-3 mb-4">
-              <p class="text-5xl font-semibold text-blue-600 text-center" id="latest-ticket-number">-</p>
+          <div class="border-t border-b border-slate-200 py-4 my-4">
+            <div class="flex items-center justify-center gap-3 mb-3">
+              <p class="text-4xl font-semibold text-blue-600 text-center" id="latest-ticket-number">-</p>
               <span class="pwd-badge hidden" id="latest-ticket-number-pwd" title="PWD Priority User">♿</span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-center">
               <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-[0.15em] mb-1">Student Name</p>
-                <p class="text-slate-800 font-medium text-lg" id="latest-ticket-name"></p>
+                <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Student Name</p>
+                <p class="text-slate-800 font-medium text-base" id="latest-ticket-name"></p>
               </div>
               <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-[0.15em] mb-1">Purpose</p>
-                <p class="text-blue-600 font-medium text-lg" id="latest-ticket-purpose"></p>
+                <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Purpose</p>
+                <p class="text-blue-600 font-medium text-base" id="latest-ticket-purpose"></p>
               </div>
               <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-[0.15em] mb-1">Generated</p>
-                <p class="text-slate-600 text-sm" id="latest-ticket-created"></p>
+                <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Generated</p>
+                <p class="text-slate-600 text-xs" id="latest-ticket-created"></p>
               </div>
               <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-[0.15em] mb-1">Waiting Time</p>
-                <p class="text-slate-600 text-sm" id="latest-ticket-wait"></p>
+                <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Waiting Time</p>
+                <p class="text-slate-600 text-xs" id="latest-ticket-wait"></p>
               </div>
             </div>
           </div>
 
           <div class="ticket-actions flex flex-col sm:flex-row gap-3" id="latest-ticket-actions">
-          <button class="flex-1 py-3 px-5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-100 rounded-2xl font-semibold text-sm transition-all duration-300 active:scale-95 focus:outline-none focus:ring-4 focus:ring-blue-500/20 flex items-center justify-center gap-2 btn-action btn-email" onclick="sendTicketEmail(currentTicketId, event)">
+          <button class="flex-1 py-2.5 px-4 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-100 rounded-lg font-semibold text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 flex items-center justify-center gap-2 btn-action btn-email" onclick="sendTicketEmail(currentTicketId, event)">
             <i class="fas fa-paper-plane"></i> Send Ticket
           </button>
-          <button class="flex-1 py-3 px-5 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-100 rounded-2xl font-semibold text-sm transition-all duration-300 active:scale-95 focus:outline-none focus:ring-4 focus:ring-red-500/20 flex items-center justify-center gap-2 btn-action btn-danger" onclick="cancelTicket(currentTicketId, event)">
+          <button class="flex-1 py-2.5 px-4 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-100 rounded-lg font-semibold text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/20 flex items-center justify-center gap-2 btn-action btn-danger" onclick="cancelTicket(currentTicketId, event)">
             <i class="fas fa-times-circle"></i> Cancel Ticket
           </button>
           </div>
@@ -819,12 +925,13 @@
           <button class="filter-button px-5 py-2.5 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all duration-300 text-slate-500 hover:text-slate-700" data-filter="expired">Expired</button>
         </div>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="tickets-container">
+      <div class="grid grid-cols-1" id="tickets-container">
         <div class="col-span-full py-20 flex flex-col items-center justify-center text-slate-400">
           <div class="w-16 h-16 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mb-4"></div>
           <span class="font-medium uppercase tracking-widest text-[10px]">Syncing History...</span>
         </div>
       </div>
+      <nav class="ticket-pagination" id="tickets-pagination" aria-label="Ticket history pagination"></nav>
     </section>
   </main>
   </div>
@@ -897,6 +1004,8 @@
   <script>
     let allTickets = [];
     let currentFilter = 'all';
+    let currentPage = 1;
+    const ticketsPerPage = 6;
     let currentTicketId = null;
     let cooldownInterval = null;
     let syncInterval = null;
@@ -997,11 +1106,14 @@
     function renderTickets() {
       const container = document.getElementById('tickets-container');
       if (!container) return;
+      const pagination = document.getElementById('tickets-pagination');
       let filtered = allTickets;
       if (currentFilter !== 'all') {
         filtered = allTickets.filter(ticket => statusClass(ticket.status) === currentFilter);
       }
       if (filtered.length === 0) {
+        currentPage = 1;
+        if (pagination) pagination.innerHTML = '';
         container.innerHTML = `
           <div class="col-span-full py-20 bg-white rounded-[2rem] border-2 border-dashed border-slate-100 flex flex-col items-center justify-center text-center px-6">
             <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-6">
@@ -1013,62 +1125,52 @@
         `;
         return;
       }
-      container.innerHTML = filtered.map(ticket => {
-        const isServing = statusClass(ticket.status) === 'serving';
+      const totalPages = Math.ceil(filtered.length / ticketsPerPage);
+      currentPage = Math.min(currentPage, totalPages);
+      const startIndex = (currentPage - 1) * ticketsPerPage;
+      const pageTickets = filtered.slice(startIndex, startIndex + ticketsPerPage);
+
+      container.innerHTML = pageTickets.map(ticket => {
         const sClass = statusClass(ticket.status);
         const statusLabel = mapStatus(ticket.status);
         const isPwd = Number(ticket.is_pwd || 0) === 1;
-        
-        let badgeColors = "bg-slate-100 text-slate-700";
-        if (sClass === 'serving') badgeColors = "bg-green-100 text-green-700";
-        if (sClass === 'completed') badgeColors = "bg-blue-100 text-blue-700";
-        if (sClass === 'expired') badgeColors = "bg-red-100 text-red-700";
 
         return `
-          <div class="ticket-history-card group bg-white rounded-[1.4rem] p-6 shadow-lg border border-slate-100 hover:shadow-xl transition-all duration-300 relative overflow-visible ${isServing ? 'ring-2 ring-green-500 ring-offset-2' : ''} ${isPwd ? 'ring-2 ring-violet-200 bg-violet-50/20' : ''}">
-            ${isServing ? '<div class="absolute top-0 right-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-12 -mt-12 pointer-events-none"></div>' : ''}
-            
-            <div class="relative z-10 flex flex-col h-full">
-              <div class="ticket-top flex items-start justify-between mb-4 gap-3">
+          <div class="ticket-history-card bg-white px-4 py-3 ${sClass === 'serving' ? 'border-l-4 border-l-green-500' : ''} ${isPwd ? 'bg-violet-50/30' : ''}">
+            <div class="ticket-history-row">
+              <div class="ticket-history-number-block">
                 <div class="flex items-center gap-2">
-                  <div class="ticket-number text-2xl font-semibold text-blue-600 tracking-tighter">${formatQueueNumber(ticket.queue_number)}</div>
+                  <div class="ticket-number text-xl font-semibold text-blue-600">${formatQueueNumber(ticket.queue_number)}</div>
                   ${isPwd ? '<span class="pwd-badge" title="PWD Priority User">♿ PWD</span>' : ''}
                 </div>
-                <span class="text-[10px] px-3 py-1 rounded-full uppercase tracking-[0.1em] font-semibold ${badgeColors}">
-                  ${statusLabel}
-                </span>
+                <span class="ticket-status ${sClass} ticket-history-status">${statusLabel}</span>
               </div>
 
-              <div class="space-y-2.5 flex-1">
-                <div>
-                  <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Visit Purpose</p>
-                  <p class="text-slate-800 font-semibold leading-snug text-sm">${ticket.purpose || 'General Inquiry'}</p>
-                </div>
-
-                <div class="ticket-meta-grid grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-                  <div>
-                    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-0.5">Generated</p>
-                    <p class="text-slate-600 text-[11px] font-medium leading-tight">${formatDateTime(ticket.created_at)}</p>
-                  </div>
-                  <div>
-                    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-0.5">Elapsed</p>
-                    <p class="text-slate-600 text-[11px] font-medium leading-tight">${getWaitingDuration(ticket.created_at, ticket.served_at)}</p>
-                  </div>
-                </div>
-
-                ${ticket.served_at ? `
-                  <div class="pt-2 border-t border-slate-100">
-                    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-0.5">Processed On</p>
-                    <p class="text-slate-900 font-semibold text-[11px]">${formatDateTime(ticket.served_at)}</p>
-                  </div>
-                ` : ''}
+              <div class="ticket-history-field ticket-history-purpose">
+                <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Visit Purpose</p>
+                <p class="text-slate-800 font-semibold text-sm">${ticket.purpose || 'General Inquiry'}</p>
               </div>
 
-              <div class="ticket-details-toggle" role="button" tabindex="0" aria-label="Toggle ticket details">
-                <span>Tap for details</span>
+              <div class="ticket-history-field">
+                <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Generated</p>
+                <p class="text-slate-600 text-[11px] font-medium">${formatDateTime(ticket.created_at)}</p>
+              </div>
+
+              <div class="ticket-history-field ticket-history-elapsed">
+                <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Elapsed</p>
+                <p class="text-slate-600 text-[11px] font-medium">${getWaitingDuration(ticket.created_at, ticket.served_at)}</p>
+              </div>
+
+              <div class="ticket-history-field ticket-history-processed">
+                <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Processed On</p>
+                <p class="text-slate-600 text-[11px] font-medium">${ticket.served_at ? formatDateTime(ticket.served_at) : '-'}</p>
+              </div>
+
+              <button type="button" class="ticket-details-toggle" aria-label="Toggle ticket details" aria-expanded="false">
+                <span>Details</span>
                 <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span>
-              </div>
-
+              </button>
+            </div>
               <div class="ticket-details-panel">
                 <div class="grid grid-cols-2 gap-2 mt-1">
                   <div class="ticket-detail-pill">
@@ -1085,22 +1187,73 @@
                   </div>
                 </div>
               </div>
-            </div>
           </div>
         `;
       }).join('');
 
       container.querySelectorAll('.ticket-history-card').forEach(card => {
         card.addEventListener('click', (event) => {
-          if (event.target.closest('button, a, input, select, textarea')) return;
+          if (event.target.closest('button, a, input, select, textarea') &&
+              !event.target.closest('.ticket-details-toggle')) return;
           const isExpanded = card.classList.toggle('is-expanded');
           card.setAttribute('aria-expanded', String(isExpanded));
+          card.querySelector('.ticket-details-toggle')?.setAttribute('aria-expanded', String(isExpanded));
           container.querySelectorAll('.ticket-history-card.is-expanded').forEach(otherCard => {
             if (otherCard !== card) {
               otherCard.classList.remove('is-expanded');
               otherCard.setAttribute('aria-expanded', 'false');
+              otherCard.querySelector('.ticket-details-toggle')?.setAttribute('aria-expanded', 'false');
             }
           });
+        });
+      });
+
+      renderTicketPagination(filtered.length, totalPages, pagination);
+
+    }
+
+    function renderTicketPagination(totalTickets, totalPages, pagination) {
+      if (!pagination) return;
+
+      const firstTicket = (currentPage - 1) * ticketsPerPage + 1;
+      const lastTicket = Math.min(currentPage * ticketsPerPage, totalTickets);
+      const pageNumbers = new Set([1, totalPages]);
+      for (let page = Math.max(1, currentPage - 1); page <= Math.min(totalPages, currentPage + 1); page++) {
+        pageNumbers.add(page);
+      }
+
+      let previousPage = 0;
+      const pageButtons = Array.from(pageNumbers).sort((a, b) => a - b).map(page => {
+        const separator = page - previousPage > 1
+          ? '<span class="ticket-pagination-ellipsis" aria-hidden="true">...</span>'
+          : '';
+        previousPage = page;
+        return `${separator}
+          <button type="button" class="ticket-pagination-button ${page === currentPage ? 'is-current' : ''}"
+            data-page="${page}" aria-label="Page ${page}" ${page === currentPage ? 'aria-current="page"' : ''}>
+            ${page}
+          </button>`;
+      }).join('');
+
+      pagination.innerHTML = `
+        <p>Showing ${firstTicket}-${lastTicket} of ${totalTickets} tickets</p>
+        ${totalPages > 1 ? `
+          <div class="ticket-pagination-controls">
+            <button type="button" class="ticket-pagination-button" data-page="${currentPage - 1}"
+              aria-label="Previous page" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+            ${pageButtons}
+            <button type="button" class="ticket-pagination-button" data-page="${currentPage + 1}"
+              aria-label="Next page" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+          </div>
+        ` : ''}
+      `;
+
+      pagination.querySelectorAll('[data-page]').forEach(button => {
+        button.addEventListener('click', () => {
+          const nextPage = Number(button.dataset.page);
+          if (nextPage < 1 || nextPage > totalPages || nextPage === currentPage) return;
+          currentPage = nextPage;
+          renderTickets();
         });
       });
     }
@@ -1637,6 +1790,7 @@
         clicked.classList.add('active', 'bg-white', 'text-blue-600', 'shadow-sm');
         clicked.classList.remove('text-slate-500', 'hover:text-slate-700');
         currentFilter = e.currentTarget.dataset.filter;
+        currentPage = 1;
         renderTickets();
       });
     });

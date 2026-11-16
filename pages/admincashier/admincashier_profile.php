@@ -366,10 +366,6 @@
         <form id="personal-info-form" onsubmit="saveChanges(event)">
           <div class="form-row">
             <div class="form-group">
-              <label for="admin-id">Admin ID</label>
-              <input type="text" id="admin-id" placeholder="Admin ID" readonly>
-            </div>
-            <div class="form-group">
               <label for="full-name">Full Name</label>
               <input type="text" id="full-name" placeholder="Full Name" readonly>
             </div>
@@ -456,7 +452,6 @@
         if (document.getElementById('full-name')) document.getElementById('full-name').value = admin.full_name || '';
         if (document.getElementById('email')) document.getElementById('email').value = admin.email || '';
         if (document.getElementById('contact-number')) document.getElementById('contact-number').value = admin.contact_number || '';
-        if (document.getElementById('admin-id')) document.getElementById('admin-id').value = admin.admin_id || '';
         
         // Populate account info
         if (document.getElementById('account-created')) {

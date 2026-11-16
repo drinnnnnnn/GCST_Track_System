@@ -95,21 +95,6 @@
                         <span class="text-xs font-semibold text-amber-500 mt-2 block"><i class="fas fa-hourglass-half"></i> Awaiting Approval</span>
                     </div>
 
-                    <!-- System Uptime Card -->
-                    <div class="balance-card group">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h3>Server Uptime</h3>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span id="serverLoadBadge" class="status bg-sky-50 text-sky-600 px-2 py-0.5 rounded text-[10px] uppercase tracking-tighter font-bold">Loading</span>
-                                <i class="fas fa-server text-sky-600 bg-sky-50 p-3 rounded-xl transition-all group-hover:bg-sky-600 group-hover:text-white"></i>
-                            </div>
-                        </div>
-                        <p class="amount" id="systemUptime">99.9%</p>
-                        <span class="text-xs font-semibold text-sky-500 mt-2 block" id="serverLoad">Server load: N/A</span>
-                    </div>
-
                     <!-- Security Alerts Card -->
                     <div class="balance-card group" id="securityFlagCard">
                         <div class="flex justify-between items-start mb-4">
@@ -174,36 +159,7 @@
                 document.getElementById('totalStudentAccounts').textContent = metrics.total_student_accounts ?? '0';
                 document.getElementById('pendingStudentAccounts').textContent = metrics.pending_student_accounts ?? '0';
                 document.getElementById('activeSessions').textContent = metrics.active_connections ?? '0';
-                document.getElementById('systemUptime').textContent = metrics.system_uptime || 'N/A';
                 document.getElementById('pendingIssues').textContent = metrics.pending_issues ?? '0';
-
-                const serverLoadText = metrics.server_load || 'N/A';
-                document.getElementById('serverLoad').textContent = `Server load: ${serverLoadText}`;
-
-                const loadValue = parseInt(serverLoadText, 10);
-                const serverLoadBadge = document.getElementById('serverLoadBadge');
-                let badgeText = 'Unknown';
-                let badgeClasses = 'status px-2 py-0.5 rounded text-[10px] uppercase tracking-tighter font-bold bg-slate-100 text-slate-600';
-
-                if (!isNaN(loadValue)) {
-                    if (loadValue < 50) {
-                        badgeText = 'Normal';
-                        badgeClasses = 'status bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[10px] uppercase tracking-tighter font-bold';
-                    } else if (loadValue < 80) {
-                        badgeText = 'Moderate';
-                        badgeClasses = 'status bg-amber-50 text-amber-600 px-2 py-0.5 rounded text-[10px] uppercase tracking-tighter font-bold';
-                    } else {
-                        badgeText = 'High';
-                        badgeClasses = 'status bg-rose-50 text-rose-600 px-2 py-0.5 rounded text-[10px] uppercase tracking-tighter font-bold';
-                    }
-                } else if (serverLoadText === 'N/A') {
-                    badgeText = 'Unavailable';
-                }
-
-                if (serverLoadBadge) {
-                    serverLoadBadge.textContent = badgeText;
-                    serverLoadBadge.className = badgeClasses;
-                }
 
                 const statusLabel = document.getElementById('securityStatus');
                 const pendingCount = Number(metrics.pending_issues || 0);

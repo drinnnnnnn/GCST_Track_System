@@ -7,6 +7,8 @@
   <title>GCST User - Welcome</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   
   <style>
@@ -871,6 +873,170 @@
       font-weight: 700;
     }
 
+    .reset-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      background: rgba(31, 43, 69, 0.4);
+      backdrop-filter: blur(8px);
+    }
+
+    .reset-modal-backdrop.open {
+      display: flex;
+    }
+
+    .reset-modal {
+      width: min(100%, 450px);
+      max-height: calc(100vh - 2.5rem);
+      overflow-y: auto;
+      padding: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 32px;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.1);
+      color: #1f2b45;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      text-align: center;
+      transform: scale(0.8);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .reset-modal-backdrop.open .reset-modal {
+      transform: scale(1);
+    }
+
+    .reset-modal-logo {
+      display: block;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 4px;
+      object-fit: contain;
+    }
+
+    .reset-modal h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .reset-modal-description {
+      margin: 15px 0;
+      color: #5b6c8f;
+      font-size: 14px;
+    }
+
+    .reset-input-box {
+      position: relative;
+      margin-bottom: 18px;
+    }
+
+    .reset-input-box input {
+      width: 100%;
+      height: 48px;
+      padding: 12px 46px 12px 14px;
+      border: 1px solid #d9dee7;
+      border-radius: 10px;
+      outline: none;
+      background: #fff;
+      color: #1f2b45;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .reset-input-box input:focus {
+      border-color: #315d96;
+      box-shadow: 0 0 0 3px rgba(49, 93, 150, 0.18);
+    }
+
+    .reset-input-box > i,
+    .reset-password-toggle {
+      position: absolute;
+      top: 50%;
+      right: 14px;
+      transform: translateY(-50%);
+      color: #8792a2;
+      font-size: 20px;
+    }
+
+    .reset-password-toggle {
+      z-index: 1;
+      display: flex;
+      width: 24px;
+      height: 24px;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .reset-submit {
+      width: 100%;
+      height: 50px;
+      margin-top: 6px;
+      border: 0;
+      border-radius: 10px;
+      background: #1f2b45;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.98rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.18s ease;
+    }
+
+    .reset-submit:hover {
+      background: #315d96;
+    }
+
+    .reset-submit:disabled {
+      cursor: wait;
+      opacity: 0.7;
+    }
+
+    .reset-feedback {
+      display: none;
+      margin: 0 0 1rem;
+      color: #b91c1c;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    .reset-feedback.visible {
+      display: block;
+    }
+
+    .reset-feedback.success {
+      color: #047857;
+    }
+
+    .reset-back-button {
+      width: 100%;
+      height: 50px;
+      margin-top: 6px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #5b6c8f;
+      font-family: inherit;
+      font-size: 0.98rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.18s ease;
+    }
+
+    .reset-back-button:hover {
+      background: rgba(255, 255, 255, 0.45);
+      color: #315d96;
+    }
+
     .signup-modal-backdrop {
       position: fixed;
       inset: 0;
@@ -908,6 +1074,10 @@
     @media (max-width: 480px) {
       .login-modal {
         padding: 1.75rem 1.25rem 1.5rem;
+      }
+
+      .reset-modal {
+        padding: 2.5rem 1.25rem;
       }
 
       .signup-modal-backdrop {
@@ -1108,11 +1278,47 @@
             <i id="home-login-password-icon" class="fas fa-eye" aria-hidden="true"></i>
           </button>
         </div>
-        <a class="login-forgot" href="../sign_in.php">Forgot Password?</a>
+        <a class="login-forgot" id="home-reset-trigger" href="#" onclick="openResetModal(event)">Forgot Password?</a>
         <button type="submit" class="login-submit">Sign In</button>
       </form>
 
       <p class="login-signup">Don't have an account? <a href="../superadmin/sign_up.php?modal=1" onclick="openSignupModal(); return false;">Sign Up</a></p>
+    </section>
+  </div>
+
+  <div id="home-reset-modal" class="reset-modal-backdrop" aria-hidden="true" onclick="closeResetModal(event)">
+    <section class="reset-modal" role="dialog" aria-modal="true" aria-labelledby="home-reset-title" onclick="event.stopPropagation()">
+      <img class="reset-modal-logo" src="../../assets/images/icons/granby_logo.png" alt="Granby Colleges of Science and Technology">
+      <h2 id="home-reset-title">Reset Password</h2>
+      <p id="home-reset-description" class="reset-modal-description">Enter your registered email address to receive a verification code.</p>
+      <p id="home-reset-feedback" class="reset-feedback" role="status" aria-live="polite"></p>
+
+      <div id="home-reset-step-1">
+        <div class="reset-input-box">
+          <input type="email" id="home-reset-email" placeholder="Registered Email Address" aria-label="Registered Email Address" autocomplete="email">
+          <i class="bx bxs-envelope" aria-hidden="true"></i>
+        </div>
+        <button type="button" class="reset-submit" id="home-reset-request" onclick="requestHomeResetCode()">Send Verification Code</button>
+      </div>
+
+      <div id="home-reset-step-2" hidden>
+        <div class="reset-input-box">
+          <input type="text" id="home-reset-otp" placeholder="6-Digit Code" aria-label="6-Digit Verification Code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+        </div>
+        <button type="button" class="reset-submit" id="home-reset-verify" onclick="verifyHomeResetCode()">Verify Code</button>
+      </div>
+
+      <div id="home-reset-step-3" hidden>
+        <div class="reset-input-box">
+          <input type="password" id="home-reset-password" placeholder="New Password" aria-label="New Password" autocomplete="new-password">
+          <button type="button" class="reset-password-toggle" aria-label="Show new password" onclick="toggleHomeResetPassword()">
+            <i id="home-reset-password-icon" class="bx bx-show" aria-hidden="true"></i>
+          </button>
+        </div>
+        <button type="button" class="reset-submit" id="home-reset-update" onclick="performHomePasswordReset()">Update Password</button>
+      </div>
+
+      <button type="button" class="reset-back-button" onclick="closeResetModal()">Back to Sign In</button>
     </section>
   </div>
 
@@ -1131,9 +1337,17 @@
   <script>
     const loginModal = document.getElementById('login-modal');
     const signupModal = document.getElementById('signup-modal');
+    const resetModal = document.getElementById('home-reset-modal');
     const signupFrame = document.getElementById('signup-modal-frame');
     const signupTrigger = document.querySelector('.login-signup a');
     const loginTrigger = document.querySelector('[aria-controls="login-modal"]');
+    const resetTrigger = document.getElementById('home-reset-trigger');
+    const homeResetSteps = {
+      1: document.getElementById('home-reset-step-1'),
+      2: document.getElementById('home-reset-step-2'),
+      3: document.getElementById('home-reset-step-3')
+    };
+    let homeResetData = { email: '', code: '', step: 1 };
 
     function openLoginModal() {
       loginModal.classList.add('open');
@@ -1148,6 +1362,167 @@
       loginModal.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
       loginTrigger.focus();
+    }
+
+    function openResetModal(event) {
+      if (event) event.preventDefault();
+      clearHomeResetFeedback();
+      resetModal.classList.add('open');
+      resetModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      focusHomeResetStep();
+    }
+
+    function closeResetModal(event) {
+      if (event && event.target !== event.currentTarget) return;
+      resetModal.classList.remove('open');
+      resetModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = 'hidden';
+      resetTrigger.focus();
+    }
+
+    function focusHomeResetStep() {
+      const fieldByStep = {
+        1: 'home-reset-email',
+        2: 'home-reset-otp',
+        3: 'home-reset-password'
+      };
+      document.getElementById(fieldByStep[homeResetData.step]).focus();
+    }
+
+    function setHomeResetStep(step) {
+      homeResetData.step = step;
+      Object.keys(homeResetSteps).forEach(stepNumber => {
+        homeResetSteps[stepNumber].hidden = Number(stepNumber) !== step;
+      });
+    }
+
+    function showHomeResetFeedback(message, isSuccess) {
+      const feedback = document.getElementById('home-reset-feedback');
+      feedback.textContent = message;
+      feedback.classList.toggle('success', Boolean(isSuccess));
+      feedback.classList.add('visible');
+    }
+
+    function clearHomeResetFeedback() {
+      const feedback = document.getElementById('home-reset-feedback');
+      feedback.textContent = '';
+      feedback.classList.remove('visible', 'success');
+    }
+
+    function saveHomeResetState() {
+      sessionStorage.setItem('resetContext', JSON.stringify(homeResetData));
+    }
+
+    async function requestHomeResetCode() {
+      const email = document.getElementById('home-reset-email').value.trim();
+      const button = document.getElementById('home-reset-request');
+      if (!email) {
+        showHomeResetFeedback('Enter your registered email address to continue.');
+        return;
+      }
+
+      clearHomeResetFeedback();
+      button.disabled = true;
+      button.textContent = 'Sending...';
+      try {
+        const response = await fetch('../../actions/reset_request.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: email })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Unable to send a verification code. Please try again.');
+        }
+
+        homeResetData.email = result.email;
+        homeResetData.code = '';
+        setHomeResetStep(2);
+        saveHomeResetState();
+        document.getElementById('home-reset-description').textContent = result.message;
+        focusHomeResetStep();
+      } catch (error) {
+        showHomeResetFeedback(error.message || 'Unable to send a verification code. Please try again.');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Send Verification Code';
+      }
+    }
+
+    async function verifyHomeResetCode() {
+      const code = document.getElementById('home-reset-otp').value.trim();
+      const button = document.getElementById('home-reset-verify');
+      if (code.length !== 6) {
+        showHomeResetFeedback('Enter the full 6-digit verification code.');
+        return;
+      }
+
+      clearHomeResetFeedback();
+      button.disabled = true;
+      button.textContent = 'Verifying...';
+      try {
+        const response = await fetch('../../actions/verify_reset_code.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: homeResetData.email, code })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Unable to verify the code. Please try again.');
+        }
+
+        homeResetData.code = code;
+        setHomeResetStep(3);
+        saveHomeResetState();
+        document.getElementById('home-reset-description').textContent = 'Verified! Set your new password.';
+        focusHomeResetStep();
+      } catch (error) {
+        showHomeResetFeedback(error.message || 'Unable to verify the code. Please try again.');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Verify Code';
+      }
+    }
+
+    async function performHomePasswordReset() {
+      const password = document.getElementById('home-reset-password').value;
+      const button = document.getElementById('home-reset-update');
+      if (password.length < 6) {
+        showHomeResetFeedback('Password must be at least 6 characters long.');
+        return;
+      }
+
+      clearHomeResetFeedback();
+      button.disabled = true;
+      button.textContent = 'Updating...';
+      try {
+        const response = await fetch('../../actions/update_password.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: homeResetData.email,
+            code: homeResetData.code,
+            password
+          })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Unable to update the password. Please try again.');
+        }
+
+        sessionStorage.removeItem('resetContext');
+        homeResetData = { email: '', code: '', step: 1 };
+        setHomeResetStep(1);
+        document.getElementById('home-reset-password').value = '';
+        document.getElementById('home-reset-description').textContent = 'Enter your registered email address to receive a verification code.';
+        showHomeResetFeedback('Password updated successfully. You can now sign in.', true);
+      } catch (error) {
+        showHomeResetFeedback(error.message || 'Unable to update the password. Please try again.');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Update Password';
+      }
     }
 
     function openSignupModal() {
@@ -1186,9 +1561,22 @@
       document.querySelector('.login-password-toggle').setAttribute('aria-label', isVisible ? 'Show password' : 'Hide password');
     }
 
+    function toggleHomeResetPassword() {
+      const password = document.getElementById('home-reset-password');
+      const icon = document.getElementById('home-reset-password-icon');
+      const toggle = document.querySelector('.reset-password-toggle');
+      const isVisible = password.type === 'text';
+      password.type = isVisible ? 'password' : 'text';
+      icon.classList.toggle('bx-show', !isVisible);
+      icon.classList.toggle('bx-hide', isVisible);
+      toggle.setAttribute('aria-label', isVisible ? 'Show new password' : 'Hide new password');
+    }
+
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape') {
-        if (signupModal.classList.contains('open')) {
+        if (resetModal.classList.contains('open')) {
+          closeResetModal();
+        } else if (signupModal.classList.contains('open')) {
           closeSignupModal();
         } else if (loginModal.classList.contains('open')) {
           closeLoginModal();
@@ -1207,6 +1595,25 @@
       document.getElementById('login-error').textContent = loginErrors[loginError];
       document.getElementById('login-error').classList.add('visible');
       openLoginModal();
+    }
+
+    try {
+      const savedReset = JSON.parse(sessionStorage.getItem('resetContext') || 'null');
+      if (savedReset && typeof savedReset.email === 'string' && [2, 3].includes(Number(savedReset.step))) {
+        homeResetData = {
+          email: savedReset.email,
+          code: typeof savedReset.code === 'string' ? savedReset.code : '',
+          step: Number(savedReset.step)
+        };
+        setHomeResetStep(homeResetData.step);
+        document.getElementById('home-reset-description').textContent = homeResetData.step === 2
+          ? 'Enter the verification code sent to your email.'
+          : 'Verified! Set your new password.';
+        openLoginModal();
+        openResetModal();
+      }
+    } catch (error) {
+      console.error('Unable to restore password reset progress:', error);
     }
 
     const API_PRODUCTS = '../../actions/get_admincashier_products.php';
