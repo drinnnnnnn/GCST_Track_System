@@ -99,16 +99,18 @@ try {
                pr.refund_amount, pr.request_type, pr.damage_description,
                pr.status, pr.rejection_reason, pr.reviewed_at, pr.fulfilled_at, pr.created_at,
                pr.handoff_received_at,
-               ct.transaction_number,
+               COALESCE(ct.transaction_number, CONCAT('Order unavailable for return #', pr.id)) AS transaction_number,
                u.student_id,
                CONCAT_WS(' ', u.first_name, u.last_name) AS customer_name,
                CONCAT_WS(' ', aa.first_name, aa.last_name) AS reviewer_name,
-               CONCAT_WS(' ', receiver.first_name, receiver.last_name) AS handoff_receiver_name
+               CONCAT_WS(' ', receiver.first_name, receiver.last_name) AS handoff_receiver_name,
+               CONCAT_WS(' ', fulfiller.first_name, fulfiller.last_name) AS processor_name
         FROM product_return_requests pr
-        JOIN cashier_transactions ct ON ct.id = pr.cashier_transaction_id
+        LEFT JOIN cashier_transactions ct ON ct.id = pr.cashier_transaction_id
         LEFT JOIN users u ON u.id = pr.user_id
         LEFT JOIN admincashier_acc aa ON aa.id = pr.reviewed_by
         LEFT JOIN admincashier_acc receiver ON receiver.id = pr.handoff_received_by
+        LEFT JOIN admincashier_acc fulfiller ON fulfiller.id = pr.fulfilled_by
         $whereSql
         ORDER BY pr.created_at DESC, pr.id DESC
         LIMIT ? OFFSET ?

@@ -188,7 +188,7 @@
 
     .balance-cards .balance-card:nth-child(2)::before { background: #ef4444; }
     .balance-cards .balance-card:nth-child(3)::before { background: #f59e0b; }
-    .balance-cards .balance-card:nth-child(4)::before { background: #10b981; }
+    .balance-cards #totalSaleSummaryCard::before { background: #10b981; }
 
     .balance-cards .balance-card:hover {
       transform: translateY(-2px);
@@ -540,15 +540,14 @@
 
         const totalSales = Number(metrics.total_sales_today ?? metrics.total_sales ?? 0);
         const totalInv = metrics.total_inventory ?? metrics.inventory_count ?? metrics.total_items ?? 0;
-        const pendingQ = metrics.pending_queue ?? metrics.queue_count ?? metrics.active_queue ?? 0;
-
+        const pendingQueue = metrics.pending_queue ?? metrics.queue_count ?? metrics.active_queue ?? 0;
         const salesEl = document.getElementById('totalSalesToday');
         if (salesEl) {
             salesEl.textContent = typeof formatCurrency === 'function' ? formatCurrency(totalSales) : '₱' + totalSales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
         
         if (document.getElementById('totalInventory')) document.getElementById('totalInventory').textContent = totalInv;
-        if (document.getElementById('pendingQueue')) document.getElementById('pendingQueue').textContent = pendingQ;
+        if (document.getElementById('pendingQueue')) document.getElementById('pendingQueue').textContent = pendingQueue;
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       }
@@ -641,26 +640,6 @@
       return div.innerHTML;
     }
 
-    function initWaitingQueueInteractions() {
-  const card = document.getElementById('waitingQueueSummaryCard');
-
-  // Handle Mouse Click
-  card?.addEventListener('click', () => {
-    window.location.href = 'admincashier_queuing_system.php';
-  });
-
-  // Handle Keyboard Access (Enter and Space)
-  card?.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault(); // Prevents page scrolling when Space is pressed
-      window.location.href = 'admincashier_queuing_system.php';
-    }
-  });
-}
-
-// Call the function once the DOM is ready
-document.addEventListener('DOMContentLoaded', initWaitingQueueInteractions);
-
     function initLowStockInteractions() {
       const card = document.getElementById('lowStockSummaryCard');
       const inventoryBtn = document.getElementById('viewInventoryBtn');
@@ -699,6 +678,21 @@ document.addEventListener('DOMContentLoaded', initWaitingQueueInteractions);
     }
     document.addEventListener('DOMContentLoaded', initItemsInventoryInteractions);    
 
+    function initWaitingQueueInteractions() {
+      const card = document.getElementById('waitingQueueSummaryCard');
+
+      card?.addEventListener('click', () => {
+        window.location.href = 'admincashier_queuing_system.php';
+      });
+
+      card?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          window.location.href = 'admincashier_queuing_system.php';
+        }
+      });
+    }
+
     function initTotalSaleInteractions() {
     const card = document.getElementById('totalSaleSummaryCard');
 
@@ -724,6 +718,13 @@ document.addEventListener('DOMContentLoaded', initTotalSaleInteractions);
      */
     function initAdminCashierDashboardPage(userData) {
       initLowStockInteractions();
+      const waitingQueueCard = document.getElementById('waitingQueueSummaryCard');
+      if (userData.role !== 'cashier') {
+        waitingQueueCard?.remove();
+        document.querySelector('.balance-cards')?.style.setProperty('grid-template-columns', 'repeat(3, minmax(0, 1fr))');
+      } else {
+        initWaitingQueueInteractions();
+      }
       refreshAllDashboardData();
       dashState.pollInterval = setInterval(refreshAllDashboardData, 30000); // 30s auto-refresh
       

@@ -6,27 +6,184 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../database/connection.php';
 $conn = Database::getConnection();
 
-$period = !empty($_GET['period']) ? $_GET['period'] : 'today';
+$hasStartDate = isset($_GET['start_date']);
+$hasEndDate = isset($_GET['end_date']);
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
 
-// Define the date filter based on the requested period
-switch ($period) {
-    case 'week':
-        $dateCondition = "t.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-        break;
-    case 'month':
-        $dateCondition = "t.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
-        break;
-    case 'year':
-        $dateCondition = "t.created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
-        break;
-    case 'today':
-    default:
-        $dateCondition = "DATE(t.created_at) = CURDATE()";
-        break;
+if ($hasStartDate !== $hasEndDate) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Both start_date and end_date are required.']);
+    $conn->close();
+    exit;
+}
+
+if ($hasStartDate) {
+    $startDate = $_GET['start_date'];
+    $endDate = $_GET['end_date'];
+    $isValidDate = static function ($value) {
+        if (!is_string($value) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return false;
+        }
+
+        $parts = explode('-', $value);
+        return checkdate((int)$parts[1], (int)$parts[2], (int)$parts[0]);
+    };
+
+    if (!$isValidDate($startDate) || !$isValidDate($endDate) || $startDate > $endDate) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'A valid date range is required.']);
+        $conn->close();
+        exit;
+    }
+
+    $dateCondition = "t.created_at >= '$startDate 00:00:00' AND t.created_at < DATE_ADD('$endDate', INTERVAL 1 DAY)";
+} else {
+    // Keep existing dashboard callers working while the Sales Management page uses date ranges.
+    $period = !empty($_GET['period']) ? $_GET['period'] : 'today';
+    switch ($period) {
+        case 'week':
+            $dateCondition = "t.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+            break;
+        case 'month':
+            $dateCondition = "t.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+            break;
+        case 'year':
+            $dateCondition = "t.created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
+            break;
+        case 'today':
+        default:
+            $dateCondition = "DATE(t.created_at) = CURDATE()";
+            break;
+    }
 }
 
 $excludeReceiptCategoryCondition = "(t.receipt_category IS NULL OR TRIM(t.receipt_category) = '')";
+
+if (isset($_GET['cashier_options']) || isset($_GET['export_data'])) {
+    if (!$hasStartDate || !$hasEndDate) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'A date range is required.']);
+        $conn->close();
+        exit;
+    }
+
+    try {
+        if (isset($_GET['cashier_options'])) {
+            $cashierQuery = "SELECT
+                    cashier_options.id,
+                    COALESCE(
+                        NULLIF(TRIM(CONCAT_WS(' ', ac.first_name, ac.middle_name, ac.last_name)), ''),
+                        MAX(NULLIF(TRIM(t.cashier_name), '')),
+                        CONCAT('Cashier #', cashier_options.id)
+                    ) AS name
+                FROM (
+                    SELECT id
+                    FROM admincashier_acc
+                    WHERE status = 'active' AND role IN ('cashier', 'admincashier')
+                    UNION
+                    SELECT t.cashier_id AS id
+                    FROM cashier_transactions t
+                    JOIN transaction_items ti ON ti.cashier_transaction_id = t.id AND ti.product_id > 0
+                    WHERE $dateCondition
+                      AND t.payment_status = 'paid'
+                      AND $excludeReceiptCategoryCondition
+                ) AS cashier_options
+                LEFT JOIN admincashier_acc ac ON ac.id = cashier_options.id
+                LEFT JOIN cashier_transactions t
+                    ON t.cashier_id = cashier_options.id
+                    AND $dateCondition
+                    AND t.payment_status = 'paid'
+                    AND $excludeReceiptCategoryCondition
+                GROUP BY cashier_options.id, ac.first_name, ac.middle_name, ac.last_name
+                ORDER BY name ASC";
+            $cashierResult = $conn->query($cashierQuery);
+            $cashiers = [];
+            while ($cashierResult && $row = $cashierResult->fetch_assoc()) {
+                $cashiers[] = ['id' => (int)$row['id'], 'name' => $row['name']];
+            }
+
+            echo json_encode(['success' => true, 'cashiers' => $cashiers]);
+            $conn->close();
+            exit;
+        }
+
+        $cashierId = null;
+        if (isset($_GET['cashier_id']) && $_GET['cashier_id'] !== '') {
+            $cashierId = filter_var($_GET['cashier_id'], FILTER_VALIDATE_INT);
+            if ($cashierId === false || $cashierId < 1) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Invalid cashier selection.']);
+                $conn->close();
+                exit;
+            }
+        }
+
+        $category = isset($_GET['category']) && is_string($_GET['category'])
+            ? strtolower($_GET['category'])
+            : 'all';
+        $categoryConditions = [
+            'uniforms' => "LOWER(TRIM(COALESCE(p.product_category, ''))) IN ('uniform fabrics', 'uniform', 'uniforms', 'fabric uniform')",
+            'books' => "LOWER(TRIM(COALESCE(p.product_category, ''))) = 'books'",
+            'accessories' => "LOWER(TRIM(COALESCE(p.product_category, ''))) = 'accessories'"
+        ];
+        if ($category !== 'all' && !isset($categoryConditions[$category])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Invalid product category.']);
+            $conn->close();
+            exit;
+        }
+
+        $cashierCondition = $cashierId === null ? '' : ' AND t.cashier_id = ' . (int)$cashierId;
+        $categoryCondition = $category === 'all' ? '' : ' AND ' . $categoryConditions[$category];
+        $exportQuery = "SELECT
+                t.id,
+                t.created_at AS date,
+                t.transaction_number,
+                t.cashier_id,
+                COALESCE(
+                    NULLIF(TRIM(t.cashier_name), ''),
+                    NULLIF(TRIM(CONCAT_WS(' ', ac.first_name, ac.middle_name, ac.last_name)), ''),
+                    CONCAT('Cashier #', t.cashier_id)
+                ) AS cashier_name,
+                COALESCE(u.student_id, t.guest_school_id) AS student_id,
+                t.student_name,
+                COALESCE(NULLIF(TRIM(ti.product_name), ''), 'Deleted Product') AS item,
+                COALESCE(NULLIF(TRIM(p.product_category), ''), 'Uncategorized') AS category,
+                ti.quantity,
+                ti.unit_price,
+                COALESCE(ti.total_item_amount, ti.quantity * ti.unit_price) AS amount,
+                COALESCE(NULLIF(t.payment_method, ''), 'Cash') AS payment_method
+            FROM cashier_transactions t
+            JOIN transaction_items ti ON ti.cashier_transaction_id = t.id AND ti.product_id > 0
+            LEFT JOIN products p ON p.product_id = ti.product_id
+            LEFT JOIN users u ON t.user_id = u.id
+            LEFT JOIN admincashier_acc ac ON ac.id = t.cashier_id
+            WHERE $dateCondition
+              AND t.payment_status = 'paid'
+              AND $excludeReceiptCategoryCondition
+              $cashierCondition
+              $categoryCondition
+            ORDER BY t.created_at DESC, t.id DESC";
+        $exportResult = $conn->query($exportQuery);
+        $exportRows = [];
+        while ($exportResult && $row = $exportResult->fetch_assoc()) {
+            $row['id'] = (int)$row['id'];
+            $row['cashier_id'] = (int)$row['cashier_id'];
+            $row['quantity'] = (int)$row['quantity'];
+            $row['unit_price'] = (float)$row['unit_price'];
+            $row['amount'] = (float)$row['amount'];
+            $exportRows[] = $row;
+        }
+
+        echo json_encode(['success' => true, 'export_data' => $exportRows]);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+
+    $conn->close();
+    exit;
+}
 
 try {
     // 1. Summary Totals (Total Sales, Total Transactions, Avg Transaction Value)
@@ -94,6 +251,77 @@ try {
         $top_products[] = ['name' => $row['name'], 'quantity' => (int)$row['quantity']];
     }
 
+    $normalizedProductCategory = "CASE
+        WHEN LOWER(TRIM(COALESCE(p.product_category, ''))) IN ('uniform fabrics', 'uniform', 'uniforms', 'fabric uniform') THEN 'Uniforms'
+        WHEN LOWER(TRIM(COALESCE(p.product_category, ''))) = 'books' THEN 'Books'
+        WHEN LOWER(TRIM(COALESCE(p.product_category, ''))) = 'accessories' THEN 'Accessories'
+        ELSE 'Uncategorized'
+    END";
+
+    // Category totals aggregate individual product lines, even when a transaction contains mixed categories.
+    $categoryTotalsQuery = "SELECT
+            $normalizedProductCategory AS category,
+            IFNULL(SUM(COALESCE(ti.total_item_amount, ti.quantity * ti.unit_price)), 0) AS total_sales,
+            IFNULL(SUM(ti.quantity), 0) AS total_items_sold,
+            COUNT(DISTINCT t.id) AS total_transactions
+        FROM cashier_transactions t
+        JOIN transaction_items ti ON ti.cashier_transaction_id = t.id AND ti.product_id > 0
+        LEFT JOIN products p ON p.product_id = ti.product_id
+        WHERE $dateCondition
+          AND t.payment_status = 'paid'
+          AND $excludeReceiptCategoryCondition
+        GROUP BY category
+        ORDER BY FIELD(category, 'Uniforms', 'Books', 'Accessories', 'Uncategorized')";
+
+    $categoryTotalsResult = $conn->query($categoryTotalsQuery);
+    $category_totals = [];
+    while ($categoryTotalsResult && $row = $categoryTotalsResult->fetch_assoc()) {
+        $category_totals[] = [
+            'category' => $row['category'],
+            'total_sales' => (float)$row['total_sales'],
+            'total_items_sold' => (int)$row['total_items_sold'],
+            'total_transactions' => (int)$row['total_transactions']
+        ];
+    }
+
+    $categoryHistoryQuery = "SELECT
+            t.id,
+            t.created_at AS date,
+            t.transaction_number,
+            COALESCE(u.student_id, t.guest_school_id) AS student_id,
+            t.student_name,
+            $normalizedProductCategory AS category,
+            GROUP_CONCAT(IFNULL(NULLIF(ti.product_name, ''), 'Deleted Product') SEPARATOR ', ') AS item,
+            SUM(ti.quantity) AS quantity,
+            ROUND(SUM(COALESCE(ti.total_item_amount, ti.quantity * ti.unit_price)), 2) AS amount
+        FROM cashier_transactions t
+        JOIN transaction_items ti ON ti.cashier_transaction_id = t.id AND ti.product_id > 0
+        LEFT JOIN products p ON p.product_id = ti.product_id
+        LEFT JOIN users u ON t.user_id = u.id
+        WHERE $dateCondition
+          AND t.payment_status = 'paid'
+          AND $excludeReceiptCategoryCondition
+        GROUP BY t.id, t.created_at, t.transaction_number, u.student_id, t.guest_school_id, t.student_name, category
+        ORDER BY t.created_at DESC
+        LIMIT $limit";
+
+    $categoryHistoryResult = $conn->query($categoryHistoryQuery);
+    $category_history = [];
+    while ($categoryHistoryResult && $row = $categoryHistoryResult->fetch_assoc()) {
+        $category_history[] = [
+            'id' => (int)$row['id'],
+            'date' => $row['date'],
+            'transaction_id' => $row['transaction_number'],
+            'student_id' => $row['student_id'] ?? null,
+            'student_name' => $row['student_name'] ?? null,
+            'category' => $row['category'],
+            'item' => $row['item'],
+            'quantity' => (int)$row['quantity'],
+            'amount' => (float)$row['amount'],
+            'display_amount' => (float)$row['amount']
+        ];
+    }
+
     // 5. Sales History
     $historyQuery = "SELECT t.id, t.created_at as date, t.transaction_number,
         GROUP_CONCAT(IFNULL(NULLIF(ti.product_name, ''), 'Deleted Product') SEPARATOR ', ') as item,
@@ -143,6 +371,8 @@ try {
         'sales_labels' => $sales_labels,
         'sales_data' => $sales_data,
         'top_products' => $top_products,
+        'category_totals' => $category_totals,
+        'category_history' => $category_history,
         'history' => $history
     ]);
 

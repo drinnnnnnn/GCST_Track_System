@@ -160,13 +160,16 @@
           const status = request.status === 'rejected' && request.rejection_reason
             ? `${escapeHtml(formatStatus(request.status))}<br><small>Reason: ${escapeHtml(request.rejection_reason)}</small>`
             : escapeHtml(formatStatus(request.status));
+          const receipt = request.status === 'refunded'
+            ? `<details class="mt-2"><summary class="cursor-pointer font-semibold text-indigo-700">View refund receipt · PR-${escapeHtml(request.id)}</summary><div class="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm"><div><strong>Refund amount:</strong> ₱${Number(request.refund_amount || 0).toFixed(2)}</div><div><strong>Refund method:</strong> Cash</div><div><strong>Completed:</strong> ${escapeHtml(formatDate(request.fulfilled_at))}</div><div><strong>Processed by:</strong> ${escapeHtml(request.processor_name || 'Cashier')}</div></div></details>`
+            : '';
           return `
             <tr>
               <td class="px-4 py-3">${escapeHtml(formatDate(request.created_at))}</td>
               <td class="px-4 py-3">${escapeHtml(request.transaction_number)}</td>
               <td class="px-4 py-3">${escapeHtml(request.product_name)} (${escapeHtml(request.quantity)} ${escapeHtml(request.unit_name || '')})</td>
               <td class="px-4 py-3">${escapeHtml(request.request_type)}</td>
-              <td class="px-4 py-3">${status}</td>
+              <td class="px-4 py-3">${status}${receipt}</td>
               <td class="px-4 py-3">${handoff}</td>
             </tr>
           `;
@@ -207,6 +210,8 @@
         actions = request.handoff_received_at
           ? `<button type="button" class="btn btn-primary btn-sm" data-return-action="fulfill_replacement" data-return-id="${request.id}">Fulfill replacement</button>`
           : '<button type="button" class="btn btn-secondary btn-sm" disabled title="Scan the return QR to record item receipt first">Awaiting handoff</button>';
+      } else if (request.status === 'refunded') {
+        actions = `<button type="button" class="btn btn-secondary btn-sm" data-return-action="resend_refund_receipt" data-return-id="${request.id}">Resend receipt</button>`;
       }
       const outcome = request.request_type === 'refund'
         ? `Refund · ₱${Number(request.refund_amount).toFixed(2)}`
@@ -308,13 +313,15 @@
       approve: 'Approve this damaged-item return?',
       reject: 'Reject this damaged-item return? Explain the reason below; it will be emailed to the user.',
       confirm_refund: 'Confirm that the refund has been paid to the customer?',
-      fulfill_replacement: 'Hand over the replacement and deduct it from inventory?'
+      fulfill_replacement: 'Hand over the replacement and deduct it from inventory?',
+      resend_refund_receipt: 'Send the cash refund receipt to the customer again?'
     };
     const actionLabels = {
       approve: 'Approve return',
       reject: 'Reject return',
       confirm_refund: 'Confirm refund',
-      fulfill_replacement: 'Fulfill replacement'
+      fulfill_replacement: 'Fulfill replacement',
+      resend_refund_receipt: 'Resend receipt'
     };
     if (!confirmations[action]) return;
 
@@ -325,6 +332,8 @@
     const cancelButton = document.getElementById('product-return-action-cancel');
     const rejectionField = document.getElementById('product-return-rejection-field');
     const rejectionReason = document.getElementById('product-return-rejection-reason');
+    const resolutionField = document.getElementById('product-return-resolution-field');
+    const resolutionSelect = document.getElementById('product-return-resolution');
     if (!modal || !message || !error || !confirmButton || !cancelButton) return;
 
     state.pendingAdminAction = {
@@ -333,8 +342,14 @@
       trigger: button
     };
     const isRejecting = action === 'reject';
+    const isApproving = action === 'approve';
     document.getElementById('product-return-action-title').textContent = isRejecting ? 'Reject return request' : 'Confirm return action';
     message.textContent = confirmations[action];
+    if (resolutionField) resolutionField.hidden = !isApproving;
+    if (resolutionSelect) {
+      resolutionSelect.value = 'refund';
+      resolutionSelect.disabled = false;
+    }
     if (rejectionField) rejectionField.hidden = !isRejecting;
     if (rejectionReason) {
       rejectionReason.value = '';
@@ -361,7 +376,9 @@
     const cancelButton = document.getElementById('product-return-action-cancel');
     const error = document.getElementById('product-return-action-error');
     const rejectionReason = document.getElementById('product-return-rejection-reason');
+    const resolutionSelect = document.getElementById('product-return-resolution');
     const rejectionReasonText = pending.action === 'reject' ? (rejectionReason?.value.trim() || '') : '';
+    const resolution = pending.action === 'approve' ? (resolutionSelect?.value || 'refund') : '';
     if (pending.action === 'reject' && (!rejectionReasonText || rejectionReasonText.length > 1000)) {
       error.textContent = rejectionReasonText
         ? 'The rejection reason must be 1,000 characters or fewer.'
@@ -383,7 +400,8 @@
         body: JSON.stringify({
           request_id: pending.requestId,
           action: pending.action,
-          rejection_reason: rejectionReasonText
+          rejection_reason: rejectionReasonText,
+          resolution
         })
       });
       closeAdminReturnConfirmation(false);

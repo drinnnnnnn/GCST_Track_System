@@ -52,12 +52,6 @@
       margin: 0;
       font-size: 1rem;
     }
-    .period-filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
     .period-button {
       border-radius: 14px;
       border: 1px solid transparent;
@@ -67,10 +61,65 @@
       cursor: pointer;
       transition: background 0.2s ease, border-color 0.2s ease;
     }
-    .period-button.active {
-      background: var(--primary);
-      color: #fff;
-      border-color: rgba(69, 88, 255, 0.28);
+    .date-range-control {
+      display: flex;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .date-range-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .date-range-field input {
+      min-height: 44px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+    }
+    .date-range-error {
+      flex-basis: 100%;
+      color: var(--danger);
+      font-size: 0.85rem;
+    }
+    .category-sales-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin: 0 0 20px;
+    }
+    .category-sales-card {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface-soft);
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+    }
+    .category-sales-card.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(69, 88, 255, 0.14);
+    }
+    .category-sales-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .category-sales-card strong {
+      display: block;
+      margin-top: 5px;
+      color: var(--primary);
+      font-size: 1.15rem;
     }
     .balance-section {
       margin-bottom: 24px;
@@ -285,6 +334,26 @@
       max-width: 500px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
+    .export-options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .export-options-grid select {
+      min-height: 44px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+    }
+    .export-options-error {
+      margin: 0 0 12px;
+      color: var(--danger);
+      font-size: 0.9rem;
+    }
     .product-tag-list {
       display: flex;
       flex-wrap: wrap;
@@ -345,10 +414,12 @@
 
     body.dark-mode .content-wrapper .period-button,
     body.dark-mode .content-wrapper #historySearch,
+    body.dark-mode .content-wrapper #salesCategoryFilter,
     body.dark-mode .content-wrapper #inventoryFilterCategory,
     body.dark-mode .content-wrapper #inventoryFilterCourse,
     body.dark-mode .content-wrapper #inventoryFilterStatus,
-    body.dark-mode .content-wrapper #inventorySearch {
+    body.dark-mode .content-wrapper #inventorySearch,
+    body.dark-mode .content-wrapper .export-options-grid select {
       background: #0f172a !important;
       border-color: #475569 !important;
       color: #e5edf8 !important;
@@ -358,6 +429,7 @@
 
     body.dark-mode .content-wrapper .period-button:hover,
     body.dark-mode .content-wrapper #historySearch:focus,
+    body.dark-mode .content-wrapper #salesCategoryFilter:focus,
     body.dark-mode .content-wrapper #inventoryFilterCategory:focus,
     body.dark-mode .content-wrapper #inventoryFilterCourse:focus,
     body.dark-mode .content-wrapper #inventoryFilterStatus:focus,
@@ -517,12 +589,18 @@
       <div class="greeting-icon">👋</div>
     </section>
 
-    <!-- Period Filters -->
-    <div class="period-filters">
-      <button class="period-button active" data-period="today">Today</button>
-      <button class="period-button" data-period="week">This Week</button>
-      <button class="period-button" data-period="month">This Month</button>
-      <button class="period-button" data-period="year">This Year</button>
+    <!-- Sales Date Range -->
+    <div class="date-range-control">
+      <label class="date-range-field" for="salesStartDate">
+        Start Date
+        <input type="date" id="salesStartDate" required>
+      </label>
+      <label class="date-range-field" for="salesEndDate">
+        End Date
+        <input type="date" id="salesEndDate" required>
+      </label>
+      <button class="period-button" type="button" id="applySalesDateRange">Apply</button>
+      <span class="date-range-error" id="salesDateRangeError" role="alert" hidden></span>
       <button class="period-button admin-only-export" id="export-csv-btn" hidden style="margin-left: auto; background: var(--success); color: white;"><i class="fas fa-file-excel"></i> Export Excel</button>
     </div>
 
@@ -572,11 +650,24 @@
     <section class="history-card">
       <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
         <h3 class="m-0 text-xl font-bold">Sales History</h3>
-        <div class="relative w-full sm:w-72">
-          <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          <input type="text" id="historySearch" placeholder="Search transactions..." class="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm bg-gray-50">
+        <div class="flex w-full sm:w-auto flex-wrap gap-3">
+          <label class="date-range-field" for="salesCategoryFilter">
+            Category
+            <select id="salesCategoryFilter" class="w-full sm:w-48 p-2.5 border border-gray-200 rounded-2xl text-sm bg-gray-50">
+              <option value="all">All Categories</option>
+              <option value="Uniforms">Uniforms</option>
+              <option value="Books">Books</option>
+              <option value="Accessories">Accessories</option>
+              <option value="Uncategorized">Uncategorized</option>
+            </select>
+          </label>
+          <div class="relative w-full sm:w-72 self-end">
+            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text" id="historySearch" placeholder="Search transactions..." class="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm bg-gray-50">
+          </div>
         </div>
       </div>
+      <div id="categorySalesSummary" class="category-sales-summary" aria-label="Sales totals by category"></div>
       <div class="table-scroll-container">
         <table class="history-table">
           <thead>
@@ -584,6 +675,7 @@
               <th>Date</th>
               <th>Transaction</th>
               <th>Student</th>
+              <th>Category</th>
               <th>Product</th>
               <th>Quantity</th>
               <th>Amount</th>
@@ -591,7 +683,7 @@
             </tr>
           </thead>
           <tbody id="historyBody">
-            <tr><td colspan="7" class="empty-state">Loading sales history...</td></tr>
+            <tr><td colspan="8" class="empty-state">Loading sales history...</td></tr>
           </tbody>
         </table>
       </div>
@@ -702,6 +794,42 @@
       </div>
     </section>
 
+    <div id="salesExportModal" class="modal" aria-hidden="true">
+      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="salesExportTitle">
+        <h3 id="salesExportTitle" class="text-xl font-bold">Export Sales Report</h3>
+        <div class="export-options-grid">
+          <label class="date-range-field" for="exportStartDate">
+            Start Date
+            <input type="date" id="exportStartDate" required>
+          </label>
+          <label class="date-range-field" for="exportEndDate">
+            End Date
+            <input type="date" id="exportEndDate" required>
+          </label>
+          <label class="date-range-field" for="exportCashier">
+            Cashier Name
+            <select id="exportCashier">
+              <option value="">All Cashiers</option>
+            </select>
+          </label>
+          <label class="date-range-field" for="exportCategory">
+            Category
+            <select id="exportCategory">
+              <option value="all">All</option>
+              <option value="uniforms">Uniforms</option>
+              <option value="books">Books</option>
+              <option value="accessories">Accessories</option>
+            </select>
+          </label>
+        </div>
+        <p id="salesExportError" class="export-options-error" role="alert" hidden></p>
+        <div class="flex justify-end gap-3">
+          <button type="button" id="cancelSalesExport" class="period-button">Cancel</button>
+          <button type="button" id="generateSalesExport" class="period-button" style="background: var(--success); color: white;">Export Excel</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Receipt Modal -->
     <div id="receiptModal" class="modal">
       <div class="modal-content">
@@ -724,7 +852,8 @@
     // =====================================================
     // SALES PAGE LOGIC
     // =====================================================
-    let currentSalesPeriod = 'today';
+    let currentSalesStartDate = '';
+    let currentSalesEndDate = '';
     let currentTotalSales = 0;
     let salesTrendChartInstance = null;
     let topProductsChartInstance = null;
@@ -734,6 +863,8 @@
     let currentItemsSold = 0;
     let lastFetchedInventory = [];
     let lastFetchedSalesHistory = [];
+    let salesCategoryTotals = [];
+    let salesHistorySearchQuery = '';
     let currentTopProduct = 'N/A';
     let currentAdminName = 'Unknown Admin'; // New: Global variable to store admin name
     let canExportReports = false;
@@ -743,6 +874,7 @@
     let salesPaginationState = { page: 1, totalPages: 1, totalItems: 0 };
     let salesSearchTimer = null;
     let salesThemeObserver = null;
+    let cashierOptionsRequestId = 0;
 
     function getSafeText(value, fallback = '') {
       if (typeof value === 'string') {
@@ -798,10 +930,15 @@
       return Number.isNaN(date.getTime()) ? '-' : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
-    function setActivePeriodButton(period) {
-      document.querySelectorAll('.period-button').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.period === period);
-      });
+    function getLocalDateInputValue(date = new Date()) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function getLocalYearStartDate(date = new Date()) {
+      return `${date.getFullYear()}-01-01`;
     }
 
     function getPageBounds(items, page, perPage) {
@@ -860,14 +997,19 @@
       container.appendChild(createButton('Next', state.page + 1, state.page === state.totalPages));
     }
 
-    async function loadSalesData(period) {
+    async function loadSalesData(startDate, endDate) {
       const historyBody = document.getElementById('historyBody');
       if (historyBody && historyBody.innerHTML === '') {
-        historyBody.innerHTML = '<tr><td colspan="7" class="empty-state">Loading data...</td></tr>';
+        historyBody.innerHTML = '<tr><td colspan="8" class="empty-state">Loading data...</td></tr>';
       }
 
       try {
-        const payload = await fetchWithError(`../../actions/get_admincashier_sales.php?period=${encodeURIComponent(period)}&limit=50`);
+        const params = new URLSearchParams({
+          start_date: startDate,
+          end_date: endDate,
+          limit: '50'
+        });
+        const payload = await fetchWithError(`../../actions/get_admincashier_sales.php?${params.toString()}`);
         const data = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
 
         if (!data.success) {
@@ -910,14 +1052,18 @@
           updateChart(topProductsChartInstance, productLabels, productQuantities, 'Units Sold', 'bar', 'rgba(69, 88, 255, 0.16)', '#4558ff');
         }
 
-        lastFetchedSalesHistory = Array.isArray(data.history) ? data.history : [];
-        renderSalesHistory(lastFetchedSalesHistory, { resetPage: true });
+        lastFetchedSalesHistory = Array.isArray(data.category_history)
+          ? data.category_history
+          : (Array.isArray(data.history) ? data.history : []);
+        salesCategoryTotals = Array.isArray(data.category_totals) ? data.category_totals : [];
+        renderSalesCategorySummary();
+        applySalesHistoryFilters({ resetPage: true });
 
         // Sales trend polling complete. Inventory is handled by loadInventoryData.
 
       } catch (error) {
         console.error('Unable to load sales data:', error);
-        if (historyBody) historyBody.innerHTML = '<tr><td colspan="6" class="empty-state">Unable to load sales history.</td></tr>';
+        if (historyBody) historyBody.innerHTML = '<tr><td colspan="8" class="empty-state">Unable to load sales history.</td></tr>';
       }
     }
 
@@ -1056,6 +1202,84 @@
         courses.forEach(c => courseSelect.add(new Option(c, c)));
       }
     }
+    function renderSalesCategorySummary() {
+      const container = document.getElementById('categorySalesSummary');
+      if (!container) return;
+
+      const totalsByCategory = new Map(
+        salesCategoryTotals.map(total => [getSafeText(total.category), total])
+      );
+      const categories = ['Uniforms', 'Books', 'Accessories', 'Uncategorized'];
+      const filterSelect = document.getElementById('salesCategoryFilter');
+      let selectedCategory = filterSelect.value;
+      const availableCategories = new Set(categories);
+      Array.from(filterSelect.options).forEach(option => {
+        if (option.value !== 'all' && !availableCategories.has(option.value)) {
+          option.remove();
+        }
+      });
+      salesCategoryTotals.forEach(total => {
+        const category = getSafeText(total.category);
+        if (category && !availableCategories.has(category)) {
+          availableCategories.add(category);
+        }
+      });
+      categories.forEach(category => {
+        if (!Array.from(filterSelect.options).some(option => option.value === category)) {
+          filterSelect.add(new Option(category, category));
+        }
+      });
+      salesCategoryTotals.forEach(total => {
+        const category = getSafeText(total.category);
+        if (category && !Array.from(filterSelect.options).some(option => option.value === category)) {
+          filterSelect.add(new Option(category, category));
+        }
+      });
+      if (selectedCategory !== 'all' && !availableCategories.has(selectedCategory)) {
+        filterSelect.value = 'all';
+        selectedCategory = 'all';
+      }
+      container.innerHTML = '';
+
+      const addCard = (category, label, amount) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `category-sales-card${selectedCategory === category ? ' active' : ''}`;
+        card.setAttribute('aria-pressed', String(selectedCategory === category));
+        const title = document.createElement('span');
+        title.textContent = label;
+        const total = document.createElement('strong');
+        total.textContent = formatCurrency(amount);
+        card.append(title, total);
+        card.addEventListener('click', () => {
+          document.getElementById('salesCategoryFilter').value = category;
+          applySalesHistoryFilters({ resetPage: true });
+        });
+        container.appendChild(card);
+      };
+
+      addCard('all', 'All Categories', currentTotalSales);
+      categories.forEach(category => {
+        const total = totalsByCategory.get(category);
+        addCard(category, category, getSafeNumber(total?.total_sales));
+      });
+    }
+
+    function getFilteredSalesHistory() {
+      const category = document.getElementById('salesCategoryFilter').value;
+      const searchQuery = salesHistorySearchQuery;
+      return lastFetchedSalesHistory.filter(entry => {
+        const matchesCategory = category === 'all' || getSafeText(entry.category) === category;
+        const text = `${getSafeText(entry.transaction_id)} ${getSafeText(entry.transaction_number)} ${getSafeText(entry.student_id)} ${getSafeText(entry.student_name)} ${getSafeText(entry.item)} ${getSafeText(entry.date)} ${getSafeText(entry.category)}`.toLowerCase();
+        return matchesCategory && text.includes(searchQuery);
+      });
+    }
+
+    function applySalesHistoryFilters(options = {}) {
+      renderSalesCategorySummary();
+      renderSalesHistory(getFilteredSalesHistory(), options);
+    }
+
     function renderSalesHistory(history, options = {}) {
       const historyBody = document.getElementById('historyBody');
       if (!historyBody) return;
@@ -1074,12 +1298,12 @@
       updatePaginationInfo('salesPaginationInfo', bounds);
       updatePaginationControls('salesPaginationControls', salesPaginationState, (page) => {
         salesPaginationState.page = page;
-        renderSalesHistory(lastFetchedSalesHistory, { resetPage: false });
+        renderSalesHistory(getFilteredSalesHistory(), { resetPage: false });
       });
 
       historyBody.innerHTML = '';
       if (bounds.totalItems === 0) {
-        historyBody.innerHTML = '<tr><td colspan="7" class="empty-state">No sales history found.</td></tr>';
+        historyBody.innerHTML = '<tr><td colspan="8" class="empty-state">No sales history found.</td></tr>';
         return;
       }
 
@@ -1101,6 +1325,7 @@
           <td>${formatDate(entry.date)}</td>
           <td>${displayId}</td>
           <td>${studentInfo}</td>
+          <td></td>
           <td><div class="product-tag-list">${itemsHtml || '<span class="text-gray-400">No items</span>'}</div></td>
           <td>${getSafeNumber(entry.quantity)}</td>
           <td>${formatCurrency(amountValue)}</td>
@@ -1110,6 +1335,7 @@
             </button>
           </td>
         `;
+        row.children[3].textContent = getSafeText(entry.category, 'Uncategorized');
         historyBody.appendChild(row);
       });
     }
@@ -1247,15 +1473,15 @@
     function startSalesPolling() {
       if (salesPollInterval) clearInterval(salesPollInterval);
       salesPollInterval = setInterval(() => {
-        Promise.allSettled([loadSalesData(currentSalesPeriod), loadInventoryData()]);
+        Promise.allSettled([loadSalesData(currentSalesStartDate, currentSalesEndDate), loadInventoryData()]);
       }, 10000);
     }
 
     window.stopSalesPolling = () => { if (salesPollInterval) clearInterval(salesPollInterval); salesPollInterval = null; };
 
-    window.exportSalesToExcel = function() {
+    window.exportSalesToExcel = function(exportRows, exportOptions) {
       if (!canExportReports) return;
-      if (!lastFetchedSalesHistory.length) return alert('No data available for export.');
+      if (!Array.isArray(exportRows) || !exportRows.length) return;
 
       const HIGH_VALUE_THRESHOLD = 1000; // Highlight sales above this amount
       const COLOR_HIGH_VALUE = { rgb: "E2EFDA" }; // Light Green
@@ -1280,17 +1506,34 @@
       // --- 2. DATA AGGREGATION (CATEGORY SUMMARY) ---
       const summaryByCategory = {};
       let totalRevenueForContribution = 0;
-      lastFetchedSalesHistory.forEach(item => {
-        const cat = item.category || 'General Sales';
+      let exportTotalSales = 0;
+      let exportItemsSold = 0;
+      const exportTransactionIds = new Set();
+      const productQuantities = {};
+      exportRows.forEach(item => {
+        const cat = item.category || 'Uncategorized';
         if (!summaryByCategory[cat]) {
-          summaryByCategory[cat] = { qty: 0, revenue: 0, count: 0 };
+          summaryByCategory[cat] = { qty: 0, revenue: 0, transactionIds: new Set() };
         }
-        summaryByCategory[cat].qty += parseFloat(item.quantity || 0);
-        const amt = parseFloat(item.amount || 0);
+        const quantity = getSafeNumber(item.quantity);
+        const amt = getSafeNumber(item.amount);
+        const transactionId = String(item.id ?? item.transaction_id ?? item.transaction_number);
+        const productName = getSafeText(item.item, 'Unnamed Product');
+        summaryByCategory[cat].qty += quantity;
         summaryByCategory[cat].revenue += amt;
-        summaryByCategory[cat].count += 1;
+        summaryByCategory[cat].transactionIds.add(transactionId);
+        exportTransactionIds.add(transactionId);
+        exportItemsSold += quantity;
+        exportTotalSales += amt;
+        productQuantities[productName] = (productQuantities[productName] || 0) + quantity;
         totalRevenueForContribution += amt;
       });
+      const exportTotalTransactions = exportTransactionIds.size;
+      const exportAverageTransaction = exportTotalTransactions ? exportTotalSales / exportTotalTransactions : 0;
+      const exportTopProduct = Object.entries(productQuantities).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+      const cashierLabel = exportOptions.cashierName || 'All Cashiers';
+      const signatureSignerName = exportOptions.cashierId ? cashierLabel : (currentAdminName || 'Unknown Admin');
+      const categoryLabel = exportOptions.categoryLabel || 'All';
 
       const dataRows = [];
       
@@ -1300,7 +1543,9 @@
       dataRows.push(["REPORT TYPE:", "Detailed Transaction Ledger"]);
       dataRows.push(["GENERATED BY:", currentAdminName]);
       dataRows.push(["EXPORT TIMESTAMP:", exportDateTime]);
-      dataRows.push(["REPORTING PERIOD:", currentSalesPeriod.toUpperCase()]);
+      dataRows.push(["REPORTING PERIOD:", `${exportOptions.startDate} to ${exportOptions.endDate}`]);
+      dataRows.push(["CASHIER:", cashierLabel]);
+      dataRows.push(["CATEGORY:", categoryLabel]);
       dataRows.push([]); 
       
       // --- 2. CATEGORY-LEVEL PERFORMANCE SUMMARY ---
@@ -1317,11 +1562,11 @@
           ? (stats.revenue / totalRevenueForContribution) * 100 
           : 0;
           
-        dataRows.push([cat, stats.qty, formatCurrency(stats.revenue), contribution.toFixed(2) + '%', stats.count]);
+        dataRows.push([cat, stats.qty, formatCurrency(stats.revenue), contribution.toFixed(2) + '%', stats.transactionIds.size]);
         grandQty += stats.qty;
         grandRev += stats.revenue;
-        grandTxns += stats.count;
       });
+      grandTxns = exportTotalTransactions;
       dataRows.push(["GRAND TOTAL", grandQty, formatCurrency(grandRev), "100.00%", grandTxns]);
       dataRows.push([]); // Spacer
       dataRows.push([]); // Spacer
@@ -1329,32 +1574,32 @@
       // --- 2. EXECUTIVE PERFORMANCE SUMMARY ---
       dataRows.push(["EXECUTIVE SUMMARY"]);
       dataRows.push(["Metric Name", "Aggregated Value", "Details/Context"]);
-      dataRows.push(["Total Gross Revenue", formatCurrency(currentTotalSales), "Sum of all transactions in period"]);
-      dataRows.push(["Transaction Volume", currentTotalTransactions, "Total number of successful orders"]);
-      dataRows.push(["Inventory Movement", currentItemsSold, "Total units sold/released from stock"]);
-      dataRows.push(["Average Order Value", formatCurrency(currentAvgTransaction), "Mean revenue per unique transaction"]);
-      dataRows.push(["Top Performing Item", currentTopProduct, "Most sold item by volume in this period"]);
+      dataRows.push(["Total Gross Revenue", formatCurrency(exportTotalSales), "Sum of exported sales"]);
+      dataRows.push(["Transaction Volume", exportTotalTransactions, "Total number of successful orders"]);
+      dataRows.push(["Inventory Movement", exportItemsSold, "Total units sold/released from stock"]);
+      dataRows.push(["Average Order Value", formatCurrency(exportAverageTransaction), "Mean revenue per unique transaction"]);
+      dataRows.push(["Top Performing Item", exportTopProduct, "Most sold item by volume in this report"]);
       dataRows.push([]); 
 
       // --- 3. DETAILED TRANSACTION LEDGER ---
       dataRows.push(["DETAILED TRANSACTION RECORDS (GROUPED BY CATEGORY)"]);
       const tableHeaders = [
-        'Category', 'Reference ID', 'Process Date', 
+        'Category', 'Reference ID', 'Cashier', 'Process Date',
         'Products & Specifications', 'Qty', 'Unit Price', 'Discounts', 
         'Total Amount', 'Profit Margin (%)', 'Payment Method'
       ];
       dataRows.push(tableHeaders);
 
       // Sort history items by category for cleaner grouped reporting
-      const sortedHistory = [...lastFetchedSalesHistory].sort((a, b) => 
+      const sortedHistory = [...exportRows].sort((a, b) =>
         (a.category || 'General Sales').localeCompare(b.category || 'General Sales')
       );
 
       sortedHistory.forEach(item => {
-        const qty = parseFloat(item.quantity || 1);
-        const amt = parseFloat(item.amount || 0);
-        const disc = parseFloat(item.discount_amount || 0);
-        const unitP = item.unit_price || (qty > 0 ? (amt + disc) / qty : 0);
+        const qty = getSafeNumber(item.quantity, 1);
+        const amt = getSafeNumber(item.amount);
+        const disc = 0;
+        const unitP = getSafeNumber(item.unit_price, qty > 0 ? amt / qty : 0);
         
         // --- CONSERVATIVE PROFIT CALCULATION ---
         const cost = parseFloat(item.cost || 0); // Original acquisition cost
@@ -1365,8 +1610,9 @@
         const profitMarginDisplay = revenue > 0 ? profitMarginValue.toFixed(2) + '%' : '—';
 
         dataRows.push([
-          item.category || 'General Sales',
+          item.category || 'Uncategorized',
           item.transaction_id || item.transaction_number || '---',
+          item.cashier_name || 'Unknown Cashier',
           formatDate(item.date),
           item.item || 'N/A',
           qty,
@@ -1381,9 +1627,15 @@
 
       // --- 4. REPORT FOOTER & AUDIT DATA ---
       dataRows.push(["END OF REPORT"]);
-      dataRows.push(["Grand Total Revenue:", formatCurrency(currentTotalSales)]);
+      dataRows.push(["Grand Total Revenue:", formatCurrency(exportTotalSales)]);
       dataRows.push(["Verified By:", currentAdminName]);
       dataRows.push(["Audit Notice:", "This report is an official system-generated document. Unauthorized alteration is prohibited."]);
+      dataRows.push([]);
+      dataRows.push(["CASHIER APPROVAL"]);
+      dataRows.push([exportOptions.cashierId ? "Cashier Name:" : "Exported By:", signatureSignerName]);
+      dataRows.push(["Signature:", signatureSignerName]);
+      dataRows.push(["Reporting Date Range:", `${exportOptions.startDate} to ${exportOptions.endDate}`]);
+      dataRows.push(["Date Signed:", getLocalDateInputValue(now)]);
 
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(dataRows);
@@ -1396,6 +1648,7 @@
       const execSummaryIdx = dataRows.findIndex(r => r.includes('EXECUTIVE SUMMARY'));
       const ledgerHeaderIdx = dataRows.findIndex(r => r.includes('Category') && r.includes('Reference ID'));
       const reportFooterIdx = dataRows.findIndex(r => r.includes('END OF REPORT'));
+      const signatureBlockIdx = dataRows.findIndex(r => r.includes('CASHIER APPROVAL'));
 
       for (let R = range.s.r; R <= range.e.r; ++R) {
         // Identify data rows for conditional evaluation
@@ -1404,9 +1657,9 @@
         let lowProfitCellStyle = null;
 
         if (isLedgerData) {
-          const qty = parseFloat(dataRows[R][4] || 0); // Qty is at Index 4 in ledger
+          const qty = parseFloat(dataRows[R][5] || 0); // Qty is at Index 5 in ledger
           // Extract numeric value from currency string for threshold check
-          const totalRaw = String(dataRows[R][7] || "0").replace(/[^0-9.-]+/g,"");
+          const totalRaw = String(dataRows[R][8] || "0").replace(/[^0-9.-]+/g,"");
           const total = parseFloat(totalRaw);
 
           if (qty <= 0) {
@@ -1416,7 +1669,7 @@
           }
 
           // Financial Analysis: Evaluate Profit Margin (%) threshold
-          const marginStr = String(dataRows[R][8] || "");
+          const marginStr = String(dataRows[R][9] || "");
           if (marginStr !== '—' && marginStr.includes('%')) {
             const marginVal = parseFloat(marginStr.replace('%', ''));
             if (!isNaN(marginVal) && marginVal < LOW_PROFIT_THRESHOLD) {
@@ -1436,7 +1689,7 @@
           };
 
           // Apply Section Title Styling
-          if (R === catSummaryIdx || R === execSummaryIdx || R === ledgerHeaderIdx - 1) {
+          if (R === catSummaryIdx || R === execSummaryIdx || R === ledgerHeaderIdx - 1 || R === signatureBlockIdx) {
             ws[cellRef].s.font = { bold: true, sz: 11, color: { rgb: "000000" } };
             ws[cellRef].s.fill = { fgColor: COLOR_SECTION_BG };
           }
@@ -1460,7 +1713,7 @@
           }
 
           // Apply Conditional Formatting
-          if (C === 8 && lowProfitCellStyle) {
+          if (C === 9 && lowProfitCellStyle) {
             // Specific Cell Formatting: Low Profit Highlight (Precedence over Row Style)
             ws[cellRef].s.fill = lowProfitCellStyle.fill;
             ws[cellRef].s.font = { ...ws[cellRef].s.font, ...lowProfitCellStyle.font };
@@ -1488,7 +1741,136 @@
       ws['!cols'] = colWidths;
 
       XLSX.utils.book_append_sheet(wb, ws, "Sales Report");
-      XLSX.writeFile(wb, `Sales_Report_${currentSalesPeriod}_${fileTimestamp}.xlsx`);
+      XLSX.writeFile(wb, `Sales_Report_${exportOptions.startDate}_to_${exportOptions.endDate}_${exportOptions.category}_${fileTimestamp}.xlsx`);
+    }
+
+    function closeSalesExportModal() {
+      const modal = document.getElementById('salesExportModal');
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    async function loadSalesExportCashiers() {
+      const startDate = document.getElementById('exportStartDate').value;
+      const endDate = document.getElementById('exportEndDate').value;
+      const cashierSelect = document.getElementById('exportCashier');
+      const error = document.getElementById('salesExportError');
+      const requestId = ++cashierOptionsRequestId;
+
+      if (!startDate || !endDate || startDate > endDate) {
+        cashierSelect.disabled = false;
+        error.textContent = 'Choose a valid date range to load cashiers.';
+        error.hidden = false;
+        cashierSelect.replaceChildren(new Option('All Cashiers', ''));
+        return;
+      }
+
+      const selectedCashier = cashierSelect.value;
+      const params = new URLSearchParams({
+        start_date: startDate,
+        end_date: endDate,
+        cashier_options: '1'
+      });
+      cashierSelect.disabled = true;
+      cashierSelect.replaceChildren(new Option('Loading cashiers...', ''));
+
+      try {
+        const data = await fetchWithError(`../../actions/get_admincashier_sales.php?${params.toString()}`);
+        if (requestId !== cashierOptionsRequestId) return;
+        if (!data || !data.success || !Array.isArray(data.cashiers)) {
+          throw new Error(data?.message || 'Unable to load cashier names.');
+        }
+
+        cashierSelect.replaceChildren(new Option('All Cashiers', ''));
+        data.cashiers.forEach(cashier => {
+          cashierSelect.add(new Option(cashier.name, String(cashier.id)));
+        });
+        if (selectedCashier && Array.from(cashierSelect.options).some(option => option.value === selectedCashier)) {
+          cashierSelect.value = selectedCashier;
+        }
+        error.hidden = true;
+      } catch (loadError) {
+        if (requestId !== cashierOptionsRequestId) return;
+        console.error('Unable to load cashier options:', loadError);
+        cashierSelect.replaceChildren(new Option('All Cashiers', ''));
+        error.textContent = loadError.message || 'Unable to load cashier names.';
+        error.hidden = false;
+      } finally {
+        if (requestId === cashierOptionsRequestId) cashierSelect.disabled = false;
+      }
+    }
+
+    function openSalesExportModal() {
+      const modal = document.getElementById('salesExportModal');
+      const startDateInput = document.getElementById('exportStartDate');
+      const endDateInput = document.getElementById('exportEndDate');
+      startDateInput.value = currentSalesStartDate;
+      endDateInput.value = currentSalesEndDate;
+      endDateInput.min = currentSalesStartDate;
+      startDateInput.max = currentSalesEndDate;
+      document.getElementById('exportCategory').value = 'all';
+      document.getElementById('exportCashier').replaceChildren(new Option('All Cashiers', ''));
+      document.getElementById('salesExportError').hidden = true;
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden', 'false');
+      loadSalesExportCashiers();
+    }
+
+    async function generateSalesExport() {
+      const startDate = document.getElementById('exportStartDate').value;
+      const endDate = document.getElementById('exportEndDate').value;
+      const cashierId = document.getElementById('exportCashier').value;
+      const categorySelect = document.getElementById('exportCategory');
+      const category = categorySelect.value;
+      const error = document.getElementById('salesExportError');
+      const button = document.getElementById('generateSalesExport');
+
+      if (!startDate || !endDate || startDate > endDate) {
+        error.textContent = 'Choose a valid start and end date.';
+        error.hidden = false;
+        return;
+      }
+
+      const params = new URLSearchParams({
+        start_date: startDate,
+        end_date: endDate,
+        category,
+        export_data: '1'
+      });
+      if (cashierId) params.set('cashier_id', cashierId);
+
+      button.disabled = true;
+      button.textContent = 'Preparing report...';
+      error.hidden = true;
+      try {
+        const data = await fetchWithError(`../../actions/get_admincashier_sales.php?${params.toString()}`);
+        if (!data || !data.success || !Array.isArray(data.export_data)) {
+          throw new Error(data?.message || 'Unable to prepare the sales report.');
+        }
+        if (!data.export_data.length) {
+          error.textContent = 'No sales match the selected export options.';
+          error.hidden = false;
+          return;
+        }
+
+        const selectedCashier = document.getElementById('exportCashier').selectedOptions[0];
+        window.exportSalesToExcel(data.export_data, {
+          startDate,
+          endDate,
+          cashierId,
+          cashierName: cashierId ? selectedCashier.textContent : 'All Cashiers',
+          category,
+          categoryLabel: categorySelect.selectedOptions[0].textContent
+        });
+        closeSalesExportModal();
+      } catch (exportError) {
+        console.error('Unable to export sales report:', exportError);
+        error.textContent = exportError.message || 'Unable to export the sales report.';
+        error.hidden = false;
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Export Excel';
+      }
     }
 
     window.exportInventoryToExcel = function() {
@@ -1676,7 +2058,10 @@
     };
 
     window.initAdminCashierSalesPage = function(userData) {
-      currentSalesPeriod = 'today';
+      currentSalesStartDate = getLocalYearStartDate();
+      currentSalesEndDate = getLocalDateInputValue();
+      document.getElementById('salesStartDate').value = currentSalesStartDate;
+      document.getElementById('salesEndDate').value = currentSalesEndDate;
       canExportReports = ['admin', 'admincashier', 'superadmin'].includes(userData.role);
       document.querySelectorAll('.admin-only-export').forEach(button => {
         button.hidden = !canExportReports;
@@ -1685,30 +2070,63 @@
       salesThemeObserver?.disconnect();
       salesThemeObserver = new MutationObserver(refreshSalesChartTheme);
       salesThemeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-      setActivePeriodButton(currentSalesPeriod);
-      loadSalesData(currentSalesPeriod);
+      loadSalesData(currentSalesStartDate, currentSalesEndDate);
       loadInventoryData();
       startSalesPolling();
 
-      document.querySelectorAll('.period-button[data-period]').forEach(button => {
-        button.addEventListener('click', () => {
-          currentSalesPeriod = button.dataset.period;
-          setActivePeriodButton(currentSalesPeriod);
-          loadSalesData(currentSalesPeriod); 
-          startSalesPolling();
-        });
+      const startDateInput = document.getElementById('salesStartDate');
+      const endDateInput = document.getElementById('salesEndDate');
+      const dateRangeError = document.getElementById('salesDateRangeError');
+      endDateInput.min = currentSalesStartDate;
+      startDateInput.max = currentSalesEndDate;
+      startDateInput.addEventListener('change', () => {
+        endDateInput.min = startDateInput.value;
+        dateRangeError.hidden = true;
+      });
+      endDateInput.addEventListener('change', () => {
+        startDateInput.max = endDateInput.value;
+        dateRangeError.hidden = true;
+      });
+      document.getElementById('applySalesDateRange').addEventListener('click', () => {
+        if (!startDateInput.value || !endDateInput.value || startDateInput.value > endDateInput.value) {
+          dateRangeError.textContent = 'Choose a valid start and end date.';
+          dateRangeError.hidden = false;
+          return;
+        }
+
+        dateRangeError.hidden = true;
+        currentSalesStartDate = startDateInput.value;
+        currentSalesEndDate = endDateInput.value;
+        loadSalesData(currentSalesStartDate, currentSalesEndDate);
+        startSalesPolling();
       });
 
-      document.getElementById('export-csv-btn').addEventListener('click', window.exportSalesToExcel);
+      const exportStartDateInput = document.getElementById('exportStartDate');
+      const exportEndDateInput = document.getElementById('exportEndDate');
+      exportEndDateInput.min = currentSalesStartDate;
+      exportStartDateInput.max = currentSalesEndDate;
+      exportStartDateInput.addEventListener('change', () => {
+        exportEndDateInput.min = exportStartDateInput.value;
+        document.getElementById('salesExportError').hidden = true;
+        loadSalesExportCashiers();
+      });
+      exportEndDateInput.addEventListener('change', () => {
+        exportStartDateInput.max = exportEndDateInput.value;
+        document.getElementById('salesExportError').hidden = true;
+        loadSalesExportCashiers();
+      });
+      document.getElementById('export-csv-btn').addEventListener('click', openSalesExportModal);
+      document.getElementById('cancelSalesExport').addEventListener('click', closeSalesExportModal);
+      document.getElementById('generateSalesExport').addEventListener('click', generateSalesExport);
+      document.getElementById('salesCategoryFilter').addEventListener('change', () => {
+        applySalesHistoryFilters({ resetPage: true });
+      });
       document.getElementById('historySearch')?.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
         if (salesSearchTimer) clearTimeout(salesSearchTimer);
         salesSearchTimer = setTimeout(() => {
-          const filtered = lastFetchedSalesHistory.filter(entry => {
-            const text = `${getSafeText(entry.transaction_id)} ${getSafeText(entry.transaction_number)} ${getSafeText(entry.student_id)} ${getSafeText(entry.student_name)} ${getSafeText(entry.item)} ${getSafeText(entry.date)}`.toLowerCase();
-            return text.includes(query);
-          });
-          renderSalesHistory(filtered, { resetPage: true });
+          salesHistorySearchQuery = query;
+          applySalesHistoryFilters({ resetPage: true });
         }, 120);
       });
 

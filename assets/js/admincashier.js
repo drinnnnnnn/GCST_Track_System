@@ -294,22 +294,10 @@ window.initializeAdminCashierPage = function(pageCallback) {
 
     const initSequence = async () => {
         try {
-            // 1. Load sidebar first so the user sees the UI immediately
-            await autoLoadSidebar();
-            
-            // 2. Authentication
             const userData = await checkAuthentication();
             if (!userData) return;
 
-            if (userData.role === 'cashier') {
-                const inventoryLink = document.getElementById('inventory-management-link');
-                if (inventoryLink) {
-                    inventoryLink.href = `${BASE_PATH}/pages/admincashier/admincashier_sale.php#inventory-details`;
-                    inventoryLink.title = 'Inventory Report';
-                    const label = inventoryLink.querySelector('span');
-                    if (label) label.textContent = 'Inventory Report';
-                }
-            }
+            await autoLoadSidebar(userData);
 
             // 3. Initialize UI elements now that sidebar is in the DOM
             initializeAdminCashierUI();
@@ -497,7 +485,7 @@ window.toggleMinimizeSidebar = function() {
     `;
   }
 
-async function autoLoadSidebar() {
+async function autoLoadSidebar(userData) {
   const container = document.getElementById('sidebar-container');
   if (!container) return;
 
@@ -505,7 +493,35 @@ async function autoLoadSidebar() {
     // Use dynamic import instead of relying on global window object
     const { getSidebarHTML } = await import('./admincashier_sidebar_content.js');
     if (container && typeof getSidebarHTML === 'function') {
-        container.innerHTML = getSidebarHTML();
+        const sidebarTemplate = document.createElement('div');
+        sidebarTemplate.innerHTML = getSidebarHTML();
+
+        if (['admin', 'admincashier'].includes(userData.role)) {
+            sidebarTemplate.querySelector('#sidebar-cashier-link')?.remove();
+            sidebarTemplate.querySelector('#sidebar-queue-link')?.remove();
+            const salesLink = sidebarTemplate.querySelector('#sidebar-sales-link');
+            if (salesLink) {
+                salesLink.title = 'Sales and Inventory Report';
+                salesLink.setAttribute('aria-label', 'Sales and Inventory Report');
+                const label = salesLink.querySelector('span');
+                if (label) label.textContent = 'Sales and Inventory Report';
+            }
+        }
+
+        if (userData.role === 'cashier') {
+            const salesLink = sidebarTemplate.querySelector('#sidebar-sales-link');
+            if (salesLink) {
+                salesLink.href = `${BASE_PATH}/pages/admincashier/admincashier_sale.php`;
+                salesLink.title = 'Sales and Inventory Report';
+                salesLink.setAttribute('aria-label', 'Sales and Inventory Report');
+                const label = salesLink.querySelector('span');
+                if (label) label.textContent = 'Sales and Inventory Report';
+            }
+            sidebarTemplate.querySelector('#inventory-management-link')?.remove();
+            sidebarTemplate.querySelector('#sidebar-gmail-link')?.remove();
+        }
+
+        container.innerHTML = sidebarTemplate.innerHTML;
         const darkModeEnabled = localStorage.getItem('admincashier-dark-mode') === 'true';
         document.body.classList.toggle('dark-mode', darkModeEnabled);
         ensureAdminCashierDarkModeOverrides();

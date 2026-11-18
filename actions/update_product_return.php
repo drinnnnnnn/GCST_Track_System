@@ -17,11 +17,15 @@ try {
     $requestId = filter_var($payload['request_id'] ?? null, FILTER_VALIDATE_INT);
     $action = (string)($payload['action'] ?? '');
     $rejectionReason = trim((string)($payload['rejection_reason'] ?? ''));
-    if (!$requestId || $requestId <= 0 || !in_array($action, ['approve', 'reject', 'confirm_refund', 'fulfill_replacement'], true)) {
+    $resolution = trim((string)($payload['resolution'] ?? ''));
+    if (!$requestId || $requestId <= 0 || !in_array($action, ['approve', 'reject', 'confirm_refund', 'fulfill_replacement', 'resend_refund_receipt'], true)) {
         jsonResponse(['success' => false, 'message' => 'Invalid return action.'], 400);
     }
     if ($action === 'reject' && ($rejectionReason === '' || mb_strlen($rejectionReason) > 1000)) {
         jsonResponse(['success' => false, 'message' => 'Enter a rejection reason of up to 1,000 characters.'], 400);
+    }
+    if ($action === 'approve' && !in_array($resolution, ['refund', 'replacement'], true)) {
+        jsonResponse(['success' => false, 'message' => 'Choose refund or replacement.'], 400);
     }
 
     $conn = productReturnsDatabase();
@@ -62,8 +66,8 @@ try {
                 throw new RuntimeException('Unable to prepare request rejection.');
             }
             $update->bind_param('sii', $rejectionReason, $cashierId, $requestId);
-        } elseif ($request['request_type'] === 'refund') {
-            $update = $conn->prepare("UPDATE product_return_requests SET status = 'refund_pending', reviewed_by = ?, reviewed_at = NOW() WHERE id = ?");
+        } elseif ($resolution === 'refund') {
+            $update = $conn->prepare("UPDATE product_return_requests SET request_type = 'refund', status = 'refund_pending', reviewed_by = ?, reviewed_at = NOW() WHERE id = ?");
             if (!$update) {
                 throw new RuntimeException('Unable to prepare refund approval.');
             }
@@ -103,7 +107,7 @@ try {
                 throw new DomainException('There is not enough available stock to approve this replacement.');
             }
 
-            $update = $conn->prepare("UPDATE product_return_requests SET status = 'replacement_pending', reviewed_by = ?, reviewed_at = NOW() WHERE id = ?");
+            $update = $conn->prepare("UPDATE product_return_requests SET request_type = 'replacement', status = 'replacement_pending', reviewed_by = ?, reviewed_at = NOW() WHERE id = ?");
             if (!$update) {
                 throw new RuntimeException('Unable to prepare replacement approval.');
             }
@@ -129,6 +133,10 @@ try {
             throw new RuntimeException('Unable to record refund confirmation.');
         }
         $update->close();
+    } elseif ($action === 'resend_refund_receipt') {
+        if ($request['status'] !== 'refunded' || $request['request_type'] !== 'refund') {
+            throw new DomainException('A receipt can only be resent for a completed refund.');
+        }
     } else {
         if ($request['status'] !== 'replacement_pending') {
             throw new DomainException('This request is not awaiting a replacement.');
@@ -182,18 +190,19 @@ try {
 
     $emailStatus = 'not_applicable';
     $message = 'Return request updated.';
-    if ($action === 'reject' || $action === 'confirm_refund' || $action === 'fulfill_replacement') {
+    if ($action === 'reject' || $action === 'confirm_refund' || $action === 'fulfill_replacement' || $action === 'resend_refund_receipt') {
         $emailStatus = 'failed';
         try {
             $receiptStmt = $conn->prepare("
                 SELECT pr.id, pr.product_name, pr.quantity, pr.unit_name,
                        pr.refund_amount, pr.status, pr.rejection_reason, pr.reviewed_at,
-                       pr.fulfilled_at, ct.transaction_number,
+                       pr.fulfilled_at,
+                       COALESCE(ct.transaction_number, CONCAT('Order #', pr.cashier_transaction_id)) AS transaction_number,
                        u.email, u.first_name, u.last_name,
                        CONCAT_WS(' ', fulfiller.first_name, fulfiller.last_name) AS cashier_name,
                        CONCAT_WS(' ', reviewer.first_name, reviewer.last_name) AS reviewer_name
                 FROM product_return_requests pr
-                JOIN cashier_transactions ct ON ct.id = pr.cashier_transaction_id
+                LEFT JOIN cashier_transactions ct ON ct.id = pr.cashier_transaction_id
                 JOIN users u ON u.id = pr.user_id
                 LEFT JOIN admincashier_acc fulfiller ON fulfiller.id = pr.fulfilled_by
                 LEFT JOIN admincashier_acc reviewer ON reviewer.id = pr.reviewed_by
@@ -246,7 +255,7 @@ try {
                 $emailType = 'Product Return E-Receipt';
                 $resolution = $receipt['status'] === 'refunded' ? 'Refund paid' : 'Replacement fulfilled';
                 $resolutionDetails = $receipt['status'] === 'refunded'
-                    ? '<p><strong>Refund amount:</strong> ₱' . number_format((float)$receipt['refund_amount'], 2) . '</p>'
+                    ? '<p><strong>Refund amount:</strong> ₱' . number_format((float)$receipt['refund_amount'], 2) . '</p><p><strong>Refund method:</strong> Cash</p>'
                     : '';
                 $emailBody = "
                     <div style='font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1f2937;line-height:1.6'>
@@ -277,18 +286,24 @@ try {
             if (!empty($emailResult['success'])) {
                 $message = $action === 'reject'
                     ? 'Return rejected and the explanation email was sent to the user.'
-                    : 'Return completed and the e-receipt was sent to the user.';
+                    : ($action === 'resend_refund_receipt'
+                        ? 'The refund receipt was sent to the user again.'
+                        : 'Return completed and the e-receipt was sent to the user.');
             } else {
                 error_log('Product return e-receipt email failed for request ' . $requestId . ': ' . (string)($emailResult['message'] ?? 'Unknown email error.'));
                 $message = $action === 'reject'
                     ? 'Return rejected, but the explanation email could not be sent. Check the user email and mail configuration.'
-                    : 'Return completed, but the e-receipt could not be emailed. Check the user email and mail configuration.';
+                    : ($action === 'resend_refund_receipt'
+                        ? 'The refund receipt could not be emailed. Check the user email and mail configuration.'
+                        : 'Return completed, but the e-receipt could not be emailed. Check the user email and mail configuration.');
             }
         } catch (Throwable $e) {
             error_log('Product return email failed for request ' . $requestId . ': ' . $e->getMessage());
             $message = $action === 'reject'
                 ? 'Return rejected, but the explanation email could not be sent. Check the user email and mail configuration.'
-                : 'Return completed, but the e-receipt could not be emailed. Check the user email and mail configuration.';
+                : ($action === 'resend_refund_receipt'
+                    ? 'The refund receipt could not be emailed. Check the user email and mail configuration.'
+                    : 'Return completed, but the e-receipt could not be emailed. Check the user email and mail configuration.');
         }
     }
 

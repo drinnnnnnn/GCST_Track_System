@@ -1224,26 +1224,26 @@ export function getSidebarHTML() {
         <a href="/GCST_Track_System/pages/admincashier/admincashier_dashb.php" class="sidebar-link" title="Dashboard" onclick="handleSidebarLinkClick()">
             <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
         </a>
-        <a href="/GCST_Track_System/pages/admincashier/admincashier_cashier.php" class="sidebar-link" title="Cashier" onclick="handleSidebarLinkClick()">
+        <a id="sidebar-cashier-link" href="/GCST_Track_System/pages/admincashier/admincashier_cashier.php" class="sidebar-link" title="Cashier" onclick="handleSidebarLinkClick()">
             <i class="fas fa-cash-register"></i> <span>Cashier</span>
         </a>
-        <a href="/GCST_Track_System/pages/admincashier/admincashier_sale.php" class="sidebar-link" title="Sales Report" onclick="handleSidebarLinkClick()">
+        <a id="sidebar-sales-link" href="/GCST_Track_System/pages/admincashier/admincashier_sale.php" class="sidebar-link" title="Sales Report" onclick="handleSidebarLinkClick()">
             <i class="fas fa-chart-line"></i> <span>Sales Report</span>
         </a>
         <a id="inventory-management-link" href="/GCST_Track_System/pages/admincashier/admincashier_inventorys.php" class="sidebar-link" title="Inventory" onclick="handleSidebarLinkClick()">
             <i class="fas fa-boxes"></i> <span>Inventory</span>
         </a>
         
-        <a href="/GCST_Track_System/pages/admincashier/admincashier_queuing_system.php" class="sidebar-link" title="Queuing System" onclick="handleSidebarLinkClick()">
+        <a id="sidebar-queue-link" href="/GCST_Track_System/pages/admincashier/admincashier_queuing_system.php" class="sidebar-link" title="Queuing System" onclick="handleSidebarLinkClick()">
             <i class="fas fa-users-cog"></i> <span>Queuing System</span>
         </a>
         <a href="/GCST_Track_System/pages/admincashier/admincashier_gmail_notification.php" id="sidebar-gmail-link" class="sidebar-link" title="Gmail Notification" onclick="handleSidebarLinkClick()">
             <i class="fas fa-envelope"></i> <span>Gmail Notification</span>
         </a>
         
-        <p class="nav-section-label">Account</p>
-        <a href="/GCST_Track_System/pages/admincashier/admincashier_profile.php" class="sidebar-link" title="Profile Settings" onclick="handleSidebarLinkClick()">
-            <i class="fas fa-user-circle"></i> <span>Profile Settings</span>
+        <p id="sidebar-account-label" class="nav-section-label">Account</p>
+        <a id="sidebar-profile-link" href="/GCST_Track_System/pages/admincashier/admincashier_profile.php" class="sidebar-link" title="Profile" onclick="handleSidebarLinkClick()">
+            <i class="fas fa-user-circle"></i> <span>Profile</span>
         </a>
     </nav>
 

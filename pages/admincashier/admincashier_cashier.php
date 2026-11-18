@@ -3090,6 +3090,14 @@
         <div class="confirmation-modal-body">
           <h3 id="product-return-action-title" class="confirmation-modal-title">Confirm return action</h3>
           <p id="product-return-action-message" class="confirmation-modal-message"></p>
+          <div id="product-return-resolution-field" hidden>
+            <label for="product-return-resolution" class="text-sm font-semibold text-slate-700">Resolution</label>
+            <select id="product-return-resolution" class="search-input" style="width: 100%; margin-top: 6px;">
+              <option value="refund">Refund money</option>
+              <option value="replacement">Replace item</option>
+            </select>
+            <p class="text-xs text-slate-500 mt-1">Choose how the customer will receive the return.</p>
+          </div>
           <div id="product-return-rejection-field" hidden>
             <label for="product-return-rejection-reason" class="text-sm font-semibold text-slate-700">Reason for rejection</label>
             <textarea id="product-return-rejection-reason" rows="4" maxlength="1000" class="search-input" style="width: 100%; margin-top: 6px; resize: vertical;" aria-describedby="product-return-rejection-help"></textarea>
@@ -4256,6 +4264,7 @@
     function createProductActions(product) {
       const price = getProductPrice(product);
       const stock = getProductStock(product);
+      const catLower = String(product?.product_category || '').toLowerCase();
 
       const actions = document.createElement('div');
       actions.className = 'product-actions';
@@ -5184,14 +5193,24 @@
 
       state.currentPage = 1;
       fetch(`${API_ROOT}/get_admincashier_products.php`, { cache: 'no-store' })
-        .then(response => response.json())
+        .then(async response => {
+          const data = await response.json().catch(() => null);
+          if (!response.ok) {
+            throw new Error(data?.message || `Server returned ${response.status}`);
+          }
+          return data;
+        })
         .then(data => {
-          products = Array.isArray(data) ? data : [];
+          if (!Array.isArray(data)) {
+            throw new Error(data?.message || 'Invalid products response');
+          }
+          products = data;
           buildCategoryFilters();
           buildCourseFilter();
           renderProducts();
         })
-        .catch(() => {
+        .catch(error => {
+          console.error('Unable to load cashier products:', error);
           if (grid) {
             grid.innerHTML = '<div class="empty-state"><p>Unable to load products. Refresh to try again.</p></div>';
           }

@@ -388,6 +388,10 @@
         <h2><i class="fas fa-cog"></i> Account Summary</h2>
         <div class="info-grid">
           <div class="info-item">
+            <div class="info-item-label">Account Role</div>
+            <div class="info-item-value" id="account-role">Loading...</div>
+          </div>
+          <div class="info-item">
             <div class="info-item-label">Account Created</div>
             <div class="info-item-value" id="account-created">Loading...</div>
           </div>
@@ -454,6 +458,16 @@
         if (document.getElementById('contact-number')) document.getElementById('contact-number').value = admin.contact_number || '';
         
         // Populate account info
+        const role = String(admin.role || userData?.role || '').toLowerCase();
+        const roleLabels = {
+          admin: 'Admin',
+          admincashier: 'Admin',
+          cashier: 'Cashier',
+          superadmin: 'Super Admin'
+        };
+        if (document.getElementById('account-role')) {
+          document.getElementById('account-role').textContent = roleLabels[role] || 'Unknown';
+        }
         if (document.getElementById('account-created')) {
           document.getElementById('account-created').textContent = admin.created_at ? new Date(admin.created_at).toLocaleString() : 'N/A';
         }
