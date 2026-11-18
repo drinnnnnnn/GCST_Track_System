@@ -12,7 +12,7 @@ ini_set('display_errors', '0');
 
 try {
     secureSessionStart();
-    requireAuth(['student', 'user', 'admin', 'admincashier', 'superadmin']);
+    requireAuth(['student', 'user', 'admin', 'cashier', 'admincashier', 'superadmin']);
 
     $conn = Database::getConnection();
     $payload = json_decode(file_get_contents('php://input'), true);

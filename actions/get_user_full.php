@@ -16,12 +16,12 @@ if (!$sessionStudentId && !$sessionUserId && !$sessionAdminCashierId) {
 
 // Allow student/user profiles to load for the intended pages while keeping
 // the existing administrative access intact.
-requireAuth(['student', 'user', 'admincashier', 'superadmin']);
+requireAuth(['student', 'user', 'admin', 'cashier', 'admincashier', 'superadmin']);
 
 $studentId = $_GET['student_id'] ?? $sessionStudentId;
 $userId = $_GET['user_id'] ?? $sessionUserId;
 
-if (!$studentId && !$userId && !in_array($sessionRole, ['admincashier', 'superadmin'], true)) {
+if (!$studentId && !$userId && !in_array($sessionRole, ['admin', 'cashier', 'admincashier', 'superadmin'], true)) {
     jsonResponse(['success' => false, 'message' => 'Session expired. Please sign in again.'], 401);
 }
 
@@ -58,7 +58,6 @@ try {
     $user['transaction_history'] = [];
     $user['notification_preferences'] = [
         'email_notifications' => true,
-        'rental_reminders' => true,
         'payment_reminders' => true,
         'queue_notifications' => true,
         'system_updates' => true,

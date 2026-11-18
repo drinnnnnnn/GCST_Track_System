@@ -2,13 +2,13 @@
 require_once __DIR__ . '/security.php';
 secureSessionStart();
 // Both admins and students need access to notifications
-requireAuth(['admincashier', 'superadmin', 'student', 'user']);
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin', 'student', 'user']);
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/db_connect.php';
 
 try {
     $role = $_SESSION['role'] ?? '';
-    if (in_array($role, ['admincashier', 'superadmin'], true)) {
+    if (in_array($role, ['admin', 'cashier', 'admincashier', 'superadmin'], true)) {
         $currentId = $_SESSION['admin_id'] ?? $_SESSION['admincashier_id'] ?? null;
         if (!$currentId) {
             echo json_encode([]);

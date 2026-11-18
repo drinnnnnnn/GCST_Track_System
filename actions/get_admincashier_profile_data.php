@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['admincashier', 'superadmin']);
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin']);
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../config/db_connect.php';
@@ -55,7 +55,7 @@ try {
         `user_id` INT(11) DEFAULT NULL,
         `student_name` VARCHAR(255) DEFAULT NULL,
         `cashier_id` INT(11) NOT NULL,
-        `transaction_type` ENUM('buy','rent','mixed') NOT NULL,
+        `transaction_type` ENUM('buy') NOT NULL,
         `items` TEXT NOT NULL,
         `subtotal` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `discount_percent` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
@@ -77,7 +77,7 @@ try {
         `cashier_transaction_id` INT(11) NOT NULL,
         `product_id` INT(11) NOT NULL,
         `product_name` VARCHAR(255) NOT NULL,
-        `item_type` ENUM('buy', 'rent') NOT NULL,
+        `item_type` ENUM('buy') NOT NULL,
         `quantity` INT(11) NOT NULL,
         `unit_price` DECIMAL(10,2) NOT NULL,
         `duration` INT(11) DEFAULT NULL,

@@ -8,7 +8,7 @@ date_default_timezone_set('Asia/Manila');
 
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['admincashier', 'superadmin', 'student', 'user']); // Allow relevant roles
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin', 'student', 'user']); // Allow relevant roles
 header('Content-Type: application/json');
 
 // Ensure the Database class is available and get the connection

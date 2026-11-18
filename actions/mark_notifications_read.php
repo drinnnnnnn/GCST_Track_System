@@ -1,7 +1,7 @@
 ﻿﻿<?php
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['student', 'admincashier', 'superadmin']);
+requireAuth(['student', 'admin', 'cashier', 'admincashier', 'superadmin']);
 header('Content-Type: application/json');
 require_once __DIR__ . '/../database/connection.php';
 $conn = Database::getConnection();

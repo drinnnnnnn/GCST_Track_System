@@ -27,12 +27,12 @@ if (count($items) === 0) {
     jsonResponse(['success' => false, 'message' => 'No products were selected.'], 400);
 }
 
-$allowedTypes = ['rent', 'buy'];
-$requestType = 'request';
-if (isset($payload['type']) && is_string($payload['type'])) {
-    $normalizedType = strtolower(trim($payload['type']));
-    if (in_array($normalizedType, $allowedTypes, true)) {
-        $requestType = $normalizedType;
+if (isset($payload['type']) && strtolower(trim((string)$payload['type'])) === 'rent') {
+    jsonResponse(['success' => false, 'message' => 'Rental requests are no longer supported.'], 400);
+}
+foreach ($items as $item) {
+    if (is_array($item) && strtolower(trim((string)($item['type'] ?? ''))) === 'rent') {
+        jsonResponse(['success' => false, 'message' => 'Rental requests are no longer supported.'], 400);
     }
 }
 
@@ -44,14 +44,6 @@ foreach ($items as $item) {
     $product_id = filter_var($item['product_id'] ?? 0, FILTER_VALIDATE_INT);
     if ($product_id === false || $product_id <= 0) {
         continue;
-    }
-
-    $itemType = $requestType;
-    if (isset($item['type']) && is_string($item['type'])) {
-        $typeCandidate = strtolower(trim($item['type']));
-        if (in_array($typeCandidate, $allowedTypes, true)) {
-            $itemType = $typeCandidate;
-        }
     }
 
     $productName = null;
@@ -67,7 +59,7 @@ foreach ($items as $item) {
 
     $insertStmt->bind_param('si', $student_id, $product_id);
     if ($insertStmt->execute()) {
-        $notifStatus = $itemType === 'buy' ? 'Buy Request Pending Approval' : ($itemType === 'rent' ? 'Rent Request Pending Approval' : 'Request Pending Approval');
+        $notifStatus = 'Buy Request Pending Approval';
         $notifStmt->bind_param('iss', $student_id, $productName, $notifStatus);
         $notifStmt->execute();
         $insertedCount++;

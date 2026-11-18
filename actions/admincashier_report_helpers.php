@@ -523,10 +523,6 @@ function getProductInventoryMetrics($conn) {
     ];
 }
 
-function getActiveRentalMetrics($conn) {
-    return ['active_rentals' => 0, 'overdue_items' => 0];
-}
-
 function getQueueMetrics($conn) {
     $queueTables = ['queue', 'ticket_queue', 'queue_numbers'];
     foreach ($queueTables as $table) {
@@ -604,7 +600,7 @@ function getRecentProducts($conn, $limit = 5) {
     if (!tableExists($conn, 'products')) {
         return [];
     }
-    $sql = "SELECT product_name AS name, stock_count, buy_price, rent_price, product_category FROM products ORDER BY stock_count DESC LIMIT $limit";
+    $sql = "SELECT product_name AS name, stock_count, buy_price, product_category FROM products ORDER BY stock_count DESC LIMIT $limit";
     $result = $conn->query($sql);
     $top = [];
     if ($result) {
@@ -613,7 +609,6 @@ function getRecentProducts($conn, $limit = 5) {
                 'name' => $row['name'] ?? 'Product',
                 'stock' => (int)($row['stock_count'] ?? 0),
                 'buy_price' => (float)($row['buy_price'] ?? 0),
-                'rent_price' => (float)($row['rent_price'] ?? 0),
                 'category' => $row['product_category'] ?? 'Uncategorized'
             ];
         }

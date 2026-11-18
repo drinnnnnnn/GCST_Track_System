@@ -8,7 +8,7 @@ ini_set('display_errors', '0'); // Ensure no HTML errors break JSON parsing
 
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['admin', 'admincashier', 'superadmin']);
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin']);
 
 // Ensure configuration and database connection are loaded once
 if (file_exists(__DIR__ . '/../config/config.php')) require_once __DIR__ . '/../config/config.php';

@@ -3,7 +3,7 @@ require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/../config/db_connect.php';
 
 secureSessionStart();
-requireAuth(['student', 'users', 'admincashier']);
+requireAuth(['student', 'users', 'admin', 'cashier', 'admincashier']);
 header('Content-Type: application/json');
 
 $student_id = $_SESSION['student_id'] ?? null;
@@ -31,10 +31,13 @@ if ($result && $row = $result->fetch_assoc()) {
             if (!is_array($item)) {
                 continue;
             }
+            if (strtolower((string)($item['type'] ?? 'buy')) !== 'buy') {
+                continue;
+            }
             $cart[] = [
                 'product_id' => intval($item['product_id'] ?? 0),
                 'product_name' => trim((string)($item['product_name'] ?? '')),
-                'type' => in_array(strtolower((string)($item['type'] ?? '')), ['buy', 'rent'], true) ? strtolower((string)$item['type']) : 'buy',
+                'type' => 'buy',
                 'quantity' => max(1, intval($item['quantity'] ?? 1)),
                 'unit_price' => floatval($item['unit_price'] ?? 0),
                 'stock' => intval($item['stock'] ?? 0),

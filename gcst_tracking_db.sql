@@ -23,23 +23,6 @@ SET time_zone = "+00:00";
 
 -- --------------------------------------------------------
 
---
--- Table structure for table `active_rentals`
---
-
-CREATE TABLE `active_rentals` (
-  `rental_id` int(11) NOT NULL,
-  `transaction_number` varchar(50) NOT NULL,
-  `student_id` varchar(50) NOT NULL,
-  `product_id` int(11) NOT NULL,
-  `quantity` int(11) NOT NULL DEFAULT 1,
-  `rental_date` timestamp NOT NULL DEFAULT current_timestamp(),
-  `return_date` datetime NOT NULL,
-  `rejection_reason` text DEFAULT NULL,
-  `status` enum('active','returned','overdue','pending_renewal') NOT NULL DEFAULT 'active',
-  `overdue_charge` decimal(10,2) NOT NULL DEFAULT 0.00
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 -- --------------------------------------------------------
 
 --
@@ -3609,15 +3592,6 @@ INSERT INTO `user_carts` (`student_id`, `cart_items`, `updated_at`) VALUES
 --
 
 --
--- Indexes for table `active_rentals`
---
-ALTER TABLE `active_rentals`
-  ADD PRIMARY KEY (`rental_id`),
-  ADD KEY `idx_active_rentals_student` (`student_id`),
-  ADD KEY `idx_active_rentals_transaction` (`transaction_number`),
-  ADD KEY `fk_active_rentals_product` (`product_id`);
-
---
 -- Indexes for table `admincashier_acc`
 --
 ALTER TABLE `admincashier_acc`
@@ -3795,12 +3769,6 @@ ALTER TABLE `user_carts`
 --
 
 --
--- AUTO_INCREMENT for table `active_rentals`
---
-ALTER TABLE `active_rentals`
-  MODIFY `rental_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `admincashier_acc`
 --
 ALTER TABLE `admincashier_acc`
@@ -3935,13 +3903,6 @@ ALTER TABLE `users`
 --
 -- Constraints for dumped tables
 --
-
---
--- Constraints for table `active_rentals`
---
-ALTER TABLE `active_rentals`
-  ADD CONSTRAINT `fk_active_rentals_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_active_rentals_student` FOREIGN KEY (`student_id`) REFERENCES `users` (`student_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `transactions`

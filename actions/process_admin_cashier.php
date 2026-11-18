@@ -93,6 +93,7 @@ try {
             $middle_name = trim($inputData['middle_name'] ?? '');
             $email = trim(filter_var($inputData['email'] ?? '', FILTER_VALIDATE_EMAIL));
             $contact_number = trim($inputData['contact_number'] ?? '');
+            $role = trim($inputData['role'] ?? '');
             $pin = trim($inputData['pin'] ?? '');
             $password = $inputData['password'] ?? '';
             $confirm_password = $inputData['confirm_password'] ?? '';
@@ -101,6 +102,12 @@ try {
             if (!$username || !$last_name || !$first_name || !$email || !$contact_number || !$pin || !$password) {
                 if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Missing fields'], 400);
                 header('Location: ../pages/superadmin/register_admin_cashier.php?error=missing');
+                exit();
+            }
+
+            if (!in_array($role, ['admin', 'cashier'], true)) {
+                if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Select a valid staff role'], 400);
+                header('Location: ../pages/superadmin/register_admin_cashier.php?error=invalid_role');
                 exit();
             }
 
@@ -197,7 +204,6 @@ try {
 
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
             $hashed_pin = password_hash($pin, PASSWORD_DEFAULT);
-            $role = 'admincashier';
             if ($signatureImagePath) {
                 $stmt = $conn->prepare('INSERT INTO admincashier_acc (username, last_name, first_name, middle_name, email, contact_number, pin, password, role, signature_image, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "active")');
                 $stmt->bind_param('ssssssssss', $username, $last_name, $first_name, $middle_name, $email, $contact_number, $hashed_pin, $hashed_password, $role, $signatureImagePath);
@@ -238,7 +244,7 @@ try {
                 exit();
             }
 
-            $stmt = $conn->prepare('SELECT id, username, last_name, first_name, middle_name, password, pin, status FROM admincashier_acc WHERE email = ? OR username = ? LIMIT 1');
+            $stmt = $conn->prepare('SELECT id, username, last_name, first_name, middle_name, contact_number, password, pin, role, status FROM admincashier_acc WHERE email = ? OR username = ? LIMIT 1');
             $stmt->bind_param('ss', $identifier, $identifier);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -269,6 +275,15 @@ try {
                         exit();
                     }
 
+                    $storedRole = strtolower(trim((string)($user['role'] ?? 'admincashier')));
+                    $role = $storedRole === 'cashier' ? 'cashier' : 'admin';
+                    if (!in_array($storedRole, ['admin', 'cashier', 'admincashier', 'superadmin'], true)) {
+                        error_log('Staff login denied for account with unsupported role: ' . $storedRole);
+                        if (isAjax()) sendJsonResponse(['success' => false, 'message' => 'Account role is not supported'], 403);
+                        header('Location: ../pages/sign_in_admin_cashier.php?error=invalid');
+                        exit();
+                    }
+
                     session_regenerate_id(true);
                     $_SESSION = [];
                     $updateLogin = $conn->prepare("UPDATE admincashier_acc SET last_login = NOW(), login_attempts = 0 WHERE id = ?");
@@ -284,12 +299,12 @@ try {
                     ])));
                     $_SESSION['contact_number'] = $user['contact_number'] ?? '';
                     $_SESSION['username'] = $user['username'] ?? '';
-                    $_SESSION['role'] = 'admincashier';
-                    $_SESSION['admincashier_role'] = 'admincashier';
+                    $_SESSION['role'] = $role;
+                    $_SESSION['admincashier_role'] = $role;
                     $_SESSION['login_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
                     $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
                     
-                    logAudit($conn, 'admincashier', $userId, 'login', 'Admin Cashier logged in.');
+                    logAudit($conn, $role, $userId, 'login', 'Staff member logged in.');
 
                     if (isAjax()) sendJsonResponse(['success' => true, 'redirect' => '../pages/admincashier/admincashier_dashb.php']);
                     header('Location: ../pages/admincashier/admincashier_dashb.php');
@@ -353,9 +368,11 @@ try {
                     $mname = trim((string) ($inputData['middle_name'] ?? ''));
                     $lname = trim((string) ($inputData['last_name'] ?? ''));
                     $contactNumber = trim((string) ($inputData['contact_number'] ?? ''));
+                    $role = trim((string) ($inputData['role'] ?? ''));
                     $pin = trim((string) ($inputData['pin'] ?? ''));
                     $email = trim((string) ($inputData['email'] ?? ''));
                     if (!$id || !$username || !$fname || !$lname || !$email) throw new Exception("Invalid fields");
+                    if (!in_array($role, ['admin', 'cashier'], true)) throw new Exception('Select a valid staff role.');
                     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new Exception('Please provide a valid email address.');
                     if ($contactNumber !== '' && !preg_match('/^\d{11}$/', $contactNumber)) throw new Exception('Contact number must be exactly 11 digits.');
 
@@ -424,19 +441,19 @@ try {
                         $pin = password_hash($pin, PASSWORD_DEFAULT);
 
                         if ($signatureImagePath) {
-                            $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ?, pin = ?, signature_image = ? WHERE id = ?");
-                            $stmt->bind_param("ssssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $pin, $signatureImagePath, $id);
+                            $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ?, pin = ?, signature_image = ?, role = ? WHERE id = ?");
+                            $stmt->bind_param("sssssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $pin, $signatureImagePath, $role, $id);
                         } else {
-                            $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ?, pin = ? WHERE id = ?");
-                            $stmt->bind_param("sssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $pin, $id);
+                            $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ?, pin = ?, role = ? WHERE id = ?");
+                            $stmt->bind_param("ssssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $pin, $role, $id);
                         }
                     } else {
                         if ($signatureImagePath) {
-                            $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ?, signature_image = ? WHERE id = ?");
-                            $stmt->bind_param("sssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $signatureImagePath, $id);
+                            $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ?, signature_image = ?, role = ? WHERE id = ?");
+                            $stmt->bind_param("ssssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $signatureImagePath, $role, $id);
                         } else {
-                            $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ? WHERE id = ?");
-                            $stmt->bind_param("ssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $id);
+                            $stmt = $conn->prepare("UPDATE admincashier_acc SET username = ?, first_name = ?, middle_name = ?, last_name = ?, email = ?, contact_number = ?, role = ? WHERE id = ?");
+                            $stmt->bind_param("sssssssi", $username, $fname, $mname, $lname, $email, $contactNumber, $role, $id);
                         }
                     }
                     if ($stmt->execute()) sendJsonResponse(['success' => true, 'message' => 'Account updated']);

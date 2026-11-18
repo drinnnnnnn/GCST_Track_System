@@ -10,7 +10,7 @@ function get_student_id() {
     $role = $_SESSION['role'] ?? '';
     
     // If staff is logged in, allow them to view a specific student via GET
-    if (in_array($role, ['admincashier', 'superadmin'])) {
+    if (in_array($role, ['admin', 'cashier', 'admincashier', 'superadmin'], true)) {
         if (!empty($_GET['student_id'])) {
             return $_GET['student_id'];
         }

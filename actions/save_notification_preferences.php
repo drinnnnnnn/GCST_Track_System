@@ -3,7 +3,7 @@ require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/../config/db_connect.php';
 
 secureSessionStart();
-requireAuth(['student', 'admincashier', 'superadmin']);
+requireAuth(['student', 'admin', 'cashier', 'admincashier', 'superadmin']);
 header('Content-Type: application/json');
 
 $student_id = $_SESSION['student_id'] ?? null;
@@ -18,7 +18,6 @@ if (!is_array($payload)) {
 
 $preferences = [
     'email_notifications' => (bool)($payload['email_notifications'] ?? true),
-    'rental_reminders' => (bool)($payload['rental_reminders'] ?? true),
     'payment_reminders' => (bool)($payload['payment_reminders'] ?? true),
     'queue_notifications' => (bool)($payload['queue_notifications'] ?? true),
     'system_updates' => (bool)($payload['system_updates'] ?? true),

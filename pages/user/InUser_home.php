@@ -33,144 +33,6 @@
       border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
-    .rental-card {
-      background: var(--surface);
-      border-radius: var(--radius-lg);
-      padding: 18px;
-      box-shadow: var(--shadow-lg);
-      transition: all 0.2s ease;
-      display: flex;
-      gap: 16px;
-    }
-    
-    .rental-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
-    }
-    
-    .rental-image {
-      width: 120px;
-      height: 140px;
-      border-radius: var(--radius);
-      object-fit: cover;
-      flex-shrink: 0;
-    }
-    
-    .rental-details {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .rental-details h3 {
-      margin: 0;
-      font-size: 1.05rem;
-      color: var(--text);
-    }
-    
-    .rental-info {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      font-size: 0.9rem;
-      color: var(--muted);
-    }
-    
-    .rental-info span {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    
-    .status-badge {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      width: fit-content;
-    }
-    
-    .status-badge.active {
-      background: #d4edda;
-      color: #155724;
-    }
-    
-    .status-badge.overdue {
-      background: #f8d7da;
-      color: #721c24;
-    }
-    
-    .status-badge.returned {
-      background: #cce5ff;
-      color: #004085;
-    }
-    
-    .alert-section {
-      background: #fff3cd;
-      border-left: 4px solid #f59e0b;
-      border-radius: var(--radius);
-      padding: 18px;
-      margin-bottom: 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .alert-content {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-    
-    .alert-content i {
-      font-size: 1.5rem;
-      color: #f59e0b;
-      flex-shrink: 0;
-    }
-    
-    .alert-text h3 {
-      margin: 0 0 4px;
-      color: #856404;
-      font-size: 1rem;
-    }
-    
-    .alert-text p {
-      margin: 0;
-      color: #856404;
-      font-size: 0.9rem;
-    }
-    
-    .rental-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: auto;
-    }
-    
-    .btn-renew {
-      background: var(--primary);
-      color: white;
-      padding: 8px 14px;
-      border: none;
-      border-radius: var(--radius);
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 600;
-      transition: all 0.2s ease;
-    }
-    
-    .btn-renew:hover {
-      background: var(--primary-dark);
-      transform: translateY(-1px);
-    }
-    
-    .rentals-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 18px;
-    }
-
     .table-container {
       background: #f8fafc;
       border-radius: 1.5rem;
@@ -528,15 +390,6 @@
         width: fit-content;
       }
 
-      .rental-card {
-        flex-direction: column;
-      }
-      
-      .rental-image {
-        width: 100%;
-        height: auto;
-        aspect-ratio: 16/9;
-      }
     }
   </style>
 </head>
@@ -557,20 +410,6 @@
       </div>
       <div class="greeting-icon">📚</div>
     </section>
-
-    <!-- Overdue Alert -->
-    <div id="overdue-alert" style="display: none;">
-      <div class="alert-section">
-        <div class="alert-content">
-          <i class="fas fa-exclamation-circle"></i>
-          <div class="alert-text">
-            <h3>Overdue Books Alert</h3>
-            <p id="overdue-count">You have overdue books. Please return them as soon as possible.</p>
-          </div>
-        </div>
-        <a href="user_queue_tickets.php" class="btn btn-primary">View Queue Tickets</a>
-      </div>
-    </div>
 
     <!-- Queue Summary Section -->
     <section class="balance-section">
@@ -619,84 +458,10 @@
   <!-- Scripts -->
   <script src="../../assets/js/user.js?v=20261111-logout-stay-fix"></script>
   <script>
-    let allRentals = [];
-    let currentFilter = 'all';
-
-    function formatDate(date) {
-      return new Date(date).toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      });
-    }
-
-    function getDaysRemaining(dueDate) {
-      const due = new Date(dueDate);
-      const today = new Date();
-      const diff = due - today;
-      const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-      return days;
-    }
-
     function formatQueueNumber(rawNumber) {
       if (rawNumber === null || rawNumber === undefined) return '-';
       const numberString = String(rawNumber).trim();
       return numberString.replace(/^(?:REG|PWD)-/i, '');
-    }
-
-    function buildImageUrl(src) {
-      const defaultImage = '/GCST_Track_System/assets/img_bg/product_details.png';
-      if (!src) return defaultImage;
-      if (src.startsWith('http')) return src;
-      const cleanPath = src.replace(/^\/?GCST_Track_System\//, '').replace(/^\/+/, '');
-      return `/GCST_Track_System/${cleanPath}`;
-    }
-
-    function renderRentals() {
-      const container = document.getElementById('rentals-container');
-      let filtered = allRentals;
-
-      if (currentFilter !== 'all') {
-        filtered = allRentals.filter(r => r.status === currentFilter);
-      }
-
-      if (filtered.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-inbox"></i>
-            <h3>No rentals found</h3>
-            <p>You don't have any ${currentFilter !== 'all' ? currentFilter : ''} rentals at the moment.</p>
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = filtered.map(rental => {
-        const rentalImg = rental.product_image || rental.image;
-        const rentalName = rental.product_name || rental.name || 'Untitled Product';
-        const rentalId = rental.rental_id || rental.id;
-
-        return `
-        <div class="rental-card">
-          <img src="${buildImageUrl(rentalImg)}" alt="${rentalName}" class="rental-image">
-          <div class="rental-details" style="flex: 1;">
-            <h3>${rentalName}</h3>
-            <div class="rental-info">
-              <span><i class="fas fa-calendar"></i> Rented: ${formatDate(rental.rental_date)}</span>
-              <span><i class="fas fa-calendar-check"></i> Due: ${formatDate(rental.due_date)}</span>
-              <span id="days-${rental.id}"><i class="fas fa-clock"></i> Days remaining: ${getDaysRemaining(rental.due_date)}</span>
-            </div>
-            <div style="margin-top: 8px;">
-              <span class="status-badge ${rental.status}">${rental.status.charAt(0).toUpperCase() + rental.status.slice(1)}</span>
-              <span style="margin-left: 12px; color: var(--muted); font-size: 0.9rem;">Fee: ₱${rental.rental_fee}</span>
-            </div>
-          </div>
-          <div class="rental-actions">
-            ${rental.status === 'active' ? `<button class="btn-renew" onclick="renewRental('${rentalId}')">Request Renewal</button>` : ''}
-          </div>
-        </div>
-      `;
-      }).join('');
     }
 
     async function loadQueueData() {
@@ -793,85 +558,10 @@
       }
     }
 
-    async function renewRental(id) {
-      if (!confirm('Are you sure you want to request a renewal for this item?')) return;
-
-      const duration = prompt('How many additional days/hours do you want to borrow this?', '1');
-      if (!duration) return;
-
-      const unit = prompt('Please enter "days" or "hours":', 'days');
-      if (!unit) return;
-
-      try {
-        const result = await fetchWithError('../../actions/renew_rental.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            rental_id: id,
-            duration: parseInt(duration),
-            unit: unit.toLowerCase()
-          })
-        });
-        alert('Renewal request submitted for Rental ID: ' + id + '. This action requires admin approval.');
-      } catch (e) {
-        console.error('Renewal failed:', e);
-      }
-    }
-
-    document.querySelectorAll('.period-button').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.period-button').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        currentFilter = e.target.dataset.filter;
-        renderRentals();
-      });
-    });
-
-    initializeAdminCashierPage(async (userData) => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const studentId = urlParams.get('student_id');
-      const idQuery = studentId ? `?student_id=${studentId}` : '';
-
-      try {
-        await loadQueueData();
-        setInterval(loadQueueData, 30000); // Auto-refresh queue data every 30 seconds
-        
-        await loadPendingOrders();
-
-        // Fetch user rentals, passing student_id if admin is viewing
-        const rentalsData = await fetchWithError(`../../actions/get_user_rentals.php${idQuery}`);
-        allRentals = rentalsData.rentals || [];
-        
-        // Update summary stats
-        const stats = {
-          activeRentals: allRentals.filter(r => r.status === 'active').length,
-          overdueBooks: allRentals.filter(r => r.status === 'overdue').length,
-          returnedItems: allRentals.filter(r => r.status === 'returned').length,
-          totalFees: allRentals.reduce((sum, r) => sum + (parseFloat(r.rental_fee) || 0), 0)
-        };
-
-        document.getElementById('activeRentals').textContent = stats.activeRentals;
-        document.getElementById('overdueBooks').textContent = stats.overdueBooks;
-        document.getElementById('returnedItems').textContent = stats.returnedItems;
-        document.getElementById('totalFees').textContent = formatCurrency(stats.totalFees);
-
-        // Show overdue alert if needed
-        if (stats.overdueBooks > 0) {
-          document.getElementById('overdue-alert').style.display = 'block';
-          document.getElementById('overdue-count').textContent = `You have ${stats.overdueBooks} overdue book${stats.overdueBooks > 1 ? 's' : ''}. Please return them as soon as possible.`;
-        }
-
-        renderRentals();
-      } catch (error) {
-        console.error('Error fetching rentals:', error);
-        document.getElementById('rentals-container').innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-exclamation-triangle"></i>
-            <h3>Error loading rentals</h3>
-            <p>Unable to load your rentals. Please try again later.</p>
-          </div>
-        `;
-      }
+    initializeAdminCashierPage(async () => {
+      await loadQueueData();
+      setInterval(loadQueueData, 30000);
+      await loadPendingOrders();
     });
   </script>
 </body>

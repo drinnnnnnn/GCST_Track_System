@@ -3,7 +3,7 @@
 require_once __DIR__ . '/security.php';
 secureSessionStart();
 // Allow admin or students to trigger the test while developing
-requireAuth(['admincashier', 'superadmin']);
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin']);
 
 require_once __DIR__ . '/../config/db_connect.php';
 require_once __DIR__ . '/../config/env.php';

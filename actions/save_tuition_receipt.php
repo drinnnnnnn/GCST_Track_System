@@ -9,7 +9,7 @@ require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/../database/connection.php';
 
 secureSessionStart();
-requireAuth(['admincashier', 'superadmin']);
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin']);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method.']);

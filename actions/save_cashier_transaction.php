@@ -10,7 +10,7 @@ ob_start(); // Buffer any accidental output
 
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['student', 'user', 'admin', 'admincashier', 'superadmin']);
+requireAuth(['student', 'user', 'admin', 'cashier', 'admincashier', 'superadmin']);
 
 // Set system timezone to Manila for accurate "Today" calculations
 date_default_timezone_set('Asia/Manila');
@@ -119,6 +119,9 @@ try {
     if (!$payload || !isset($payload['items']) || !is_array($payload['items']) || count($payload['items']) === 0) {
         throw new Exception('No items in cart.');
     }
+    if (isset($payload['transaction_type']) && $payload['transaction_type'] !== 'buy') {
+        throw new Exception('Rental transactions are no longer supported.');
+    }
 
     // Strict Identification & Verification
     $userId = null;
@@ -163,8 +166,6 @@ try {
         $checkNumber = null;
     }
 
-    $allowedTypes = ['buy'];
-    $itemTypes = [];
     $cartItems = [];
 
     $conn->begin_transaction();
@@ -178,7 +179,7 @@ try {
         $stockColumn = 'stock';
     }
 
-    // Detect price columns
+    // Detect purchase price column
     $buyPriceCol = 'buy_price';
     $priceCheck = $conn->query("SHOW COLUMNS FROM `products` LIKE 'buy_price'");
     if ($priceCheck === false) {
@@ -186,25 +187,19 @@ try {
     }
     if (!$priceCheck || $priceCheck->num_rows === 0) { $buyPriceCol = 'price'; }
 
-    $rentPriceCol = 'rent_price';
-    $rentCheck = $conn->query("SHOW COLUMNS FROM `products` LIKE 'rent_price'");
-    if ($rentCheck === false) {
-        throw new Exception("Failed to check rent_price column: " . $conn->error);
-    }
-    if (!$rentCheck || $rentCheck->num_rows === 0) { $rentPriceCol = '0.00'; } // Fallback if no rent price exists
-
     $calculatedSubtotal = 0;
     foreach ($payload['items'] as $item) {
         $productId = intval($item['product_id'] ?? 0);
         $quantity = floatval($item['quantity'] ?? 0);
         $unitName = isset($item['unit_name']) ? trim($item['unit_name']) : 'pc/s';
-        $type = 'buy';
+        $type = strtolower(trim((string)($item['type'] ?? 'buy')));
 
-        if ($productId <= 0 || $quantity <= 0 || !in_array($type, $allowedTypes, true)) {
+        if ($type === 'rent') {
+            throw new Exception('Rental transactions are no longer supported.');
+        }
+        if ($productId <= 0 || $quantity <= 0 || $type !== 'buy') {
             throw new Exception('Invalid cart item data.');
         }
-
-        $itemTypes[] = $type;
 
         $stmt = $conn->prepare("SELECT product_id, product_name, product_category, `$stockColumn` AS available_stock, `$buyPriceCol` AS buy_price FROM products WHERE product_id = ? LIMIT 1");
         $stmt->bind_param('i', $productId);

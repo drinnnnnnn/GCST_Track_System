@@ -15,7 +15,7 @@ ini_set('display_errors', '0');
 try {
     secureSessionStart();
     // Allow students, users, and admin staff to access this endpoint
-    requireAuth(['student', 'user', 'admin', 'admincashier', 'superadmin']);
+    requireAuth(['student', 'user', 'admin', 'cashier', 'admincashier', 'superadmin']);
 
     $conn = Database::getConnection();
     
@@ -41,7 +41,7 @@ try {
 
     // Security: Verify ownership unless the requester is an administrator
     $role = $_SESSION['role'] ?? 'users';
-    $isAdmin = in_array($role, ['admincashier', 'superadmin']);
+    $isAdmin = in_array($role, ['admin', 'cashier', 'admincashier', 'superadmin'], true);
     
     if (!$isAdmin) {
         $sessionStudentId = $_SESSION['student_id'] ?? null;

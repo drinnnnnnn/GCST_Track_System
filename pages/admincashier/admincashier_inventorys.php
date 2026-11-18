@@ -1,4 +1,17 @@
-﻿﻿<!DOCTYPE html>
+<?php
+require_once __DIR__ . '/../../actions/security.php';
+secureSessionStart();
+$staffRole = $_SESSION['role'] ?? '';
+if ($staffRole === 'cashier') {
+    header('Location: admincashier_sale.php#inventory-details');
+    exit;
+}
+if (!in_array($staffRole, ['admin', 'admincashier', 'superadmin'], true)) {
+    header('Location: ../sign_in_admin_cashier.php');
+    exit;
+}
+?>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />

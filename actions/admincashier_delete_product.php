@@ -7,7 +7,7 @@ ob_start();
 
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['admin', 'admincashier', 'superadmin', 'cashier']);
+requireAuth(['admin', 'admincashier', 'superadmin']);
 
 try {
     require_once __DIR__ . '/../database/connection.php';

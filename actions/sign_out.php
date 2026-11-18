@@ -41,6 +41,8 @@ switch ($userRole) {
         $redirect = '/GCST_Track_System/pages/sign_in_superadmin.php';
         break;
         
+    case 'admin':
+    case 'cashier':
     case 'admincashier':
         $redirect = '/GCST_Track_System/pages/sign_in_admin_cashier.php';
         break;

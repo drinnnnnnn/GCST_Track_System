@@ -1,5 +1,8 @@
 <?php
 header('Content-Type: application/json');
+require_once __DIR__ . '/security.php';
+secureSessionStart();
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin']);
 require_once 'admincashier_report_helpers.php';
 
 $conn = connectAdminCashierDb();

@@ -2,7 +2,7 @@
 header('Content-Type: application/json');
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['student', 'user', 'admin', 'admincashier', 'superadmin']);
+requireAuth(['student', 'user', 'admin', 'cashier', 'admincashier', 'superadmin']);
 
 // Strict Security: Check for verification flag
 if (!isset($_SESSION['password_update_verified']) || $_SESSION['password_update_verified'] !== true) {

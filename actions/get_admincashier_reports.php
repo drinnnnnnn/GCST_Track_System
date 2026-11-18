@@ -1,5 +1,8 @@
 <?php
 header('Content-Type: application/json');
+require_once __DIR__ . '/security.php';
+secureSessionStart();
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin']);
 require_once 'admincashier_report_helpers.php';
 
 $conn = connectAdminCashierDb();
@@ -18,7 +21,6 @@ $inventoryDistribution = getInventoryDistribution($conn);
 $topProducts = getTopProducts($conn, $salesTable, 5);
 $recentActivity = getRecentActivity($conn, $salesTable, 5);
 $inventoryMetrics = getProductInventoryMetrics($conn);
-$rentalMetrics = getActiveRentalMetrics($conn);
 $queueCount = getQueueCount($conn);
 
 $response = [
@@ -26,8 +28,6 @@ $response = [
     'total_inventory' => $inventoryMetrics['total_inventory'],
     'total_products' => $inventoryMetrics['product_count'],
     'inventory_value' => $inventoryMetrics['inventory_value'],
-    'active_rentals' => $rentalMetrics['active_rentals'],
-    'overdue_items' => $rentalMetrics['overdue_items'],
     'pending_queue' => $queueCount,
     'total_transactions' => $salesSummary['total_transactions'],
     'books_sold' => $salesSummary['books_sold'],

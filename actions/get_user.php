@@ -12,7 +12,7 @@ $isLoggedIn = false;
 
 if (($role === 'student' || $role === 'user') && !empty($studentId)) {
     $isLoggedIn = true;
-} elseif (($role === 'admincashier' || $role === 'superadmin') && !empty($adminId)) {
+} elseif (in_array($role, ['admin', 'cashier', 'admincashier', 'superadmin'], true) && !empty($adminId)) {
     $isLoggedIn = true;
 } elseif (!empty($studentId) || !empty($userId) || !empty($adminId)) {
     $isLoggedIn = true;

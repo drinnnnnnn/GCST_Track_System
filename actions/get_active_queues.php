@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 date_default_timezone_set('Asia/Manila');
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['admincashier', 'superadmin']);
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin']);
 
 require_once __DIR__ . '/../database/models/QueueModel.php';
 require_once __DIR__ . '/email_helpers.php';

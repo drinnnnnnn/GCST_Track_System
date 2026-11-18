@@ -19,7 +19,6 @@ class ProductModel {
             product_image,
             barcode,
             COALESCE(buy_price, price, 0.00) AS buy_price,
-            COALESCE(rent_price, 0.00) AS rent_price,
             COALESCE(stock_count, stock, 0) AS stock,
             COALESCE(product_status, "available") AS product_status
         FROM products';

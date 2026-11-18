@@ -2,7 +2,7 @@
 require_once __DIR__ . '/security.php';
 secureSessionStart();
 // Allow students and staff to browse products
-requireAuth(['users', 'admincashier', 'superadmin', 'student']);
+requireAuth(['users', 'admin', 'cashier', 'admincashier', 'superadmin', 'student']);
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../database/connection.php';
@@ -23,7 +23,7 @@ $availableOnly = isset($_GET['available_only']) && $_GET['available_only'] === '
 $sql = "SELECT product_id, product_name, product_category, product_description,
                product_image, product_status, stock_count,
                COALESCE(buy_price, price, 0.00) AS buy_price,
-               rent_price, barcode,
+               barcode,
                book_author AS author, book_pages AS pages, 
                COALESCE(NULLIF(uniform_course, ''), book_course) AS course_program,
                uniform_type, uniform_material AS material_type,

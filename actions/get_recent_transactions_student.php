@@ -18,12 +18,24 @@ try {
     $search = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
     $from = isset($_GET['from']) ? $conn->real_escape_string($_GET['from']) : '';
     $to = isset($_GET['to']) ? $conn->real_escape_string($_GET['to']) : '';
+    $productFilter = isset($_GET['product_filter']) ? (string)$_GET['product_filter'] : 'all';
+    if (!in_array($productFilter, ['all', 'products', 'paid_products'], true)) {
+        throw new Exception('Invalid product filter.');
+    }
     $offset = ($page - 1) * $limit;
 
     // Strictly filter where the student_id matches the active session
     $studentId = $conn->real_escape_string($session_student_id);
     $filterClausesCashier = ["(u.student_id = '$studentId' OR ct.guest_school_id = '$studentId')", 'tr.transaction_number IS NULL'];
     $filterClausesTuition = ["(tr.student_id = '$studentId' OR u2.student_id = '$studentId')"];
+
+    if ($productFilter === 'products') {
+        $filterClausesCashier[] = "ct.transaction_type = 'buy'";
+        $filterClausesTuition[] = '1 = 0';
+    } elseif ($productFilter === 'paid_products') {
+        $filterClausesCashier[] = "ct.transaction_type = 'buy' AND ct.payment_status = 'paid'";
+        $filterClausesTuition[] = '1 = 0';
+    }
 
     if ($from) {
         $filterClausesCashier[] = "DATE(ct.created_at) >= '$from'";

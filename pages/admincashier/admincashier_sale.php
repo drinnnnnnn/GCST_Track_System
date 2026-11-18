@@ -523,7 +523,7 @@
       <button class="period-button" data-period="week">This Week</button>
       <button class="period-button" data-period="month">This Month</button>
       <button class="period-button" data-period="year">This Year</button>
-      <button class="period-button" id="export-csv-btn" style="margin-left: auto; background: var(--success); color: white;"><i class="fas fa-file-excel"></i> Export Excel</button>
+      <button class="period-button admin-only-export" id="export-csv-btn" hidden style="margin-left: auto; background: var(--success); color: white;"><i class="fas fa-file-excel"></i> Export Excel</button>
     </div>
 
     <!-- Summary Section -->
@@ -603,7 +603,7 @@
     <section id="inventory-details" class="balance-section mt-12">
       <div class="flex justify-between items-center mb-6">
         <h2 class="m-0">Inventory Report</h2>
-        <button onclick="window.exportInventoryToExcel()" class="period-button" style="background: var(--primary); color: white;">
+        <button class="period-button admin-only-export" onclick="window.exportInventoryToExcel()" hidden style="background: var(--primary); color: white;">
           <i class="fas fa-file-download mr-2"></i> Export Inventory Report
         </button>
       </div>
@@ -736,6 +736,7 @@
     let lastFetchedSalesHistory = [];
     let currentTopProduct = 'N/A';
     let currentAdminName = 'Unknown Admin'; // New: Global variable to store admin name
+    let canExportReports = false;
     const INVENTORY_ROWS_PER_PAGE = 10;
     const SALES_ROWS_PER_PAGE = 10;
     let inventoryPaginationState = { page: 1, totalPages: 1, totalItems: 0 };
@@ -1253,6 +1254,7 @@
     window.stopSalesPolling = () => { if (salesPollInterval) clearInterval(salesPollInterval); salesPollInterval = null; };
 
     window.exportSalesToExcel = function() {
+      if (!canExportReports) return;
       if (!lastFetchedSalesHistory.length) return alert('No data available for export.');
 
       const HIGH_VALUE_THRESHOLD = 1000; // Highlight sales above this amount
@@ -1490,6 +1492,7 @@
     }
 
     window.exportInventoryToExcel = function() {
+      if (!canExportReports) return;
       if (!lastFetchedInventory.length) return alert('No inventory data to export.');
 
       const headers = [
@@ -1674,6 +1677,10 @@
 
     window.initAdminCashierSalesPage = function(userData) {
       currentSalesPeriod = 'today';
+      canExportReports = ['admin', 'admincashier', 'superadmin'].includes(userData.role);
+      document.querySelectorAll('.admin-only-export').forEach(button => {
+        button.hidden = !canExportReports;
+      });
       currentAdminName = userData.name || 'Unknown Admin'; // New: Set admin name from user data
       salesThemeObserver?.disconnect();
       salesThemeObserver = new MutationObserver(refreshSalesChartTheme);

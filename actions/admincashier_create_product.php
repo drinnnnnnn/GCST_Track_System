@@ -17,7 +17,7 @@ require_once __DIR__ . '/security.php';
 secureSessionStart();
 
 // Ensure authorized personnel only
-requireAuth(['admin', 'admincashier', 'superadmin', 'cashier']);
+requireAuth(['admin', 'admincashier', 'superadmin']);
 
 try {
     require_once __DIR__ . '/../database/connection.php';

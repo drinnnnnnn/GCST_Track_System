@@ -9,7 +9,7 @@ require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/../config/db_connect.php';
 
 secureSessionStart();
-requireAuth(['admincashier', 'superadmin']);
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin']);
 
 $studentId = isset($_GET['student_id']) ? trim((string)$_GET['student_id']) : '';
 if ($studentId === '') {

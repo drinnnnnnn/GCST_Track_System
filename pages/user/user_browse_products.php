@@ -502,8 +502,6 @@
     
     .btn-buy { background: #2563eb; color: white; }
     .btn-buy:hover:not(:disabled) { background: #1d4ed8; transform: scale(1.02); }
-    .btn-rent { background: #2563eb; color: white; }
-    .btn-rent:hover:not(:disabled) { background: #1d4ed8; transform: scale(1.02); }
     .btn-action:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
     
     .products-grid {
@@ -1255,7 +1253,7 @@
     <section class="greeting-section">
       <div class="greeting-content">
         <h1>Browse Products</h1>
-        <p>Explore our wide selection of products available for purchase or rental.</p>
+        <p>Explore our wide selection of products available for purchase.</p>
       </div>  
       <div class="greeting-icon">🛍️</div>
     </section>
@@ -1595,7 +1593,7 @@
               ${metaHtml}
               <div class="product-footer">
                 <div class="product-price-group">
-                  <span class="product-price-value">${formatCurrency(effectiveBuyPrice > 0 ? effectiveBuyPrice : product.rent_price)}</span>
+                  <span class="product-price-value">${effectiveBuyPrice > 0 ? formatCurrency(effectiveBuyPrice) : 'Not for sale'}</span>
                   <span class="stock-badge ${stockClass}">
                     <i class="fas fa-${stockIcon}"></i> ${stockLabel}
                   </span>
@@ -1609,8 +1607,7 @@
               </div>
             </div>
             <div class="product-actions" onclick="event.stopPropagation()">
-              ${effectiveBuyPrice > 0 ? `<button class="btn-action btn-buy" type="button" ${stockValue <= 0 ? 'disabled' : ''} onclick="handleAddToCart('${product.product_id}', 'buy', ${isFabric}, event)"><i class="fas fa-cart-plus"></i> Add</button>` : ''} 
-              ${product.rent_price > 0 ? `<button class="btn-action btn-rent" type="button" ${stockValue <= 0 ? 'disabled' : ''} onclick="addToCart('${product.product_id}', 'rent', 1, 'day', event)"><i class="fas fa-hand-holding"></i> Rent</button>` : ''}
+              ${effectiveBuyPrice > 0 ? `<button class="btn-action btn-buy" type="button" ${stockValue <= 0 ? 'disabled' : ''} onclick="handleAddToCart('${product.product_id}', ${isFabric}, event)"><i class="fas fa-cart-plus"></i> Add</button>` : ''}
             </div>
           </div>
         `;
@@ -1654,7 +1651,7 @@
 
       // Price & Stock
       const effectiveBuyPrice = getEffectiveBuyPrice(product);
-      const displayPrice = effectiveBuyPrice > 0 ? `₱${effectiveBuyPrice.toFixed(2)}` : `₱${parseFloat(product.rent_price).toFixed(2)}`;
+      const displayPrice = effectiveBuyPrice > 0 ? `₱${effectiveBuyPrice.toFixed(2)}` : 'Not for sale';
       document.getElementById('modal-p-price').textContent = displayPrice;
 
       // Render Specifications section
@@ -1727,16 +1724,8 @@
         if (effectiveBuyPrice > 0) {
           actionContainer.innerHTML += `
             <button class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl blue-500/20 active:scale-95" 
-              onclick="handleModalAddToCart(${product.product_id}, 'buy', ${isFabric}, event)">
+              onclick="handleModalAddToCart(${product.product_id}, ${isFabric}, event)">
               Add to Cart
-            </button>
-          `;
-        }
-        if (product.rent_price > 0) {
-          actionContainer.innerHTML += `
-            <button class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 active:scale-95" 
-              onclick="handleModalAddToCart(${product.product_id}, 'rent', false, event)">
-              Rent Now
             </button>
           `;
         }
@@ -1792,12 +1781,12 @@
     /**
      * Wrapper to call standard addToCart from the modal interface.
      */
-    function handleModalAddToCart(productId, type, isFabric, event) {
+    function handleModalAddToCart(productId, isFabric, event) {
       const input = document.getElementById('modal-input-qty');
       const qty = parseFloat(input?.value) || 1;
-      const unitName = isFabric ? 'yard/s' : (type === 'rent' ? 'day' : 'pc/s');
+      const unitName = isFabric ? 'yard/s' : 'pc/s';
       
-      addToCart(productId, type, qty, unitName, event);
+      addToCart(productId, qty, unitName, event);
       
       // Visual feedback in modal
       const btn = event?.currentTarget;
@@ -1948,21 +1937,21 @@
       ];
     }
 
-    function handleAddToCart(productId, type, isFabric, event) {
-      if (isFabric === true && type === 'buy') {
+    function handleAddToCart(productId, isFabric, event) {
+      if (isFabric === true) {
         const input = document.getElementById(`qty-fabric-${productId}`);
         const yards = parseFloat(input.value);
         if (isNaN(yards) || yards < 0.25) {
           showToast('Please enter at least 0.25 yards.', 'error');
           return;
         }
-        addToCart(productId, type, yards, 'yard/s', event);
+        addToCart(productId, yards, 'yard/s', event);
       } else {
-        addToCart(productId, type, 1, null, event);
+        addToCart(productId, 1, null, event);
       }
     }
 
-    function addToCart(productId, type, customQty = null, unitName = null, event = null) {
+    function addToCart(productId, customQty = null, unitName = null, event = null) {
       const normalizedProductId = Number(productId);
       const product = allProducts.find(item => Number(item.product_id) === normalizedProductId);
       const productStatus = String(product?.product_status || 'available').trim().toLowerCase();
@@ -1975,12 +1964,12 @@
       }
 
       const qtyToAdd = customQty !== null ? parseFloat(customQty) : 1;
-      const uName = unitName || (type === 'rent' ? 'day' : 'pc/s');
-      const unitPrice = type === 'rent' ? parseFloat(product.rent_price) : getEffectiveBuyPrice(product);
-      const isComplete = type === 'buy' && isCompleteUniformSet(product);
+      const uName = unitName || 'pc/s';
+      const unitPrice = getEffectiveBuyPrice(product);
+      const isComplete = isCompleteUniformSet(product);
       const groupKey = isComplete ? `${normalizedProductId}-complete-uniform` : null;
       const existingGroupItems = isComplete ? cart.filter(item => item.groupKey === groupKey) : [];
-      const existing = !isComplete ? cart.find(item => Number(item.product_id) === normalizedProductId && item.type === type) : null;
+      const existing = !isComplete ? cart.find(item => Number(item.product_id) === normalizedProductId) : null;
 
       if (isComplete) {
         const currentQuantity = existingGroupItems.length > 0 ? existingGroupItems[0].quantity : 0;
@@ -2005,19 +1994,17 @@
         triggerFloatingPlusOne(event);
       } else if (!existing) {
         cart.push({
-          cart_id: `${normalizedProductId}-${type}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          cart_id: `${normalizedProductId}-buy-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           product_id: normalizedProductId,
           product_name: product.product_name,
           product_category: product.product_category || 'General',
           product_image: product.product_image || '',
-          type,
+          type: 'buy',
           quantity: qtyToAdd,
           unitPrice,
           unitName: uName,
           stock: stockValue,
           selected: true,
-          duration: 1,
-          durationUnit: 'days'
         });
         showToast(`Added ${product.product_name} to cart.`);
         animateProductImage(normalizedProductId);
@@ -2048,22 +2035,6 @@
       const item = cart.find(entry => entry.cart_id === cartItemId);
       if (item) item.selected = checked;
       renderCart();
-    }
-
-    function updateRentalDuration(cartItemId, value) {
-      const item = cart.find(entry => entry.cart_id === cartItemId && entry.type === 'rent');
-      if (item) {
-        item.duration = Math.max(1, parseInt(value) || 1);
-        renderCart();
-      }
-    }
-
-    function updateRentalUnit(cartItemId, value) {
-      const item = cart.find(entry => entry.cart_id === cartItemId && entry.type === 'rent');
-      if (item) {
-        item.durationUnit = value;
-        renderCart();
-      }
     }
 
     function deleteSelectedItems() {
@@ -2142,10 +2113,7 @@
       const deleteSelectedBtn = document.getElementById('btn-delete-selected');
 
       const selectedItems = cart.filter(item => item.selected);
-      const totalAmount = selectedItems.reduce((sum, item) => {
-        const multiplier = item.type === 'rent' ? (item.duration || 1) : 1;
-        return sum + (item.unitPrice * multiplier * item.quantity);
-      }, 0);
+      const totalAmount = selectedItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
       const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
       const selectedItemsQuantity = selectedItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -2184,16 +2152,6 @@
               ${item.type} • ₱${item.unitPrice.toFixed(2)}
               ${item.unitName ? ` per ${item.unitName}` : ''}
             </div>
-            ${item.type === 'rent' ? `
-              <div class="flex items-center gap-2 mt-2">
-                <span class="text-[10px] font-semibold text-slate-400 uppercase">Duration:</span>
-                <input type="number" min="1" value="${item.duration || 1}" class="w-12 text-center text-xs font-semibold py-1 bg-white border border-slate-200 rounded-lg" onchange="updateRentalDuration('${item.cart_id}', this.value)">
-                <select class="text-[10px] font-semibold py-1 px-1 bg-white border border-slate-200 rounded-lg outline-none" onchange="updateRentalUnit('${item.cart_id}', this.value)">
-                  <option value="days" ${item.durationUnit === 'days' ? 'selected' : ''}>Days</option>
-                  <option value="hours" ${item.durationUnit === 'hours' ? 'selected' : ''}>Hours</option>
-                </select>
-              </div>
-            ` : ''}
           </div>
           <div class="flex flex-col items-end gap-2">
             <div class="flex items-center gap-2">
@@ -2272,21 +2230,19 @@
           const normalizedProductId = Number(item.product_id);
           const product = allProducts.find(p => Number(p.product_id) === normalizedProductId);
           
-          const unitPrice = parseFloat(item.unitPrice || item.unit_price) || (product ? (item.type === 'rent' ? parseFloat(product.rent_price) : parseFloat(product.buy_price)) : 0);
+          const unitPrice = parseFloat(item.unitPrice || item.unit_price) || (product ? parseFloat(product.buy_price) : 0);
           return {
             cart_id: item.cart_id || `${normalizedProductId}-${item.type || 'buy'}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
             product_id: normalizedProductId,
             product_name: item.product_name || (product ? product.product_name : 'Unknown item'),
             product_category: item.product_category || (product ? product.product_category : 'General'),
             product_image: item.product_image || (product ? product.product_image : ''),
-            type: item.type || 'buy',
+            type: 'buy',
             quantity: parseFloat(item.quantity) || 1,
             unitPrice,
-            unitName: item.unitName || item.unit_name || (item.type === 'rent' ? 'day' : (item.product_category === 'Uniform Fabrics' ? 'yard/s' : 'pc/s')),
+            unitName: item.unitName || item.unit_name || (item.product_category === 'Uniform Fabrics' ? 'yard/s' : 'pc/s'),
             stock: product ? Number(product.stock_count ?? product.stock ?? 0) : (parseFloat(item.stock) || 0),
             selected: item.selected === true || item.selected === 'true' || false,
-            duration: item.duration || 1,
-            durationUnit: item.durationUnit || item.duration_unit || 'days'
           };
         });
       } catch (error) {
@@ -2316,10 +2272,7 @@
     function getCheckoutSummary() {
       const selectedItems = getSelectedItems();
       const quantity = selectedItems.reduce((sum, item) => sum + item.quantity, 0);
-      const totalAmount = selectedItems.reduce((sum, item) => {
-        const multiplier = item.type === 'rent' ? (item.duration || 1) : 1;
-        return sum + (item.unitPrice * multiplier * item.quantity);
-      }, 0);
+      const totalAmount = selectedItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
 
       return {
         selectedItems,
@@ -2372,10 +2325,7 @@
         return;
       }
 
-      const subtotal = selectedItems.reduce((sum, item) => {
-        const multiplier = item.type === 'rent' ? (item.duration || 1) : 1;
-        return sum + (item.unitPrice * multiplier * item.quantity);
-      }, 0);
+      const subtotal = selectedItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
 
       if (!currentStudentId) {
         showToast('Student session not found. Please log in again.', 'error');
@@ -2394,19 +2344,16 @@
         checkoutButton.disabled = true;
       }
 
-      const hasRental = selectedItems.some(item => item.type === 'rent');
       const payload = {
         student_id: currentStudentId,
-        transaction_type: hasRental ? 'rent' : 'buy',
+        transaction_type: 'buy',
         is_scanned: true,
         items: selectedItems.map(item => ({
           product_id: item.product_id,
           quantity: item.quantity,
-          type: item.type,
+          type: 'buy',
           unit_name: item.unitName,
           unit_price: item.unitPrice,
-          duration: item.duration || 1,
-          duration_unit: item.durationUnit || 'days'
         })),
         subtotal,
         total_amount: subtotal,

@@ -2,7 +2,7 @@
 require_once __DIR__ . '/security.php';
 secureSessionStart();
 // Allow students and staff to generate/view QR codes
-requireAuth(['student', 'admincashier', 'superadmin', 'users']);
+requireAuth(['student', 'admin', 'cashier', 'admincashier', 'superadmin', 'users']);
 
 require_once __DIR__ . '/../vendor/phpqrcode/qrlib.php';
 

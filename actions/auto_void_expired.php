@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['admincashier', 'superadmin']);
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin']);
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../config/db_connect.php';
@@ -61,12 +61,6 @@ try {
                     $updateStock->close();
                 }
             }
-
-            // Cancel associated rentals
-            $updateRentals = $conn->prepare("UPDATE active_rentals SET status = 'returned', rejection_reason = 'Auto-voided: Order Expired (2-day limit)' WHERE transaction_number = ? AND status != 'returned'");
-            $updateRentals->bind_param('s', $txnNumber);
-            $updateRentals->execute();
-            $updateRentals->close();
 
             if (function_exists('logAudit')) {
                 logAudit('system', '0', 'auto_void_transaction', "Auto-voided expired transaction: $txnNumber");

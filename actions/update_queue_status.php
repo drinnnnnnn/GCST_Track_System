@@ -2,7 +2,7 @@
 header('Content-Type: application/json');
 require_once __DIR__ . '/security.php';
 secureSessionStart();
-requireAuth(['admincashier', 'superadmin']);
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin']);
 require_once __DIR__ . '/NotificationService.php';
 
 require_once __DIR__ . '/../database/models/QueueModel.php';

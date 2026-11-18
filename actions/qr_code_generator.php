@@ -4,7 +4,7 @@
 $libDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'phpqrcode';
 $libPath = $libDir . DIRECTORY_SEPARATOR . 'qrlib.php';
 
-if (file_exists($libPath)) {
+if (file_exists($libPath) && extension_loaded('gd')) {
     // Add the library directory to the include path so qrlib.php can find its dependencies
     set_include_path(get_include_path() . PATH_SEPARATOR . $libDir);
     require_once $libPath;
@@ -22,8 +22,7 @@ if (file_exists($libPath)) {
  */
 function generateLocalQrCode($data, $filename, $ecc = 'L', $pixelSize = 10, $frameSize = 4) {
     if (!extension_loaded('gd')) {
-        error_log("PHP GD extension is not loaded. QR code generation requires GD.");
-        return false;
+        return generateLocalQrCodeWithoutGd($data, $filename, $ecc, $pixelSize, $frameSize);
     }
     // Basic check for library integrity: qrlib.php needs other files in its directory
     $toolsPath = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'phpqrcode' . DIRECTORY_SEPARATOR . 'qrtools.php';
@@ -56,6 +55,73 @@ function generateLocalQrCode($data, $filename, $ecc = 'L', $pixelSize = 10, $fra
         }
     } catch (Exception $e) {
         error_log("QR Code generation failed: " . $e->getMessage());
+        return false;
+    }
+}
+
+function generateLocalQrCodeWithoutGd($data, $filename, $ecc, $pixelSize, $frameSize) {
+    $barcodePath = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor'
+        . DIRECTORY_SEPARATOR . 'tecnickcom' . DIRECTORY_SEPARATOR . 'tcpdf'
+        . DIRECTORY_SEPARATOR . 'tcpdf_barcodes_2d.php';
+    if (!is_file($barcodePath) || !function_exists('gzcompress')) {
+        error_log('Local QR generation requires the TCPDF barcode library and zlib when GD is unavailable.');
+        return false;
+    }
+
+    $ecc = strtoupper((string)$ecc);
+    if (!in_array($ecc, ['L', 'M', 'Q', 'H'], true)) {
+        error_log('Unsupported QR error correction level.');
+        return false;
+    }
+
+    try {
+        require_once $barcodePath;
+        $barcode = new TCPDF2DBarcode((string)$data, 'QRCODE,' . $ecc);
+        $matrix = $barcode->getBarcodeArray();
+        if (empty($matrix['bcode']) || empty($matrix['num_rows']) || empty($matrix['num_cols'])) {
+            throw new RuntimeException('The QR code matrix could not be generated.');
+        }
+
+        $scale = max(1, (int)$pixelSize);
+        $quietZone = max(4, (int)$frameSize);
+        $dimension = ((int)$matrix['num_rows'] + ($quietZone * 2)) * $scale;
+        $rawImage = '';
+        for ($y = 0; $y < $dimension; $y++) {
+            $row = "\0";
+            $moduleY = intdiv($y, $scale) - $quietZone;
+            for ($x = 0; $x < $dimension; $x++) {
+                $moduleX = intdiv($x, $scale) - $quietZone;
+                $isBlack = $moduleY >= 0
+                    && $moduleY < $matrix['num_rows']
+                    && $moduleX >= 0
+                    && $moduleX < $matrix['num_cols']
+                    && $matrix['bcode'][$moduleY][$moduleX] === 1;
+                $row .= $isBlack ? "\0" : "\xff";
+            }
+            $rawImage .= $row;
+        }
+
+        $compressedImage = gzcompress($rawImage, 6);
+        if ($compressedImage === false) {
+            throw new RuntimeException('The QR code image could not be compressed.');
+        }
+        $pngChunk = static function ($type, $content) {
+            $crc = crc32($type . $content);
+            return pack('N', strlen($content)) . $type . $content . pack('N', $crc);
+        };
+        $png = "\x89PNG\r\n\x1a\n"
+            . $pngChunk('IHDR', pack('N2C5', $dimension, $dimension, 8, 0, 0, 0, 0))
+            . $pngChunk('IDAT', $compressedImage)
+            . $pngChunk('IEND', '');
+
+        $directory = dirname($filename);
+        if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
+            throw new RuntimeException('Unable to create the QR code directory.');
+        }
+        $written = file_put_contents($filename, $png, LOCK_EX);
+        return $written === strlen($png);
+    } catch (Throwable $e) {
+        error_log('Local QR code generation failed: ' . $e->getMessage());
         return false;
     }
 }

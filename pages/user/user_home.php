@@ -385,14 +385,6 @@
       transform: translateY(-1px);
     }
 
-    .btn-rent {
-      display: none;
-    }
-
-    .btn-rent:hover {
-      background: #eff6ff;
-    }
-
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -1138,7 +1130,7 @@
         <a class="quick-link-card">
           <div class="quick-link-icon text-blue-600"><i class="fas fa-chart-pie"></i></div>
           <h3 class="text-lg font-bold text-slate-800">Dashboard</h3>
-          <p class="text-sm text-slate-500 mt-2">Personalized rental summaries and real-time statistics.</p>
+          <p class="text-sm text-slate-500 mt-2">Personalized updates and real-time statistics.</p>
         </a>
         <a class="quick-link-card">
           <div class="quick-link-icon text-emerald-600"><i class="fas fa-shopping-bag"></i></div>
@@ -1653,11 +1645,7 @@
       const imageSrc = normalizeImagePath(product.product_image);
       const stockCount = Number(product.stock_count || 0);
       const buyPrice = formatPrice(product.buy_price);
-      const rentPrice = formatPrice(product.rent_price);
-      const category = (product.product_category || 'General').toLowerCase();
-      
-      const buyText = (category !== 'books' && buyPrice) ? `Buy ₱${buyPrice}` : '';
-      const rentText = rentPrice ? `${buyText ? ' · ' : ''}Rent ₱${rentPrice}` : '';
+      const priceText = buyPrice ? `Price ₱${buyPrice}` : 'Not for sale';
 
       const card = document.createElement('article');
       card.className = 'product-card';
@@ -1667,7 +1655,7 @@
         <div class="product-card-body">
           <span class="product-category-pill">${product.product_category || 'General'}</span>
           <h3 class="product-name">${product.product_name}</h3>
-          <p class="product-details">${buyText}${rentText}</p>
+          <p class="product-details">${priceText}</p>
           <div class="product-card-footer">
             <span class="product-stock ${stockCount > 10 ? 'stock-available' : stockCount > 0 ? 'stock-low' : 'stock-unavailable'}">${stockCount > 0 ? `${stockCount} in stock` : 'Out of stock'}</span>
             <div class="product-actions">
@@ -1761,13 +1749,8 @@
       document.getElementById('modal-category').textContent = product.product_category || 'General';
       document.getElementById('modal-stock').textContent = Number(product.stock_count || 0) > 0 ? `${product.stock_count} in stock` : 'Out of stock';
       
-      const category = (product.product_category || 'General').toLowerCase();
       const buyPrice = formatPrice(product.buy_price);
-      const rentPrice = formatPrice(product.rent_price);
-      
-      const buyDisplay = (category !== 'books' && buyPrice) ? `Buy ₱${buyPrice}` : '';
-      const rentDisplay = rentPrice ? `${buyDisplay ? ' · ' : ''}Rent ₱${rentPrice}` : '';
-      document.getElementById('modal-price').textContent = (buyDisplay || rentDisplay) ? `${buyDisplay}${rentDisplay}` : 'Not available';
+      document.getElementById('modal-price').textContent = buyPrice ? `₱${buyPrice}` : 'Not for sale';
       document.getElementById('modal-description').textContent = product.product_description || 'No description available.';
 
       const modal = document.getElementById('product-details-modal');

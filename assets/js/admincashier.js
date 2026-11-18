@@ -301,6 +301,16 @@ window.initializeAdminCashierPage = function(pageCallback) {
             const userData = await checkAuthentication();
             if (!userData) return;
 
+            if (userData.role === 'cashier') {
+                const inventoryLink = document.getElementById('inventory-management-link');
+                if (inventoryLink) {
+                    inventoryLink.href = `${BASE_PATH}/pages/admincashier/admincashier_sale.php#inventory-details`;
+                    inventoryLink.title = 'Inventory Report';
+                    const label = inventoryLink.querySelector('span');
+                    if (label) label.textContent = 'Inventory Report';
+                }
+            }
+
             // 3. Initialize UI elements now that sidebar is in the DOM
             initializeAdminCashierUI();
             updateGreeting(resolveUserDisplayName(userData));

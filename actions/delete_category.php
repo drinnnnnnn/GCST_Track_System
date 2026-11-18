@@ -1,7 +1,9 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admincashier') {
+$role = $_SESSION['role'] ?? '';
+$staffId = $_SESSION['admin_id'] ?? $_SESSION['admincashier_id'] ?? null;
+if (!in_array($role, ['admin', 'admincashier', 'superadmin'], true) || !$staffId) {
     http_response_code(403);
     echo json_encode(["error" => "Unauthorized"]);
     exit();

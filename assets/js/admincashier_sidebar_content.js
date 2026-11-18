@@ -1230,7 +1230,7 @@ export function getSidebarHTML() {
         <a href="/GCST_Track_System/pages/admincashier/admincashier_sale.php" class="sidebar-link" title="Sales Report" onclick="handleSidebarLinkClick()">
             <i class="fas fa-chart-line"></i> <span>Sales Report</span>
         </a>
-        <a href="/GCST_Track_System/pages/admincashier/admincashier_inventorys.php" class="sidebar-link" title="Inventory" onclick="handleSidebarLinkClick()">
+        <a id="inventory-management-link" href="/GCST_Track_System/pages/admincashier/admincashier_inventorys.php" class="sidebar-link" title="Inventory" onclick="handleSidebarLinkClick()">
             <i class="fas fa-boxes"></i> <span>Inventory</span>
         </a>
         

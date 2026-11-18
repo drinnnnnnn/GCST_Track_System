@@ -140,7 +140,8 @@
             border: 0;
         }
 
-        .input-group input {
+        .input-group input,
+        .input-group select {
             width: 100%;
             padding: 14px 18px;
             background: rgba(255, 255, 255, 0.6);
@@ -153,7 +154,8 @@
             transition: all 0.3s ease;
         }
 
-        .input-group input:focus {
+        .input-group input:focus,
+        .input-group select:focus {
             background: #fff;
             border-color: var(--primary);
             box-shadow: 0 8px 15px -3px var(--primary-glow);
@@ -317,7 +319,8 @@
             color: #cbd5e1;
         }
 
-        html.dark-mode .input-group input {
+        html.dark-mode .input-group input,
+        html.dark-mode .input-group select {
             background: rgba(23, 34, 53, 0.9);
             border-color: #475569;
             color: #f1f5f9;
@@ -327,7 +330,8 @@
             color: #94a3b8;
         }
 
-        html.dark-mode .input-group input:focus {
+        html.dark-mode .input-group input:focus,
+        html.dark-mode .input-group select:focus {
             background: #172235;
             border-color: var(--primary);
         }
@@ -469,7 +473,7 @@
         <div class="header-anim animate-item">
             <div class="header-icon"><i class='bx bx-user-plus'></i></div>
             <h1>Create Staff Account</h1>
-            <p class="subtitle">Set up a new administrator cashier</p>
+            <p class="subtitle">Set up a new administrator or cashier</p>
         </div>
 
         <form action="../../actions/process_admin_cashier.php" method="POST" enctype="multipart/form-data" onsubmit="return validateForm(this)">
@@ -497,6 +501,13 @@
                 <div class="input-group">
                     <label for="contact_number" class="sr-only">Contact Number</label>
                     <input type="tel" id="contact_number" name="contact_number" inputmode="numeric" maxlength="11" pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);" placeholder="Contact Number" autocomplete="tel" required>
+                </div>
+                <div class="input-group">
+                    <label for="role">Staff Role</label>
+                    <select id="role" name="role" required>
+                        <option value="admin">Admin</option>
+                        <option value="cashier">Cashier</option>
+                    </select>
                 </div>
                 <div class="input-group">
                     <label for="signature_image">Upload Signature Image</label>
@@ -657,6 +668,7 @@ document.querySelectorAll('.password-toggle').forEach(setupToggle);
                 weak_password: 'Password is too weak. Use at least 8 characters.',
                 invalid_contact: 'Contact number must be exactly 11 digits.',
                 invalid_pin: 'PIN must be exactly 4 digits.',
+                invalid_role: 'Select a valid staff role.',
                 pin_duplicate: 'That PIN is already used by another account. Please choose a different one.',
                 exists: 'Email or username already exists. Please choose another one.',
                 invalid_signature: 'Upload a valid PNG or JPG signature image under 2MB.'

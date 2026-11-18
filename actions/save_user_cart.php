@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/db_connect.php';
 require_once __DIR__ . '/audit_helpers.php'; // Include audit logging helper
 
 secureSessionStart();
-requireAuth(['student', 'admincashier', 'superadmin']);
+requireAuth(['student', 'admin', 'cashier', 'admincashier', 'superadmin']);
 header('Content-Type: application/json');
 
 $student_id = $_SESSION['student_id'] ?? null;
@@ -37,10 +37,12 @@ foreach ($items as $item) {
     $productImage = trim((string)($item['product_image'] ?? ''));
     $stock = intval($item['stock'] ?? 0);
     $selected = filter_var($item['selected'] ?? false, FILTER_VALIDATE_BOOLEAN);
-    $duration = intval($item['duration'] ?? 1);
-    $durationUnit = trim((string)($item['duration_unit'] ?? $item['durationUnit'] ?? 'days'));
 
-    if ($productId <= 0 || $quantity <= 0 || !in_array($type, ['buy', 'rent'], true) || $unitPrice <= 0) {
+    if ($type === 'rent') {
+        jsonResponse(['success' => false, 'message' => 'Rental items are no longer supported.'], 400);
+    }
+
+    if ($productId <= 0 || $quantity <= 0 || $type !== 'buy' || $unitPrice <= 0) {
         continue;
     }
 
@@ -53,9 +55,7 @@ foreach ($items as $item) {
         'quantity' => $quantity,
         'unit_price' => round($unitPrice, 2),
         'stock' => $stock,
-        'selected' => $selected,
-        'duration' => $duration,
-        'durationUnit' => $durationUnit
+        'selected' => $selected
     ];
 }
 

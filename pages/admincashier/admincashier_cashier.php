@@ -297,6 +297,22 @@
       margin-bottom: 1.5rem;
     }
 
+    .product-return-confirm-error {
+      margin: 0 1.75rem 1.25rem;
+      color: #b91c1c;
+      font-size: 0.9rem;
+    }
+
+    #admin-product-returns tr.return-scan-highlight > td {
+      background-color: #e0e7ff !important;
+      transition: background-color 0.25s ease;
+    }
+
+    body.dark-mode #admin-product-returns tr.return-scan-highlight > td {
+      background-color: #3730a3 !important;
+      color: #ffffff;
+    }
+
     .confirmation-modal-actions {
       display: flex;
       justify-content: flex-end;
@@ -886,9 +902,6 @@
       transition: all 0.2s ease;
     }
     /* Consistent Scrollbar Styling for all scrollable containers */
-    #active-rentals-content,
-    #overdue-rentals-content,
-    #renewals-content,
     #txn-history-content {
       display: flex;
       flex-direction: column;
@@ -901,19 +914,13 @@
     #products-grid::-webkit-scrollbar,
     #cart-content::-webkit-scrollbar,
     .cashier-layout::-webkit-scrollbar, /* Apply to main layout if it ever scrolls */
-    #active-rentals-content::-webkit-scrollbar,
     .panel::-webkit-scrollbar, /* Apply to generic panels */
-    #overdue-rentals-content::-webkit-scrollbar,
-    #renewals-content::-webkit-scrollbar,
     #txn-history-content::-webkit-scrollbar {
       width: 6px;
     }
     #products-grid::-webkit-scrollbar-track,
     .cashier-layout::-webkit-scrollbar-track,
     #cart-content::-webkit-scrollbar-track,
-    #active-rentals-content::-webkit-scrollbar-track,
-    #overdue-rentals-content::-webkit-scrollbar-track,
-    #renewals-content::-webkit-scrollbar-track,
     #txn-history-content::-webkit-scrollbar-track {
       background: #f1f5f9;
       background: #f8fafc; /* Lighter track */
@@ -921,9 +928,6 @@
     }
     #products-grid::-webkit-scrollbar-thumb,
     #cart-content::-webkit-scrollbar-thumb,
-    #active-rentals-content::-webkit-scrollbar-thumb,
-    #overdue-rentals-content::-webkit-scrollbar-thumb,
-    #renewals-content::-webkit-scrollbar-thumb,
     #txn-history-content::-webkit-scrollbar-thumb {
       background: #cbd5e1; /* Lighter thumb */
       background: #cbd5e1;
@@ -931,9 +935,6 @@
     }
     #products-grid::-webkit-scrollbar-thumb:hover,
     #cart-content::-webkit-scrollbar-thumb:hover,
-    #active-rentals-content::-webkit-scrollbar-thumb:hover,
-    #overdue-rentals-content::-webkit-scrollbar-thumb:hover,
-    #renewals-content::-webkit-scrollbar-thumb:hover,
     .cashier-layout::-webkit-scrollbar-thumb:hover,
     #txn-history-content::-webkit-scrollbar-thumb:hover {
       background: #94a3b8;
@@ -2689,7 +2690,6 @@
     body.dark-mode .content-wrapper #checkout-modal > .panel,
     body.dark-mode .content-wrapper #view-txn-modal > .panel,
     body.dark-mode .content-wrapper #voided-report-modal > .panel,
-    body.dark-mode .content-wrapper #partial-return-modal > .panel,
     body.dark-mode .content-wrapper #qr-modal > .panel,
     body.dark-mode .content-wrapper .confirmation-modal-card {
       background: #172033 !important;
@@ -2889,7 +2889,7 @@
           <div class="cashier-search-tools">
             <input id="product-search" class="search-input" type="text" placeholder="Search products, category, author, or SKU" aria-label="Search products" />
           </div>
-          <button id="qr-scan-btn" class="btn btn-secondary" title="Scan Order QR Code"><i class="fas fa-qrcode"></i> Scan Order</button>
+          <button id="qr-scan-btn" class="btn btn-secondary" title="Scan an order or return QR code"><i class="fas fa-qrcode"></i> Scan Order / Return</button>
           <button type="button" class="btn btn-secondary" title="Generate Payment Receipt" onclick="openTuitionModal()">
               <i class="fas fa-file-invoice"></i> Payment Receipt
           </button>
@@ -3037,6 +3037,73 @@
       </div>
     </section>
 
+    <section id="admin-product-returns" class="management-section" style="margin-top: 24px; padding: 0 20px;">
+      <div class="panel">
+        <div class="panel-header" style="flex-wrap: wrap; gap: 16px;">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800">Damaged Product Returns</h2>
+            <p class="text-sm text-slate-500">Review customer requests, record refunds, and fulfill replacements.</p>
+            <p id="admin-product-return-navigation-status" class="text-sm text-indigo-600" role="status" aria-live="polite" hidden></p>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+            <select id="admin-product-return-status" class="search-input" aria-label="Filter product returns">
+              <option value="all">All requests and history</option>
+              <option value="pending">Awaiting review</option>
+              <option value="refund_pending">Refund to be paid</option>
+              <option value="refunded">Refunded</option>
+              <option value="replacement_pending">Replacement to be fulfilled</option>
+              <option value="completed">Completed</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <button type="button" id="admin-product-return-refresh" class="btn btn-secondary">Refresh</button>
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="data-table" style="width: 100%; min-width: 1160px;">
+            <thead>
+              <tr>
+                <th>Submitted</th>
+                <th>Customer / order</th>
+                <th>Product / quantity</th>
+                <th>Requested resolution</th>
+                <th>Damage / photo</th>
+                <th>Item handoff</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="admin-product-return-body">
+              <tr><td colspan="8" class="empty-state">Loading return requests...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 12px;">
+          <button type="button" id="admin-product-return-prev" class="btn btn-secondary" disabled>Previous</button>
+          <span id="admin-product-return-page">1 / 1</span>
+          <button type="button" id="admin-product-return-next" class="btn btn-secondary" disabled>Next</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="product-return-action-modal" class="confirmation-modal-overlay" aria-hidden="true">
+      <div class="confirmation-modal-card" role="dialog" aria-modal="true" aria-labelledby="product-return-action-title" aria-describedby="product-return-action-message">
+        <div class="confirmation-modal-body">
+          <h3 id="product-return-action-title" class="confirmation-modal-title">Confirm return action</h3>
+          <p id="product-return-action-message" class="confirmation-modal-message"></p>
+          <div id="product-return-rejection-field" hidden>
+            <label for="product-return-rejection-reason" class="text-sm font-semibold text-slate-700">Reason for rejection</label>
+            <textarea id="product-return-rejection-reason" rows="4" maxlength="1000" class="search-input" style="width: 100%; margin-top: 6px; resize: vertical;" aria-describedby="product-return-rejection-help"></textarea>
+            <p id="product-return-rejection-help" class="text-xs text-slate-500 mt-1">This explanation will be emailed to the user.</p>
+          </div>
+        </div>
+        <p id="product-return-action-error" class="product-return-confirm-error" role="alert" hidden></p>
+        <div class="confirmation-modal-actions">
+          <button type="button" id="product-return-action-cancel" class="confirmation-modal-btn cancel">Cancel</button>
+          <button type="button" id="product-return-action-confirm" class="confirmation-modal-btn confirm">Confirm</button>
+        </div>
+      </div>
+    </div>
+
     <div id="view-txn-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;">
       <div class="panel" style="width: 100%; max-width: 550px; max-height: 90vh; overflow-y: auto;">
         <div class="panel-header">
@@ -3086,49 +3153,6 @@
     </div>
 
     <!-- New Partial Return Modal -->
-    <div id="partial-return-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
-      <div class="panel" style="width: 100%; max-width: 500px;">
-        <div class="panel-header">
-          <h2>Process Item Return</h2>
-          <button type="button" class="modal-close" onclick="closePartialReturnModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:#6b7280;">×</button>
-        </div>
-        <form id="partial-return-form">
-          <input type="hidden" id="return-rental-id" name="rental_id">
-          <div class="summary-card">
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label>Student Name:
-                <input type="text" id="return-student-name" readonly style="background: #f8fafc;" />
-              </label>
-            </div>
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label>Product Name:
-                <input type="text" id="return-product-name" readonly style="background: #f8fafc;" />
-              </label>
-            </div>
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label>Currently Out (Quantity):
-                <input type="number" id="return-current-quantity" readonly style="background: #f8fafc;" />
-              </label>
-            </div>
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label>Quantity to Return:
-                <input type="number" id="return-quantity-input" name="returned_quantity" min="1" required />
-              </label>
-            </div>
-            <div class="summary-row" style="grid-template-columns: 1fr;">
-              <label>Student Gmail Account:
-                <input type="email" id="return-student-email" name="student_email" class="search-input" placeholder="Enter student Gmail address" />
-              </label>
-            </div>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-              <button type="submit" class="btn btn-primary flex-1">Process Return</button>
-              <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closePartialReturnModal()">Cancel</button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-
     <div id="tuition-modal" class="modal-backdrop hidden receipt-modal-shell" style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10000;">
       <div class="panel receipt-modal-card" style="position: relative;">
         <div class="receipt-modal-body" style="position: relative; padding-top: 30px;">
@@ -3270,7 +3294,7 @@
             </div>
           </div>
 
-          <div class="receipt-card">
+          <div class="receipt-card">  
             <div class="receipt-card-title"><i class="fas fa-signature"></i> Approval & Delivery</div>
             <div class="receipt-form-grid">
               <div class="receipt-field-group">
@@ -3633,9 +3657,9 @@
     <div id="qr-modal" class="modal-backdrop hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10001;">
       <div class="panel qr-panel" style="width: 100%; max-width: 480px;">
         <div class="panel-header">
-          <h2 style="font-weight: 700;"><i class="fas fa-qrcode mr-2"></i> Scan Order</h2>
+          <h2 style="font-weight: 700;"><i class="fas fa-qrcode mr-2"></i> Scan Order or Return QR</h2>
         </div>
-        <p class="scan-hint" style="text-align: center; margin-bottom: 20px;">Position the student's Order QR code within the frame.</p>
+        <p class="scan-hint" style="text-align: center; margin-bottom: 20px;">Scan an order QR to load a purchase, or a return QR to record the item handoff.</p>
         
         <div class="scanner-container">
           <div id="reader"></div>
@@ -3654,7 +3678,7 @@
              <div class="success-checkmark-pop flex flex-col items-center">
                 <i class="fas fa-check-circle text-white" style="font-size: 5.5rem;"></i>
                 <p id="scan-success-text" class="text-white font-bold mt-4 text-lg" title="Scan Successful">Scan Successful</p>
-                <p id="scan-success-detail" class="text-white/80 text-sm mt-3 max-w-[320px] text-center">Order loaded successfully
+                <p id="scan-success-detail" class="text-white/80 text-sm mt-3 max-w-[320px] text-center"><span id="scan-success-detail-text">Order loaded successfully</span>
                   <span class="tooltip-badge" aria-label="Order loaded message" role="tooltip">
                     <i class="fas fa-info-circle"></i>
                     <span id="scan-success-tooltip" class="tooltip-box">Order loaded successfully</span>
@@ -3678,11 +3702,11 @@
           </div>
           <div id="manual-entry-overlay" class="scan-overlay hidden" style="background: #ffffff; z-index: 20; pointer-events: auto; flex-direction: column;">
              <div class="p-8 w-full max-w-sm">
-                <h3 class="text-gray-900 font-bold text-xl mb-2 text-center">Manual Order Entry</h3>
-                <p class="text-gray-500 text-xs mb-6 text-center uppercase tracking-wider">Enter the transaction number</p>
-                <input type="text" id="manual-order-input" class="search-input mb-4" placeholder="ORDER-XXXX-XXXX" style="width: 100%; border: 2px solid #e2e8f0; font-weight: 700; text-align: center; text-transform: uppercase;">
+                <h3 class="text-gray-900 font-bold text-xl mb-2 text-center">Manual Code Entry</h3>
+                <p class="text-gray-500 text-xs mb-6 text-center uppercase tracking-wider">Enter an order number or paste the return QR code</p>
+                <input type="text" id="manual-order-input" class="search-input mb-4" placeholder="Order number or GCST-RETURN code" aria-label="Order number or return QR code" style="width: 100%; border: 2px solid #e2e8f0; font-weight: 700; text-align: center; text-transform: uppercase;">
                 <div class="flex flex-col gap-3">
-                    <button onclick="OrderScanner.submitManualEntry()" class="btn btn-primary" style="width: 100%; border-radius: 14px; padding: 14px; font-weight: 700;">Load Order</button>
+                    <button onclick="OrderScanner.submitManualEntry()" class="btn btn-primary" style="width: 100%; border-radius: 14px; padding: 14px; font-weight: 700;">Continue</button>
                     <button onclick="OrderScanner.hideManualEntry()" class="btn btn-secondary" style="width: 100%; border-radius: 14px; padding: 12px;">Back to Scanner</button>
                 </div>
              </div>
@@ -3692,7 +3716,7 @@
         <div id="camera-error-message" class="hidden" style="color: #ef4444; background: #fee2e2; padding: 12px; border-radius: 12px; font-size: 0.85rem; margin-bottom: 20px; text-align: center; border: 1px solid #fecaca;"></div>
 
         <div style="display: flex; flex-direction: column; gap: 12px;">
-          <button class="btn btn-primary" onclick="OrderScanner.showManualEntry()" style="width: 100%; border-radius: 14px; padding: 12px;">Enter Order Number Manually</button>
+          <button class="btn btn-primary" onclick="OrderScanner.showManualEntry()" style="width: 100%; border-radius: 14px; padding: 12px;">Enter Order Number or Return Code</button>
           <button class="btn btn-secondary" onclick="closeQRScanner()" style="width: 100%; border-radius: 14px; padding: 12px;">Cancel</button>
         </div>
         <!-- Datalist for student search/autocomplete -->
@@ -3724,8 +3748,6 @@
     let products = [];
     let cart = [];
     let pendingOrders = []; // New array for pending orders
-    let pendingRenewals = [];
-    let activeRentals = [];
     let pendingOrdersCurrentPage = 1;
     let studentList = []; // Global registry for instant name resolution
     const studentMapById = new Map();
@@ -3762,7 +3784,6 @@
       currentPage: 1,
       itemsPerPage: 12,
       productSort: 'newest',
-      transactionType: 'buy',
       discountPercent: 0,
       cashReceived: 0,
       paymentStatus: 'paid', // Default to paid
@@ -3798,9 +3819,6 @@
     }
     function getProductPrice(product) {
       return parseFloat(product.buy_price ?? product.product_price ?? product.price ?? 0);
-    }
-    function getProductRentPrice(product) {
-      return parseFloat(product.rent_price ?? 0);
     }
     function getProductStock(product) {
       return parseFloat(product.stock_count ?? product.stock ?? 0);
@@ -4237,10 +4255,7 @@
 
     function createProductActions(product) {
       const price = getProductPrice(product);
-      const rentPrice = getProductRentPrice(product);
       const stock = getProductStock(product);
-      const catLower = (product.product_category || '').toLowerCase();
-      const activePrice = (catLower === 'books' && state.transactionType === 'rent') ? rentPrice : price;
 
       const actions = document.createElement('div');
       actions.className = 'product-actions';
@@ -4249,7 +4264,7 @@
       priceInfo.className = 'flex items-center justify-between gap-2';
       priceInfo.innerHTML = `
         <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">${catLower === 'uniform fabrics' ? 'Per Yard' : 'Price'}</span>
-        <span class="product-price">${formatCurrency(activePrice)}</span>
+        <span class="product-price">${formatCurrency(price)}</span>
       `;
 
       const btn = document.createElement('button');
@@ -4304,10 +4319,6 @@
         button.className = 'filter-btn' + (category === state.category ? ' active' : '');
         button.textContent = category;
         button.onclick = () => {
-          if (state.transactionType === 'rent' && category !== 'Books') {
-            alert('During a rental session, only the "Books" category is allowed.');
-            return;
-          }
           state.currentPage = 1; // Reset to page 1 on category switch
           state.category = category;
           buildCategoryFilters();
@@ -4898,7 +4909,7 @@
       cart = cart.map(item => {
         const product = products.find(p => p.product_id == item.product_id);
         if (!product) return item; 
-        const unitPrice = state.transactionType === 'rent' ? getProductRentPrice(product) : getProductPrice(product);
+        const unitPrice = getProductPrice(product);
         return { ...item, unitPrice };
 
       });
@@ -4924,16 +4935,6 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Adding...</span>';
           }
         }
-      }
-
-      if (state.transactionType === 'rent' && (product.product_category || '').toLowerCase() !== 'books') {
-        alert('Rental is only allowed for items in the "Books" category.');
-        if (btn && !wasDisabled) {
-          btn.disabled = false;
-          btn.classList.remove('loading');
-          btn.innerHTML = originalHtml;
-        }
-        return;
       }
 
       const stock = getProductStock(product);
@@ -4971,7 +4972,7 @@
             }
             return;
           }
-          const unitPrice = state.transactionType === 'rent' ? getProductRentPrice(product) : getProductPrice(product);
+          const unitPrice = getProductPrice(product);
           cart.push(...createCompleteUniformCartItems(product, unitPrice));
         }
       } else if (isLower) {
@@ -4997,7 +4998,7 @@
             }
             return;
           }
-          const unitPrice = state.transactionType === 'rent' ? getProductRentPrice(product) : getProductPrice(product);
+          const unitPrice = getProductPrice(product);
           cart.push(...createUniformLowerCartItems(product, unitPrice));
         }
       } else if (isUpper) {
@@ -5023,7 +5024,7 @@
             }
             return;
           }
-          const unitPrice = state.transactionType === 'rent' ? getProductRentPrice(product) : getProductPrice(product);
+          const unitPrice = getProductPrice(product);
           cart.push(...createUniformUpperCartItems(product, unitPrice));
         }
       } else {
@@ -5048,7 +5049,7 @@
             }
             return;
           }
-          const unitPrice = state.transactionType === 'rent' ? getProductRentPrice(product) : getProductPrice(product);
+          const unitPrice = getProductPrice(product);
           const isFabric = (product.product_category || '').toLowerCase() === 'uniform fabrics';
           const isBook = (product.product_category || '').toLowerCase() === 'books';
           const unitName = isFabric ? 'yards' : (isBook ? 'pcs' : 'unit');
@@ -5525,17 +5526,6 @@
       // Ensure all financials are synchronized before capturing payload
       updateTransactionSettings();
 
-      if (state.transactionType === 'rent') {
-          if (state.isGuest) {
-            alert('Restriction: Rentals are only permitted for verified Student IDs.');
-            return;
-          }
-          if (!state.studentId) {
-            alert('Required: Identification is mandatory for rentals.');
-            return;
-          }
-      }
-
       if (state.isGuest) {
           if (!validateGuestInfo()) return;
       } else {
@@ -5566,7 +5556,7 @@
         // Ensure Student ID is captured even for Guest transactions
         guest_school_id: state.isGuest ? (document.getElementById('guest-school-id')?.value.trim() || state.studentId) : null,
         guest_email: state.isGuest ? document.getElementById('guest-email')?.value.trim() : null,
-        transaction_type: state.transactionType,
+        transaction_type: 'buy',
         is_scanned: state.isQRScanned,
         original_txn_number: state.scannedTxnNumber,
         items: selectedItems.map(item => ({ 
@@ -5579,7 +5569,7 @@
             uniform_upper_fabric: item.uniform_upper_fabric || null,
             uniform_lower_fabric: item.uniform_lower_fabric || null,
             quantity: item.quantity, 
-            type: state.transactionType,
+            type: 'buy',
             unit_name: item.unitName,
             unit_price: item.unitPrice,
             total: Math.round((item.unitPrice * item.quantity) * 100) / 100
@@ -6944,133 +6934,6 @@
       if (modal) modal.classList.add('hidden');
     }
 
-    function renderActiveRentals(data = []) {
-      const body = document.getElementById('active-rentals-body');
-      const empty = document.getElementById('active-rentals-empty');
-      const content = document.getElementById('active-rentals-content');
-      if (!body || !empty || !content) return;
-
-      const items = Array.isArray(data) ? data : [];
-      body.innerHTML = '';
-
-      if (items.length === 0) {
-        content.style.display = 'none';
-        empty.classList.remove('hidden');
-        return;
-      }
-
-      content.style.display = 'block';
-      empty.classList.add('hidden');
-      items.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${item.first_name || ''} ${item.last_name || ''} (${item.student_id || 'N/A'})</td>
-          <td>${item.product_name || '—'}</td>
-          <td>${item.quantity || 0}</td>
-          <td>${item.rental_date ? new Date(item.rental_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }) : '—'}</td>
-          <td>${item.return_date ? new Date(item.return_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }) : '—'}</td>
-        `;
-        body.appendChild(tr);
-      });
-    }
-
-    function loadPendingRenewals() {
-      fetch(`${API_ROOT}/get_pending_renewals.php`)
-        .then(res => res.json())
-        .then(data => {
-          pendingRenewals = Array.isArray(data) ? data : [];
-          filterRenewals();
-        })
-        .catch(err => {
-          console.error('Error loading pending renewals:', err);
-          pendingRenewals = [];
-          renderPendingRenewals([]);
-        });
-    }
-    function filterRenewals() {
-      const searchInput = document.getElementById('renewal-search');
-      const dateToInput = document.getElementById('renewal-date-to');
-      const query = (searchInput?.value || '').toLowerCase();
-      const dateTo = dateToInput?.value || '';
-
-      const filtered = pendingRenewals.filter(item => {
-        const studentName = `${item.first_name || ''} ${item.last_name || ''}`.toLowerCase();
-        const studentId = String(item.student_id || '').toLowerCase();
-        const productName = String(item.product_name || '').toLowerCase();
-        const matchesQuery = studentName.includes(query) || studentId.includes(query) || productName.includes(query);
-
-        let matchesDate = true;
-        if (dateTo) {
-          const itemDate = new Date(item.return_date || item.rental_date || 0);
-          const normalizedItemDate = isNaN(itemDate.getTime()) ? '' : itemDate.toISOString().split('T')[0];
-          matchesDate = normalizedItemDate ? normalizedItemDate <= dateTo : true;
-        }
-        return matchesQuery && matchesDate;
-      });
-      renderPendingRenewals(filtered);
-    }
-    function renderPendingRenewals(data) {
-      const body = document.getElementById('renewals-body');
-      const empty = document.getElementById('renewals-empty');
-      const content = document.getElementById('renewals-content');
-      const count = document.getElementById('renewal-count');
-
-      if (!body || !empty || !content) return;
-
-      body.innerHTML = '';
-      if (!data || data.length === 0) {
-        content.style.display = 'none';
-        empty.classList.remove('hidden');
-        if (count) count.textContent = '0 pending';
-        return;
-      }
-
-      content.style.display = 'block';
-      empty.classList.add('hidden');
-      if (count) count.textContent = `${data.length} pending`;
-
-      data.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${item.first_name || ''} ${item.last_name || ''} (${item.student_id || 'N/A'})</td>
-          <td>${item.product_name || '—'}</td>
-          <td>${item.quantity || 0}</td>
-          <td>${item.rental_date ? new Date(item.rental_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }) : '—'}</td>
-          <td>${item.return_date ? new Date(item.return_date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }) : '—'}</td>
-          <td>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn btn-primary" onclick="handleRenewal(${item.rental_id}, 'approve')">Approve</button>
-              <button class="btn btn-danger" onclick="handleRenewal(${item.rental_id}, 'reject')">Reject</button>
-            </div>
-          </td>
-        `;
-        body.appendChild(tr);
-      });
-    }
-
-    let pendingRenewalSortAsc = true;
-    function sortPendingRenewalsByDate() {
-      pendingRenewalSortAsc = !pendingRenewalSortAsc;
-      pendingRenewals.sort((a, b) => {
-        const dateA = new Date(a.rental_date || 0);
-        const dateB = new Date(b.rental_date || 0);
-        return pendingRenewalSortAsc ? dateA - dateB : dateB - dateA;
-      });
-      const icon = document.getElementById('sort-icon-renewal-date');
-      if (icon) {
-        icon.className = pendingRenewalSortAsc ? 'fas fa-sort-up' : 'fas fa-sort-down';
-      }
-      const searchInput = document.getElementById('renewal-search');
-      const query = (searchInput?.value || '').toLowerCase();
-      const filtered = pendingRenewals.filter(item => {
-        const studentName = `${item.first_name || ''} ${item.last_name || ''}`.toLowerCase();
-        const studentId = String(item.student_id || '').toLowerCase();
-        const productName = String(item.product_name || '').toLowerCase();
-        return studentName.includes(query) || studentId.includes(query) || productName.includes(query);
-      });
-      renderPendingRenewals(filtered);
-    }
-
     let txnCurrentPage = 1;
     function loadRecentTransactions(page = 1, search = null) {
       const from = document.getElementById('txn-date-from')?.value || '';
@@ -7669,107 +7532,6 @@
       });
     }
 
-    function processReturn(rentalId) {
-      // This function is now replaced by openPartialReturnModal and executeReturn
-      // Keeping it as a placeholder or for backward compatibility if needed elsewhere.
-      console.warn("`processReturn(rentalId)` is deprecated. Use `openPartialReturnModal` and `executeReturn`.");
-    }
-
-    let currentRentalForReturn = {}; // Store details for the modal
-
-    function openPartialReturnModal(rentalId, currentQuantity, productName, studentName) {
-      currentRentalForReturn = { rentalId, currentQuantity, productName, studentName };
-      const rentalIdInput = document.getElementById('return-rental-id');
-      const studentNameInput = document.getElementById('return-student-name');
-      const productNameInput = document.getElementById('return-product-name');
-      const currentQuantityInput = document.getElementById('return-current-quantity');
-      const returnQuantityInput = document.getElementById('return-quantity-input');
-      const notesInput = document.getElementById('return-notes');
-      const modal = document.getElementById('partial-return-modal');
-
-      if (rentalIdInput) rentalIdInput.value = rentalId;
-      if (studentNameInput) studentNameInput.value = studentName;
-      if (productNameInput) productNameInput.value = productName;
-      if (currentQuantityInput) currentQuantityInput.value = currentQuantity;
-      if (returnQuantityInput) {
-        returnQuantityInput.max = currentQuantity;
-        returnQuantityInput.value = currentQuantity;
-      }
-      if (notesInput) notesInput.value = '';
-      if (modal) modal.classList.remove('hidden');
-    }
-
-    function closePartialReturnModal() {
-      const modal = document.getElementById('partial-return-modal');
-      const form = document.getElementById('partial-return-form');
-      if (modal) modal.classList.add('hidden');
-      if (form) form.reset();
-      currentRentalForReturn = {};
-    }
-
-    // Form submission for Partial Return
-    document.getElementById('partial-return-form')?.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const form = this;
-      const rentalIdInput = document.getElementById('return-rental-id');
-      const quantityInput = document.getElementById('return-quantity-input');
-      const currentQuantityInput = document.getElementById('return-current-quantity');
-      const notesInput = document.getElementById('return-notes');
-
-      if (!rentalIdInput || !quantityInput || !currentQuantityInput) {
-        alert('The return form is unavailable right now.');
-        return;
-      }
-
-      const rentalId = rentalIdInput.value;
-      const returnedQuantity = parseInt(quantityInput.value, 10);
-      const notes = notesInput?.value.trim() || '';
-      const currentQuantity = parseInt(currentQuantityInput.value, 10);
-
-      if (returnedQuantity <= 0 || returnedQuantity > currentQuantity) {
-        alert(`Quantity to return must be between 1 and ${currentQuantity}.`);
-        return;
-      }
-
-      if (!confirm(`Are you sure you want to return ${returnedQuantity} item(s) for this rental?`)) {
-        return;
-      }
-
-      const submitBtn = form.querySelector('button[type="submit"]');
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-      }
-
-      fetch(`${API_ROOT}/process_rental_return.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rental_id: rentalId, returned_quantity: returnedQuantity, notes: notes })
-      })
-      .then(res => res.json())
-      .then(result => {
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Process Return';
-        }
-        if (result.success) {
-          alert(result.message);
-          loadProducts();
-        } else {
-          alert(result.message || 'Failed to process return.');
-        }
-        closePartialReturnModal();
-      })
-      .catch(err => {
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Process Return';
-        }
-        console.error('Return Error:', err);
-        alert('An error occurred while processing the return.');
-      });
-    });
-
     initializeAdminCashierPage(async (userData) => { // Made async to await loadStudentList
       const name = userData.name || userData.full_name || 'Admin Cashier';
       currentAdminName = name;
@@ -7782,7 +7544,6 @@
       updateDateTime();
       setInterval(updateDateTime, 60000);
       loadPendingOrders(); // Load pending orders on page load
-      loadPendingRenewals();
       loadRecentTransactions();
       await loadRecentTuitionReceipts(3);
       await loadStudentList(); // Await student list loading
@@ -7970,20 +7731,6 @@
       state.currentPage = 1;
       renderProducts();
     });
-
-    const activeRentalSearchInput = document.getElementById('active-rental-search');
-    if (activeRentalSearchInput) {
-      activeRentalSearchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
-        const filtered = activeRentals.filter(item => {
-          const studentName = `${item.first_name || ''} ${item.last_name || ''}`.toLowerCase();
-          return studentName.includes(query) ||
-            (item.student_id || '').toLowerCase().includes(query) ||
-            (item.product_name || '').toLowerCase().includes(query);
-        });
-        renderActiveRentals(filtered);
-      });
-    }
 
     const txnDateFrom = document.getElementById('txn-date-from');
     if (txnDateFrom) {
@@ -8309,52 +8056,6 @@
       }
     }
 
-    function toggleSelectAllRentals(isChecked) {
-      document.querySelectorAll('.rental-checkbox').forEach(cb => cb.checked = isChecked);
-      updateBulkReturnButtonVisibility(); // Update button state after toggling all
-    }
-
-    function updateBulkReturnButtonVisibility() {
-      const selectedCount = document.querySelectorAll('.rental-checkbox:checked').length;
-      const btn = document.getElementById('bulk-return-btn');
-      if (btn) btn.classList.toggle('hidden', selectedCount === 0);
-    }
-
-    function processBulkReturn() {
-      const selectedCheckboxes = document.querySelectorAll('.rental-checkbox:checked');
-      const rentalIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-
-      if (rentalIds.length === 0) return;
-      if (!confirm(`Are you sure you want to mark ${rentalIds.length} items as returned? Stock will be updated.`)) return;
-
-      const bulkBtn = document.getElementById('bulk-return-btn');
-      bulkBtn.disabled = true;
-      bulkBtn.textContent = 'Processing...';
-
-      fetch(`${API_ROOT}/bulk_return_items.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rental_ids: rentalIds })
-      })
-      .then(res => res.json())
-      .then(result => {
-        bulkBtn.disabled = false;
-        bulkBtn.textContent = 'Bulk Return';
-        if (result.success) {
-          alert(result.message);
-          loadProducts();
-          document.getElementById('select-all-rentals').checked = false; // Deselect all after processing
-        } else {
-          alert(result.message || 'Bulk return failed.');
-        }
-      })
-      .catch(() => {
-        bulkBtn.disabled = false;
-        bulkBtn.textContent = 'Bulk Return';
-        alert('An error occurred during bulk return.');
-      });
-    }
-
     function toggleTxnAutoRefresh(enabled) {
       if (txnAutoRefreshInterval) clearInterval(txnAutoRefreshInterval);
       if (enabled) {
@@ -8537,5 +8238,6 @@
       </div>
     </div>
   </div>
+  <script src="../../assets/js/product_returns.js" defer></script>
 </body>
 </html>

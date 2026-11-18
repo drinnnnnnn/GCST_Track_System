@@ -8,7 +8,7 @@ header('Content-Type: application/json');
 try {
     require_once __DIR__ . '/security.php';
     secureSessionStart();
-    requireAuth(['admin', 'admincashier', 'superadmin', 'cashier']);
+    requireAuth(['admin', 'cashier', 'admincashier', 'superadmin']);
 
     require_once __DIR__ . '/../config/db_connect.php';
 
@@ -19,7 +19,6 @@ try {
 $sql = "SELECT product_id, product_name, product_description, product_category, product_image, barcode, is_featured,
         COALESCE(stock_count, stock, 0) AS stock_count, 
         COALESCE(buy_price, price, 0.00) AS buy_price, 
-        COALESCE(rent_price, 0.00) AS rent_price, 
         COALESCE(product_status, 'available') AS product_status, 
         book_author, book_pages, book_course, book_subject, book_edition, book_publisher, book_isbn, book_publication_year,
         uniform_course, uniform_type, uniform_upper_fabric, uniform_lower_fabric, uniform_material,

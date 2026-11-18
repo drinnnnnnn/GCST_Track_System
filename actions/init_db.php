@@ -53,7 +53,7 @@ $mysqli->query(
         `middle_name` VARCHAR(100) DEFAULT NULL,
         `email` VARCHAR(150) NOT NULL UNIQUE,
         `password` VARCHAR(255) NOT NULL,
-        `role` ENUM('admincashier','cashier','superadmin') NOT NULL DEFAULT 'admincashier',
+        `role` ENUM('admin','cashier','admincashier','superadmin') NOT NULL DEFAULT 'admincashier',
         `status` ENUM('active','inactive') NOT NULL DEFAULT 'active',
         `login_attempts` INT DEFAULT 0,
         `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -70,7 +70,6 @@ $mysqli->query(
         `product_description` TEXT DEFAULT NULL,
         `product_image` VARCHAR(255) DEFAULT NULL,
         `price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-        `rent_price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `stock` INT(11) NOT NULL DEFAULT 0,
         `stock_count` INT(11) NOT NULL DEFAULT 0,
         `product_status` ENUM('available','unavailable') NOT NULL DEFAULT 'available',
@@ -85,7 +84,7 @@ $mysqli->query(
         `transaction_id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
         `user_id` INT(11) NOT NULL,
         `product_id` INT(11) NOT NULL,
-        `type` ENUM('buy','rent') NOT NULL,
+        `type` ENUM('buy') NOT NULL,
         `quantity` INT(11) NOT NULL DEFAULT 1,
         `total_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `transaction_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -164,24 +163,6 @@ $mysqli->query(
 );
 
 $mysqli->query(
-    "CREATE TABLE IF NOT EXISTS `active_rentals` (
-        `rental_id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        `transaction_number` VARCHAR(50) NOT NULL,
-        `student_id` VARCHAR(50) NOT NULL,
-        `product_id` INT(11) NOT NULL,
-        `quantity` INT(11) NOT NULL DEFAULT 1,
-        `rental_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        `return_date` DATETIME NOT NULL,
-        `rejection_reason` TEXT DEFAULT NULL,
-        `status` ENUM('active','returned','overdue','pending_renewal') NOT NULL DEFAULT 'active',
-        KEY `idx_active_rentals_student` (`student_id`),
-        KEY `idx_active_rentals_transaction` (`transaction_number`),
-        CONSTRAINT `fk_active_rentals_product` FOREIGN KEY (`product_id`) REFERENCES `products`(`product_id`) ON DELETE CASCADE,
-        CONSTRAINT `fk_active_rentals_student` FOREIGN KEY (`student_id`) REFERENCES `users`(`student_id`) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-);
-
-$mysqli->query(
     "CREATE TABLE IF NOT EXISTS `cashier_transactions` ( 
         `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
         `transaction_number` VARCHAR(50) NOT NULL,
@@ -190,7 +171,7 @@ $mysqli->query(
         `user_id` INT(11) DEFAULT NULL,
         `student_name` VARCHAR(255) DEFAULT NULL,
         `cashier_id` INT(11) NOT NULL,
-        `transaction_type` ENUM('buy','rent','mixed') NOT NULL,
+        `transaction_type` ENUM('buy') NOT NULL,
         `items` TEXT NOT NULL,
         `subtotal` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `discount_percent` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
@@ -245,13 +226,12 @@ addColumnIfNotExists($mysqli, 'users', 'phone', "VARCHAR(25) DEFAULT NULL");
 addColumnIfNotExists($mysqli, 'users', 'is_pwd', "TINYINT(1) NOT NULL DEFAULT 0 AFTER `status` ");
 addColumnIfNotExists($mysqli, 'users', 'created_at', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
 addColumnIfNotExists($mysqli, 'users', 'updated_at', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
-addColumnIfNotExists($mysqli, 'admincashier_acc', 'role', "ENUM('admincashier','superadmin') NOT NULL DEFAULT 'admincashier'");
+addColumnIfNotExists($mysqli, 'admincashier_acc', 'role', "ENUM('admin','cashier','admincashier','superadmin') NOT NULL DEFAULT 'admincashier'");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'pin', "VARCHAR(10) DEFAULT NULL AFTER `password` ");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'status', "ENUM('active','inactive') NOT NULL DEFAULT 'active'");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'login_attempts', "INT DEFAULT 0 AFTER `status` ");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'created_at', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
 addColumnIfNotExists($mysqli, 'admincashier_acc', 'updated_at', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
-addColumnIfNotExists($mysqli, 'products', 'rent_price', "DECIMAL(10,2) NOT NULL DEFAULT 0.00");
 addColumnIfNotExists($mysqli, 'products', 'stock', "INT(11) NOT NULL DEFAULT 0");
 addColumnIfNotExists($mysqli, 'products', 'product_status', "ENUM('available','unavailable') NOT NULL DEFAULT 'available'");
 addColumnIfNotExists($mysqli, 'products', 'barcode', "VARCHAR(50) DEFAULT NULL");
@@ -273,12 +253,6 @@ addColumnIfNotExists($mysqli, 'cashier_transactions', 'payment_method', "VARCHAR
 addColumnIfNotExists($mysqli, 'cashier_transactions', 'check_number', "VARCHAR(100) DEFAULT NULL");
 addColumnIfNotExists($mysqli, 'cashier_transactions', 'receipt_category', "VARCHAR(100) DEFAULT NULL");
 
-// Ensure critical columns exist in active_rentals for the renewal system
-addColumnIfNotExists($mysqli, 'active_rentals', 'rental_date', "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `quantity` ");
-addColumnIfNotExists($mysqli, 'active_rentals', 'transaction_number', "VARCHAR(50) NOT NULL AFTER `rental_id` ");
-addColumnIfNotExists($mysqli, 'active_rentals', 'status', "ENUM('active','returned','overdue','pending_renewal') NOT NULL DEFAULT 'active'");
-addColumnIfNotExists($mysqli, 'active_rentals', 'rejection_reason', "TEXT DEFAULT NULL AFTER `status` ");
-addColumnIfNotExists($mysqli, 'active_rentals', 'overdue_charge', "DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `status` ");
 addColumnIfNotExists($mysqli, 'cashier_transactions', 'payment_status', "ENUM('paid','pending','voided') NOT NULL DEFAULT 'pending'");
 
 // Ensure email log columns match the helper logic

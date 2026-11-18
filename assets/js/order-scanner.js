@@ -66,7 +66,11 @@ const OrderScanner = {
         } catch (err) {
             console.error("Scanner Initialization Error:", err);
             loader.classList.add('hidden');
-            errorDiv.textContent = "Camera Error: " + err;
+            const cameraUnavailable = err?.name === 'NotFoundError'
+                || String(err).includes('Requested device not found');
+            errorDiv.textContent = cameraUnavailable
+                ? 'No camera was found. Use a handheld scanner or enter the order number or return QR code manually.'
+                : "Camera Error: " + err;
             errorDiv.classList.remove('hidden');
         } finally {
             this.isBusy = false;
@@ -101,6 +105,7 @@ const OrderScanner = {
 
     showManualEntry() {
         this.resetFromError();
+        document.getElementById('camera-error-message')?.classList.add('hidden');
         const manualOverlay = document.getElementById('manual-entry-overlay');
         if (manualOverlay) {
             manualOverlay.classList.remove('hidden');
@@ -130,6 +135,12 @@ const OrderScanner = {
         this.lastScannedData = cleanText;
         this.lastScanTime = now;
 
+        const returnQrPrefix = 'GCST-RETURN-';
+        if (cleanText.toUpperCase().startsWith(returnQrPrefix)) {
+            await this.loadProductReturn(cleanText.slice(returnQrPrefix.length));
+            return;
+        }
+
         // If the scanned text is a renewal reference, route it to the renewal handler instead
         if (cleanText.toUpperCase().startsWith('RENEW-')) {
             if (typeof SCAN_SOUND !== 'undefined') {
@@ -151,6 +162,70 @@ const OrderScanner = {
         await this.loadOrder(cleanText);
     },
 
+    async loadProductReturn(token) {
+        try {
+            if (typeof window.scanProductReturnQr !== 'function') {
+                throw new Error('Return scanning is not ready. Refresh the cashier page and try again.');
+            }
+
+            const result = await window.scanProductReturnQr(token);
+            const request = result.request;
+            if (!request) throw new Error('Return request details were not returned.');
+
+            const scannerModal = document.getElementById('qr-modal');
+            const scannerIsOpen = scannerModal && !scannerModal.classList.contains('hidden');
+            const successOverlay = document.getElementById('scan-success-overlay');
+            const successText = document.getElementById('scan-success-text');
+            const successDetail = document.getElementById('scan-success-detail-text');
+            const successTooltip = document.getElementById('scan-success-tooltip');
+            const details = `${request.product_name} (${request.quantity}${request.unit_name ? ` ${request.unit_name}` : ''}) · Order ${request.transaction_number}`;
+
+            if (scannerIsOpen && successText) {
+                successText.textContent = result.already_received ? 'Item already received' : 'Return item received';
+            }
+            if (scannerIsOpen && successDetail) successDetail.textContent = details;
+            if (scannerIsOpen && successTooltip) successTooltip.textContent = details;
+            if (scannerIsOpen && successOverlay) successOverlay.classList.remove('hidden');
+
+            if (typeof SCAN_SOUND !== 'undefined') {
+                SCAN_SOUND.currentTime = 0;
+                SCAN_SOUND.play().catch(() => {});
+            }
+
+            this.lastScannedData = null;
+            if (scannerIsOpen) {
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                await this.close();
+            }
+            if (typeof window.focusAdminProductReturn === 'function') {
+                await window.focusAdminProductReturn(request.id);
+            }
+        } catch (error) {
+            console.error('Product return QR scan failed:', error);
+            const errorOverlay = document.getElementById('scan-error-overlay');
+            const scannerModal = document.getElementById('qr-modal');
+            if (errorOverlay && scannerModal && !scannerModal.classList.contains('hidden')) {
+                const errorText = document.getElementById('scan-error-text');
+                if (errorText) errorText.textContent = error.message || 'Return QR could not be processed.';
+                errorOverlay.classList.remove('hidden');
+                this.lastScannedData = null;
+                if (typeof ERROR_SOUND !== 'undefined') {
+                    ERROR_SOUND.currentTime = 0;
+                    ERROR_SOUND.play().catch(() => {});
+                }
+            } else if (typeof window.showAdminProductReturnScanFeedback === 'function') {
+                window.showAdminProductReturnScanFeedback(`Unable to process return QR: ${error.message}`);
+            } else {
+                const errorDiv = document.getElementById('camera-error-message');
+                if (errorDiv) {
+                    errorDiv.textContent = error.message || 'Return QR could not be processed.';
+                    errorDiv.classList.remove('hidden');
+                }
+                this.lastScannedData = null;
+            }
+        }
+    },
+
     async submitManualEntry() {
         const input = document.getElementById('manual-order-input');
         const code = input?.value.trim().toUpperCase();
@@ -163,7 +238,7 @@ const OrderScanner = {
             return;
         }
         this.hideManualEntry();
-        await this.loadOrder(code);
+        await this.handleScanSuccess(code);
     },
 
     async loadOrder(txnNumber) {

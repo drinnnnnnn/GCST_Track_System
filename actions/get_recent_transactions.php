@@ -2,7 +2,7 @@
 require_once __DIR__ . '/security.php';
 secureSessionStart();
 // Allow students and users to access their own transaction history
-requireAuth(['admincashier', 'superadmin', 'student', 'user']);
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin', 'student', 'user']);
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/db_connect.php';
 

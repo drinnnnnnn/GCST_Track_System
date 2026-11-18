@@ -295,6 +295,33 @@
       border-color: #334155 !important;
     }
 
+    body.dark-mode .return-history-panel {
+      background: #172033 !important;
+      border-color: #334155 !important;
+    }
+
+    body.dark-mode .return-history-header h3,
+    body.dark-mode .return-history-table td {
+      color: #e5edf8;
+    }
+
+    body.dark-mode .return-history-header p,
+    body.dark-mode .return-history-pagination {
+      color: #a9b7cb;
+    }
+
+    body.dark-mode .return-history-control,
+    body.dark-mode .return-history-table-wrap,
+    body.dark-mode .return-history-table th {
+      background: #1e293b !important;
+      color: #e5edf8 !important;
+      border-color: #334155 !important;
+    }
+
+    body.dark-mode .return-history-table tbody tr:hover {
+      background: #243247 !important;
+    }
+
     body.dark-mode .save-profile-modal-card {
       background: #172033 !important;
       color: #e5edf8 !important;
@@ -660,6 +687,103 @@
       padding: 0 6px;
     }
 
+    .return-history-panel {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      background: #f8fafc;
+    }
+
+    .return-history-header h3 {
+      margin: 0;
+      color: #0f172a;
+      font-size: 1.125rem;
+      font-weight: 650;
+    }
+
+    .return-history-header p {
+      margin: 0.35rem 0 0;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    .return-history-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 0.625rem;
+      margin: 1.25rem 0 1rem;
+    }
+
+    .return-history-control {
+      min-height: 42px;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.625rem;
+      background: #fff;
+      padding: 0.625rem 0.75rem;
+      color: #334155;
+      font-size: 0.875rem;
+    }
+
+    .return-history-status-filter {
+      width: 220px;
+    }
+
+    .return-history-search {
+      width: min(100%, 260px);
+    }
+
+    .return-history-table-wrap {
+      overflow-x: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      background: #fff;
+    }
+
+    .return-history-table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+
+    .return-history-table th {
+      padding: 0.75rem 0.875rem;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .return-history-table td {
+      padding: 0.875rem;
+      border-bottom: 1px solid #e2e8f0;
+      color: #334155;
+      vertical-align: middle;
+    }
+
+    .return-history-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .return-history-table tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    .return-history-pagination {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
     .receipt-modal .save-profile-modal-card {
       max-width: 720px;
     }
@@ -774,6 +898,30 @@
         min-height: 44px;
       }
 
+      .return-history-panel {
+        margin-top: 1.5rem;
+        padding: 1rem;
+      }
+
+      .return-history-toolbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .return-history-status-filter {
+        grid-column: 1 / -1;
+        width: 100%;
+      }
+
+      .return-history-search {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .return-history-pagination {
+        justify-content: center;
+      }
+
       #toastContainer {
         left: 12px;
         right: 12px;
@@ -814,6 +962,16 @@
 
       .receipt-modal #receipt-modal-content > .grid > div > div {
         overflow-wrap: anywhere;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .return-history-toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .return-history-toolbar > * {
+        width: 100%;
       }
     }
 
@@ -1018,9 +1176,14 @@
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
           <div>
             <h2><i class="fas fa-receipt"></i> Transaction History</h2>
-            <p class="text-sm text-slate-500">View your purchased products and receipt details.</p>
+            <p class="text-sm text-slate-500">View receipts and choose Return Product on a paid product purchase if an item is damaged.</p>
           </div>
           <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <select id="txn-product-filter" onchange="loadTransactionHistory(1)" class="w-full sm:w-56 px-4 py-3 border border-gray-200 rounded-2xl bg-slate-50 focus:outline-none focus:border-blue-500" aria-label="Filter transaction history by product">
+              <option value="all">All transactions</option>
+              <option value="products">Product purchases</option>
+              <option value="paid_products">Paid product purchases</option>
+            </select>
             <input id="txn-search" type="text" placeholder="Search by transaction #" class="w-full sm:w-72 px-4 py-3 border border-gray-200 rounded-2xl bg-slate-50 focus:outline-none focus:border-blue-500" />
             <button onclick="loadTransactionHistory(1)" class="btn btn-primary">Search</button>
           </div>
@@ -1055,6 +1218,47 @@
             Next
             <i class="fas fa-chevron-right"></i>
           </button>
+        </div>
+        <div class="return-history-panel">
+          <div class="return-history-header">
+            <h3>Damaged Product Returns</h3>
+            <p>Submit a request from a paid purchase and track its status here.</p>
+          </div>
+          <div class="return-history-toolbar">
+            <select id="product-return-history-status" class="return-history-control return-history-status-filter" aria-label="Filter return requests by status">
+              <option value="all">All return statuses</option>
+              <option value="pending">Awaiting review</option>
+              <option value="refund_pending">Refund to be paid</option>
+              <option value="refunded">Refunded</option>
+              <option value="replacement_pending">Replacement to be fulfilled</option>
+              <option value="completed">Completed</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <input id="product-return-history-search" type="search" placeholder="Search product name" class="return-history-control return-history-search" aria-label="Search return requests by product name">
+            <button type="button" id="product-return-history-search-btn" class="btn btn-secondary btn-sm">Search</button>
+          </div>
+          <div class="return-history-table-wrap">
+            <table class="return-history-table">
+              <thead>
+                <tr>
+                  <th>Submitted</th>
+                  <th>Order</th>
+                  <th>Product / quantity</th>
+                  <th>Resolution</th>
+                  <th>Status</th>
+                  <th>Item handoff</th>
+                </tr>
+              </thead>
+              <tbody id="product-return-history-body">
+                <tr><td colspan="6" class="px-4 py-4 text-center text-slate-500">Loading return requests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="return-history-pagination">
+            <button type="button" id="product-return-history-prev" class="btn btn-secondary btn-sm" disabled>Previous</button>
+            <span id="product-return-history-page" class="text-sm text-slate-500" aria-live="polite">1 / 1</span>
+            <button type="button" id="product-return-history-next" class="btn btn-secondary btn-sm" disabled>Next</button>
+          </div>
         </div>
       </div>
     </section>
@@ -1153,6 +1357,47 @@
           <button onclick="closeVerificationModal()" class="text-sm font-medium text-slate-400 hover:text-slate-600">Cancel</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div id="product-return-modal" class="hidden fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="product-return-title">
+    <div class="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
+      <div class="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <h2 id="product-return-title" class="text-xl font-bold text-slate-900">Report a damaged product</h2>
+          <p class="text-sm text-slate-500">Order <span id="product-return-order-number"></span></p>
+        </div>
+        <button type="button" id="product-return-close" class="text-2xl text-slate-500" aria-label="Close">&times;</button>
+      </div>
+      <form id="product-return-form" class="space-y-4">
+        <label class="block text-sm font-semibold text-slate-700">
+          Product
+          <select id="product-return-item" name="transaction_item_id" required class="mt-1 w-full rounded-xl border border-slate-300 p-3">
+            <option value="">Select a product</option>
+          </select>
+        </label>
+        <label class="block text-sm font-semibold text-slate-700">
+          Quantity to return
+          <input id="product-return-quantity" name="quantity" type="number" min="0.01" step="0.01" required disabled class="mt-1 w-full rounded-xl border border-slate-300 p-3">
+        </label>
+        <label class="block text-sm font-semibold text-slate-700">
+          Preferred resolution
+          <select name="request_type" required class="mt-1 w-full rounded-xl border border-slate-300 p-3">
+            <option value="refund">Refund</option>
+            <option value="replacement">Replacement</option>
+          </select>
+        </label>
+        <label class="block text-sm font-semibold text-slate-700">
+          Describe the damage
+          <textarea name="damage_description" maxlength="2000" rows="3" required class="mt-1 w-full rounded-xl border border-slate-300 p-3"></textarea>
+        </label>
+        <label class="block text-sm font-semibold text-slate-700">
+          Damage photo (JPEG, PNG, or WebP; up to 5 MB)
+          <input name="damage_photo" type="file" accept="image/jpeg,image/png,image/webp" required class="mt-1 w-full rounded-xl border border-slate-300 p-3">
+        </label>
+        <p id="product-return-feedback" class="text-sm" aria-live="polite"></p>
+        <button type="submit" id="product-return-submit" class="btn btn-primary w-full">Submit return request</button>
+      </form>
     </div>
   </div>
 
@@ -1490,13 +1735,20 @@
         const row = document.createElement('tr');
         const receiptType = normalizeReceiptType(txn.receipt_type) || normalizeReceiptType(txn.receipt_category) || txn.transaction_type || (txn.source === 'tuition' ? 'Tuition Receipt' : 'Payment Receipt');
         const statusText = normalizePaymentStatusText(txn);
+        const isProductPurchase = txn.source === 'cashier' && txn.transaction_type === 'buy' && Number(txn.user_id) > 0;
+        const canRequestDamagedReturn = isProductPurchase && String(txn.payment_status).toLowerCase() === 'paid' && txn.transaction_number;
+        const returnButton = !isProductPurchase
+          ? ''
+          : canRequestDamagedReturn
+            ? `<button type="button" class="btn btn-primary btn-sm mt-2" data-request-damaged-return="${escapeHtml(String(txn.transaction_number))}">Return Product</button>`
+            : '<button type="button" class="btn btn-secondary btn-sm mt-2" disabled title="Only paid, completed product purchases can be returned." style="opacity: 0.55; cursor: not-allowed;">Return Product</button>';
         row.innerHTML = `
           <td class="px-4 py-4 text-slate-700">${formatDateTime(txn.created_at)}</td>
           <td class="px-4 py-4 text-slate-700">${txn.transaction_number || txn.receipt_number || 'N/A'}</td>
           <td class="px-4 py-4 text-slate-700">${escapeHtml(receiptType)}</td>
           <td class="px-4 py-4"><span class="status-badge ${getPaymentStatusClass(txn)}">${statusText}</span></td>
           <td class="px-4 py-4 text-slate-700">${formatCurrency(txn.total_amount)}</td>
-          <td class="px-4 py-4"><button class="btn btn-secondary btn-sm" onclick="viewTransactionReceipt('${encodeURIComponent(txn.transaction_number || txn.id)}')">View Receipt</button></td>
+          <td class="px-4 py-4"><button class="btn btn-secondary btn-sm" onclick="viewTransactionReceipt('${encodeURIComponent(txn.transaction_number || txn.id)}')">View Receipt</button>${returnButton}</td>
         `;
         tbody.appendChild(row);
 
@@ -1526,6 +1778,7 @@
             </div>
             <div class="txn-actions">
               <button class="btn btn-secondary btn-sm" onclick="viewTransactionReceipt('${encodeURIComponent(txn.transaction_number || txn.id)}')">View Receipt</button>
+              ${returnButton}
             </div>
           `;
           mobileList.appendChild(card);
@@ -1594,6 +1847,7 @@
 
       try {
         const params = new URLSearchParams({ page: String(page), limit: '20' });
+        params.set('product_filter', document.getElementById('txn-product-filter')?.value || 'all');
         if (search) params.set('search', search);
 
         const response = await fetchWithError(`../../actions/get_recent_transactions_student.php?${params.toString()}`, { cache: 'no-store' });
@@ -1763,13 +2017,11 @@
 
         const prefs = user.notification_preferences || {};
         const emailCheckbox = document.getElementById('email-notif');
-        const rentalCheckbox = document.getElementById('rental-notif');
         const paymentCheckbox = document.getElementById('payment-notif');
         const queueCheckbox = document.getElementById('queue-notif');
         const systemCheckbox = document.getElementById('system-notif');
 
         if (emailCheckbox) emailCheckbox.checked = prefs.email_notifications ?? true;
-        if (rentalCheckbox) rentalCheckbox.checked = prefs.rental_reminders ?? true;
         if (paymentCheckbox) paymentCheckbox.checked = prefs.payment_reminders ?? true;
         if (queueCheckbox) queueCheckbox.checked = prefs.queue_notifications ?? true;
         if (systemCheckbox) systemCheckbox.checked = prefs.system_updates ?? true;
@@ -1781,6 +2033,7 @@
         showToast(error?.message || 'Unable to load profile data.', 'error');
       }
     });
-  </script> 
+  </script>
+  <script src="../../assets/js/product_returns.js" defer></script>
 </body>
 </html>

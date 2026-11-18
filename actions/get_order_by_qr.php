@@ -9,7 +9,7 @@ date_default_timezone_set('Asia/Manila');
 require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/QRService.php';
 secureSessionStart();
-requireAuth(['admincashier', 'superadmin', 'student', 'user']);
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin', 'student', 'user']);
 header('Content-Type: application/json');
 
 // 1. Prevent direct external access by checking for AJAX header

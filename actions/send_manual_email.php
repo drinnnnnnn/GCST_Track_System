@@ -11,7 +11,7 @@ if (file_exists(__DIR__ . '/../config/config.php')) {
 
 // Ensure only authenticated users with appropriate roles can access this
 secureSessionStart();
-requireAuth(['admincashier', 'superadmin']); // Adjust roles as necessary
+requireAuth(['admin', 'cashier', 'admincashier', 'superadmin']); // Adjust roles as necessary
 
 $conn = Database::getConnection();
 

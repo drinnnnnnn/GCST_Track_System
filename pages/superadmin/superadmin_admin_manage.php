@@ -334,6 +334,13 @@
                             <label class="text-[10px] font-bold uppercase text-slate-500">Email Address</label>
                             <input type="email" id="form-email" name="email" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
                         </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold uppercase text-slate-500" for="form-role">Staff Role</label>
+                            <select id="form-role" name="role" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-primary">
+                                <option value="admin">Admin</option>
+                                <option value="cashier">Cashier</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -554,7 +561,7 @@
                         </div>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="text-[10px] font-extrabold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg uppercase tracking-widest border border-slate-200/50">${escapeHtml(a.role || 'Staff')}</span>
+                        <span class="text-[10px] font-extrabold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg uppercase tracking-widest border border-slate-200/50">${escapeHtml(a.role === 'admincashier' || !a.role ? 'Admin' : a.role)}</span>
                     </td>
                     <td class="px-6 py-4">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${a.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}">
@@ -807,6 +814,7 @@
             document.getElementById('form-last-name').value = a.last_name;
             document.getElementById('form-contact-number').value = a.contact_number || '';
             document.getElementById('form-email').value = a.email;
+            document.getElementById('form-role').value = a.role === 'cashier' ? 'cashier' : 'admin';
             const signatureInput = document.getElementById('form-signature-image');
             if (signatureInput) {
                 signatureInput.value = '';
@@ -907,6 +915,7 @@
             formData.append('last_name', document.getElementById('form-last-name').value);
             formData.append('contact_number', document.getElementById('form-contact-number').value);
             formData.append('email', document.getElementById('form-email').value);
+            formData.append('role', document.getElementById('form-role').value);
 
             const signatureFile = document.getElementById('form-signature-image').files[0];
             if (signatureFile) {
