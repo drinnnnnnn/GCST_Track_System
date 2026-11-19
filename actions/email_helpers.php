@@ -30,6 +30,7 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
     $emailStatus = 'not_sent'; 
     $finalStatus = 'failed';   
     $logMessage  = "";
+    $attachmentDiagnostics = [];
 
     // 2. Sanitize parameters to ensure non-null values for database insertion
     $toEmail     = (string)($toEmail ?? '');
@@ -100,18 +101,105 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
             // Process attachments (QR codes, etc.)
             foreach ($attachments as $att) {
                 if (isset($att['path'], $att['cid'])) {
-                    $mail->addEmbeddedImage($att['path'], $att['cid'], $att['name'] ?? 'image.png');
+                    $name = $att['name'] ?? 'image.png';
+                    $added = $mail->addEmbeddedImage($att['path'], $att['cid'], $name);
+                    if (!$added) {
+                        throw new Exception('Unable to embed email attachment: ' . $name);
+                    }
+                    $attachmentDiagnostics[] = [
+                        'name' => $name,
+                        'mime_type' => PHPMailer::filenameToType($name),
+                        'bytes' => is_file($att['path']) ? filesize($att['path']) : null,
+                        'registered' => true,
+                        'mime_verified' => false,
+                        'required' => !empty($att['required']),
+                    ];
                 } elseif (isset($att['path'])) {
-                    $mail->addAttachment($att['path'], $att['name'] ?? '');
+                    $name = $att['name'] ?? '';
+                    $added = $mail->addAttachment($att['path'], $name);
+                    if (!$added) {
+                        throw new Exception('Unable to add email attachment: ' . $name);
+                    }
+                    $attachmentDiagnostics[] = [
+                        'name' => $name !== '' ? $name : basename($att['path']),
+                        'mime_type' => PHPMailer::filenameToType($att['path']),
+                        'bytes' => is_file($att['path']) ? filesize($att['path']) : null,
+                        'registered' => true,
+                        'mime_verified' => false,
+                        'required' => !empty($att['required']),
+                    ];
+                } elseif (isset($att['data'])) {
+                    $name = $att['name'] ?? 'attachment.bin';
+                    $mimeType = $att['mime_type'] ?? 'application/octet-stream';
+                    $attached = $mail->addStringAttachment(
+                        $att['data'],
+                        $name,
+                        'base64',
+                        $mimeType
+                    );
+                    if (!$attached) {
+                        throw new Exception('Unable to add email attachment: ' . $name);
+                    }
+                    $attachmentDiagnostics[] = [
+                        'name' => $name,
+                        'mime_type' => $mimeType,
+                        'bytes' => strlen((string)$att['data']),
+                        'registered' => true,
+                        'mime_verified' => false,
+                        'required' => !empty($att['required']),
+                    ];
                 }
             }
 
-            if ($mail->send()) {
+            $requiredAttachmentIndexes = [];
+            foreach ($attachmentDiagnostics as $index => $attachment) {
+                if (!$attachment['required']) {
+                    continue;
+                }
+                $requiredAttachmentIndexes[] = $index;
+                $registered = false;
+                foreach ($mail->getAttachments() as $mailAttachment) {
+                    if (
+                        ($mailAttachment[2] ?? '') === $attachment['name']
+                        && ($mailAttachment[4] ?? '') === $attachment['mime_type']
+                        && ($mailAttachment[6] ?? '') === 'attachment'
+                    ) {
+                        $registered = true;
+                        break;
+                    }
+                }
+                if (!$registered) {
+                    throw new Exception('Required attachment was not registered with the mailer: ' . $attachment['name']);
+                }
+            }
+
+            if ($requiredAttachmentIndexes) {
+                if (!$mail->preSend()) {
+                    throw new Exception('Mailer could not build the receipt email: ' . $mail->ErrorInfo);
+                }
+                $mimeMessage = $mail->getSentMIMEMessage();
+                foreach ($requiredAttachmentIndexes as $index) {
+                    $attachment = $attachmentDiagnostics[$index];
+                    if (
+                        strpos($mimeMessage, 'Content-Type: ' . $attachment['mime_type'] . '; name=') === false
+                        || strpos($mimeMessage, $attachment['name']) === false
+                        || strpos($mimeMessage, 'Content-Disposition: attachment; filename=') === false
+                    ) {
+                        throw new Exception('Receipt image is missing from the generated email MIME: ' . $attachment['name']);
+                    }
+                    $attachmentDiagnostics[$index]['mime_verified'] = true;
+                }
+                $sent = $mail->postSend();
+            } else {
+                $sent = $mail->send();
+            }
+
+            if ($sent) {
                 $emailStatus = 'sent';
                 $logMessage .= "Email sent successfully. ";
             } else {
                 $emailStatus = 'failed';
-                $logMessage .= "Email send() failed. ";
+                $logMessage .= 'Email send() failed: ' . ($mail->ErrorInfo ?: 'Unknown SMTP error.') . ' ';
             }
         } catch (Exception $e) {
             $emailStatus = 'failed';
@@ -158,6 +246,7 @@ function sendEmailWithLog($conn, $toEmail, $subject, $body, $type, $attachments 
         'status' => $finalStatus,
         'message' => trim($logMessage),
         'email_status' => $emailStatus,
+        'attachment_diagnostics' => $attachmentDiagnostics,
     ];
 }
 ?>

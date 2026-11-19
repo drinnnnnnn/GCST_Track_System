@@ -211,7 +211,7 @@
 <div class="login-card">
     <img class="school-logo animate-item" src="../assets/images/icons/granby_logo.png" alt="Granby Colleges of Science and Technology">
 
-    <h1 class="animate-item">Admin Login</h1>
+    <h1 class="animate-item">Admin Cashier Login</h1>
     <p class="animate-item">Authorized personnel access only</p>
 
     <div id="status-area" class="status-card animate-item" role="status"></div>

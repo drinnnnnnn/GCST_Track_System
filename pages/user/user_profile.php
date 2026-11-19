@@ -1735,8 +1735,12 @@
         const row = document.createElement('tr');
         const receiptType = normalizeReceiptType(txn.receipt_type) || normalizeReceiptType(txn.receipt_category) || txn.transaction_type || (txn.source === 'tuition' ? 'Tuition Receipt' : 'Payment Receipt');
         const statusText = normalizePaymentStatusText(txn);
-        const isProductPurchase = txn.source === 'cashier' && txn.transaction_type === 'buy' && Number(txn.user_id) > 0;
-        const canRequestDamagedReturn = isProductPurchase && String(txn.payment_status).toLowerCase() === 'paid' && txn.transaction_number;
+        const isProductPurchase = String(txn.source).toLowerCase() === 'cashier'
+          && String(txn.transaction_type).toLowerCase() === 'buy';
+        const normalizedPaymentStatus = statusText.toLowerCase();
+        const canRequestDamagedReturn = isProductPurchase
+          && (String(txn.payment_status).toLowerCase() === 'paid' || normalizedPaymentStatus === 'paid')
+          && txn.transaction_number;
         const returnButton = !isProductPurchase
           ? ''
           : canRequestDamagedReturn

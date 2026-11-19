@@ -1835,7 +1835,8 @@
         start_date: startDate,
         end_date: endDate,
         category,
-        export_data: '1'
+        export_data: '1',
+        download_excel: '1'
       });
       if (cashierId) params.set('cashier_id', cashierId);
 
@@ -1843,25 +1844,26 @@
       button.textContent = 'Preparing report...';
       error.hidden = true;
       try {
-        const data = await fetchWithError(`../../actions/get_admincashier_sales.php?${params.toString()}`);
-        if (!data || !data.success || !Array.isArray(data.export_data)) {
-          throw new Error(data?.message || 'Unable to prepare the sales report.');
-        }
-        if (!data.export_data.length) {
-          error.textContent = 'No sales match the selected export options.';
-          error.hidden = false;
-          return;
+        const response = await fetch(`../../actions/get_admincashier_sales.php?${params.toString()}`);
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          throw new Error(payload?.message || 'Unable to prepare the sales report.');
         }
 
-        const selectedCashier = document.getElementById('exportCashier').selectedOptions[0];
-        window.exportSalesToExcel(data.export_data, {
-          startDate,
-          endDate,
-          cashierId,
-          cashierName: cashierId ? selectedCashier.textContent : 'All Cashiers',
-          category,
-          categoryLabel: categorySelect.selectedOptions[0].textContent
-        });
+        const blob = await response.blob();
+        if (!blob.size) throw new Error('The generated Excel file is empty.');
+
+        const disposition = response.headers.get('content-disposition') || '';
+        const fileNameMatch = disposition.match(/filename=\"?([^\";]+)\"?/i);
+        const fileName = fileNameMatch?.[1] || `Sales_Report_${startDate}_to_${endDate}_${category}.xlsx`;
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(downloadUrl);
         closeSalesExportModal();
       } catch (exportError) {
         console.error('Unable to export sales report:', exportError);

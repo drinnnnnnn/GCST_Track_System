@@ -4,6 +4,7 @@ secureSessionStart();
 requireAuth(['admin', 'cashier', 'admincashier', 'superadmin']);
 header('Content-Type: application/json');
 require_once __DIR__ . '/../database/connection.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 $conn = Database::getConnection();
 
 $hasStartDate = isset($_GET['start_date']);
@@ -173,6 +174,169 @@ if (isset($_GET['cashier_options']) || isset($_GET['export_data'])) {
             $row['unit_price'] = (float)$row['unit_price'];
             $row['amount'] = (float)$row['amount'];
             $exportRows[] = $row;
+        }
+
+        if (isset($_GET['download_excel']) && $_GET['download_excel'] === '1') {
+            if (!$exportRows) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'No sales match the selected export options.']);
+                $conn->close();
+                exit;
+            }
+
+            $signerId = $cashierId ?? (int)($_SESSION['admin_id'] ?? 0);
+            $signerName = '';
+            $signaturePath = '';
+
+            if ($signerId > 0) {
+                $signerStmt = $conn->prepare("SELECT
+                        COALESCE(NULLIF(TRIM(CONCAT_WS(' ', first_name, middle_name, last_name)), ''), username) AS name,
+                        signature_image
+                    FROM admincashier_acc
+                    WHERE id = ?");
+                if ($signerStmt) {
+                    $signerStmt->bind_param('i', $signerId);
+                    $signerStmt->execute();
+                    $signerResult = $signerStmt->get_result();
+                    if ($signer = $signerResult->fetch_assoc()) {
+                        $signerName = trim((string)$signer['name']);
+                        $signaturePath = trim((string)($signer['signature_image'] ?? ''));
+                    }
+                    $signerStmt->close();
+                }
+            }
+
+            if ($signerName === '') {
+                $signerName = $cashierId ? 'Cashier #' . $cashierId : 'Unknown Admin';
+            }
+
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Sales Report');
+
+            $title = 'GRANBY COLLEGES OF SCIENCE AND TECHNOLOGY - SALES PERFORMANCE REPORT';
+            $sheet->setCellValue('A1', $title);
+            $sheet->mergeCells('A1:K1');
+            $sheet->setCellValue('A2', 'SYSTEM: GCST TRACK SYSTEM (POS MODULE)');
+            $sheet->mergeCells('A2:K2');
+            $sheet->setCellValue('A3', 'REPORT TYPE');
+            $sheet->setCellValue('B3', 'Detailed Transaction Ledger');
+            $sheet->setCellValue('A4', 'REPORTING PERIOD');
+            $sheet->setCellValue('B4', $startDate . ' to ' . $endDate);
+            $sheet->setCellValue('A5', 'CATEGORY');
+            $sheet->setCellValue('B5', ucwords(str_replace('_', ' ', $category)));
+
+            $headerRow = 7;
+            $headers = [
+                'Category', 'Reference ID', 'Cashier', 'Process Date',
+                'Products & Specifications', 'Qty', 'Unit Price', 'Discount',
+                'Total Amount', 'Payment Method'
+            ];
+            $sheet->fromArray($headers, null, 'A' . $headerRow);
+
+            $row = $headerRow + 1;
+            $grandTotal = 0.0;
+            foreach ($exportRows as $item) {
+                $quantity = (int)$item['quantity'];
+                $amount = (float)$item['amount'];
+                $unitPrice = (float)$item['unit_price'];
+                $grandTotal += $amount;
+                $sheet->fromArray([
+                    $item['category'] ?: 'Uncategorized',
+                    $item['transaction_number'] ?: '---',
+                    $item['cashier_name'] ?: 'Unknown Cashier',
+                    date('M j, Y', strtotime($item['date'])),
+                    $item['item'] ?: 'N/A',
+                    $quantity,
+                    $unitPrice,
+                    0,
+                    $amount,
+                    $item['payment_method'] ?: 'Cash'
+                ], null, 'A' . $row);
+                $row++;
+            }
+
+            $row++;
+            $sheet->setCellValue('A' . $row, 'END OF REPORT');
+            $sheet->mergeCells('A' . $row . ':K' . $row);
+            $row++;
+            $sheet->setCellValue('A' . $row, 'Grand Total Revenue');
+            $sheet->setCellValue('B' . $row, $grandTotal);
+            $row++;
+            $sheet->setCellValue('A' . $row, 'Verified By');
+            $sheet->setCellValue('B' . $row, $signerName);
+            $row++;
+            $sheet->setCellValue('A' . $row, 'Audit Notice');
+            $sheet->setCellValue('B' . $row, 'This report is an official system-generated document. Unauthorized alteration is prohibited.');
+            $sheet->mergeCells('B' . $row . ':K' . $row);
+            $row += 2;
+            $sheet->setCellValue('A' . $row, 'CASHIER APPROVAL');
+            $sheet->mergeCells('A' . $row . ':K' . $row);
+            $approvalRow = $row + 1;
+            $signatureRow = $approvalRow;
+            $sheet->setCellValue('A' . $signatureRow, 'Signature:');
+            $signerNameRow = $signatureRow + 1;
+            $sheet->setCellValue('A' . $signerNameRow, $cashierId ? 'Cashier Name:' : 'Exported By:');
+            $sheet->setCellValue('B' . $signerNameRow, $signerName);
+
+            $absoluteSignaturePath = '';
+            if ($signaturePath !== '') {
+                $absoluteSignaturePath = $signaturePath[0] === '/'
+                    ? $_SERVER['DOCUMENT_ROOT'] . $signaturePath
+                    : dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $signaturePath);
+            }
+
+            if ($absoluteSignaturePath !== '' && is_readable($absoluteSignaturePath)) {
+                $sheet->getStyle('B' . $signatureRow)->getFill()
+                    ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                    ->getStartColor()->setRGB('FFFFFF');
+                $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+                $drawing->setName('Official Signature');
+                $drawing->setDescription('Uploaded cashier signature');
+                $drawing->setPath($absoluteSignaturePath);
+                $drawing->setHeight(50);
+                $drawing->setCoordinates('B' . $signatureRow);
+                $drawing->setOffsetX(4);
+                $drawing->setOffsetY(2);
+                $drawing->setWorksheet($sheet);
+                $sheet->getRowDimension($signatureRow)->setRowHeight(40);
+            }
+
+            $sheet->setCellValue('A' . ($signerNameRow + 1), 'Reporting Date Range');
+            $sheet->setCellValue('B' . ($signerNameRow + 1), $startDate . ' to ' . $endDate);
+            $sheet->setCellValue('A' . ($signerNameRow + 2), 'Date Signed');
+            $sheet->setCellValue('B' . ($signerNameRow + 2), date('Y-m-d'));
+
+            $sheet->getStyle('A1:K1')->getFont()->setBold(true)->setSize(14)->getColor()->setRGB('FFFFFF');
+            $sheet->getStyle('A1:K1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('4472C4');
+            $sheet->getStyle('A2:K2')->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFF'));
+            $sheet->getStyle('A2:K2')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('4472C4');
+            $sheet->getStyle('A' . $headerRow . ':K' . $headerRow)->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+            $sheet->getStyle('A' . $headerRow . ':K' . $headerRow)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('4472C4');
+
+            $approvalTitleRow = $approvalRow - 1;
+            $sheet->getStyle('A' . $approvalTitleRow . ':K' . $approvalTitleRow)->getFont()->setBold(true);
+            $sheet->getStyle('A' . $approvalTitleRow . ':K' . $approvalTitleRow)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('D9E1F2');
+            $sheet->getStyle('A' . $headerRow . ':K' . ($signerNameRow + 2))->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN)->getColor()->setRGB('D1D5DB');
+            $sheet->getStyle('B' . $signatureRow . ':B' . ($signerNameRow + 2))->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+
+            foreach (range('A', 'K') as $column) {
+                $sheet->getColumnDimension($column)->setAutoSize(true);
+            }
+            $sheet->getColumnDimension('E')->setWidth(34);
+            $sheet->getColumnDimension('K')->setWidth(22);
+            $sheet->freezePane('A' . ($headerRow + 1));
+            $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+
+            $fileName = 'Sales_Report_' . $startDate . '_to_' . $endDate . '_' . $category . '_' . date('Y-m-d') . '.xlsx';
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment; filename="' . $fileName . '"');
+            header('Cache-Control: max-age=0');
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+            $spreadsheet->disconnectWorksheets();
+            $conn->close();
+            exit;
         }
 
         echo json_encode(['success' => true, 'export_data' => $exportRows]);

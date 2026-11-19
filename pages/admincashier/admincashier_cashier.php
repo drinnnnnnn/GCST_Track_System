@@ -655,6 +655,11 @@
       margin-top: 10px;
       padding: 18px;
       border-radius: 18px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+      font-size: 0.88rem;
+      font-weight: 700;
     }
     .receipt-generate-feedback.hidden {
       display: none;
@@ -674,57 +679,6 @@
       border-radius: inherit;
       background: linear-gradient(90deg, #22c55e 0%, #10b981 100%);
       transition: width 1s linear;
-    }
-    .receipt-loading-overlay {
-      position: absolute;
-      inset: 0;
-      z-index: 12000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(2px);
-      transition: opacity 0.2s ease, visibility 0.2s ease;
-    }
-    .receipt-loading-overlay.hidden {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-    }
-    .receipt-loading-overlay.active {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-    }
-    .receipt-loading-shell {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
-      padding: 26px 28px;
-      border-radius: 20px;
-      background: #ffffff;
-      min-width: 280px;
-      max-width: 420px;
-      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
-    }
-    .receipt-loading-spinner {
-      width: 44px;
-      height: 44px;
-      border: 5px solid rgba(37, 99, 235, 0.2);
-      border-top-color: #2563eb;
-      border-radius: 50%;
-      animation: receipt-loading-spin 1s linear infinite;
-    }
-    .receipt-loading-message {
-      font-size: 0.98rem;
-      font-weight: 700;
-      color: #0f172a;
-      text-align: center;
-      line-height: 1.4;
-    }
-    @keyframes receipt-loading-spin {
-      to { transform: rotate(360deg); }
     }
     .receipt-preview-card {
       margin-top: 6px;
@@ -3329,10 +3283,10 @@
             <button id="tuition-generate-btn" type="button" class="btn btn-primary btn-sm receipt-actions-btn" onclick="openTuitionReceiptConfirmationModal()">Generate Receipt</button>
             <button id="tuition-clear-btn" type="button" class="btn btn-secondary btn-sm receipt-actions-btn" onclick="clearTuitionForm()">Clear</button>
           </div>
-          <div id="tuition-receipt-loading-overlay" class="receipt-loading-overlay hidden" aria-live="polite" aria-busy="true">
-            <div class="receipt-loading-shell">
-              <div class="receipt-loading-spinner" aria-hidden="true"></div>
-              <div class="receipt-loading-message">Generating receipt, please wait...</div>
+          <div id="receipt-generate-feedback" class="receipt-generate-feedback hidden" aria-live="polite" aria-busy="true">
+            <div id="receipt-generate-feedback-text">Generating payment details...</div>
+            <div class="receipt-generate-feedback-track" aria-hidden="true">
+              <span id="receipt-generate-feedback-fill" class="receipt-generate-feedback-fill"></span>
             </div>
           </div>
 
@@ -3576,8 +3530,7 @@
               <i class="fas fa-check"></i>
             </div>
             <h3 style="font-weight: 800; color: #111827; margin: 0;">Transaction Successful</h3>
-            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">A digital receipt has been emailed to the student.</p>
-
+            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Transaction details and email delivery status appear below.</p>
             <div id="reload-countdown-container" class="receipt-countdown-card" style="display: none; text-align: left;">
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
                 <div style="display: flex; align-items: center; gap: 8px; color: #166534; font-weight: 700; font-size: 0.9rem; flex: 1; min-width: 220px;">
@@ -4661,24 +4614,46 @@
       feedback.classList.remove('hidden');
     }
 
-    function showReceiptLoadingOverlay() {
-      const overlay = document.getElementById('tuition-receipt-loading-overlay');
-      if (!overlay) return;
-      const message = overlay.querySelector('.receipt-loading-message');
-      if (message) {
-        message.textContent = currentReceiptMode === 'tuition'
-          ? 'Generating tuition receipt, please wait...'
-          : 'Generating payment details, please wait...';
+    function setReceiptGenerateButtonLoading(isLoading) {
+      const generateBtn = document.getElementById('tuition-generate-btn');
+      const reviewConfirmBtn = document.getElementById('tuition-review-confirm');
+      const feedback = document.getElementById('receipt-generate-feedback');
+
+      [generateBtn, reviewConfirmBtn].forEach((button) => {
+        if (!button) return;
+
+        if (isLoading) {
+          if (!button.dataset.originalHtml) {
+            button.dataset.originalHtml = button.innerHTML;
+          }
+          button.disabled = true;
+          button.setAttribute('aria-busy', 'true');
+          button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        } else {
+          button.disabled = false;
+          button.removeAttribute('aria-busy');
+          if (button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+          }
+        }
+      });
+
+      if (feedback) {
+        feedback.classList.toggle('hidden', !isLoading);
       }
-      overlay.classList.remove('hidden');
-      overlay.classList.add('active');
+    }
+
+    function showReceiptLoadingOverlay() {
+      setReceiptGenerateButtonLoading(true);
+      showReceiptGenerateFeedback();
     }
 
     function hideReceiptLoadingOverlay() {
-      const overlay = document.getElementById('tuition-receipt-loading-overlay');
-      if (!overlay) return;
-      overlay.classList.add('hidden');
-      overlay.classList.remove('active');
+      setReceiptGenerateButtonLoading(false);
+      const feedback = document.getElementById('receipt-generate-feedback');
+      if (feedback) {
+        feedback.classList.add('hidden');
+      }
     }
 
     function openTuitionReceiptConfirmationModal() {
@@ -5378,14 +5353,12 @@
       const receiptPaidEl = document.getElementById('receipt-paid');
       const receiptChangeEl = document.getElementById('receipt-change');
       const receiptItems = document.getElementById('receipt-items');
-
       if (receiptNumberEl) receiptNumberEl.textContent = receipt.transaction_number || '—';
       if (receiptSubtotalEl) receiptSubtotalEl.textContent = formatCurrency(receipt.subtotal || 0);
       if (receiptDiscountEl) receiptDiscountEl.textContent = formatCurrency(receipt.discount_amount || 0);
       if (receiptTotalEl) receiptTotalEl.textContent = formatCurrency(receipt.total_amount || 0);
       if (receiptPaidEl) receiptPaidEl.textContent = formatCurrency(receipt.payment_received || 0);
       if (receiptChangeEl) receiptChangeEl.textContent = formatCurrency(receipt.change_amount || 0);
-
       if (receiptItems) {
         receiptItems.innerHTML = '';
         const items = Array.isArray(receipt.items) ? receipt.items : [];
@@ -5625,9 +5598,11 @@
         syncChannel.postMessage('refresh_inventory');
 
         showReceipt(result.receipt);
-        
-        // Professional 5-second countdown with progress tracking
-        startReloadCountdown(5);
+        startReloadCountdown(
+          result.payment_status === 'paid'
+            ? (result.email_status === 'sent' ? 10 : 20)
+            : 5
+        );
       } catch (err) {
         console.error('Sale Finalization Error:', err);
         alert('Error: ' + err.message);
@@ -6040,7 +6015,7 @@
         receipt_number: provisional,
         receipt_category: category,
         student_name: name,
-        student_email: document.getElementById('tuition-student-email').value.trim() || null,
+        student_email: getTuitionReceiptRecipientEmail() || document.getElementById('tuition-student-email').value.trim() || null,
         student_id: studentId || null,
         student_year_level: document.getElementById('tuition-student-year-level').value.trim() || null,
         student_semester: document.getElementById('tuition-student-semester').value.trim() || null,
@@ -6147,14 +6122,16 @@
       const emailStatus = document.getElementById('tuition-receipt-email-status');
       if (emailStatus) {
         emailStatus.style.display = 'block';
-        emailStatus.textContent = 'Sending receipt automatically to the selected student\u2019s Gmail...';
+        emailStatus.textContent = 'Sending receipt image automatically to the selected student\u2019s Gmail...';
       }
 
       removeTuitionReceiptStorePanel();
 
       document.getElementById('tuition-receipt-preview').classList.remove('hidden');
-      await sendTuitionReceiptEmail();
-      startTuitionReceiptReloadCountdown(2);
+      const emailSent = await sendTuitionReceiptEmail(tuitionSaveResult.transaction_number);
+      if (emailSent) {
+        startTuitionReceiptReloadCountdown(2);
+      }
     } finally {
       hideReceiptLoadingOverlay();
     }
@@ -6871,26 +6848,67 @@
       return (student?.email || student?.student_email || student?.email_address || '').trim();
     }
 
-    async function sendTuitionReceiptEmail() {
+    function formatReceiptEmailDiagnostics(diagnostics) {
+      if (!diagnostics) return 'No server diagnostics were returned.';
+      const pngState = diagnostics.png_generated
+        ? `PNG generated (${diagnostics.png_bytes || 0} bytes)`
+        : 'PNG not generated';
+      const attachmentState = diagnostics.attachment_registered
+        ? `attachment registered as ${diagnostics.attachment_mime || 'unknown MIME type'}`
+        : 'attachment not registered';
+      const mimeState = diagnostics.mime_verified ? 'MIME verified' : 'MIME not verified';
+      const logoState = diagnostics.logo_included ? 'Granby logo included' : 'Granby logo not included';
+      const signatureState = diagnostics.signature_included
+        ? 'assigned cashier signature included'
+        : 'assigned cashier signature omitted';
+      const smtpState = diagnostics.smtp_accepted ? 'SMTP accepted' : 'SMTP not accepted';
+      const errorState = diagnostics.error ? `Error: ${diagnostics.error}` : '';
+      const signatureError = diagnostics.signature_error ? `Signature note: ${diagnostics.signature_error}` : '';
+      const httpState = diagnostics.http_status ? `HTTP ${diagnostics.http_status}` : '';
+      return [
+        `Diagnostic ${diagnostics.id || 'unavailable'}: ${diagnostics.stage || 'unknown stage'}`,
+        httpState,
+        pngState,
+        attachmentState,
+        mimeState,
+        logoState,
+        signatureState,
+        signatureError,
+        smtpState,
+        errorState,
+      ].filter(Boolean).join('; ') + '.';
+    }
+
+    async function sendTuitionReceiptEmail(transactionNumber) {
       const recipient = getTuitionReceiptRecipientEmail();
       const preview = document.getElementById('tuition-receipt-preview');
+      const emailStatus = document.getElementById('tuition-receipt-email-status');
       if (!preview || preview.classList.contains('hidden')) {
         alert('Please generate the tuition receipt first.');
-        return;
+        return false;
       }
       if (!recipient) {
-        alert('No student Gmail address found. Please select the student or update the profile with a valid Gmail address.');
-        return;
+        const errorMessage = 'Receipt was saved, but no student Gmail address was found.';
+        if (emailStatus) emailStatus.textContent = errorMessage;
+        alert(errorMessage);
+        return false;
       }
       if (!validateEmail(recipient) || !recipient.toLowerCase().endsWith('@gmail.com')) {
-        alert('A valid student Gmail address is required. Please update the student profile with a Gmail address.');
-        return;
+        const errorMessage = 'Receipt was saved, but a valid student Gmail address is required.';
+        if (emailStatus) emailStatus.textContent = errorMessage;
+        alert(errorMessage);
+        return false;
+      }
+      if (!transactionNumber) {
+        const errorMessage = 'Receipt was saved, but its reference is missing, so the image could not be emailed.';
+        if (emailStatus) emailStatus.textContent = errorMessage;
+        alert(errorMessage);
+        return false;
       }
 
-      const emailStatus = document.getElementById('tuition-receipt-email-status');
       if (emailStatus) {
         emailStatus.style.display = 'block';
-        emailStatus.textContent = `Sending receipt automatically to ${recipient}...`;
+        emailStatus.textContent = `Sending receipt image automatically to ${recipient}...`;
       }
 
       try {
@@ -6904,29 +6922,42 @@
         const response = await fetch(`${API_ROOT}/send_tuition_receipt.php`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ recipient, subject, message, signature_image: currentAdminSignatureImage })
+          body: JSON.stringify({ recipient, subject, message, signature_image: currentAdminSignatureImage, transaction_number: transactionNumber })
         });
-        const result = await response.json();
+        const responseText = await response.text();
+        let result;
+        try {
+          result = JSON.parse(responseText);
+        } catch {
+          throw new Error(`Email endpoint returned HTTP ${response.status} with a non-JSON response: ${responseText.slice(0, 240) || 'empty response'}`);
+        }
+        if (result.diagnostics) {
+          result.diagnostics.http_status = response.status;
+        }
 
         if (result.success) {
+          const diagnosticMessage = formatReceiptEmailDiagnostics(result.diagnostics);
           if (emailStatus) {
-            emailStatus.textContent = `Receipt sent automatically to ${recipient}.`;
+            emailStatus.textContent = `Receipt image sent to ${result.recipient || recipient}. ${diagnosticMessage}`;
           }
           if (preview) {
             preview.classList.add('hidden');
           }
+          return true;
         } else {
           if (emailStatus) {
-            emailStatus.textContent = `Receipt delivery failed for ${recipient}.`;
+            emailStatus.textContent = `Receipt was saved, but the image email failed for ${recipient}. ${formatReceiptEmailDiagnostics(result.diagnostics)}`;
           }
-          alert('Failed to send tuition receipt: ' + (result.message || 'Please try again.'));
+          alert('Receipt was saved, but the image email failed: ' + (result.message || 'Please try again.') + ` ${formatReceiptEmailDiagnostics(result.diagnostics)}`);
+          return false;
         }
       } catch (error) {
         if (emailStatus) {
-          emailStatus.textContent = `Receipt delivery failed for ${recipient}.`;
+          emailStatus.textContent = `Receipt was saved, but the image email failed for ${recipient}.`;
         }
         console.error('Failed to send tuition receipt:', error);
-        alert('Failed to send tuition receipt: ' + (error.message || 'Please try again.'));
+        alert('Receipt was saved, but the image email failed: ' + (error.message || 'Please try again.'));
+        return false;
       }
     }
 

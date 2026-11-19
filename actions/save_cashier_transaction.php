@@ -54,6 +54,7 @@ try {
         $cashierName = 'Admin Cashier';
     }
     $payload = json_decode(file_get_contents('php://input'), true);
+    $discountPercent = isset($payload['discount_percent']) ? floatval($payload['discount_percent']) : 0.0;
     $isGuest = $payload['is_guest'] ?? false;
     $guestName = $payload['guest_name'] ?? null;
     $guestSchoolId = $payload['guest_school_id'] ?? null;
@@ -150,7 +151,6 @@ try {
         $lookupStmt->close();
     }
 
-    $discountPercent = isset($payload['discount_percent']) ? floatval($payload['discount_percent']) : 0.0;
     $paymentReceived = isset($payload['payment_received']) ? floatval($payload['payment_received']) : 0.0;
     $paymentStatus = isset($payload['payment_status']) && in_array($payload['payment_status'], ['paid', 'pending'], true) ? $payload['payment_status'] : 'paid';
     $receiptNumber = isset($payload['receipt_number']) ? trim((string)$payload['receipt_number']) : null;
@@ -416,6 +416,15 @@ try {
     $userEmail = null;
     $targetEmail = null;
     $targetName = null;
+    $emailDiagnostics = [
+        'id' => bin2hex(random_bytes(6)),
+        'stage' => 'recipient_lookup',
+        'png_generated' => false,
+        'png_bytes' => 0,
+        'attachment_registered' => false,
+        'mime_verified' => false,
+        'smtp_accepted' => false,
+    ];
 
     if ($userId && !$isGuest) {
         $emailStmt = $conn->prepare('SELECT email, first_name, last_name FROM users WHERE id = ? LIMIT 1');
@@ -623,14 +632,136 @@ try {
                     </div>";
                 }
 
-                $sendResult = sendEmailWithLog($conn, $userEmail, $subject, $emailBody, 'Transaction Details', $attachments);
-                $emailStatus = $sendResult['status'] === 'sent' ? 'sent' : 'failed';
+                $receiptImageError = null;
+                if ($paymentStatus === 'paid') {
+                    $emailDiagnostics['stage'] = 'png_generation';
+                    try {
+                        $cashierSignaturePath = null;
+                        $signatureLookupError = null;
+                        if ($adminId) {
+                            try {
+                                $signatureStmt = $conn->prepare('SELECT signature_image FROM admincashier_acc WHERE id = ? LIMIT 1');
+                                if (!$signatureStmt) {
+                                    $signatureLookupError = 'Unable to look up the assigned cashier signature.';
+                                } else {
+                                    $signatureId = (int)$adminId;
+                                    $signatureStmt->bind_param('i', $signatureId);
+                                    if ($signatureStmt->execute()) {
+                                        $signatureRow = $signatureStmt->get_result()->fetch_assoc();
+                                        $cashierSignaturePath = trim((string)($signatureRow['signature_image'] ?? ''));
+                                    } else {
+                                        $signatureLookupError = 'Unable to load the assigned cashier signature.';
+                                    }
+                                    $signatureStmt->close();
+                                }
+                            } catch (Throwable $e) {
+                                if (isset($signatureStmt)) {
+                                    $signatureStmt->close();
+                                }
+                                $signatureLookupError = 'Unable to look up the assigned cashier signature.';
+                            }
+                        }
+
+                        require_once __DIR__ . '/receipt_image.php';
+                        $receiptImage = generateReceiptPng([
+                            'receipt_number' => $receiptNumber,
+                            'transaction_number' => $transactionNumber,
+                            'created_at' => date('Y-m-d H:i:s'),
+                            'student_name' => $studentFullName,
+                            'student_id' => $studentId,
+                            'receipt_category' => $receiptCategory ?: 'Official Transaction Receipt',
+                            'amount_paid' => $totalAmount,
+                            'payment_status' => $paymentStatus,
+                            'payment_method' => $paymentMethod,
+                            'payment_type' => 'Purchase',
+                            'check_number' => $checkNumber,
+                            'cashier_name' => $cashierName,
+                            'items' => $cartItems,
+                            'subtotal' => $subtotal,
+                            'discount_amount' => $discountAmount,
+                            'discount_percent' => $discountPercent,
+                            'payment_received' => $paymentReceived,
+                            'change_amount' => $changeAmount,
+                            'signature_image' => $cashierSignaturePath ?? '',
+                        ]);
+                        if (substr($receiptImage['content'], 0, 8) !== "\x89PNG\r\n\x1a\n") {
+                            throw new RuntimeException('Generated transaction receipt is not a valid PNG.');
+                        }
+                        $emailDiagnostics['png_generated'] = true;
+                        $emailDiagnostics['png_bytes'] = strlen($receiptImage['content']);
+                        $emailDiagnostics['attachment_name'] = $receiptImage['file_name'];
+                        $emailDiagnostics['logo_included'] = (bool)($receiptImage['logo_included'] ?? false);
+                        $emailDiagnostics['signature_included'] = (bool)($receiptImage['signature_included'] ?? false);
+                        if ($signatureLookupError || !empty($receiptImage['signature_error'])) {
+                            $emailDiagnostics['signature_error'] = $signatureLookupError
+                                ?: $receiptImage['signature_error'];
+                        }
+                        $emailDiagnostics['stage'] = 'attachment_registration';
+                        $attachments[] = [
+                            'data' => $receiptImage['content'],
+                            'mime_type' => 'image/png',
+                            'name' => $receiptImage['file_name'],
+                            'required' => true,
+                        ];
+                    } catch (Throwable $e) {
+                        $receiptImageError = $e->getMessage();
+                        $emailDiagnostics['error'] = $receiptImageError;
+                        error_log(
+                            '[CashierReceiptEmail ' . $emailDiagnostics['id'] . '] PNG generation failed for ' .
+                            $transactionNumber . ': ' . $receiptImageError
+                        );
+                    }
+                }
+
+                if ($receiptImageError === null) {
+                    $sendResult = sendEmailWithLog($conn, $userEmail, $subject, $emailBody, 'Transaction Details', $attachments);
+                    $emailStatus = ($sendResult['status'] ?? '') === 'sent' ? 'sent' : 'failed';
+                    foreach ($sendResult['attachment_diagnostics'] ?? [] as $attachmentDiagnostic) {
+                        if (($attachmentDiagnostic['name'] ?? '') === ($emailDiagnostics['attachment_name'] ?? null)) {
+                            $emailDiagnostics['attachment_registered'] = (bool)($attachmentDiagnostic['registered'] ?? false);
+                            $emailDiagnostics['mime_verified'] = (bool)($attachmentDiagnostic['mime_verified'] ?? false);
+                            $emailDiagnostics['attachment_mime'] = $attachmentDiagnostic['mime_type'] ?? '';
+                            break;
+                        }
+                    }
+                    $emailDiagnostics['smtp_accepted'] = !empty($sendResult['success']);
+                    $emailDiagnostics['stage'] = $emailDiagnostics['smtp_accepted']
+                        ? 'smtp_accepted'
+                        : (!$emailDiagnostics['attachment_registered']
+                            ? 'attachment_registration'
+                            : (!$emailDiagnostics['mime_verified'] ? 'attachment_mime' : 'smtp_submission'));
+                    if ($emailStatus !== 'sent') {
+                        $emailDiagnostics['error'] = $sendResult['message'] ?? 'Mailer failed without an error message.';
+                    }
+                } else {
+                    $emailStatus = 'failed';
+                }
+
+                if ($paymentStatus === 'paid') {
+                    error_log(
+                        '[CashierReceiptEmail ' . $emailDiagnostics['id'] . '] ' .
+                        json_encode($emailDiagnostics, JSON_UNESCAPED_SLASHES) .
+                        '; status=' . $emailStatus
+                    );
+                }
 
                 if (isset($tempQrPath) && file_exists($tempQrPath)) {
                     unlink($tempQrPath);
                 }
             }
         }
+    if ($paymentStatus === 'paid' && $emailStatus === 'skipped') {
+        $emailDiagnostics['error'] = $targetEmail
+            ? 'The saved recipient email address is invalid.'
+            : 'No recipient email address was found for this transaction.';
+        $emailDiagnostics['stage'] = $targetEmail ? 'recipient_validation' : 'recipient_lookup';
+        $emailStatus = 'failed';
+        error_log(
+            '[CashierReceiptEmail ' . $emailDiagnostics['id'] . '] ' .
+            json_encode($emailDiagnostics, JSON_UNESCAPED_SLASHES) .
+            '; status=' . $emailStatus
+        );
+    }
 
     // Log the transaction
     logAudit($conn, $adminId ? 'admincashier' : 'student', $adminId ?? $userId, 'save_cashier_transaction', 'Saved transaction ' . $transactionNumber . ' and email status: ' . $emailStatus);
@@ -642,6 +773,7 @@ try {
         'receipt_number' => $receiptNumber,
         'transaction_id' => $conn->insert_id,
         'email_status' => $emailStatus,
+        'email_diagnostics' => $emailDiagnostics,
         'payment_status' => $paymentStatus,
         'receipt' => [
             'transaction_number' => $transactionNumber,
